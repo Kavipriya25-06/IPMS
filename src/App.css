@@ -1,0 +1,82 @@
+/* src/App.css */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+.App {
+  text-align: left;
+  padding: 20px;
+  margin: 0;
+}
+
+h1 {
+  margin-bottom: 10px;
+  font-size: 2rem;
+  margin-top: 0;
+  padding: 20px 0;
+  background-color: #f8f9fa;
+}
+
+nav {
+  width: 100%;
+  background-color: #f58720;
+  padding: 10px 0;
+  display: flex;
+  justify-content: left;
+}
+
+nav ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+}
+
+nav ul li {
+  margin-right: 10px;
+}
+
+nav ul li a {
+  padding: 10px 20px;
+  background-color: #f58720;
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+}
+
+nav ul li a:hover {
+  background-color: #eea561;
+}
+
+nav ul li a.active {
+  background-color: #cb6c13;
+}
+
+main {
+  padding: 20px;
+  margin-top: 10px;
+}
+
+
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th, td {
+  padding: 12px;
+  border: 1px solid #ddd;
+}
+
+th {
+  background-color: #F58720;
+  color: white;
+}
+
+tbody tr:hover {
+  background-color: #f1f1f1;
+}

@@ -1,0 +1,249 @@
+[
+    {
+        "bom": "B001",
+        "component": {
+            "component_type": "Connectors",
+            "component_specification": "Amass XT30-U Female Bullet Connector",
+            "unit_of_measurement": "Nos",
+            "category": "Electricals"
+        },
+        "quantity": 2,
+        "vendor": {
+            "vendor_id": "V_00002",
+            "vendor_name": "Macfos",
+            "point_of_contact": "Ramesh",
+            "email": "abc@example.com",
+            "phone_number": "12345678",
+            "location": "Washington",
+            "category": "Electricals"
+        }
+    },
+    {
+        "bom": "B001",
+        "component": {
+            "component_type": "Cables",
+            "component_specification": "High Quality Ultra Flexible 16AWG Silicon Wire 5m (Red)",
+            "unit_of_measurement": "Nos",
+            "category": "Electricals"
+        },
+        "quantity": 2,
+        "vendor": {
+            "vendor_id": "V_00003",
+            "vendor_name": "Robocraze",
+            "point_of_contact": "Dinesh",
+            "email": "abc@example.com",
+            "phone_number": "12345678",
+            "location": "Ottawa",
+            "category": "Electronics"
+        }
+    },
+    {
+        "bom": "B001",
+        "component": {
+            "component_type": "SD card",
+            "component_specification": "256 GB (Extreme)",
+            "unit_of_measurement": "Nos",
+            "category": "Electronics"
+        },
+        "quantity": 2,
+        "vendor": {
+            "vendor_id": "V_00006",
+            "vendor_name": "Robokits",
+            "point_of_contact": "Dinesh",
+            "email": "abc@example.com",
+            "phone_number": "12345678",
+            "location": "Amsterdam",
+            "category": "Electricals"
+        }
+    },
+    {
+        "bom": "B001",
+        "component": {
+            "component_type": "GPS",
+            "component_specification": "Here3+",
+            "unit_of_measurement": "Nos",
+            "category": "Electronics"
+        },
+        "quantity": 2,
+        "vendor": {
+            "vendor_id": "V_00007",
+            "vendor_name": "APICO",
+            "point_of_contact": "Vignesh",
+            "email": "abc@example.com",
+            "phone_number": "12345678",
+            "location": "Antwerp",
+            "category": "Electronics"
+        }
+    },
+    {
+        "bom": "B002",
+        "component": {
+            "component_type": "Sprayer System",
+            "component_specification": "Centrifugal Nozzle",
+            "unit_of_measurement": "Nos",
+            "category": "Payload"
+        },
+        "quantity": 2,
+        "vendor": {
+            "vendor_id": "V_00004",
+            "vendor_name": "Indian Robo Store",
+            "point_of_contact": "Harish",
+            "email": "abc@example.com",
+            "phone_number": "12345678",
+            "location": "Rio de janeiro",
+            "category": "Airframe"
+        }
+    },
+    {
+        "bom": "B002",
+        "component": {
+            "component_type": "Sensors",
+            "component_specification": "TF mini Plus",
+            "unit_of_measurement": "Nos",
+            "category": "Electronics"
+        },
+        "quantity": 2,
+        "vendor": {
+            "vendor_id": "V_00009",
+            "vendor_name": "Mpower",
+            "point_of_contact": "Rajesh",
+            "email": "abc@example.com",
+            "phone_number": "12345678",
+            "location": "Canberra",
+            "category": "Electricals"
+        }
+    },
+    {
+        "bom": "B002",
+        "component": {
+            "component_type": "Flight controller",
+            "component_specification": "Holybro Kakute H7 V2 Stack",
+            "unit_of_measurement": "Nos",
+            "category": "Electronics"
+        },
+        "quantity": 4,
+        "vendor": {
+            "vendor_id": "V_00004",
+            "vendor_name": "Indian Robo Store",
+            "point_of_contact": "Harish",
+            "email": "abc@example.com",
+            "phone_number": "12345678",
+            "location": "Rio de janeiro",
+            "category": "Airframe"
+        }
+    },
+    {
+        "bom": "B003",
+        "component": {
+            "component_type": "Camera",
+            "component_specification": "NightHawk2",
+            "unit_of_measurement": "Nos",
+            "category": "Payload"
+        },
+        "quantity": 4,
+        "vendor": {
+            "vendor_id": "V_00005",
+            "vendor_name": "Elecdrone Technologies",
+            "point_of_contact": "Ganesh",
+            "email": "abc@example.com",
+            "phone_number": "12345678",
+            "location": "Dublin",
+            "category": "Payload"
+        }
+    },
+    {
+        "bom": "B003",
+        "component": {
+            "component_type": "Flight controller",
+            "component_specification": "Holybro Kakute H7 V2 Stack",
+            "unit_of_measurement": "Nos",
+            "category": "Electronics"
+        },
+        "quantity": 1,
+        "vendor": {
+            "vendor_id": "V_00002",
+            "vendor_name": "Macfos",
+            "point_of_contact": "Ramesh",
+            "email": "abc@example.com",
+            "phone_number": "12345678",
+            "location": "Washington",
+            "category": "Electricals"
+        }
+    },
+    {
+        "bom": "B003",
+        "component": {
+            "component_type": "Sensors",
+            "component_specification": "TF mini Plus",
+            "unit_of_measurement": "Nos",
+            "category": "Electronics"
+        },
+        "quantity": 1,
+        "vendor": {
+            "vendor_id": "V_00010",
+            "vendor_name": "Nextvision",
+            "point_of_contact": "Dinesh",
+            "email": "abc@example.com",
+            "phone_number": "12345678",
+            "location": "Copenhagen",
+            "category": "Communication"
+        }
+    },
+    {
+        "bom": "B004",
+        "component": {
+            "component_type": "SD card",
+            "component_specification": "256 GB (Extreme)",
+            "unit_of_measurement": "Nos",
+            "category": "Electronics"
+        },
+        "quantity": 1,
+        "vendor": {
+            "vendor_id": "V_00009",
+            "vendor_name": "Mpower",
+            "point_of_contact": "Rajesh",
+            "email": "abc@example.com",
+            "phone_number": "12345678",
+            "location": "Canberra",
+            "category": "Electricals"
+        }
+    },
+    {
+        "bom": "B004",
+        "component": {
+            "component_type": "Connectors",
+            "component_specification": "Amass XT30-U Female Bullet Connector",
+            "unit_of_measurement": "Nos",
+            "category": "Electricals"
+        },
+        "quantity": 1,
+        "vendor": {
+            "vendor_id": "V_00011",
+            "vendor_name": "Amuze",
+            "point_of_contact": "Sam",
+            "email": "bc@example.com",
+            "phone_number": "12345677777",
+            "location": "Mumbai",
+            "category": "Airframe"
+        }
+    },
+    {
+        "bom": "B004",
+        "component": {
+            "component_type": "ToolKit",
+            "component_specification": "Insulation Tapes",
+            "unit_of_measurement": "Nos",
+            "category": "Electricals"
+        },
+        "quantity": 2,
+        "vendor": {
+            "vendor_id": "V_00005",
+            "vendor_name": "Elecdrone Technologies",
+            "point_of_contact": "Ganesh",
+            "email": "abc@example.com",
+            "phone_number": "12345678",
+            "location": "Dublin",
+            "category": "Payload"
+        }
+    }
+]

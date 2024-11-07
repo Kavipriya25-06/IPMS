@@ -1,0 +1,44 @@
+[
+    {
+    "id": 1,
+    "request_id": "R_00001",
+    "requester_name": "Ganesh",
+    "date": "2024-10-24",
+    "status": "In Progress",
+    "last_modified_by": "Arun",
+    "bom": 1
+},
+
+
+
+{
+    "request_id": 1,
+    "component": 4,
+    "product_id": "P0003",
+    "bom": 4,
+    "component_type": "Flight controller",
+    "component_specification": "Holybro Kakute H7 V2 Stack",
+    "unit_of_measurement": "Nos",
+    "category": "Electronics"
+},
+{
+    "request_id": 1,
+    "component": 5,
+    "product_id": "P0006",
+    "bom": 2,
+    "component_type": "GPS",
+    "component_specification": "Here3+",
+    "unit_of_measurement": "Nos",
+    "category": "Electronics"
+},
+{
+    "request_id": 1,
+    "component": 9,
+    "product_id": "P0004",
+    "bom": 3,
+    "component_type": "Camera",
+    "component_specification": "NightHawk2",
+    "unit_of_measurement": "Nos",
+    "category": "Payload"
+}
+]
