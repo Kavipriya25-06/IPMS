@@ -80,7 +80,7 @@ const VendorDetails = () => {
     const updatedProduct = selectedVendorData[index];
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/vendor_master_put/${updatedProduct.product_id}/`,
+        `http://127.0.0.1:8000/vendor_master/${updatedProduct.product_id}/`,
         {
           method: "PUT",
           headers: {
@@ -108,7 +108,7 @@ const VendorDetails = () => {
     const productToDelete = selectedVendorData[index];
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/vendor_master_delete/${productToDelete.product_id}/`,
+        `http://127.0.0.1:8000/vendor_master/${productToDelete.product_id}/`,
         {
           method: "DELETE",
         }
@@ -165,38 +165,38 @@ const VendorDetails = () => {
     }
   };
 
-    // Handle Add button click
-    const handleAddComponent = async (product) => {
-      const payload = {
-        product_id: product.product_id,
-        component_type: product.component_type,
-        component_specification: product.component_specification,
-        unit_of_measurement: product.unit_of_measurement,
-        category: product.category,
-      };
-
-      try {
-        const response = await fetch("http://127.0.0.1:8000/component/", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          console.log("Component successfully added:", data);
-          alert("Component added successfully!");
-        } else {
-          console.error("Error adding component:", response.statusText);
-          alert("Failed to add component.");
-        }
-      } catch (error) {
-        console.error("Error adding component:", error);
-        alert("Error occurred while adding component.");
-      }
+  // Handle Add button click
+  const handleAddComponent = async (product) => {
+    const payload = {
+      product_id: product.product_id,
+      component_type: product.component_type,
+      component_specification: product.component_specification,
+      unit_of_measurement: product.unit_of_measurement,
+      category: product.category,
     };
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/component/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Component successfully added:", data);
+        alert("Component added successfully!");
+      } else {
+        console.error("Error adding component:", response.statusText);
+        alert("Failed to add component.");
+      }
+    } catch (error) {
+      console.error("Error adding component:", error);
+      alert("Error occurred while adding component.");
+    }
+  };
 
   const handleBackClick = () => {
     navigate("/vendor");
@@ -288,8 +288,16 @@ const VendorDetails = () => {
         </thead>
         <tbody>
           {selectedVendorData.map((product, index) => (
-            <tr key={product.product_id}>
+            <tr
+              key={product.product_id}
+              onClick={() => {
+                // Only trigger row click if not in editing mode for this row
+                if (isEditingVendorMaster !== index) {
+                }
+              }}
+            >
               <td>{product.product_id}</td>
+
               <td>
                 {isEditingVendorMaster === index ? (
                   <input
@@ -307,9 +315,45 @@ const VendorDetails = () => {
                   product.product_description
                 )}
               </td>
-              <td>{product.unit_of_measurement}</td>
+
+              <td>
+                {isEditingVendorMaster === index ? (
+                  <input
+                    type="text"
+                    value={product.unit_of_measurement}
+                    onChange={(e) =>
+                      handleInputChange(
+                        index,
+                        "product.unit_of_measurement",
+                        e.target.value
+                      )
+                    }
+                  />
+                ) : (
+                  product.unit_of_measurement
+                )}
+              </td>
+
               <td>{getComponentId(product.product_id)}</td>
-              <td>{product.last_price}</td>
+
+              <td>
+                {" "}
+                {isEditingVendorMaster === index ? (
+                  <input
+                    type="text"
+                    value={product.last_price}
+                    onChange={(e) =>
+                      handleInputChange(
+                        index,
+                        "product.last_price",
+                        e.target.value
+                      )
+                    }
+                  />
+                ) : (
+                  product.last_price
+                )}
+              </td>
               <td>
                 {product.img ? (
                   <img
