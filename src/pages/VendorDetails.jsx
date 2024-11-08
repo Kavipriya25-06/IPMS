@@ -337,7 +337,6 @@ const VendorDetails = () => {
               <td>{getComponentId(product.product_id)}</td>
 
               <td>
-                {" "}
                 {isEditingVendorMaster === index ? (
                   <input
                     type="text"

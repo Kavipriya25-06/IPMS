@@ -7,7 +7,7 @@ const RequestForm = () => {
   const [selectedBom, setSelectedBom] = useState(null);
   const [selectedComponents, setSelectedComponents] = useState([]);
   const [availableComponents, setAvailableComponents] = useState([]);
-  
+
   const [vendorMaster, setVendorMaster] = useState([]); // Store data from vendor_master
   const [vendorList, setVendorList] = useState([]); // Store data from vendor_list
   const [requesterName, setRequesterName] = useState("");
@@ -94,16 +94,20 @@ const RequestForm = () => {
     const selectedComponent = availableComponents.find(
       (comp) => comp.component_id === componentId
     );
+    console.log("Fetched component id: ", componentId);
 
     const updatedComponents = [...selectedComponents];
     updatedComponents[index].component = selectedComponent;
-    updatedComponents[index]
+    // updatedComponents[index].component.id = 3;
+
+    console.log("Added component API response:", selectedComponent);
 
     // Step 1: Find vendor_id from vendor_master using component_id
     const vendorData = vendorMaster.find(
-      (vendor) => vendor.component === componentId // Vendor master has component_id as component
+      (vendor) => vendor.product_id === selectedComponent.product_id // Vendor master has component_id as component
     );
     console.log("Selected components API response:", selectedComponents);
+    console.log("fetched vendor response:", vendorData);
 
     // Step 2: Use vendor_id to find vendor_name from vendor_list
     if (vendorData) {
@@ -124,7 +128,7 @@ const RequestForm = () => {
   };
 
   const bom_id_list = selectedBom ? selectedBom.bom_id : "";
-  const firstComponentId = selectedComponents[0]?.id ;
+  const firstComponentId = selectedComponents[0]?.id;
 
   const handleSubmit = async () => {
     try {
@@ -166,7 +170,7 @@ const RequestForm = () => {
         request: generatedRequestId,
         component: component.component.component_id,
         vendor: component.vendor.vendor_id,
-        bom: component.id, // For the components added we give a default bom master id
+        bom: component.id ? component.id : 3, // For the components added we give a default bom master id
         qty: component.quantity,
         status: "pending",
       }));
