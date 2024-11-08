@@ -40,6 +40,7 @@ const Vendors = () => {
       );
 
       setSelectedVendorData(matchedProducts);
+      // setNewVendor((prevVendor) => ({ ...prevVendor, vendor: vendor_id }));
     } catch (error) {
       console.error("Error fetching vendor products:", error);
     }
@@ -77,6 +78,18 @@ const Vendors = () => {
       }
     } catch (error) {
       console.error("Error updating vendor:", error);
+    }
+  };
+
+  const handleInputChange = (index, field, value, table) => {
+    if (table === "vendor_list") {
+      const updatedVendors = [...vendorData];
+      updatedVendors[index][field] = value;
+      setVendorData(updatedVendors);
+    } else {
+      const updatedProducts = [...selectedVendorData];
+      updatedProducts[index][field] = value;
+      setSelectedVendorData(updatedProducts);
     }
   };
 
@@ -145,7 +158,12 @@ const Vendors = () => {
               {vendorData.map((vendor, index) => (
                 <tr
                   key={vendor.vendor_id}
-                  onClick={() => handleVendorClick(vendor.vendor_id)}
+                  onClick={() => {
+                    // Only trigger row click if not in editing mode for this row
+                    if (isEditingVendorList !== index) {
+                      handleVendorClick(vendor.vendor_id);
+                    }
+                  }}
                 >
                   <td>
                     {isEditingVendorList === index ? (
@@ -160,16 +178,107 @@ const Vendors = () => {
                             "vendor_list"
                           )
                         }
+                        onClick={(e) => e.stopPropagation()} // Prevent row click when interacting with input
                       />
                     ) : (
                       vendor.vendor_name
                     )}
                   </td>
-                  <td>{vendor.point_of_contact}</td>
-                  <td>{vendor.email}</td>
-                  <td>{vendor.phone_number}</td>
-                  <td>{vendor.location}</td>
-                  <td>{vendor.category}</td>
+                  <td>
+                    {isEditingVendorList === index ? (
+                      <input
+                        type="text"
+                        value={vendor.point_of_contact}
+                        onChange={(e) =>
+                          handleInputChange(
+                            index,
+                            "point_of_contact",
+                            e.target.value,
+                            "vendor_list"
+                          )
+                        }
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    ) : (
+                      vendor.point_of_contact
+                    )}
+                  </td>
+                  <td>
+                    {isEditingVendorList === index ? (
+                      <input
+                        type="text"
+                        value={vendor.email}
+                        onChange={(e) =>
+                          handleInputChange(
+                            index,
+                            "email",
+                            e.target.value,
+                            "vendor_list"
+                          )
+                        }
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    ) : (
+                      vendor.email
+                    )}
+                  </td>
+                  <td>
+                    {isEditingVendorList === index ? (
+                      <input
+                        type="text"
+                        value={vendor.phone_number}
+                        onChange={(e) =>
+                          handleInputChange(
+                            index,
+                            "phone_number",
+                            e.target.value,
+                            "vendor_list"
+                          )
+                        }
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    ) : (
+                      vendor.phone_number
+                    )}
+                  </td>
+                  <td>
+                    {isEditingVendorList === index ? (
+                      <input
+                        type="text"
+                        value={vendor.location}
+                        onChange={(e) =>
+                          handleInputChange(
+                            index,
+                            "location",
+                            e.target.value,
+                            "vendor_list"
+                          )
+                        }
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    ) : (
+                      vendor.location
+                    )}
+                  </td>
+                  <td>
+                    {isEditingVendorList === index ? (
+                      <input
+                        type="text"
+                        value={vendor.category}
+                        onChange={(e) =>
+                          handleInputChange(
+                            index,
+                            "category",
+                            e.target.value,
+                            "vendor_list"
+                          )
+                        }
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    ) : (
+                      vendor.category
+                    )}
+                  </td>
                   <td>
                     <button
                       onClick={(e) => {
@@ -210,14 +319,19 @@ const Vendors = () => {
                 placeholder="Point of Contact"
                 value={newVendor.point_of_contact}
                 onChange={(e) =>
-                  setNewVendor({ ...newVendor, point_of_contact: e.target.value })
+                  setNewVendor({
+                    ...newVendor,
+                    point_of_contact: e.target.value,
+                  })
                 }
               />
               <input
                 type="email"
                 placeholder="Email"
                 value={newVendor.email}
-                onChange={(e) => setNewVendor({ ...newVendor, email: e.target.value })}
+                onChange={(e) =>
+                  setNewVendor({ ...newVendor, email: e.target.value })
+                }
               />
               <input
                 type="text"
