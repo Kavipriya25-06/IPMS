@@ -8,6 +8,8 @@ import { useParams, useNavigate } from "react-router-dom";
 const VendorDetails = () => {
   const { vendorId } = useParams();
   const navigate = useNavigate();
+  const [priceHistory, setPriceHistory] = useState([]);
+  const [showPriceHistory, setShowPriceHistory] = useState(false); // State to control the modal
   const [isEditingVendorMaster, setIsEditingVendorMaster] = useState(null);
   const [showAddProductForm, setShowAddProductForm] = useState(false);
   const [selectedVendorData, setSelectedVendorData] = useState([]);
@@ -60,6 +62,26 @@ const VendorDetails = () => {
 
   const getComponentId = (product_id) => {
     return componentMasterData[product_id] || "null";
+  };
+
+  // Fetch price history for a product
+  const fetchPriceHistory = async (productId) => {
+    // Sample data, replace with API call to fetch price history if available
+    const sampleData = [
+      { date: "2023-01-15", price: 100, tax: 5 },
+      { date: "2023-02-20", price: 110, tax: 5 },
+      { date: "2023-03-25", price: 105, tax: 5 },
+    ];
+    setPriceHistory(sampleData);
+    setShowPriceHistory(true); // Open the modal
+  };
+
+  const handleClosePriceHistory = () => {
+    setShowPriceHistory(false);
+  };
+
+  const handlePriceClick = (productId) => {
+    fetchPriceHistory(productId);
   };
 
   const handleInputChange = (index, field, value) => {
@@ -273,6 +295,36 @@ const VendorDetails = () => {
         </div>
       )}
 
+      {/* Price History Modal */}
+      {showPriceHistory && (
+        <div className="modal">
+          <div className="modal-content">
+            <span className="close-button" onClick={handleClosePriceHistory}>
+              &times;
+            </span>
+            <h3>Price History</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Price</th>
+                  <th>Tax</th>
+                </tr>
+              </thead>
+              <tbody>
+                {priceHistory.map((entry, index) => (
+                  <tr key={index}>
+                    <td>{entry.date}</td>
+                    <td>{entry.price}</td>
+                    <td>{entry.tax}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       <table>
         <thead>
           <tr>
@@ -281,6 +333,7 @@ const VendorDetails = () => {
             <th>UOM</th>
             <th>Component ID</th>
             <th>Last Price</th>
+            <th>Tax</th>
             <th>Image</th>
             <th>Attachments</th>
             <th>Actions</th>
@@ -288,16 +341,8 @@ const VendorDetails = () => {
         </thead>
         <tbody>
           {selectedVendorData.map((product, index) => (
-            <tr
-              key={product.product_id}
-              onClick={() => {
-                // Only trigger row click if not in editing mode for this row
-                if (isEditingVendorMaster !== index) {
-                }
-              }}
-            >
+            <tr key={product.product_id}>
               <td>{product.product_id}</td>
-
               <td>
                 {isEditingVendorMaster === index ? (
                   <input
@@ -315,7 +360,6 @@ const VendorDetails = () => {
                   product.product_description
                 )}
               </td>
-
               <td>
                 {isEditingVendorMaster === index ? (
                   <input
@@ -324,7 +368,7 @@ const VendorDetails = () => {
                     onChange={(e) =>
                       handleInputChange(
                         index,
-                        "product.unit_of_measurement",
+                        "unit_of_measurement",
                         e.target.value
                       )
                     }
@@ -333,26 +377,24 @@ const VendorDetails = () => {
                   product.unit_of_measurement
                 )}
               </td>
-
               <td>{getComponentId(product.product_id)}</td>
-
-              <td>
+              <td
+                onClick={() => handlePriceClick(product.product_id)}
+                style={{ cursor: "pointer", textDecoration: "underline" }}
+              >
                 {isEditingVendorMaster === index ? (
                   <input
                     type="text"
                     value={product.last_price}
                     onChange={(e) =>
-                      handleInputChange(
-                        index,
-                        "product.last_price",
-                        e.target.value
-                      )
+                      handleInputChange(index, "last_price", e.target.value)
                     }
                   />
                 ) : (
                   product.last_price
                 )}
               </td>
+              <td>5</td>{/* Add the code for tax here */}
               <td>
                 {product.img ? (
                   <img

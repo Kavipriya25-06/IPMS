@@ -193,6 +193,8 @@ const RequestForm = () => {
 
       await Promise.all(requestMasterPromises);
       console.log("All request master entries successfully added.");
+      alert("Request added successfully!");
+      navigate("/");
     } catch (error) {
       console.error("Error in submission process:", error);
     }

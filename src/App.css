@@ -60,23 +60,49 @@ main {
   margin-top: 10px;
 }
 
-
-
 table {
   border-collapse: collapse;
   width: 100%;
 }
 
-th, td {
+th,
+td {
   padding: 12px;
   border: 1px solid #ddd;
 }
 
 th {
-  background-color: #F58720;
+  background-color: #f58720;
   color: white;
 }
 
 tbody tr:hover {
   background-color: #f1f1f1;
+}
+
+/* Add this CSS in a separate file or within your CSS setup */
+.modal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 5px;
+  width: 300px;
+}
+
+.close-button {
+  float: right;
+  cursor: pointer;
+  font-size: 20px;
 }
