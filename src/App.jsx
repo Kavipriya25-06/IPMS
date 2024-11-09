@@ -17,6 +17,7 @@ import VendorDetails from "./pages/VendorDetails";
 import BOMDetails from "./pages/BOMDetails";
 import "./App.css";
 import RequestForm from "./pages/RequestForm";
+import HomePage from "./pages/HomePage";
 
 
 function App() {
@@ -77,7 +78,7 @@ function App() {
           <Route path="/bom" element={<BOMDisplay />} />
           <Route path="/bom/:bomId" element={<BOMDetails />} />
           <Route path="/requests" element={<Requests />} />
-          <Route path="/"/>
+          <Route path="/" element={<HomePage/>}/>
           <Route path="request-form" element = {<RequestForm/>} />          
           <Route path="/requests/:requestId" element={<RequestDetails />} /> 
           

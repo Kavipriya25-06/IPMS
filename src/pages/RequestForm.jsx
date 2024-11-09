@@ -1,13 +1,14 @@
 //
 // Eighth set of code
 import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 
 const RequestForm = () => {
   const [boms, setBoms] = useState([]);
   const [selectedBom, setSelectedBom] = useState(null);
   const [selectedComponents, setSelectedComponents] = useState([]);
   const [availableComponents, setAvailableComponents] = useState([]);
-
+  const navigate = useNavigate();
   const [vendorMaster, setVendorMaster] = useState([]); // Store data from vendor_master
   const [vendorList, setVendorList] = useState([]); // Store data from vendor_list
   const [requesterName, setRequesterName] = useState("");
@@ -306,6 +307,7 @@ const RequestForm = () => {
       )}
 
       <button onClick={handleSubmit}>Submit Request</button>
+      <button onClick={() => navigate("/")}>Save and exit</button>
     </div>
   );
 };
