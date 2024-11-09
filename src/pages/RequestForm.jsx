@@ -129,7 +129,7 @@ const RequestForm = () => {
   };
 
   const bom_id_list = selectedBom ? selectedBom.bom_id : "";
-  const firstComponentId = selectedComponents[0]?.id;
+  const firstComponentId = selectedComponents[0]?.id || 3;
 
   const handleSubmit = async () => {
     try {
