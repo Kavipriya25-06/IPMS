@@ -129,7 +129,7 @@ const RequestForm = () => {
   };
 
   const bom_id_list = selectedBom ? selectedBom.bom_id : "";
-  const firstComponentId = selectedComponents[0]?.id || 3;
+  const firstComponentId = selectedComponents[0]?.id || 3; // Default component added
 
   const handleSubmit = async () => {
     try {
