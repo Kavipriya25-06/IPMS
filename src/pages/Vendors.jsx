@@ -376,13 +376,42 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
+// Popup Modal Component
+const Modal = ({ isOpen, onClose, children }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <button className="close-button" onClick={onClose}>
+          &times;
+        </button>
+        {children}
+      </div>
+    </div>
+  );
+};
+
 const Vendors = () => {
   const [vendorData, setVendorData] = useState([]);
   const [pocData, setPocData] = useState([]);
   const [selectedVendorId, setSelectedVendorId] = useState(null);
+  const [isAddingVendor, setIsAddingVendor] = useState(false);
+  const [isAddingSubVendor, setIsAddingSubVendor] = useState(false);
   const [showPocPopup, setShowPocPopup] = useState(false);
   const [isEditing, setIsEditing] = useState(null);
   const navigate = useNavigate();
+  const [newVendor, setNewVendor] = useState({
+    vendor_name: "",
+  });
+  const [newSubVendor, setNewSubVendor] = useState({
+    point_of_contact: "",
+    email: "",
+    phone_number: "",
+    location: "",
+    category: "",
+  });
+  const [newVendorId, setNewVendorId] = useState(null);
 
   useEffect(() => {
     fetchVendorData();
@@ -449,14 +478,192 @@ const Vendors = () => {
     }
   };
 
+  const [isAdding, setIsAdding] = useState(false);
+  const [newPOC, setNewPOC] = useState({
+    point_of_contact: "",
+    email: "",
+    phone_number: "",
+    location: "",
+    category: "",
+  });
+
+  // Handle input change for new POC
+  const handleInputChange = (field, value) => {
+    setNewPOC((prevPOC) => ({ ...prevPOC, [field]: value }));
+  };
+
+  const handleAddPOC = async () => {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/vendor_sub_list/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ...newPOC, vendor: selectedVendorId }),
+      });
+      if (response.ok) {
+        const addedPOC = await response.json();
+        setPocData([...pocData, addedPOC]);
+        setNewPOC({
+          point_of_contact: "",
+          email: "",
+          phone_number: "",
+          location: "",
+          category: "",
+        });
+        setIsAdding(false);
+      } else {
+        console.error("Error adding POC:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error adding POC:", error);
+    }
+  };
+
   // Navigate to the Vendor Details page
   const handleVendorNameClick = (vendor_id) => {
     navigate(`/vendor/${vendor_id}`);
   };
 
+  // Handle input change for the new vendor form
+  const handleVendorInputChange = (field, value) => {
+    setNewVendor((prevVendor) => ({ ...prevVendor, [field]: value }));
+  };
+
+  // Handle input change for the new sub-vendor (POC) form
+  const handleSubVendorInputChange = (field, value) => {
+    setNewSubVendor((prevSubVendor) => ({ ...prevSubVendor, [field]: value }));
+  };
+
+  // Function to add a new vendor and generate a vendor_id
+  const handleAddVendor = async () => {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/vendor_list/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ vendor_name: newVendor.vendor_name }),
+      });
+      if (response.ok) {
+        const addedVendor = await response.json();
+        setVendorData([...vendorData, addedVendor]);
+        setNewVendorId(addedVendor.vendor_id); // Store the generated vendor_id
+        setIsAddingVendor(false);
+        setIsAddingSubVendor(true); // Show the form for adding sub-vendor
+        setNewVendor({ vendor_name: "" });
+      } else {
+        console.error("Error adding vendor:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error adding vendor:", error);
+    }
+  };
+
+  // Function to add a new sub-vendor (POC) linked to the new vendor_id
+  const handleAddSubVendor = async () => {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/vendor_sub_list/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...newSubVendor,
+          vendor: newVendorId, // Link the new vendor_id
+        }),
+      });
+      if (response.ok) {
+        const addedSubVendor = await response.json();
+        setNewSubVendor({
+          point_of_contact: "",
+          email: "",
+          phone_number: "",
+          location: "",
+          category: "",
+        });
+        setIsAddingSubVendor(false);
+        fetchVendorData(); // Refresh the vendor list to show the new vendor and sub-vendor
+      } else {
+        console.error("Error adding sub-vendor:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error adding sub-vendor:", error);
+    }
+  };
+
   return (
     <div>
       <h4>Vendors</h4>
+      <button onClick={() => setIsAddingVendor(true)}>Add Vendor</button>
+
+      {/* Modal for Adding New Vendor */}
+      <Modal isOpen={isAddingVendor} onClose={() => setIsAddingVendor(false)}>
+        <h4>Add New Vendor</h4>
+        <input
+          type="text"
+          placeholder="Vendor Name"
+          value={newVendor.vendor_name}
+          onChange={(e) =>
+            handleVendorInputChange("vendor_name", e.target.value)
+          }
+        />
+        <button onClick={handleAddVendor}>Save Vendor</button>
+        <button onClick={() => setIsAddingVendor(false)}>Cancel</button>
+      </Modal>
+
+      {/* Modal for Adding New Sub-Vendor (POC) */}
+      <Modal
+        isOpen={isAddingSubVendor}
+        onClose={() => setIsAddingSubVendor(false)}
+      >
+        <h4>Add Point of Contact for Vendor: {newVendorId}</h4>
+        <input
+          type="text"
+          placeholder="Point of Contact"
+          value={newSubVendor.point_of_contact}
+          onChange={(e) =>
+            handleSubVendorInputChange("point_of_contact", e.target.value)
+          }
+        />
+        <input
+          type="email"
+          placeholder="Email"
+          value={newSubVendor.email}
+          onChange={(e) => handleSubVendorInputChange("email", e.target.value)}
+        />
+        <input
+          type="text"
+          placeholder="Phone Number"
+          value={newSubVendor.phone_number}
+          onChange={(e) =>
+            handleSubVendorInputChange("phone_number", e.target.value)
+          }
+        />
+        <input
+          type="text"
+          placeholder="Location"
+          value={newSubVendor.location}
+          onChange={(e) =>
+            handleSubVendorInputChange("location", e.target.value)
+          }
+        />
+        <select
+          value={newSubVendor.category}
+          onChange={(e) =>
+            handleSubVendorInputChange("category", e.target.value)
+          }
+        >
+          <option value="">Select Category</option>
+          <option value="Airframe">Airframe</option>
+          <option value="Communication">Communication</option>
+          <option value="Electricals">Electricals</option>
+          <option value="Electronics">Electronics</option>
+          <option value="Payload">Payload</option>
+        </select>
+        <button onClick={handleAddSubVendor}>Save Point of Contact</button>
+        <button onClick={() => setIsAddingSubVendor(false)}>Cancel</button>
+      </Modal>
       <table>
         <thead>
           <tr>
@@ -466,7 +673,6 @@ const Vendors = () => {
             <th>Phone</th>
             <th>Location</th>
             <th>Category</th>
-            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -477,13 +683,13 @@ const Vendors = () => {
               <tr key={vendor.vendor_id}>
                 <td
                   onClick={() => handleVendorNameClick(vendor.vendor_id)}
-                  style={{ cursor: "pointer" }}
+                  style={{ cursor: "pointer", textDecoration: "underline" }}
                 >
                   {vendor.vendor_name}
                 </td>
                 <td
                   onClick={() => handlePocClick(vendor.vendor_id)}
-                  style={{ cursor: "pointer", color: "blue" }}
+                  style={{ cursor: "pointer", textDecoration: "underline" }}
                 >
                   {primaryPoc.point_of_contact || "N/A"}
                 </td>
@@ -491,7 +697,6 @@ const Vendors = () => {
                 <td>{primaryPoc.phone_number || "N/A"}</td>
                 <td>{primaryPoc.location || "N/A"}</td>
                 <td>{primaryPoc.category || "N/A"}</td>
-                <td>{/* Additional Actions if needed */}</td>
               </tr>
             );
           })}
@@ -604,8 +809,72 @@ const Vendors = () => {
                   </td>
                 </tr>
               ))}
+              {isAdding && (
+                <tr>
+                  <td>
+                    <input
+                      type="text"
+                      placeholder="POC Name"
+                      value={newPOC.point_of_contact}
+                      onChange={(e) =>
+                        handleInputChange("point_of_contact", e.target.value)
+                      }
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="email"
+                      placeholder="Email"
+                      value={newPOC.email}
+                      onChange={(e) =>
+                        handleInputChange("email", e.target.value)
+                      }
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      placeholder="Phone"
+                      value={newPOC.phone_number}
+                      onChange={(e) =>
+                        handleInputChange("phone_number", e.target.value)
+                      }
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      placeholder="Location"
+                      value={newPOC.location}
+                      onChange={(e) =>
+                        handleInputChange("location", e.target.value)
+                      }
+                    />
+                  </td>
+                  <td>
+                    <select
+                      value={newPOC.category}
+                      onChange={(e) =>
+                        handleInputChange("category", e.target.value)
+                      }
+                    >
+                      <option value="">Select Category</option>
+                      <option value="Airframe">Airframe</option>
+                      <option value="Communication">Communication</option>
+                      <option value="Electricals">Electricals</option>
+                      <option value="Electronics">Electronics</option>
+                      <option value="Payload">Payload</option>
+                    </select>
+                  </td>
+                  <td>
+                    <button onClick={handleAddPOC}>Save</button>
+                    <button onClick={() => setIsAdding(false)}>Cancel</button>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
+          <button onClick={() => setIsAdding(true)}>Add POC</button>
           <button onClick={() => setShowPocPopup(false)}>Close</button>
         </div>
       )}

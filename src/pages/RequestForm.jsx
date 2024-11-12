@@ -174,6 +174,7 @@ const RequestForm = () => {
         bom: component.id ? component.id : 3, // For the components added we give a default bom master id
         qty: component.quantity,
         status: "pending",
+        assign: false,
       }));
 
       const requestMasterPromises = requestMasterEntries.map((entry) =>

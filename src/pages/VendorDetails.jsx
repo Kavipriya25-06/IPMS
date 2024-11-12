@@ -20,6 +20,7 @@ const VendorDetails = () => {
     unit_of_measurement: "",
     component: "",
     last_price: "",
+    tax: "",
     img: null,
     attachments: null,
     category: "", // Initialize as an empty string
@@ -36,7 +37,32 @@ const VendorDetails = () => {
         const matchedProducts = data.filter(
           (product) => product.vendor === vendorId
         );
-        setSelectedVendorData(matchedProducts);
+
+        // Fetch and add the latest price for each product
+        const updatedProducts = await Promise.all(
+          matchedProducts.map(async (product) => {
+            const priceResponse = await fetch(
+              "http://127.0.0.1:8000/price_tables/"
+            );
+            const priceData = await priceResponse.json();
+
+            // Filter prices for the current product and sort to get the latest price
+            const productPrices = priceData
+              .filter((entry) => entry.product === product.product_id)
+              .sort(
+                (a, b) => new Date(b.current_time) - new Date(a.current_time)
+              );
+
+            // Set the latest price in the product data
+            return {
+              ...product,
+              last_price: productPrices[0]?.price || product.last_price,
+              tax: productPrices[0]?.tax || product.tax,
+            };
+          })
+        );
+
+        setSelectedVendorData(updatedProducts);
       } catch (error) {
         console.error("Error fetching vendor products:", error);
       }
@@ -66,14 +92,35 @@ const VendorDetails = () => {
 
   // Fetch price history for a product
   const fetchPriceHistory = async (productId) => {
-    // Sample data, replace with API call to fetch price history if available
-    const sampleData = [
-      { date: "2023-01-15", price: 100, tax: 5 },
-      { date: "2023-02-20", price: 110, tax: 5 },
-      { date: "2023-03-25", price: 105, tax: 5 },
-    ];
-    setPriceHistory(sampleData);
-    setShowPriceHistory(true); // Open the modal
+    try {
+      const response = await fetch("http://127.0.0.1:8000/price_tables/");
+      const data = await response.json();
+
+      // Filter data to include only entries with the specified productId
+      const filteredData = data.filter((entry) => entry.product === productId);
+
+      // Sort filtered data by date, if necessary
+      const sortedData = filteredData.sort(
+        (a, b) => new Date(b.current_time) - new Date(a.current_time)
+      );
+
+      setPriceHistory(sortedData);
+
+      // Set the latest price in the selectedVendorData for display
+      const updatedVendorData = selectedVendorData.map((product) =>
+        product.product_id === productId
+          ? {
+              ...product,
+              last_price: sortedData[0]?.price || product.last_price,
+            }
+          : product
+      );
+      setSelectedVendorData(updatedVendorData);
+
+      setShowPriceHistory(true); // Open the modal
+    } catch (error) {
+      console.error("Error fetching price history:", error);
+    }
   };
 
   const handleClosePriceHistory = () => {
@@ -172,6 +219,7 @@ const VendorDetails = () => {
           img: null,
           attachments: null,
           last_price: "",
+          tax: "",
           category: "",
           component_type: "",
           component_specification: "",
@@ -249,22 +297,44 @@ const VendorDetails = () => {
               handleInputChange(null, "last_price", e.target.value)
             }
           />
+
           <input
-            type="text"
-            placeholder="Category"
+            type="number"
+            placeholder="Tax"
+            value={newProduct.tax}
+            onChange={(e) =>
+              handleInputChange(null, "tax", e.target.value)
+            }
+          />
+
+          <select
             value={newProduct.category}
             onChange={(e) =>
               handleInputChange(null, "category", e.target.value)
             }
-          />
-          <input
-            type="text"
-            placeholder="Component Type"
+          >
+            <option value="">Select Category</option>
+            <option value="Airframe">Airframe</option>
+            <option value="Communication">Communication</option>
+            <option value="Electricals">Electricals</option>
+            <option value="Electronics">Electronics</option>
+            <option value="Payload">Payload</option>
+          </select>
+
+          <select
             value={newProduct.component_type}
             onChange={(e) =>
               handleInputChange(null, "component_type", e.target.value)
             }
-          />
+          >
+            <option value="">Select Component Type</option>
+            <option value="type-1">component_type-1</option>
+            <option value="type-2">component_type-2</option>
+            <option value="type-3">component_type-3</option>
+            <option value="type-4">component_type-4</option>
+            <option value="type-5">component_type-5</option>
+            <option value="type-6">component_type-6</option>
+          </select>
           <input
             type="text"
             placeholder="Component Specification"
@@ -314,7 +384,7 @@ const VendorDetails = () => {
               <tbody>
                 {priceHistory.map((entry, index) => (
                   <tr key={index}>
-                    <td>{entry.date}</td>
+                    <td>{new Date(entry.current_time).toLocaleDateString()}</td>
                     <td>{entry.price}</td>
                     <td>{entry.tax}</td>
                   </tr>
@@ -341,7 +411,7 @@ const VendorDetails = () => {
         </thead>
         <tbody>
           {selectedVendorData.map((product, index) => (
-            <tr key={product.product_id}>
+            <tr key={product.product_id || index}>
               <td>{product.product_id}</td>
               <td>
                 {isEditingVendorMaster === index ? (
@@ -394,7 +464,19 @@ const VendorDetails = () => {
                   product.last_price
                 )}
               </td>
-              <td>5</td>{/* Add the code for tax here */}
+              <td>
+                {isEditingVendorMaster === index ? (
+                  <input
+                    type="text"
+                    value={product.tax}
+                    onChange={(e) =>
+                      handleInputChange(index, "tax", e.target.value)
+                    }
+                  />
+                ) : (
+                  product.tax
+                )}
+              </td>
               <td>
                 {product.img ? (
                   <img
