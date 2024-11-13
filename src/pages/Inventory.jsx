@@ -215,7 +215,6 @@
 // };
 
 // export default Inventory;
-
 import React, { useState, useEffect } from "react";
 import config from "../Config"; // Import config for API endpoints
 
@@ -279,13 +278,13 @@ const Inventory = () => {
   };
 
   const handleEditClick = (index) => {
-    setEditRowIndex(index);
+    setEditRowIndex(index); // Set the row index to edit
   };
 
   const handleSaveClick = async (index) => {
-    const item = inventoryData[index];
+    const item = inventoryData[index]; // Get the edited item data
     try {
-      const response = await fetch(`${config.apiBaseURL}${config.endpoints.inventoryDetail(item.serial_number)}`, {
+      const response = await fetch(`http://127.0.0.1:8000/inventory/${item.serial_number}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -294,8 +293,8 @@ const Inventory = () => {
       });
       if (response.ok) {
         console.log("Item updated successfully");
-        setEditRowIndex(null);
-        fetchInventoryData();
+        setEditRowIndex(null); // Exit edit mode
+        fetchInventoryData(); // Refresh data to reflect changes
       } else {
         console.error("Error updating item:", response.statusText);
       }
@@ -321,42 +320,35 @@ const Inventory = () => {
       return;
     }
 
-    const newItem = {
-      component: component.component_id,
-      serial_number: serialNumber,
-      vendor: vendorId,
-      com_id: component.component_id,
-      qty: count,
-      created_date: createdDate || new Date().toISOString(),
-    };
+    for (let i = 1; i <= count; i++) {
+      const newItem = {
+        component: component.component_id,
+        vendor: vendorId,
+        com_id: component.component_id,
+        qty: 1,
+        created_date: createdDate || new Date().toISOString(),
+        status: true,
+      };
 
-    const displayItem = {
-      ...newItem,
-      category: component.category,
-      component_type: component.component_type,
-      component_specification: component.component_specification,
-      unit_of_measurement: component.unit_of_measurement,
-    };
-
-    setInventoryData([...inventoryData, displayItem]);
-
-    try {
-      const response = await fetch("http://127.0.0.1:8000/inventory/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newItem),
-      });
-      if (response.ok) {
-        console.log("New item added to inventory successfully.");
-        fetchInventoryData();
-      } else {
-        console.error("Error adding item to inventory:", response.statusText);
+      try {
+        const response = await fetch("http://127.0.0.1:8000/inventory/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newItem),
+        });
+        if (response.ok) {
+          console.log(`Item ${i} added to inventory successfully.`);
+        } else {
+          console.error("Error adding item to inventory:", response.statusText);
+        }
+      } catch (error) {
+        console.error("Error posting new inventory item:", error);
       }
-    } catch (error) {
-      console.error("Error posting new inventory item:", error);
     }
+
+    fetchInventoryData();
 
     setSelectedComponent("");
     setSerialNumber("");
@@ -429,7 +421,7 @@ const Inventory = () => {
             inventoryData.map((item, index) => {
               const component = componentData[item.com_id] || {};
               const isEditing = editRowIndex === index;
-              const isDisabled = item.status === false; // Check if status is false
+              const isDisabled = item.status === false;
 
               return (
                 <tr key={index} className={isDisabled ? "disabled-row" : ""}>
