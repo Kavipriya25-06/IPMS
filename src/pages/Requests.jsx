@@ -30,7 +30,7 @@ const Requests = () => {
         <thead>
           <tr>
             <th>Request ID</th>
-            <th>BOM ID</th>
+            {/* <th>BOM ID</th> */}
             <th>Requester Name</th>
             <th>Date</th>
             <th>Status</th>
@@ -41,7 +41,7 @@ const Requests = () => {
           {requests.map((request) => (
             <tr key={request.request_id} onClick={() => handleRequestClick(request.request_id)}>
               <td>{request.request_id}</td>
-              <td>{request.bom_id}</td>
+              {/* <td>{request.bom_id}</td> */}
               <td>{request.requester_name}</td>
               <td>{request.date}</td>
               <td>{request.status}</td>

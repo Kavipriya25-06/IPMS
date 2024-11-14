@@ -1152,7 +1152,7 @@ const handleUnassign = async (componentId) => {
                   <th>Unit of Measurement</th>
                   <th>Category</th>
                   <th>Vendor Name</th>
-                  <th>BOM Name</th>
+                  {/* <th>BOM Name</th> */}
                   <th>Quantity</th>
                   <th>Available Quantity</th>
                   <th>Actions</th>
@@ -1185,7 +1185,7 @@ const handleUnassign = async (componentId) => {
                           ))}
                         </select>
                       </td>
-                      <td>{detail.bom_name}</td>
+                      {/* <td>{detail.bom_name}</td> */}
                       <td>{detail.qty}</td>
                       <td>{availableQty}</td>
                       <td>
@@ -1218,7 +1218,7 @@ const handleUnassign = async (componentId) => {
       )}
   
   {showSerialPopup && (
-      <div className="modal">
+      <div className="popup">
         <div className="modal-content">
           <h3>Select Serial Numbers</h3>
           <ul>
@@ -1247,7 +1247,7 @@ const handleUnassign = async (componentId) => {
       </div>
       )}
   
-      <style jsx>{`
+      <style>{`
         .modal {
           position: fixed;
           top: 0;
