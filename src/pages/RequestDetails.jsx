@@ -38,21 +38,29 @@
 //     try {
 //       const response = await fetch("http://127.0.0.1:8000/inventory/");
 //       const data = await response.json();
+
 //       const inventoryMap = data.reduce((acc, item) => {
-//         acc[item.com_id] = acc[item.com_id] || { qty: 0, serialNumbers: [] };
-//         acc[item.com_id].qty += item.qty;
+//         if (!acc[item.com_id]) {
+//           acc[item.com_id] = { qty: 0, serialNumbers: [] };
+//         }
+
+//         if (item.status === true) {
+//           acc[item.com_id].qty += 1; // Increment qty if status is true
+//         }
+
 //         acc[item.com_id].serialNumbers.push({
 //           serialNumber: item.serial_number,
 //           status: item.status,
 //         });
+
 //         return acc;
 //       }, {});
+
 //       setInventoryData(inventoryMap);
 //     } catch (error) {
 //       console.error("Error fetching inventory data:", error);
 //     }
 //   };
-
 
 //   const fetchVendorList = async () => {
 //     try {
@@ -68,79 +76,110 @@
 //     }
 //   };
 
+
+//   ////
+
 //   const handleOrder = async (detail) => {
-//     if (!detail.vendor_name) {
-//       alert("Please select a vendor for this component.");
-//       return;
-//     }
+//       if (!detail.vendor_name) {
+//            alert("Please select a vendor for this component.");
+//            return;
+//          }
+    
+//          const selectedVendor = vendorNames.find(
+//            (vendor) => vendor.vendor_name === detail.vendor_name
+//          );
+//          const vendor_id = selectedVendor ? selectedVendor.vendor_id : null;
+    
+//          if (!vendor_id) {
+//            alert("Invalid vendor selected.");
+//            return;
+//          }
+    
+//          const orderData = {
+//            component_id: detail.component_id,
+//            component_type: detail.component_type,
+//            component_specification: detail.component_specification,
+//            quantity: detail.qty,
+//            request_id: requestId,
+//            vendor_name: detail.vendor_name,
+//            vendor_id: vendor_id,
+//            category: detail.category,
+//            unit_of_measurement: detail.unit_of_measurement,
+//          };
+    
+//          try {
+//            const response = await fetch("http://127.0.0.1:8000/cart/", {
+//              method: "POST",
+//              headers: {
+//                "Content-Type": "application/json",
+//              },
+//              body: JSON.stringify(orderData),
+//            });
+    
+//            if (response.ok) {
+//              alert(`Component ${detail.component_id} added to cart.`);
+//              fetchCartItems();
+//            } else {
+//              console.error("Error adding component to cart:", response.statusText);
+//            }
+//          } catch (error) {
+//            console.error("Error posting to cart:", error);
+//          }
+//        };
+    
 
-//     const selectedVendor = vendorNames.find(
-//       (vendor) => vendor.vendor_name === detail.vendor_name
-//     );
-//     const vendor_id = selectedVendor ? selectedVendor.vendor_id : null;
 
-//     if (!vendor_id) {
-//       alert("Invalid vendor selected.");
-//       return;
-//     }
 
-//     const orderData = {
-//       component_id: detail.component_id,
-//       component_type: detail.component_type,
-//       component_specification: detail.component_specification,
-//       quantity: detail.qty,
-//       request_id: requestId,
-//       vendor_name: detail.vendor_name,
-//       vendor_id: vendor_id,
-//       category: detail.category,
-//       unit_of_measurement: detail.unit_of_measurement,
-//     };
 
-//     try {
-//       const response = await fetch("http://127.0.0.1:8000/cart/", {
-//         method: "POST",
-//         headers: {
-//           "Content-Type": "application/json",
-//         },
-//         body: JSON.stringify(orderData),
-//       });
 
-//       if (response.ok) {
-//         alert(`Component ${detail.component_id} added to cart.`);
-//         fetchCartItems();
-//       } else {
-//         console.error("Error adding component to cart:", response.statusText);
-//       }
-//     } catch (error) {
-//       console.error("Error posting to cart:", error);
-//     }
-//   };
 
-//   const handleAssign = async (componentId, requiredQty) => {
+//   /////
+
+//   const handleAssign = async (componentId, qty) => {
 //     const componentData = inventoryData[componentId];
-//     if (componentData) {
+  
+//     if (componentData && componentData.qty >= qty) {
 //       const availableSerialNumbers = componentData.serialNumbers
 //         .filter((sn) => sn.status === true)
 //         .map((sn) => sn.serialNumber);
-
-//       if (availableSerialNumbers.length > 0) {
+  
+//       if (availableSerialNumbers.length >= qty) {
 //         setSerialNumbers(availableSerialNumbers);
 //         setSelectedComponent(componentId);
 //         setShowSerialPopup(true);
 //       } else {
-//         alert("No available serial numbers in inventory for this component.");
+//         alert("Insufficient available serial numbers in inventory for this component.");
 //       }
 //     } else {
-//       alert("Component not found in inventory.");
+//       alert("Insufficient quantity in inventory.");
 //     }
 //   };
-
 
 //   const handleSerialSelection = async (serialNumber) => {
 //     setShowSerialPopup(false);
   
 //     try {
-//       // Update inventory to set status to false
+//       // Find the selected component details
+//       const selectedDetail = details.find(
+//         (detail) => detail.component_id === selectedComponent
+//       );
+  
+//       if (!selectedDetail) {
+//         console.error("Component details not found.");
+//         return;
+//       }
+  
+//       // Construct the payload for inventory update
+//       const inventoryPayload = {
+//         component: selectedComponent,
+//         serial_number: serialNumber,
+//         vendor: selectedDetail.vendor_name || "V_00001",
+//         com_id: selectedComponent,
+//         qty: 1,
+//         status: false,
+//       };
+  
+//       // Send the PUT request to update inventory
 //       const inventoryResponse = await fetch(
 //         `http://127.0.0.1:8000/inventory/${serialNumber}`,
 //         {
@@ -148,29 +187,29 @@
 //           headers: {
 //             "Content-Type": "application/json",
 //           },
-//           body: JSON.stringify({
-//             component: selectedComponent,
-//             qty: inventoryData[selectedComponent]?.qty,
-//             serialNumber,
-//             status: false,
-//             vendor: "V_00001",
-//           }),
+//           body: JSON.stringify(inventoryPayload),
 //         }
 //       );
   
 //       if (inventoryResponse.ok) {
-//         // Retrieve the current qty from request_master and decrement by 1
+//         // Fetch the current quantity from request_master
 //         const requestMasterFetchResponse = await fetch(
 //           `http://127.0.0.1:8000/request_master/${requestId}/`
 //         );
   
 //         if (requestMasterFetchResponse.ok) {
 //           const requestData = await requestMasterFetchResponse.json();
-//           const currentQty = requestData.qty || 1; // Get current qty or default to 1
-//           const updatedQty = currentQty - 1; // Decrement qty by 1
-//           const updatedStatus = "false"; // Sending status as a string
+//           const currentQty = requestData.qty || 1;
+//           const updatedQty = currentQty - 1;
   
-//           // Update request_master to include assign, updated qty, and status as a string for this requestId
+//           // Construct the payload for request master update
+//           const requestMasterPayload = {
+//             assign: true,
+//             qty: updatedQty,
+//             status: "Assigned", // Set the status to "Assigned"
+//           };
+  
+//           // Send the PUT request to update request master
 //           const requestMasterResponse = await fetch(
 //             `http://127.0.0.1:8000/request_master/${requestId}/`,
 //             {
@@ -178,16 +217,11 @@
 //               headers: {
 //                 "Content-Type": "application/json",
 //               },
-//               body: JSON.stringify({
-//                 assign: true,
-//                 qty: updatedQty,
-//                 status: updatedStatus, // Set status as a string
-//               }),
+//               body: JSON.stringify(requestMasterPayload),
 //             }
 //           );
   
 //           if (requestMasterResponse.ok) {
-//             // Update local state if both requests succeed
 //             setInventoryData((prevData) => {
 //               const currentComponentData = prevData[selectedComponent] || {};
 //               const currentSerialNumbers = currentComponentData.serialNumbers || [];
@@ -196,7 +230,7 @@
 //                 ...prevData,
 //                 [selectedComponent]: {
 //                   ...currentComponentData,
-//                   qty: updatedQty, // Update qty in local state as well
+//                   qty: currentComponentData.qty - 1,
 //                   serialNumbers: currentSerialNumbers.filter(
 //                     (sn) => sn.serialNumber !== serialNumber
 //                   ),
@@ -220,7 +254,10 @@
 //         }
 //       } else {
 //         const errorData = await inventoryResponse.json();
-//         console.error("Error assigning serial number:", errorData.error || inventoryResponse.statusText);
+//         console.error(
+//           "Error assigning serial number:",
+//           errorData.error || inventoryResponse.statusText
+//         );
 //         alert("Could not assign the serial number. Please check and try again.");
 //       }
 //     } catch (error) {
@@ -228,9 +265,128 @@
 //       alert("An unexpected error occurred while assigning the serial number.");
 //     }
 //   };
-  
-  
-  
+
+
+// /////////////
+
+// const handleUnassign = async (componentId) => {
+//   try {
+//     const componentData = inventoryData[componentId];
+//     const assignedSerial = componentData.serialNumbers.find(
+//       (sn) => sn.status === false
+//     );
+
+//     if (!assignedSerial) {
+//       alert("No assigned serial number found to unassign.");
+//       return;
+//     }
+
+//     // Construct the inventory payload to reset status to true
+//     const inventoryPayload = {
+//       component: componentId,
+//       serial_number: assignedSerial.serialNumber,
+//       vendor: componentData.vendor || "V_00001",
+//       com_id: componentId,
+//       qty: 1,
+//       status: true,
+//     };
+
+//     // Update inventory to set status back to true
+//     const inventoryResponse = await fetch(
+//       `http://127.0.0.1:8000/inventory/${assignedSerial.serialNumber}`,
+//       {
+//         method: "PUT",
+//         headers: {
+//           "Content-Type": "application/json",
+//         },
+//         body: JSON.stringify(inventoryPayload),
+//       }
+//     );
+
+//     if (inventoryResponse.ok) {
+//       // Fetch the updated qty from the backend to ensure consistency
+//       const updatedInventoryResponse = await fetch(
+//         `http://127.0.0.1:8000/inventory/`
+//       );
+//       const updatedInventoryData = await updatedInventoryResponse.json();
+
+//       // Find the updated qty for the specific componentId
+//       const updatedComponentData = updatedInventoryData.find(
+//         (item) => item.com_id === componentId
+//       );
+
+//       // Full payload for request_master update with assign = false
+//       const requestMasterPayload = {
+//         request_id: requestId,
+//         component_id: componentId,
+//         bom_master_id: componentData.bom_master_id,
+//         status: "Unassigned",
+//         vendor_id: componentData.vendor || "V_00001",
+//         component_type: componentData.component_type,
+//         component_specification: componentData.component_specification,
+//         unit_of_measurement: componentData.unit_of_measurement,
+//         category: componentData.category,
+//         bom_detail: componentData.bom_detail,
+//         bom_name: componentData.bom_name,
+//         quantity: componentData.quantity,
+//         qty: updatedComponentData.qty, // Update with the latest qty from backend
+//         assign: false,
+//       };
+
+//       // Update request master to set assign to false
+//       const requestMasterResponse = await fetch(
+//         `http://127.0.0.1:8000/request_master/${requestId}/`,
+//         {
+//           method: "PUT",
+//           headers: {
+//             "Content-Type": "application/json",
+//           },
+//           body: JSON.stringify(requestMasterPayload),
+//         }
+//       );
+
+//       if (requestMasterResponse.ok) {
+//         setInventoryData((prevData) => {
+//           const currentComponentData = prevData[componentId] || {};
+//           const updatedSerialNumbers = currentComponentData.serialNumbers.map(
+//             (sn) =>
+//               sn.serialNumber === assignedSerial.serialNumber
+//                 ? { ...sn, status: true }
+//                 : sn
+//           );
+
+//           return {
+//             ...prevData,
+//             [componentId]: {
+//               ...currentComponentData,
+//               qty: updatedComponentData.qty, // Set qty to latest value from backend
+//               serialNumbers: updatedSerialNumbers,
+//             },
+//           };
+//         });
+
+//         setAssignedComponents((prevAssigned) => ({
+//           ...prevAssigned,
+//           [componentId]: false,
+//         }));
+//       } else {
+//         console.error("Error updating request master status.");
+//       }
+//     } else {
+//       console.error("Error unassigning serial number in inventory.");
+//     }
+//   } catch (error) {
+//     console.error("Error unassigning serial number:", error);
+//   }
+// };
+
+
+
+
+
+
+//   ////////////////
+
 
 //   const handleVendorChange = (component_id, selectedVendorName) => {
 //     const updatedDetails = details.map((detail) => {
@@ -277,7 +433,7 @@
 //       <button onClick={toggleCartView}>
 //         {showCart ? "Hide Cart" : "View Cart"}
 //       </button>
-
+  
 //       {showCart ? (
 //         <div>
 //           <h3>Cart</h3>
@@ -338,8 +494,8 @@
 //               <tbody>
 //                 {details.map((detail) => {
 //                   const availableQty = inventoryData[detail.component_id]?.qty || 0;
-//                   const isAssigned = assignedComponents[detail.component_id] || false;
-
+//                   const isAssigned = assignedComponents[detail.component_id] || detail.qty === 0;
+  
 //                   return (
 //                     <tr key={detail.component_id}>
 //                       <td>{detail.status}</td>
@@ -366,12 +522,18 @@
 //                       <td>{detail.qty}</td>
 //                       <td>{availableQty}</td>
 //                       <td>
-//                         <button
-//                           onClick={() => handleAssign(detail.component_id, detail.qty)}
-//                           disabled={isAssigned || availableQty < detail.qty || detail.qty !== 1}
-//                         >
-//                           {isAssigned ? "Unassign" : "Assign"}
-//                         </button>
+//                         {isAssigned || availableQty === 0 || detail.quantity === 0 ? (
+//                           <button onClick={() => handleUnassign(detail.component_id)}>
+//                             Unassign
+//                           </button>
+//                         ) : (
+//                           <button
+//                             onClick={() => handleAssign(detail.component_id, detail.qty)}
+//                             disabled={availableQty < detail.qty || detail.qty === 0}
+//                           >
+//                             Assign
+//                           </button>
+//                         )}
 //                         <button onClick={() => handleOrder(detail)}>
 //                           Add to Cart
 //                         </button>
@@ -384,7 +546,7 @@
 //           )}
 //         </>
 //       )}
-
+  
 //       {showSerialPopup && (
 //         <div className="modal">
 //           <div className="modal-content">
@@ -409,7 +571,7 @@
 //           </div>
 //         </div>
 //       )}
-
+  
 //       <style jsx>{`
 //         .modal {
 //           position: fixed;
@@ -440,9 +602,10 @@
 //       `}</style>
 //     </div>
 //   );
-// };
+//   };
 
 // export default RequestDetails;
+
 
 
 import React, { useState, useEffect } from "react";
@@ -460,11 +623,16 @@ const RequestDetails = () => {
   const [selectedComponent, setSelectedComponent] = useState(null);
   const [disabledSerialNumbers, setDisabledSerialNumbers] = useState([]);
   const [assignedComponents, setAssignedComponents] = useState({}); // Track assigned components
+  const [selectedSerialNumbers, setSelectedSerialNumbers] = useState([]);
+  const [requiredQty, setRequiredQty] = useState(0); 
+
+  
 
   useEffect(() => {
     fetchRequestDetails();
     fetchInventoryData();
     fetchVendorList();
+    fetchCartItems();
   }, [requestId]);
 
   const fetchRequestDetails = async () => {
@@ -485,18 +653,15 @@ const RequestDetails = () => {
       const response = await fetch("http://127.0.0.1:8000/inventory/");
       const data = await response.json();
 
-      // Calculate available quantity only for items with status: true
       const inventoryMap = data.reduce((acc, item) => {
         if (!acc[item.com_id]) {
           acc[item.com_id] = { qty: 0, serialNumbers: [] };
         }
 
-        // Count only items with status: true for available quantity
         if (item.status === true) {
-          acc[item.com_id].qty += 1; // Increment qty only if status is true
+          acc[item.com_id].qty += 1; // Increment qty if status is true
         }
 
-        // Store serial numbers and statuses regardless of status
         acc[item.com_id].serialNumbers.push({
           serialNumber: item.serial_number,
           status: item.status,
@@ -525,114 +690,370 @@ const RequestDetails = () => {
     }
   };
 
-  const handleAssign = (componentId) => {
+
+
+
+
+  const fetchCartItems = async () => {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/cart/");
+      const data = await response.json();
+
+      const groupedByVendor = data.grouped_data.reduce((acc, vendorGroup) => {
+        const { vendor_id, vendor_name, requests } = vendorGroup;
+        acc[vendor_name] = acc[vendor_name] || [];
+        acc[vendor_name].push(
+          ...requests.map((request) => ({
+            ...request,
+            vendor_id,
+            vendor_name,
+          }))
+        );
+        return acc;
+      }, {});
+
+      setCartItems(groupedByVendor);
+    } catch (error) {
+      console.error("Error fetching cart items:", error);
+    }
+  };
+
+
+  ////
+
+  const handleOrder = async (detail) => {
+      if (!detail.vendor_name) {
+           alert("Please select a vendor for this component.");
+           return;
+         }
+    
+         const selectedVendor = vendorNames.find(
+           (vendor) => vendor.vendor_name === detail.vendor_name
+         );
+         const vendor_id = selectedVendor ? selectedVendor.vendor_id : null;
+    
+         if (!vendor_id) {
+           alert("Invalid vendor selected.");
+           return;
+         }
+
+           // Check if component is already in the cart for this vendor
+          if (cartItems[vendor_id] && cartItems[vendor_id][detail.component_id]) {
+            alert(`Component ${detail.component_id} is already in the cart.`);
+            return;
+          }
+    
+         const orderData = {
+           component_id: detail.component_id,
+           component_type: detail.component_type,
+           component_specification: detail.component_specification,
+           quantity: detail.qty,
+           request_id: requestId,
+           vendor_name: detail.vendor_name,
+           vendor_id: vendor_id,
+           category: detail.category,
+           unit_of_measurement: detail.unit_of_measurement,
+         };
+    
+         try {
+           const response = await fetch("http://127.0.0.1:8000/cart/", {
+             method: "POST",
+             headers: {
+               "Content-Type": "application/json",
+             },
+             body: JSON.stringify(orderData),
+           });
+    
+           if (response.ok) {
+             alert(`Component ${detail.component_id} added to cart.`);
+            // Update qty to 0 in frontend
+           setDetails((prevDetails) =>
+           prevDetails.map((d) =>
+            d.component_id === detail.component_id ? { ...d, qty: 0 } : d
+          )
+        );
+
+        // Update qty to 0 in backend request_master table
+         // Update qty to 0 and set required fields in the backend
+      const requestMasterPayload = {
+        qty: 0,
+        status: "Added to cart", // Set status as "Added to cart"
+        assign: true, // Set assign as true
+      };
+
+      const requestMasterResponse = await fetch(`http://127.0.0.1:8000/request_master/${requestId}/`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestMasterPayload),
+      });
+
+      if (requestMasterResponse.ok) {
+        fetchCartItems(); // Refresh the cart items
+      } else {
+        console.error("Error updating request master status:", requestMasterResponse.statusText);
+      }
+    } else {
+      console.error("Error adding component to cart:", response.statusText);
+    }
+  } catch (error) {
+    console.error("Error posting to cart:", error);
+  }
+};
+    
+
+
+
+
+
+
+  /////
+
+  const handleAssign = async (componentId, qty) => {
     const componentData = inventoryData[componentId];
-    if (componentData && componentData.qty > 0) {
+  
+    if (componentData && componentData.qty >= qty) {
       const availableSerialNumbers = componentData.serialNumbers
         .filter((sn) => sn.status === true)
         .map((sn) => sn.serialNumber);
-
-      if (availableSerialNumbers.length > 0) {
-        setSerialNumbers(availableSerialNumbers);
+  
+      if (availableSerialNumbers.length >= qty) {
+        setSerialNumbers(availableSerialNumbers); // Set available serials
         setSelectedComponent(componentId);
+        setSelectedSerialNumbers([]); // Reset selection
+        setRequiredQty(qty); // Set required quantity for exact selection
         setShowSerialPopup(true);
       } else {
-        alert("No available serial numbers in inventory for this component.");
+        alert("Insufficient available serial numbers in inventory for this component.");
       }
     } else {
       alert("Insufficient quantity in inventory.");
     }
   };
+  
 
-  const handleSerialSelection = async (serialNumber) => {
+  const handleSerialSelection = (serialNumber) => {
+    setSelectedSerialNumbers((prevSelectedSerials) => {
+      if (prevSelectedSerials.includes(serialNumber)) {
+        return prevSelectedSerials.filter((sn) => sn !== serialNumber);
+      } else if (prevSelectedSerials.length < requiredQty) {
+        return [...prevSelectedSerials, serialNumber];
+      } else {
+        alert(`You must select exactly ${requiredQty} serial numbers.`);
+        return prevSelectedSerials;
+      }
+    });
+  };
+  
+  // Update `handleConfirmAssignment` to only allow confirmation with exact selections
+  const handleConfirmAssignment = async () => {
+    if (selectedSerialNumbers.length !== requiredQty) {
+      alert(`Please select exactly ${requiredQty} serial numbers.`);
+      return;
+    }
+  
     setShowSerialPopup(false);
-
+  
     try {
-      // Update inventory to set status to false
+      for (const serialNumber of selectedSerialNumbers) {
+        const selectedDetail = details.find(
+          (detail) => detail.component_id === selectedComponent
+        );
+  
+        if (!selectedDetail) {
+          console.error("Component details not found.");
+          return;
+        }
+  
+        const inventoryPayload = {
+          component: selectedComponent,
+          serial_number: serialNumber,
+          vendor: selectedDetail.vendor_name || "V_00001",
+          com_id: selectedComponent,
+          qty: 1,
+          status: false,
+        };
+  
+        await fetch(`http://127.0.0.1:8000/inventory/${serialNumber}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(inventoryPayload),
+        });
+      }
+  
+      const requestMasterFetchResponse = await fetch(
+        `http://127.0.0.1:8000/request_master/${requestId}/`
+      );
+  
+      if (requestMasterFetchResponse.ok) {
+        const requestData = await requestMasterFetchResponse.json();
+        const currentQty = requestData.qty || 1;
+        const updatedQty = currentQty - requiredQty;
+  
+        const requestMasterPayload = {
+          assign: true,
+          qty: updatedQty,
+          status: "Assigned",
+        };
+  
+        const requestMasterResponse = await fetch(
+          `http://127.0.0.1:8000/request_master/${requestId}/`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(requestMasterPayload),
+          }
+        );
+  
+        if (requestMasterResponse.ok) {
+          setInventoryData((prevData) => {
+            const currentComponentData = prevData[selectedComponent] || {};
+            const updatedSerialNumbers = currentComponentData.serialNumbers.filter(
+              (sn) => !selectedSerialNumbers.includes(sn.serialNumber)
+            );
+  
+            return {
+              ...prevData,
+              [selectedComponent]: {
+                ...currentComponentData,
+                qty: currentComponentData.qty - requiredQty,
+                serialNumbers: updatedSerialNumbers,
+              },
+            };
+          });
+        } else {
+          console.error("Error updating request master status.");
+          alert("Could not update the request master status.");
+        }
+      } else {
+        console.error("Error fetching request master data.");
+        alert("Could not fetch the current quantity for the request.");
+      }
+    } catch (error) {
+      console.error("Error assigning serial numbers:", error);
+      alert("An error occurred during assignment.");
+    }
+  };
+
+
+/////////////
+
+const handleUnassign = async (componentId) => {
+  try {
+    const componentData = inventoryData[componentId];
+    const assignedSerials = componentData.serialNumbers.filter(
+      (sn) => sn.status === false
+    );
+
+    if (assignedSerials.length === 0) {
+      alert("No assigned serial numbers found to unassign.");
+      return;
+    }
+
+    // Unassign each assigned serial number
+    for (const serial of assignedSerials) {
+      const inventoryPayload = {
+        component: componentId,
+        serial_number: serial.serialNumber,
+        vendor: componentData.vendor || "V_00001",
+        com_id: componentId,
+        qty: 1,
+        status: true, // Reverting status to true in inventory
+      };
+
+      // Update each serial in inventory to set status back to true
       const inventoryResponse = await fetch(
-        `http://127.0.0.1:8000/inventory/${serialNumber}`,
+        `http://127.0.0.1:8000/inventory/${serial.serialNumber}`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            component: selectedComponent,
-            qty: inventoryData[selectedComponent]?.qty,
-            serialNumber,
-            status: false,
-            vendor: "V_00001",
-          }),
+          body: JSON.stringify(inventoryPayload),
         }
       );
 
-      if (inventoryResponse.ok) {
-        const requestMasterFetchResponse = await fetch(
-          `http://127.0.0.1:8000/request_master/${requestId}/`
+      if (!inventoryResponse.ok) {
+        console.error("Error unassigning serial number in inventory.");
+        alert("Could not unassign the serial number. Please try again.");
+        return;
+      }
+    }
+
+    // Update request_master to reflect all quantities are unassigned
+    const updatedQty = componentData.qty-1 ; // Recalculate the qty
+    const requestMasterPayload = {
+      request_id: requestId,
+      component_id: componentId,
+      bom_master_id: componentData.bom_master_id,
+      status: "Unassigned",
+      vendor_id: componentData.vendor || "V_00001",
+      component_type: componentData.component_type,
+      component_specification: componentData.component_specification,
+      unit_of_measurement: componentData.unit_of_measurement,
+      category: componentData.category,
+      bom_detail: componentData.bom_detail,
+      bom_name: componentData.bom_name,
+      quantity: componentData.quantity,
+      qty: updatedQty, // Set qty back with total after unassigning all serials
+      assign: false,
+    };
+
+    // Update request_master with the new qty and assign status
+    const requestMasterResponse = await fetch(
+      `http://127.0.0.1:8000/request_master/${requestId}/`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestMasterPayload),
+      }
+    );
+
+    if (requestMasterResponse.ok) {
+      setInventoryData((prevData) => {
+        const currentComponentData = prevData[componentId] || {};
+        const updatedSerialNumbers = currentComponentData.serialNumbers.map(
+          (sn) => (assignedSerials.includes(sn.serialNumber) ? { ...sn, status: true } : sn)
         );
 
-        if (requestMasterFetchResponse.ok) {
-          const requestData = await requestMasterFetchResponse.json();
-          const currentQty = requestData.qty || 1;
-          const updatedQty = currentQty - 1;
-          const updatedStatus = "false";
+        return {
+          ...prevData,
+          [componentId]: {
+            ...currentComponentData,
+            qty: updatedQty, // Update with the new qty after unassigning all serials
+            serialNumbers: updatedSerialNumbers,
+          },
+        };
+      });
 
-          const requestMasterResponse = await fetch(
-            `http://127.0.0.1:8000/request_master/${requestId}/`,
-            {
-              method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                assign: true,
-                qty: updatedQty,
-                status: updatedStatus,
-              }),
-            }
-          );
-
-          if (requestMasterResponse.ok) {
-            setInventoryData((prevData) => {
-              const currentComponentData = prevData[selectedComponent] || {};
-              const currentSerialNumbers = currentComponentData.serialNumbers || [];
-
-              return {
-                ...prevData,
-                [selectedComponent]: {
-                  ...currentComponentData,
-                  qty: currentComponentData.qty - 1,
-                  serialNumbers: currentSerialNumbers.filter(
-                    (sn) => sn.serialNumber !== serialNumber
-                  ),
-                },
-              };
-            });
-
-            setAssignedComponents((prevAssigned) => ({
-              ...prevAssigned,
-              [selectedComponent]: true,
-            }));
-
-            setDisabledSerialNumbers((prev) => [...prev, serialNumber]);
-          } else {
-            console.error("Error updating request master status.");
-            alert("Could not update the request master status.");
-          }
-        } else {
-          console.error("Error fetching request master data.");
-          alert("Could not fetch the current quantity for the request.");
-        }
-      } else {
-        const errorData = await inventoryResponse.json();
-        console.error("Error assigning serial number:", errorData.error || inventoryResponse.statusText);
-        alert("Could not assign the serial number. Please check and try again.");
-      }
-    } catch (error) {
-      console.error("Error assigning serial number:", error);
-      alert("An unexpected error occurred while assigning the serial number.");
+      setAssignedComponents((prevAssigned) => ({
+        ...prevAssigned,
+        [componentId]: false,
+      }));
+    } else {
+      console.error("Error updating request master status.");
+      alert("Could not update the request master status.");
     }
-  };
+  } catch (error) {
+    console.error("Error unassigning serial numbers:", error);
+  }
+};
+
+
+
+
+
+
+
+  ////////////////
+
 
   const handleVendorChange = (component_id, selectedVendorName) => {
     const updatedDetails = details.map((detail) => {
@@ -644,27 +1065,27 @@ const RequestDetails = () => {
     setDetails(updatedDetails);
   };
 
-  const fetchCartItems = async () => {
-    try {
-      const response = await fetch("http://127.0.0.1:8000/cart/");
-      const data = await response.json();
+  // const fetchCartItems = async () => {
+  //   try {
+  //     const response = await fetch("http://127.0.0.1:8000/cart/");
+  //     const data = await response.json();
 
-      const groupedByVendor = data.grouped_data.reduce((acc, vendorGroup) => {
-        const { vendor_id, vendor_name, requests } = vendorGroup;
-        acc[vendor_name] = acc[vendor_name] || [];
-        acc[vendor_name].push(...requests.map((request) => ({
-          ...request,
-          vendor_id,
-          vendor_name,
-        })));
-        return acc;
-      }, {});
+  //     const groupedByVendor = data.grouped_data.reduce((acc, vendorGroup) => {
+  //       const { vendor_id, vendor_name, requests } = vendorGroup;
+  //       acc[vendor_name] = acc[vendor_name] || [];
+  //       acc[vendor_name].push(...requests.map((request) => ({
+  //         ...request,
+  //         vendor_id,
+  //         vendor_name,
+  //       })));
+  //       return acc;
+  //     }, {});
 
-      setCartItems(groupedByVendor);
-    } catch (error) {
-      console.error("Error fetching cart items:", error);
-    }
-  };
+  //     setCartItems(groupedByVendor);
+  //   } catch (error) {
+  //     console.error("Error fetching cart items:", error);
+  //   }
+  // };
 
   const toggleCartView = async () => {
     if (!showCart) {
@@ -679,7 +1100,7 @@ const RequestDetails = () => {
       <button onClick={toggleCartView}>
         {showCart ? "Hide Cart" : "View Cart"}
       </button>
-
+  
       {showCart ? (
         <div>
           <h3>Cart</h3>
@@ -740,8 +1161,8 @@ const RequestDetails = () => {
               <tbody>
                 {details.map((detail) => {
                   const availableQty = inventoryData[detail.component_id]?.qty || 0;
-                  const isAssigned = assignedComponents[detail.component_id] || false;
-
+                  const isAssigned = assignedComponents[detail.component_id] || detail.qty === 0;
+  
                   return (
                     <tr key={detail.component_id}>
                       <td>{detail.status}</td>
@@ -765,16 +1186,25 @@ const RequestDetails = () => {
                         </select>
                       </td>
                       <td>{detail.bom_name}</td>
-                      <td>{detail.quantity}</td>
+                      <td>{detail.qty}</td>
                       <td>{availableQty}</td>
                       <td>
-                        <button
-                          onClick={() => handleAssign(detail.component_id, detail.qty)}
-                          disabled={isAssigned || availableQty < detail.qty || detail.qty !== 1}
+                        {isAssigned || availableQty === 0 || detail.quantity === 0 ? (
+                          <button onClick={() => handleUnassign(detail.component_id)}>
+                            Unassign
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleAssign(detail.component_id, detail.qty)}
+                            disabled={availableQty < detail.qty || detail.qty === 0}
+                          >
+                            Assign
+                          </button>
+                        )}
+                       <button
+                          onClick={() => handleOrder(detail)}
+                          disabled={detail.qty === 0}
                         >
-                          {isAssigned ? "Unassign" : "Assign"}
-                        </button>
-                        <button onClick={() => handleOrder(detail)}>
                           Add to Cart
                         </button>
                       </td>
@@ -786,32 +1216,37 @@ const RequestDetails = () => {
           )}
         </>
       )}
-
-      {showSerialPopup && (
-        <div className="modal">
-          <div className="modal-content">
-            <h3>Select Serial Number</h3>
-            <ul>
-              {serialNumbers.map((serial, index) => (
-                <li key={index}>
-                  <button
-                    onClick={() => handleSerialSelection(serial)}
-                    disabled={disabledSerialNumbers.includes(serial)}
-                    style={{
-                      color: disabledSerialNumbers.includes(serial) ? "grey" : "black",
-                      cursor: disabledSerialNumbers.includes(serial) ? "not-allowed" : "pointer",
-                    }}
-                  >
-                    {serial}
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <button onClick={() => setShowSerialPopup(false)}>Close</button>
-          </div>
+  
+  {showSerialPopup && (
+      <div className="modal">
+        <div className="modal-content">
+          <h3>Select Serial Numbers</h3>
+          <ul>
+            {serialNumbers.map((serial, index) => (
+              <li key={index}>
+                <button
+                  onClick={() => handleSerialSelection(serial)}
+                  style={{
+                    color: selectedSerialNumbers.includes(serial) ? "blue" : "black",
+                    cursor: "pointer",
+                  }}
+                >
+                  {serial}
+                </button>
+              </li>
+            ))}
+          </ul>
+          <button
+            onClick={handleConfirmAssignment}
+            disabled={selectedSerialNumbers.length !== requiredQty}
+          >
+            Confirm Assignment
+          </button>
+          <button onClick={() => setShowSerialPopup(false)}>Close</button>
         </div>
+      </div>
       )}
-
+  
       <style jsx>{`
         .modal {
           position: fixed;
@@ -842,6 +1277,6 @@ const RequestDetails = () => {
       `}</style>
     </div>
   );
-};
+  };
 
 export default RequestDetails;
