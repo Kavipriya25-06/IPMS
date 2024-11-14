@@ -19,12 +19,15 @@ import "./App.css";
 import RequestForm from "./pages/RequestForm";
 import HomePage from "./pages/HomePage";
 
-
 function App() {
   return (
     <Router>
       <div className="App">
-        <h1>Inventory Management</h1>
+        <h1>
+          <NavLink to="/" style={{ textDecoration: "none", color: "inherit" }}>
+            Inventory Management
+          </NavLink>
+        </h1>
         <nav>
           <ul>
             <li>
@@ -67,7 +70,6 @@ function App() {
                 Requests
               </NavLink>
             </li>
-            
           </ul>
         </nav>
         <Routes>
@@ -78,10 +80,9 @@ function App() {
           <Route path="/bom" element={<BOMDisplay />} />
           <Route path="/bom/:bomId" element={<BOMDetails />} />
           <Route path="/requests" element={<Requests />} />
-          <Route path="/" element={<HomePage/>}/>
-          <Route path="request-form" element = {<RequestForm/>} />          
-          <Route path="/requests/:requestId" element={<RequestDetails />} /> 
-          
+          <Route path="/" element={<HomePage />} />
+          <Route path="request-form" element={<RequestForm />} />
+          <Route path="/requests/:requestId" element={<RequestDetails />} />
         </Routes>
       </div>
     </Router>

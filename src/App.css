@@ -1,4 +1,4 @@
-/* src/App.css */
+/* General Styles */
 body {
   font-family: Arial, sans-serif;
   margin: 0;
@@ -13,13 +13,13 @@ body {
 }
 
 h1 {
-  margin-bottom: 10px;
+  margin: 0 0 10px;
   font-size: 2rem;
-  margin-top: 0;
   padding: 20px 0;
   background-color: #f8f9fa;
 }
 
+/* Navbar Styles */
 nav {
   width: 100%;
   background-color: #f58720;
@@ -55,11 +55,13 @@ nav ul li a.active {
   background-color: #cb6c13;
 }
 
+/* Main Content */
 main {
   padding: 20px;
   margin-top: 10px;
 }
 
+/* Table Styles */
 table {
   border-collapse: collapse;
   width: 100%;
@@ -80,33 +82,126 @@ tbody tr:hover {
   background-color: #f1f1f1;
 }
 
-/* Add this CSS in a separate file or within your CSS setup */
-.modal {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* Modal Overlay */
+.modal-overlay,
+.vm-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   z-index: 1000;
 }
 
-.modal-content {
-  background-color: white;
+/* Modal Container */
+.modal,
+.vm-modal {
+  background-color: #ffffff;
   padding: 20px;
+  border-radius: 8px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+}
+
+/* Modal Header */
+.modal h3,
+.vm-modal h3 {
+  margin: 0 0 15px;
+  font-size: 1.5rem;
+  text-align: center;
+  color: #333;
+}
+
+/* Modal Input Fields */
+.modal input[type="text"],
+.modal input[type="number"],
+.modal input[type="file"],
+.modal select,
+.vm-modal input[type="text"],
+.vm-modal input[type="number"],
+.vm-modal input[type="date"],
+.vm-modal select {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+/* Button Styles */
+.modal button,
+.vm-modal button {
+  padding: 10px;
+  border: none;
   border-radius: 5px;
-  width: 300px;
-}
-
-.close-button {
-  float: right;
   cursor: pointer;
-  font-size: 20px;
 }
 
+.modal button:first-of-type,
+.vm-modal button:first-of-type {
+  background-color: #4caf50;
+  color: white;
+}
+
+.modal button:last-of-type,
+.vm-modal button:last-of-type {
+  background-color: #f44336;
+  color: white;
+}
+
+/* Close Button */
+.close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 1.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #333;
+}
+
+/* Table Inside Modal */
+.modal table,
+.vm-modal table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.modal table th,
+.modal table td,
+.vm-modal table th,
+.vm-modal table td {
+  padding: 8px;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+
+.modal table th,
+.vm-modal table th {
+  background-color: #f58720;
+  color: white;
+  font-weight: bold;
+}
+
+.modal table tbody tr:hover,
+.vm-modal table tbody tr:hover {
+  background-color: #f1f1f1;
+}
+
+/* Popup Styles */
 .popup {
   position: fixed;
   top: 50%;
@@ -126,38 +221,3 @@ tbody tr:hover {
 .popup button {
   margin-top: 10px;
 }
-
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background-color: white;
-  padding: 20px;
-  border-radius: 5px;
-  max-width: 500px;
-  width: 100%;
-  position: relative;
-}
-
-.close-button {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  font-size: 1.5rem;
-  background: none;
-  border: none;
-  cursor: pointer;
-}
-
-

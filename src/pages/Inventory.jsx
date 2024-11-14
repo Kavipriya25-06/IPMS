@@ -216,7 +216,7 @@
 
 // export default Inventory;
 import React, { useState, useEffect } from "react";
-import config from "../Config"; // Import config for API endpoints
+// import config from "../Config"; // Import config for API endpoints
 
 const Inventory = () => {
   const [inventoryData, setInventoryData] = useState([]);
@@ -227,7 +227,6 @@ const Inventory = () => {
   const [serialNumber, setSerialNumber] = useState("");
   const [count, setCount] = useState("");
   const [createdDate, setCreatedDate] = useState("");
-  const [editRowIndex, setEditRowIndex] = useState(null);
 
   useEffect(() => {
     fetchInventoryData();
@@ -258,16 +257,18 @@ const Inventory = () => {
       console.error("Error fetching component data:", error);
     }
   };
+  console.log("Retrieved component data", componentData);
 
   const fetchVendorMasterData = async () => {
     try {
       const response = await fetch("http://127.0.0.1:8000/vendor_master/");
       const data = await response.json();
       const formattedData = data.reduce((acc, vendor) => {
-        acc[vendor.component_id] = vendor.vendor_id;
+        acc[vendor.product_id] = vendor.vendor;
         return acc;
       }, {});
       setVendorData(formattedData);
+      console.log("Retrieved vendor data", formattedData);
     } catch (error) {
       console.error("Error fetching vendor data:", error);
     }
@@ -277,36 +278,23 @@ const Inventory = () => {
     setShowForm(true);
   };
 
-  const handleEditClick = (index) => {
-    setEditRowIndex(index); // Set the row index to edit
-  };
-
-  const handleSaveClick = async (index) => {
-    const item = inventoryData[index]; // Get the edited item data
+  const handleDeleteClick = async (serialNumber) => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/inventory/${item.serial_number}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(item),
-      });
+      const response = await fetch(
+        `http://127.0.0.1:8000/inventory/${serialNumber}`,
+        {
+          method: "DELETE",
+        }
+      );
       if (response.ok) {
-        console.log("Item updated successfully");
-        setEditRowIndex(null); // Exit edit mode
-        fetchInventoryData(); // Refresh data to reflect changes
+        console.log("Item deleted successfully");
+        fetchInventoryData(); // Refresh data to reflect deletion
       } else {
-        console.error("Error updating item:", response.statusText);
+        console.error("Error deleting item:", response.statusText);
       }
     } catch (error) {
-      console.error("Error updating inventory item:", error);
+      console.error("Error deleting inventory item:", error);
     }
-  };
-
-  const handleChange = (e, index, field) => {
-    const updatedInventoryData = [...inventoryData];
-    updatedInventoryData[index][field] = e.target.value;
-    setInventoryData(updatedInventoryData);
   };
 
   const handleSubmit = async (e) => {
@@ -420,47 +408,27 @@ const Inventory = () => {
           {inventoryData.length > 0 ? (
             inventoryData.map((item, index) => {
               const component = componentData[item.com_id] || {};
-              const isEditing = editRowIndex === index;
+
               const isDisabled = item.status === false;
 
               return (
                 <tr key={index} className={isDisabled ? "disabled-row" : ""}>
-                  <td>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={item.com_id}
-                        onChange={(e) => handleChange(e, index, "com_id")}
-                        disabled={isDisabled}
-                      />
-                    ) : (
-                      item.com_id
-                    )}
-                  </td>
-                  <td>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={item.serial_number}
-                        onChange={(e) => handleChange(e, index, "serial_number")}
-                        disabled={isDisabled}
-                      />
-                    ) : (
-                      item.serial_number
-                    )}
-                  </td>
+                  <td>{item.com_id}</td>
+                  <td>{item.serial_number}</td>
                   <td>{component.category || ""}</td>
                   <td>{component.component_type || ""}</td>
                   <td>{component.component_specification || ""}</td>
                   <td>{component.unit_of_measurement || ""}</td>
                   <td>{item.vendor || ""}</td>
-                  <td>{item.created_date || new Date().toLocaleDateString()}</td>
                   <td>
-                    {isEditing ? (
-                      <button onClick={() => handleSaveClick(index)} disabled={isDisabled}>Save</button>
-                    ) : (
-                      <button onClick={() => handleEditClick(index)} disabled={isDisabled}>Edit</button>
-                    )}
+                    {item.created_date || new Date().toLocaleDateString()}
+                  </td>
+                  <td>
+                    <button
+                      onClick={() => handleDeleteClick(item.serial_number)}
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
               );

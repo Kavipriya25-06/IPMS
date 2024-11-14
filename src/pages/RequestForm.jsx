@@ -128,8 +128,8 @@ const RequestForm = () => {
     setSelectedComponents(updatedComponents);
   };
 
-  const bom_id_list = selectedBom ? selectedBom.bom_id : "";
-  const firstComponentId = selectedComponents[0]?.id || 3; // Default component added
+  // const bom_id_list = selectedBom ? selectedBom.bom_id : "";
+  // const firstComponentId = selectedComponents[0]?.id || 3; // Default component added
 
   const handleSubmit = async () => {
     try {
@@ -138,8 +138,8 @@ const RequestForm = () => {
         date: date,
         status: "In Progress",
         last_modified_by: "Arun",
-        bom: firstComponentId,
-        bom_id: bom_id_list,
+        // bom: firstComponentId,
+        // bom_id: bom_id_list,
       };
 
       // Step 1: Submit to request_list to get the generated request_id
@@ -171,7 +171,7 @@ const RequestForm = () => {
         request: generatedRequestId,
         component: component.component.component_id,
         vendor: component.vendor.vendor_id,
-        bom: component.id ? component.id : 3, // For the components added we give a default bom master id
+        // bom: component.id ? component.id : 3, // For the components added we give a default bom master id
         qty: component.quantity,
         status: "pending",
         assign: false,
