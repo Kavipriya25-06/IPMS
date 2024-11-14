@@ -154,6 +154,10 @@ const RequestForm = () => {
         }
       );
 
+      if (requestListResponse) {
+        console.log("Response", requestListResponse);
+      }
+
       const requestListData = await requestListResponse.json();
 
       // Debugging log to inspect API response

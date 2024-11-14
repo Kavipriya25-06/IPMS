@@ -400,331 +400,309 @@ const VendorDetails = () => {
 
       {/* Add Product Modal */}
       {showAddProductForm && (
-        <div className="vm-modal-overlay">
-          <div className="vm-modal">
-            <h3>Add New Product</h3>
-            <input
-              type="text"
-              placeholder="Product Description"
-              value={newProduct.product_description}
-              onChange={(e) =>
-                handleInputChange(null, "product_description", e.target.value)
-              }
-            />
-            <input
-              type="number"
-              placeholder="Last Price"
-              value={newProduct.last_price}
-              onChange={(e) =>
-                handleInputChange(null, "last_price", e.target.value)
-              }
-            />
+        <div className="popup">
+          <h3>Add New Product</h3>
+          <input
+            type="text"
+            placeholder="Product Description"
+            value={newProduct.product_description}
+            onChange={(e) =>
+              handleInputChange(null, "product_description", e.target.value)
+            }
+          />
+          <input
+            type="number"
+            placeholder="Last Price"
+            value={newProduct.last_price}
+            onChange={(e) =>
+              handleInputChange(null, "last_price", e.target.value)
+            }
+          />
 
-            <input
-              type="number"
-              placeholder="Tax %"
-              value={newProduct.tax}
-              onChange={(e) => handleInputChange(null, "tax", e.target.value)}
-            />
+          <input
+            type="number"
+            placeholder="Tax %"
+            value={newProduct.tax}
+            onChange={(e) => handleInputChange(null, "tax", e.target.value)}
+          />
 
-            <select
-              value={newProduct.category}
-              onChange={(e) =>
-                handleInputChange(null, "category", e.target.value)
-              }
-            >
-              <option value="">Select Category</option>
-              <option value="Airframe">Airframe</option>
-              <option value="Communication">Communication</option>
-              <option value="Electricals">Electricals</option>
-              <option value="Electronics">Electronics</option>
-              <option value="Payload">Payload</option>
-            </select>
+          <select
+            value={newProduct.category}
+            onChange={(e) =>
+              handleInputChange(null, "category", e.target.value)
+            }
+          >
+            <option value="">Select Category</option>
+            <option value="Airframe">Airframe</option>
+            <option value="Communication">Communication</option>
+            <option value="Electricals">Electricals</option>
+            <option value="Electronics">Electronics</option>
+            <option value="Payload">Payload</option>
+          </select>
 
-            <select
-              value={newProduct.component_type}
-              onChange={(e) =>
-                handleInputChange(null, "component_type", e.target.value)
-              }
-            >
-              <option value="">Select Component Type</option>
-              <option value="type-1">component_type-1</option>
-              <option value="type-2">component_type-2</option>
-              <option value="type-3">component_type-3</option>
-              <option value="type-4">component_type-4</option>
-              <option value="type-5">component_type-5</option>
-              <option value="type-6">component_type-6</option>
-            </select>
-            <input
-              type="text"
-              placeholder="Component Specification"
-              value={newProduct.component_specification}
-              onChange={(e) =>
-                handleInputChange(
-                  null,
-                  "component_specification",
-                  e.target.value
-                )
-              }
-            />
-            <input
-              type="text"
-              placeholder="Unit of Measurement"
-              value={newProduct.unit_of_measurement}
-              onChange={(e) =>
-                handleInputChange(null, "unit_of_measurement", e.target.value)
-              }
-            />
-            <input
-              type="file"
-              onChange={(e) =>
-                handleInputChange(null, "img", e.target.files[0])
-              }
-            />
-            <input
-              type="file"
-              onChange={(e) =>
-                handleInputChange(null, "attachments", e.target.files[0])
-              }
-            />
-            <button onClick={handleAddNewProduct}>Save Product</button>
-            <button onClick={() => setShowAddProductForm(false)}>Cancel</button>
-          </div>
+          <select
+            value={newProduct.component_type}
+            onChange={(e) =>
+              handleInputChange(null, "component_type", e.target.value)
+            }
+          >
+            <option value="">Select Component Type</option>
+            <option value="type-1">component_type-1</option>
+            <option value="type-2">component_type-2</option>
+            <option value="type-3">component_type-3</option>
+            <option value="type-4">component_type-4</option>
+            <option value="type-5">component_type-5</option>
+            <option value="type-6">component_type-6</option>
+          </select>
+          <input
+            type="text"
+            placeholder="Component Specification"
+            value={newProduct.component_specification}
+            onChange={(e) =>
+              handleInputChange(null, "component_specification", e.target.value)
+            }
+          />
+          <input
+            type="text"
+            placeholder="Unit of Measurement"
+            value={newProduct.unit_of_measurement}
+            onChange={(e) =>
+              handleInputChange(null, "unit_of_measurement", e.target.value)
+            }
+          />
+          <input
+            type="file"
+            onChange={(e) => handleInputChange(null, "img", e.target.files[0])}
+          />
+          <input
+            type="file"
+            onChange={(e) =>
+              handleInputChange(null, "attachments", e.target.files[0])
+            }
+          />
+          <button onClick={handleAddNewProduct}>Save Product</button>
+          <button onClick={() => setShowAddProductForm(false)}>Cancel</button>
         </div>
       )}
 
       {/* Edit Product Modal */}
       {showEditProductForm && (
-        <div className="vm-modal-overlay">
-          <div className="vm-modal">
-            <h3>Edit Product</h3>
-            <input
-              type="text"
-              placeholder="Product Description"
-              value={editProduct.product_description || ""}
-              onChange={(e) =>
-                handleInputChange("product_description", e.target.value, true)
-              }
-            />
-            <input
-              type="number"
-              placeholder="Last Price"
-              value={editProduct.last_price || ""}
-              onChange={(e) =>
-                handleInputChange("last_price", e.target.value, true)
-              }
-            />
-            <input
-              type="number"
-              placeholder="Tax"
-              value={editProduct.tax || ""}
-              onChange={(e) => handleInputChange("tax", e.target.value, true)}
-            />
-            <select
-              value={editProduct.category || ""}
-              onChange={(e) =>
-                handleInputChange("category", e.target.value, true)
-              }
-            >
-              <option value="">Select Category</option>
-              <option value="Airframe">Airframe</option>
-              <option value="Communication">Communication</option>
-              <option value="Electricals">Electricals</option>
-              <option value="Electronics">Electronics</option>
-              <option value="Payload">Payload</option>
-            </select>
+        <div className="popup">
+          <h3>Edit Product</h3>
+          <input
+            type="text"
+            placeholder="Product Description"
+            value={editProduct.product_description || ""}
+            onChange={(e) =>
+              handleInputChange("product_description", e.target.value, true)
+            }
+          />
+          <input
+            type="number"
+            placeholder="Last Price"
+            value={editProduct.last_price || ""}
+            onChange={(e) =>
+              handleInputChange("last_price", e.target.value, true)
+            }
+          />
+          <input
+            type="number"
+            placeholder="Tax"
+            value={editProduct.tax || ""}
+            onChange={(e) => handleInputChange("tax", e.target.value, true)}
+          />
+          <select
+            value={editProduct.category || ""}
+            onChange={(e) =>
+              handleInputChange("category", e.target.value, true)
+            }
+          >
+            <option value="">Select Category</option>
+            <option value="Airframe">Airframe</option>
+            <option value="Communication">Communication</option>
+            <option value="Electricals">Electricals</option>
+            <option value="Electronics">Electronics</option>
+            <option value="Payload">Payload</option>
+          </select>
 
-            <select
-              value={editProduct.component_type || ""}
-              onChange={(e) =>
-                handleInputChange("component_type", e.target.value, true)
-              }
-            >
-              <option value="">Select Component Type</option>
-              <option value="type-1">component_type-1</option>
-              <option value="type-2">component_type-2</option>
-              <option value="type-3">component_type-3</option>
-              <option value="type-4">component_type-4</option>
-              <option value="type-5">component_type-5</option>
-              <option value="type-6">component_type-6</option>
-            </select>
+          <select
+            value={editProduct.component_type || ""}
+            onChange={(e) =>
+              handleInputChange("component_type", e.target.value, true)
+            }
+          >
+            <option value="">Select Component Type</option>
+            <option value="type-1">component_type-1</option>
+            <option value="type-2">component_type-2</option>
+            <option value="type-3">component_type-3</option>
+            <option value="type-4">component_type-4</option>
+            <option value="type-5">component_type-5</option>
+            <option value="type-6">component_type-6</option>
+          </select>
 
-            <input
-              type="text"
-              placeholder="Component Specification"
-              value={editProduct.component_specification || ""}
-              onChange={(e) =>
-                handleInputChange(
-                  "component_specification",
-                  e.target.value,
-                  true
-                )
-              }
-            />
-            <input
-              type="text"
-              placeholder="Unit of Measurement"
-              value={editProduct.unit_of_measurement || ""}
-              onChange={(e) =>
-                handleInputChange("unit_of_measurement", e.target.value, true)
-              }
-            />
-            <input
-              type="file"
-              onChange={(e) =>
-                handleInputChange("img", e.target.files[0], true)
-              }
-            />
-            <input
-              type="file"
-              onChange={(e) =>
-                handleInputChange("attachments", e.target.files[0], true)
-              }
-            />
-            <button onClick={handleSaveEditProduct}>Save Changes</button>
-            <button onClick={() => setShowEditProductForm(false)}>
-              Cancel
-            </button>
-          </div>
+          <input
+            type="text"
+            placeholder="Component Specification"
+            value={editProduct.component_specification || ""}
+            onChange={(e) =>
+              handleInputChange("component_specification", e.target.value, true)
+            }
+          />
+          <input
+            type="text"
+            placeholder="Unit of Measurement"
+            value={editProduct.unit_of_measurement || ""}
+            onChange={(e) =>
+              handleInputChange("unit_of_measurement", e.target.value, true)
+            }
+          />
+          <input
+            type="file"
+            onChange={(e) => handleInputChange("img", e.target.files[0], true)}
+          />
+          <input
+            type="file"
+            onChange={(e) =>
+              handleInputChange("attachments", e.target.files[0], true)
+            }
+          />
+          <button onClick={handleSaveEditProduct}>Save Changes</button>
+          <button onClick={() => setShowEditProductForm(false)}>Cancel</button>
         </div>
       )}
 
       {/* Price History Modal */}
       {showPriceHistory && (
-        <div className="vm-modal-overlay">
-          <div className="vm-modal">
-            <span className="close-button" onClick={handleClosePriceHistory}>
-              &times;
-            </span>
-            <h3>Price History</h3>
-            <button onClick={() => setShowAddPriceEntryForm(true)}>
-              Add Price Entry
-            </button>
+        <div className="popup">
+          <span className="close-button" onClick={handleClosePriceHistory}>
+            &times;
+          </span>
+          <h3>Price History</h3>
+          <button onClick={() => setShowAddPriceEntryForm(true)}>
+            Add Price Entry
+          </button>
 
-            <table>
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Price</th>
-                  <th>Tax %</th>
-                  <th>Actions</th>
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Price</th>
+                <th>Tax %</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {priceHistory.map((entry, index) => (
+                <tr key={index}>
+                  <td>
+                    {isEditingPriceEntry === index ? (
+                      <input
+                        type="date"
+                        value={editPriceEntry.date}
+                        onChange={(e) =>
+                          setEditPriceEntry({
+                            ...editPriceEntry,
+                            date: e.target.value,
+                          })
+                        }
+                      />
+                    ) : (
+                      new Date(entry.current_time).toLocaleDateString()
+                    )}
+                  </td>
+                  <td>
+                    {isEditingPriceEntry === index ? (
+                      <input
+                        type="number"
+                        value={editPriceEntry.price}
+                        onChange={(e) =>
+                          setEditPriceEntry({
+                            ...editPriceEntry,
+                            price: e.target.value,
+                          })
+                        }
+                      />
+                    ) : (
+                      entry.price
+                    )}
+                  </td>
+                  <td>
+                    {isEditingPriceEntry === index ? (
+                      <input
+                        type="number"
+                        value={editPriceEntry.tax}
+                        onChange={(e) =>
+                          setEditPriceEntry({
+                            ...editPriceEntry,
+                            tax: e.target.value,
+                          })
+                        }
+                      />
+                    ) : (
+                      entry.tax
+                    )}
+                  </td>
+                  <td>
+                    {isEditingPriceEntry === index ? (
+                      <>
+                        <button onClick={() => handleSavePriceEntry(index)}>
+                          Save
+                        </button>
+                        <button onClick={() => setIsEditingPriceEntry(null)}>
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleEditPriceEntry(index, entry)}
+                        >
+                          Edit
+                        </button>
+                        <button onClick={() => handleDeletePriceEntry(index)}>
+                          Delete
+                        </button>
+                      </>
+                    )}
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {priceHistory.map((entry, index) => (
-                  <tr key={index}>
-                    <td>
-                      {isEditingPriceEntry === index ? (
-                        <input
-                          type="date"
-                          value={editPriceEntry.date}
-                          onChange={(e) =>
-                            setEditPriceEntry({
-                              ...editPriceEntry,
-                              date: e.target.value,
-                            })
-                          }
-                        />
-                      ) : (
-                        new Date(entry.current_time).toLocaleDateString()
-                      )}
-                    </td>
-                    <td>
-                      {isEditingPriceEntry === index ? (
-                        <input
-                          type="number"
-                          value={editPriceEntry.price}
-                          onChange={(e) =>
-                            setEditPriceEntry({
-                              ...editPriceEntry,
-                              price: e.target.value,
-                            })
-                          }
-                        />
-                      ) : (
-                        entry.price
-                      )}
-                    </td>
-                    <td>
-                      {isEditingPriceEntry === index ? (
-                        <input
-                          type="number"
-                          value={editPriceEntry.tax}
-                          onChange={(e) =>
-                            setEditPriceEntry({
-                              ...editPriceEntry,
-                              tax: e.target.value,
-                            })
-                          }
-                        />
-                      ) : (
-                        entry.tax
-                      )}
-                    </td>
-                    <td>
-                      {isEditingPriceEntry === index ? (
-                        <>
-                          <button onClick={() => handleSavePriceEntry(index)}>
-                            Save
-                          </button>
-                          <button onClick={() => setIsEditingPriceEntry(null)}>
-                            Cancel
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => handleEditPriceEntry(index, entry)}
-                          >
-                            Edit
-                          </button>
-                          <button onClick={() => handleDeletePriceEntry(index)}>
-                            Delete
-                          </button>
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
       {/* Add Price Entry Modal */}
       {showAddPriceEntryForm && (
-        <div className="vm-modal-overlay">
-          <div className="vm-modal">
-            <h3>Add New Price Entry</h3>
-            <input
-              type="date"
-              value={newPriceEntry.date}
-              onChange={(e) =>
-                setNewPriceEntry({ ...newPriceEntry, date: e.target.value })
-              }
-            />
-            <input
-              type="number"
-              placeholder="Price"
-              value={newPriceEntry.price}
-              onChange={(e) =>
-                setNewPriceEntry({ ...newPriceEntry, price: e.target.value })
-              }
-            />
-            <input
-              type="number"
-              placeholder="Tax %"
-              value={newPriceEntry.tax}
-              onChange={(e) =>
-                setNewPriceEntry({ ...newPriceEntry, tax: e.target.value })
-              }
-            />
-            <button onClick={handleAddPriceEntry}>Add</button>
-            <button onClick={() => setShowAddPriceEntryForm(false)}>
-              Cancel
-            </button>
-          </div>
+        <div className="popup">
+          <h3>Add New Price Entry</h3>
+          <input
+            type="date"
+            value={newPriceEntry.date}
+            onChange={(e) =>
+              setNewPriceEntry({ ...newPriceEntry, date: e.target.value })
+            }
+          />
+          <input
+            type="number"
+            placeholder="Price"
+            value={newPriceEntry.price}
+            onChange={(e) =>
+              setNewPriceEntry({ ...newPriceEntry, price: e.target.value })
+            }
+          />
+          <input
+            type="number"
+            placeholder="Tax %"
+            value={newPriceEntry.tax}
+            onChange={(e) =>
+              setNewPriceEntry({ ...newPriceEntry, tax: e.target.value })
+            }
+          />
+          <button onClick={handleAddPriceEntry}>Add</button>
+          <button onClick={() => setShowAddPriceEntryForm(false)}>
+            Cancel
+          </button>
         </div>
       )}
 
