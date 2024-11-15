@@ -83,17 +83,24 @@ const Vendors = () => {
     }));
   };
 
-  const handleEditPocChange = (index, field, value) => {
-    const updatedPocData = [...pocData];
-    updatedPocData[index][field] = value;
+  const handleEditPocChange = (pocId, field, value) => {
+    // const updatedPocData = [...pocData];
+    // updatedPocData[index][field] = value;
+    const updatedPocData = pocData.map((poc) =>
+      poc.id === pocId ? { ...poc, [field]: value } : poc
+    );
     setPocData(updatedPocData);
   };
 
-  const handleSavePoc = async (index) => {
-    const updatedPoc = pocData[index];
+  const handleSavePoc = async (pocId) => {
+    const updatedPoc = pocData.find((poc) => poc.id === pocId); // Find POC by ID
+    if (!updatedPoc) {
+      console.error("POC not found for the provided ID:", pocId);
+      return;
+    }
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/vendor_sub_list/${updatedPoc.id}/`,
+        `http://127.0.0.1:8000/vendor_sub_list/${pocId}/`,
         {
           method: "PUT",
           headers: {
@@ -474,13 +481,13 @@ const Vendors = () => {
                     />
                   </td>
                   <td>
-                    {isEditing === index ? (
+                    {isEditing === poc.id ? (
                       <input
                         type="text"
                         value={poc.point_of_contact}
                         onChange={(e) =>
                           handleEditPocChange(
-                            index,
+                            poc.id,
                             "point_of_contact",
                             e.target.value
                           )
@@ -491,12 +498,12 @@ const Vendors = () => {
                     )}
                   </td>
                   <td>
-                    {isEditing === index ? (
+                    {isEditing === poc.id ? (
                       <input
                         type="email"
                         value={poc.email}
                         onChange={(e) =>
-                          handleEditPocChange(index, "email", e.target.value)
+                          handleEditPocChange(poc.id, "email", e.target.value)
                         }
                       />
                     ) : (
@@ -504,13 +511,13 @@ const Vendors = () => {
                     )}
                   </td>
                   <td>
-                    {isEditing === index ? (
+                    {isEditing === poc.id ? (
                       <input
                         type="text"
                         value={poc.phone_number}
                         onChange={(e) =>
                           handleEditPocChange(
-                            index,
+                            poc.id,
                             "phone_number",
                             e.target.value
                           )
@@ -521,12 +528,16 @@ const Vendors = () => {
                     )}
                   </td>
                   <td>
-                    {isEditing === index ? (
+                    {isEditing === poc.id ? (
                       <input
                         type="text"
                         value={poc.location}
                         onChange={(e) =>
-                          handleEditPocChange(index, "location", e.target.value)
+                          handleEditPocChange(
+                            poc.id,
+                            "location",
+                            e.target.value
+                          )
                         }
                       />
                     ) : (
@@ -534,11 +545,15 @@ const Vendors = () => {
                     )}
                   </td>
                   <td>
-                    {isEditing === index ? (
+                    {isEditing === poc.id ? (
                       <select
                         value={poc.category}
                         onChange={(e) =>
-                          handleEditPocChange(index, "category", e.target.value)
+                          handleEditPocChange(
+                            poc.id,
+                            "category",
+                            e.target.value
+                          )
                         }
                       >
                         <option value="">Select Category</option>
@@ -554,10 +569,17 @@ const Vendors = () => {
                   </td>
 
                   <td>
-                    {isEditing === index ? (
-                      <button onClick={() => handleSavePoc(index)}>Save</button>
+                    {isEditing === poc.id ? (
+                      <>
+                        <button onClick={() => handleSavePoc(poc.id)}>
+                          Save
+                        </button>
+                        <button onClick={() => setIsEditing(null)}>
+                          Cancel
+                        </button>
+                      </>
                     ) : (
-                      <button onClick={() => setIsEditing(index)}>Edit</button>
+                      <button onClick={() => setIsEditing(poc.id)}>Edit</button>
                     )}
                     <button onClick={() => handleDeletePoc(poc.id)}>
                       Delete
