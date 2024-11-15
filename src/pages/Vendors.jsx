@@ -20,7 +20,7 @@ const Vendors = () => {
   const [vendorData, setVendorData] = useState([]);
   const [pocData, setPocData] = useState([]);
   const [selectedVendorId, setSelectedVendorId] = useState(null);
-  const [primaryPocId, setPrimaryPocId] = useState(null); // State for primary POC ID
+  const [primaryPocSelection, setPrimaryPocSelection] = useState({}); // selecting Primary POC in a Dictionary
   const [isAddingVendor, setIsAddingVendor] = useState(false);
   const [isAddingSubVendor, setIsAddingSubVendor] = useState(false);
   const [showPocPopup, setShowPocPopup] = useState(false);
@@ -74,6 +74,13 @@ const Vendors = () => {
   const handlePocClick = (vendor_id) => {
     setSelectedVendorId(vendor_id);
     setShowPocPopup(true);
+  };
+
+  const handlePrimaryPocSelect = (vendorId, pocId) => {
+    setPrimaryPocSelection((prevSelection) => ({
+      ...prevSelection,
+      [vendorId]: pocId, // Update only the POC for the specific vendor
+    }));
   };
 
   const handleEditPocChange = (index, field, value) => {
@@ -371,7 +378,13 @@ const Vendors = () => {
         <tbody>
           {vendorData.map((vendor) => {
             const vendorPocs = getVendorPocs(vendor.vendor_id);
-            const primaryPoc = vendorPocs[0] || {}; // Use the first POC as the primary one
+            const selectedPocId = primaryPocSelection[vendor.vendor_id];
+            const primaryPoc =
+              vendorPocs.find((poc) => poc.id === selectedPocId) ||
+              vendorPocs[0] ||
+              {};
+
+            // const primaryPoc = vendorPocs[0] || {}; // Use the first POC as the primary one
             return (
               <tr key={vendor.vendor_id}>
                 <td>
@@ -438,6 +451,7 @@ const Vendors = () => {
           <table>
             <thead>
               <tr>
+                <th>Select</th>
                 <th>POC Name</th>
                 <th>Email</th>
                 <th>Phone</th>
@@ -449,6 +463,16 @@ const Vendors = () => {
             <tbody>
               {getVendorPocs(selectedVendorId).map((poc, index) => (
                 <tr key={poc.id}>
+                  <td>
+                    <input
+                      type="radio"
+                      name={`primaryPoc-${selectedVendorId}`} // Scoped to the vendor
+                      checked={primaryPocSelection[selectedVendorId] === poc.id}
+                      onChange={() =>
+                        handlePrimaryPocSelect(selectedVendorId, poc.id)
+                      }
+                    />
+                  </td>
                   <td>
                     {isEditing === index ? (
                       <input
@@ -543,6 +567,7 @@ const Vendors = () => {
               ))}
               {isAdding && (
                 <tr>
+                  <td></td>
                   <td>
                     <input
                       type="text"

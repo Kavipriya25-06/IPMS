@@ -721,54 +721,61 @@ const VendorDetails = () => {
           </tr>
         </thead>
         <tbody>
-          {selectedVendorData.map((product, index) => (
-            <tr key={product.product_id || index}>
-              <td>{product.product_id}</td>
-              <td>{product.product_description}</td>
-              <td>{product.unit_of_measurement}</td>
-              <td>{getComponentId(product.product_id)}</td>
-              <td
-                onClick={() => handlePriceClick(product.product_id)}
-                style={{ cursor: "pointer", textDecoration: "underline" }}
-              >
-                {product.last_price}
-              </td>
-              <td>{product.tax}</td>
-              <td>
-                {product.img ? (
-                  <img
-                    src={product.img}
-                    alt="Product"
-                    style={{ width: "50px", height: "50px" }}
-                  />
-                ) : (
-                  "No Image"
-                )}
-              </td>
-              <td>
-                {product.attachments ? (
-                  <a
-                    href={product.attachments}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    View Attachment
-                  </a>
-                ) : (
-                  "No Attachments"
-                )}
-              </td>
-              <td>
-                <button onClick={() => handleEditClickVendorMaster(index)}>
-                  Edit
-                </button>
+          {selectedVendorData.map((product, index) => {
+            const isAddedToComp = !!componentMasterData[product.product_id]; // Check if the product is in component master
 
-                <button onClick={() => handleAddComponent(product)}>
-                  Add to Comp
-                </button>
-              </td>
-            </tr>
-          ))}
+            return (
+              <tr key={product.product_id || index}>
+                <td>{product.product_id}</td>
+                <td>{product.product_description}</td>
+                <td>{product.unit_of_measurement}</td>
+                <td>{getComponentId(product.product_id)}</td>
+                <td
+                  onClick={() => handlePriceClick(product.product_id)}
+                  style={{ cursor: "pointer", textDecoration: "underline" }}
+                >
+                  {product.last_price}
+                </td>
+                <td>{product.tax}</td>
+                <td>
+                  {product.img ? (
+                    <img
+                      src={product.img}
+                      alt="Product"
+                      style={{ width: "50px", height: "50px" }}
+                    />
+                  ) : (
+                    "No Image"
+                  )}
+                </td>
+                <td>
+                  {product.attachments ? (
+                    <a
+                      href={product.attachments}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      View Attachment
+                    </a>
+                  ) : (
+                    "No Attachments"
+                  )}
+                </td>
+                <td>
+                  <button onClick={() => handleEditClickVendorMaster(index)}>
+                    Edit
+                  </button>
+
+                  <button
+                    onClick={() => handleAddComponent(product)}
+                    disabled={isAddedToComp}
+                  >
+                    {isAddedToComp ? "Already Added" : "Add to Comp"}
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
       <button onClick={handleBackClick}>Back to Vendor List</button>
