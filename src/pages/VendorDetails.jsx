@@ -407,7 +407,7 @@ const VendorDetails = () => {
             placeholder="Product Description"
             value={newProduct.product_description}
             onChange={(e) =>
-              handleInputChange(null, "product_description", e.target.value)
+              handleInputChange("product_description", e.target.value)
             }
           />
           <input
@@ -415,7 +415,7 @@ const VendorDetails = () => {
             placeholder="Last Price"
             value={newProduct.last_price}
             onChange={(e) =>
-              handleInputChange(null, "last_price", e.target.value)
+              handleInputChange("last_price", e.target.value)
             }
           />
 
@@ -423,13 +423,13 @@ const VendorDetails = () => {
             type="number"
             placeholder="Tax %"
             value={newProduct.tax}
-            onChange={(e) => handleInputChange(null, "tax", e.target.value)}
+            onChange={(e) => handleInputChange("tax", e.target.value)}
           />
 
           <select
             value={newProduct.category}
             onChange={(e) =>
-              handleInputChange(null, "category", e.target.value)
+              handleInputChange("category", e.target.value)
             }
           >
             <option value="">Select Category</option>
@@ -443,7 +443,7 @@ const VendorDetails = () => {
           <select
             value={newProduct.component_type}
             onChange={(e) =>
-              handleInputChange(null, "component_type", e.target.value)
+              handleInputChange("component_type", e.target.value)
             }
           >
             <option value="">Select Component Type</option>
@@ -459,7 +459,7 @@ const VendorDetails = () => {
             placeholder="Component Specification"
             value={newProduct.component_specification}
             onChange={(e) =>
-              handleInputChange(null, "component_specification", e.target.value)
+              handleInputChange("component_specification", e.target.value)
             }
           />
           <input
@@ -467,17 +467,17 @@ const VendorDetails = () => {
             placeholder="Unit of Measurement"
             value={newProduct.unit_of_measurement}
             onChange={(e) =>
-              handleInputChange(null, "unit_of_measurement", e.target.value)
+              handleInputChange("unit_of_measurement", e.target.value)
             }
           />
           <input
             type="file"
-            onChange={(e) => handleInputChange(null, "img", e.target.files[0])}
+            onChange={(e) => handleInputChange("img", e.target.files[0])}
           />
           <input
             type="file"
             onChange={(e) =>
-              handleInputChange(null, "attachments", e.target.files[0])
+              handleInputChange("attachments", e.target.files[0])
             }
           />
           <button onClick={handleAddNewProduct}>Save Product</button>
