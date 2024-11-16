@@ -101,7 +101,7 @@ const VendorDetails = () => {
   }, [vendorId]);
 
   const getComponentId = (product_id) => {
-    return componentMasterData[product_id] || "null";
+    return componentMasterData[product_id] || "-";
   };
 
   // Fetch price history for a product

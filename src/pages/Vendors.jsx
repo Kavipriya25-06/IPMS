@@ -128,6 +128,23 @@ const Vendors = () => {
     category: "",
   });
 
+  // Validating the email and phone number for the POC
+
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePhoneNumber = (phoneNumber) => {
+    const phoneRegex = /^[0-9]{10}$/; // Adjust this based on your phone number format
+    return phoneRegex.test(phoneNumber);
+  };
+
+  const [errors, setErrors] = useState({
+    email: "",
+    phone_number: "",
+  });
+
   // Handle input change for new POC
   const handleInputChange = (field, value) => {
     setNewPOC((prevPOC) => ({ ...prevPOC, [field]: value }));
@@ -336,16 +353,34 @@ const Vendors = () => {
           type="email"
           placeholder="Email"
           value={newSubVendor.email}
-          onChange={(e) => handleSubVendorInputChange("email", e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value;
+            handleSubVendorInputChange("email", value);
+            setErrors((prevErrors) => ({
+              ...prevErrors,
+              email: validateEmail(value) ? "" : "Invalid email address",
+            }));
+          }}
         />
+        {errors.email && <span className="error-message">{errors.email}</span>}
         <input
           type="text"
           placeholder="Phone Number"
           value={newSubVendor.phone_number}
-          onChange={(e) =>
-            handleSubVendorInputChange("phone_number", e.target.value)
-          }
+          onChange={(e) => {
+            const value = e.target.value;
+            handleSubVendorInputChange("phone_number", value);
+            setErrors((prevErrors) => ({
+              ...prevErrors,
+              phone_number: validatePhoneNumber(value)
+                ? ""
+                : "Phone number must be 10 digits",
+            }));
+          }}
         />
+        {errors.phone_number && (
+          <span className="error-message">{errors.phone_number}</span>
+        )}
         <input
           type="text"
           placeholder="Location"
@@ -458,7 +493,7 @@ const Vendors = () => {
           <table>
             <thead>
               <tr>
-                <th>Select</th>
+                <th>Default</th>
                 <th>POC Name</th>
                 <th>Email</th>
                 <th>Phone</th>
@@ -502,9 +537,15 @@ const Vendors = () => {
                       <input
                         type="email"
                         value={poc.email}
-                        onChange={(e) =>
-                          handleEditPocChange(poc.id, "email", e.target.value)
-                        }
+                        onChange={(e) => {
+                          handleEditPocChange(poc.id, "email", e.target.value);
+                          setErrors((prevErrors) => ({
+                            ...prevErrors,
+                            email: validateEmail(value)
+                              ? ""
+                              : "Invalid email address",
+                          }));
+                        }}
                       />
                     ) : (
                       poc.email
@@ -515,13 +556,19 @@ const Vendors = () => {
                       <input
                         type="text"
                         value={poc.phone_number}
-                        onChange={(e) =>
+                        onChange={(e) => {
                           handleEditPocChange(
                             poc.id,
                             "phone_number",
                             e.target.value
-                          )
-                        }
+                          );
+                          setErrors((prevErrors) => ({
+                            ...prevErrors,
+                            phone_number: validatePhoneNumber(value)
+                              ? ""
+                              : "Phone number must be 10 digits",
+                          }));
+                        }}
                       />
                     ) : (
                       poc.phone_number
@@ -605,20 +652,42 @@ const Vendors = () => {
                       type="email"
                       placeholder="Email"
                       value={newPOC.email}
-                      onChange={(e) =>
-                        handleInputChange("email", e.target.value)
-                      }
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        handleInputChange("email", value);
+                        setErrors((prevErrors) => ({
+                          ...prevErrors,
+                          email: validateEmail(value)
+                            ? ""
+                            : "Invalid email address",
+                        }));
+                      }}
                     />
+                    {errors.email && (
+                      <span className="error-message">{errors.email}</span>
+                    )}
                   </td>
                   <td>
                     <input
                       type="text"
                       placeholder="Phone"
                       value={newPOC.phone_number}
-                      onChange={(e) =>
-                        handleInputChange("phone_number", e.target.value)
-                      }
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        handleInputChange("phone_number", value);
+                        setErrors((prevErrors) => ({
+                          ...prevErrors,
+                          phone_number: validatePhoneNumber(value)
+                            ? ""
+                            : "Phone number must be 10 digits",
+                        }));
+                      }}
                     />
+                    {errors.phone_number && (
+                      <span className="error-message">
+                        {errors.phone_number}
+                      </span>
+                    )}
                   </td>
                   <td>
                     <input

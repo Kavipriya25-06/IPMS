@@ -55,12 +55,16 @@ const BOM = () => {
         </thead>
         <tbody>
           {boms.map((bom) => (
-            <tr
-              key={bom.bom_id}
-              onClick={() => handleBomClick(bom.bom_id)}
-              style={{ cursor: "pointer" }}
-            >
-              <td>{bom.bom_id}</td>
+            <tr key={bom.bom_id}>
+              <td
+                onClick={() => handleBomClick(bom.bom_id)}
+                style={{
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                }}
+              >
+                {bom.bom_id}
+              </td>
               <td>{bom.bom_name}</td>
               <td>{bomQuantities[bom.bom_id] || 0}</td>
               <td>{bom.created_by}</td>

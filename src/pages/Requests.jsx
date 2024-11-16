@@ -39,8 +39,16 @@ const Requests = () => {
         </thead>
         <tbody>
           {requests.map((request) => (
-            <tr key={request.request_id} onClick={() => handleRequestClick(request.request_id)}>
-              <td>{request.request_id}</td>
+            <tr key={request.request_id}>
+              <td
+                onClick={() => handleRequestClick(request.request_id)}
+                style={{
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                }}
+              >
+                {request.request_id}
+              </td>
               {/* <td>{request.bom_id}</td> */}
               <td>{request.requester_name}</td>
               <td>{request.date}</td>
