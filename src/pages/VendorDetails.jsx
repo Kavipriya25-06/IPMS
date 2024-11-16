@@ -244,11 +244,29 @@ const VendorDetails = () => {
 
   const handleEditClickVendorMaster = (index) => {
     const productToEdit = selectedVendorData[index];
-    setEditProduct({ ...productToEdit });
+    // Exclude `img` and `attachments` from the product data
+    const {
+      img, // Destructure to exclude
+      attachments, // Destructure to exclude
+      ...editableFields
+    } = productToEdit;
+    setEditProduct({ ...editableFields });
     setShowEditProductForm(true);
   };
 
   const handleSaveEditProduct = async () => {
+    // Prepare the payload by excluding `img` and `attachments`
+    const payload = {
+      product_id: editProduct.product_id,
+      product_description: editProduct.product_description,
+      last_price: editProduct.last_price,
+      category: editProduct.category,
+      component_type: editProduct.component_type,
+      component_specification: editProduct.component_specification,
+      unit_of_measurement: editProduct.unit_of_measurement,
+      tax: editProduct.tax,
+      vendor: editProduct.vendor,
+    };
     const formData = new FormData();
     Object.entries(editProduct).forEach(([key, value]) => {
       if (value !== null && value !== undefined) {
@@ -260,8 +278,13 @@ const VendorDetails = () => {
       const response = await fetch(
         `http://127.0.0.1:8000/vendor_master/${editProduct.product_id}/`,
         {
+          // method: "PUT",
+          // body: formData,
           method: "PUT",
-          body: formData,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
         }
       );
 
@@ -414,9 +437,7 @@ const VendorDetails = () => {
             type="number"
             placeholder="Last Price"
             value={newProduct.last_price}
-            onChange={(e) =>
-              handleInputChange("last_price", e.target.value)
-            }
+            onChange={(e) => handleInputChange("last_price", e.target.value)}
           />
 
           <input
@@ -428,9 +449,7 @@ const VendorDetails = () => {
 
           <select
             value={newProduct.category}
-            onChange={(e) =>
-              handleInputChange("category", e.target.value)
-            }
+            onChange={(e) => handleInputChange("category", e.target.value)}
           >
             <option value="">Select Category</option>
             <option value="Airframe">Airframe</option>
@@ -556,7 +575,7 @@ const VendorDetails = () => {
               handleInputChange("unit_of_measurement", e.target.value, true)
             }
           />
-          <input
+          {/* <input
             type="file"
             onChange={(e) => handleInputChange("img", e.target.files[0], true)}
           />
@@ -565,7 +584,38 @@ const VendorDetails = () => {
             onChange={(e) =>
               handleInputChange("attachments", e.target.files[0], true)
             }
-          />
+          /> */}
+
+          {/* Show existing image preview */}
+          <div>
+            <p>Current Image:</p>
+            {editProduct.img ? (
+              <img
+                src={`http://127.0.0.1:8000${editProduct.img}`}
+                alt="Product"
+                style={{ width: "100px", height: "100px" }}
+              />
+            ) : (
+              "No Image Available"
+            )}
+          </div>
+
+          {/* Show existing attachment preview */}
+          <div>
+            <p>Current Attachment:</p>
+            {editProduct.attachments ? (
+              <a
+                href={`http://127.0.0.1:8000${editProduct.attachments}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                View Attachment
+              </a>
+            ) : (
+              "No Attachments Available"
+            )}
+          </div>
+
           <button onClick={handleSaveEditProduct}>Save Changes</button>
           <button onClick={() => setShowEditProductForm(false)}>Cancel</button>
         </div>
@@ -740,7 +790,7 @@ const VendorDetails = () => {
                 <td>
                   {product.img ? (
                     <img
-                      src={product.img}
+                      src={`http://127.0.0.1:8000${product.img}`}
                       alt="Product"
                       style={{ width: "50px", height: "50px" }}
                     />
@@ -751,7 +801,7 @@ const VendorDetails = () => {
                 <td>
                   {product.attachments ? (
                     <a
-                      href={product.attachments}
+                      href={`http://127.0.0.1:8000${product.attachments}`}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
