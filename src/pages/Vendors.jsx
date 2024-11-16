@@ -36,7 +36,7 @@ const Vendors = () => {
     email: "",
     phone_number: "",
     location: "",
-    category: "",
+    // category: "",
   });
   const [newVendorId, setNewVendorId] = useState(null);
 
@@ -125,7 +125,7 @@ const Vendors = () => {
     email: "",
     phone_number: "",
     location: "",
-    category: "",
+    // category: "",
   });
 
   // Validating the email and phone number for the POC
@@ -167,7 +167,7 @@ const Vendors = () => {
           email: "",
           phone_number: "",
           location: "",
-          category: "",
+          // category: "",
         });
         setIsAdding(false);
       } else {
@@ -239,7 +239,7 @@ const Vendors = () => {
           email: "",
           phone_number: "",
           location: "",
-          category: "",
+          // category: "",
         });
         setIsAddingSubVendor(false);
         fetchVendorData(); // Refresh the vendor list to show the new vendor and sub-vendor
@@ -389,7 +389,7 @@ const Vendors = () => {
             handleSubVendorInputChange("location", e.target.value)
           }
         />
-        <select
+        {/* <select
           value={newSubVendor.category}
           onChange={(e) =>
             handleSubVendorInputChange("category", e.target.value)
@@ -401,7 +401,7 @@ const Vendors = () => {
           <option value="Electricals">Electricals</option>
           <option value="Electronics">Electronics</option>
           <option value="Payload">Payload</option>
-        </select>
+        </select> */}
         <button onClick={handleAddSubVendor}>Save Point of Contact</button>
         <button onClick={() => setIsAddingSubVendor(false)}>Cancel</button>
       </Modal>
@@ -413,7 +413,7 @@ const Vendors = () => {
             <th>Email</th>
             <th>Phone</th>
             <th>Location</th>
-            <th>Category</th>
+            {/* <th>Category</th> */}
             <th>Actions</th>
           </tr>
         </thead>
@@ -466,7 +466,7 @@ const Vendors = () => {
                 <td>{primaryPoc.email || "N/A"}</td>
                 <td>{primaryPoc.phone_number || "N/A"}</td>
                 <td>{primaryPoc.location || "N/A"}</td>
-                <td>{primaryPoc.category || "N/A"}</td>
+                {/* <td>{primaryPoc.category || "N/A"}</td> */}
                 <td>
                   {isEditingVendor !== vendor.vendor_id && (
                     <button
@@ -498,7 +498,7 @@ const Vendors = () => {
                 <th>Email</th>
                 <th>Phone</th>
                 <th>Location</th>
-                <th>Category</th>
+                {/* <th>Category</th> */}
                 <th>Actions</th>
               </tr>
             </thead>
@@ -591,7 +591,7 @@ const Vendors = () => {
                       poc.location
                     )}
                   </td>
-                  <td>
+                  {/* <td>
                     {isEditing === poc.id ? (
                       <select
                         value={poc.category}
@@ -613,7 +613,7 @@ const Vendors = () => {
                     ) : (
                       poc.category
                     )}
-                  </td>
+                  </td> */}
 
                   <td>
                     {isEditing === poc.id ? (
@@ -699,7 +699,7 @@ const Vendors = () => {
                       }
                     />
                   </td>
-                  <td>
+                  {/* <td>
                     <select
                       value={newPOC.category}
                       onChange={(e) =>
@@ -713,7 +713,7 @@ const Vendors = () => {
                       <option value="Electronics">Electronics</option>
                       <option value="Payload">Payload</option>
                     </select>
-                  </td>
+                  </td> */}
                   <td>
                     <button onClick={handleAddPOC}>Save</button>
                     <button onClick={() => setIsAdding(false)}>Cancel</button>
