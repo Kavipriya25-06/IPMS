@@ -36,6 +36,7 @@ const Vendors = () => {
     email: "",
     phone_number: "",
     location: "",
+    default_poc: true,
     // category: "",
   });
   const [newVendorId, setNewVendorId] = useState(null);
@@ -125,6 +126,7 @@ const Vendors = () => {
     email: "",
     phone_number: "",
     location: "",
+    default_poc: true,
     // category: "",
   });
 
@@ -152,6 +154,14 @@ const Vendors = () => {
 
   const handleAddPOC = async () => {
     try {
+
+      const isFirstPoc = !pocData.some((poc) => poc.vendor === selectedVendorId);
+      const payload = {
+        ...newPOC,
+        vendor: selectedVendorId,
+        default_poc: isFirstPoc, // Set default_poc to true if it's the first POC
+      };
+
       const response = await fetch("http://127.0.0.1:8000/vendor_sub_list/", {
         method: "POST",
         headers: {
@@ -167,6 +177,7 @@ const Vendors = () => {
           email: "",
           phone_number: "",
           location: "",
+          default_poc: true,
           // category: "",
         });
         setIsAdding(false);
@@ -239,6 +250,7 @@ const Vendors = () => {
           email: "",
           phone_number: "",
           location: "",
+          default_poc: true,
           // category: "",
         });
         setIsAddingSubVendor(false);
