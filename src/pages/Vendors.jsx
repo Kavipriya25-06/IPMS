@@ -77,11 +77,19 @@ const Vendors = () => {
     setShowPocPopup(true);
   };
 
-  const handlePrimaryPocSelect = (vendorId, pocId) => {
-    setPrimaryPocSelection((prevSelection) => ({
-      ...prevSelection,
-      [vendorId]: pocId, // Update only the POC for the specific vendor
-    }));
+  // const handlePrimaryPocSelect = (vendorId, pocId) => {
+  //   setPrimaryPocSelection((prevSelection) => ({
+  //     ...prevSelection,
+  //     [vendorId]: pocId, // Update only the POC for the specific vendor
+  //   }));
+  // };
+
+  // Get the default POC for a given vendor
+  const getDefaultPocForVendor = (vendorId) => {
+    const defaultPoc = pocData.find(
+      (poc) => poc.vendor === vendorId && poc.default_poc
+    );
+    return defaultPoc ? defaultPoc.point_of_contact : "N/A";
   };
 
   const handleEditPocChange = (pocId, field, value) => {
@@ -152,10 +160,48 @@ const Vendors = () => {
     setNewPOC((prevPOC) => ({ ...prevPOC, [field]: value }));
   };
 
+  // const handleAddPOC = async () => {
+  //   try {
+
+  //     const isFirstPoc = !pocData.some((poc) => poc.vendor === selectedVendorId);
+  //     const payload = {
+  //       ...newPOC,
+  //       vendor: selectedVendorId,
+  //       default_poc: isFirstPoc, // Set default_poc to true if it's the first POC
+  //     };
+
+  //     const response = await fetch("http://127.0.0.1:8000/vendor_sub_list/", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({ ...newPOC, vendor: selectedVendorId }),
+  //     });
+  //     if (response.ok) {
+  //       const addedPOC = await response.json();
+  //       setPocData([...pocData, addedPOC]);
+  //       setNewPOC({
+  //         point_of_contact: "",
+  //         email: "",
+  //         phone_number: "",
+  //         location: "",
+  //         default_poc: true,
+  //         // category: "",
+  //       });
+  //       setIsAdding(false);
+  //     } else {
+  //       console.error("Error adding POC:", response.statusText);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error adding POC:", error);
+  //   }
+  // };
+
   const handleAddPOC = async () => {
     try {
-
-      const isFirstPoc = !pocData.some((poc) => poc.vendor === selectedVendorId);
+      const isFirstPoc = !pocData.some(
+        (poc) => poc.vendor === selectedVendorId
+      );
       const payload = {
         ...newPOC,
         vendor: selectedVendorId,
@@ -167,8 +213,9 @@ const Vendors = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ ...newPOC, vendor: selectedVendorId }),
+        body: JSON.stringify(payload),
       });
+
       if (response.ok) {
         const addedPOC = await response.json();
         setPocData([...pocData, addedPOC]);
@@ -177,8 +224,7 @@ const Vendors = () => {
           email: "",
           phone_number: "",
           location: "",
-          default_poc: true,
-          // category: "",
+          default_poc: isFirstPoc,
         });
         setIsAdding(false);
       } else {
@@ -186,6 +232,41 @@ const Vendors = () => {
       }
     } catch (error) {
       console.error("Error adding POC:", error);
+    }
+  };
+
+  const handleDefaultPocChange = async (pocId) => {
+    try {
+      // Update all POCs for the vendor to set default_poc
+      const updatedPocData = pocData.map((poc) =>
+        poc.vendor === selectedVendorId
+          ? { ...poc, default_poc: poc.id === pocId }
+          : poc
+      );
+
+      setPocData(updatedPocData);
+
+      // Update backend
+      await Promise.all(
+        updatedPocData.map((poc) =>
+          fetch(`http://127.0.0.1:8000/vendor_sub_list/${poc.id}/`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              default_poc: poc.default_poc,
+              point_of_contact: poc.point_of_contact,
+              email: poc.email,
+              phone_number: poc.phone_number,
+              location: poc.location,
+              vendor: poc.vendor,
+            }),
+          })
+        )
+      );
+    } catch (error) {
+      console.error("Error updating default POC:", error);
     }
   };
 
@@ -433,6 +514,10 @@ const Vendors = () => {
           {vendorData.map((vendor) => {
             const vendorPocs = getVendorPocs(vendor.vendor_id);
             const selectedPocId = primaryPocSelection[vendor.vendor_id];
+            const defaultPoc = vendorPocs.find((poc) => poc.default_poc) || {};
+            const defaultPocDetails = pocData.find(
+              (poc) => poc.vendor === vendor.vendor_id && poc.default_poc
+            );
             const primaryPoc =
               vendorPocs.find((poc) => poc.id === selectedPocId) ||
               vendorPocs[0] ||
@@ -473,11 +558,11 @@ const Vendors = () => {
                   onClick={() => handlePocClick(vendor.vendor_id)}
                   style={{ cursor: "pointer", textDecoration: "underline" }}
                 >
-                  {primaryPoc.point_of_contact || "N/A"}
+                  {defaultPoc.point_of_contact || "N/A"}
                 </td>
-                <td>{primaryPoc.email || "N/A"}</td>
-                <td>{primaryPoc.phone_number || "N/A"}</td>
-                <td>{primaryPoc.location || "N/A"}</td>
+                <td>{defaultPoc.email || "N/A"}</td>
+                <td>{defaultPoc.phone_number || "N/A"}</td>
+                <td>{defaultPoc.location || "N/A"}</td>
                 {/* <td>{primaryPoc.category || "N/A"}</td> */}
                 <td>
                   {isEditingVendor !== vendor.vendor_id && (
@@ -521,10 +606,8 @@ const Vendors = () => {
                     <input
                       type="radio"
                       name={`primaryPoc-${selectedVendorId}`} // Scoped to the vendor
-                      checked={primaryPocSelection[selectedVendorId] === poc.id}
-                      onChange={() =>
-                        handlePrimaryPocSelect(selectedVendorId, poc.id)
-                      }
+                      checked={poc.default_poc}
+                      onChange={() => handleDefaultPocChange(poc.id)}
                     />
                   </td>
                   <td>
