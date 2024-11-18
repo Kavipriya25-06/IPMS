@@ -74,10 +74,24 @@ const RequestForm = () => {
   };
 
   const handleAddComponent = () => {
-    // Add a blank row with default values
+    // Get the list of component IDs that have already been selected
+    const selectedIds = selectedComponents.map(
+      (comp) => comp.component?.component_id
+    );
+  
+    // Check if all components are already added
+    const availableIds = availableComponents.map((comp) => comp.component_id);
+    const remainingIds = availableIds.filter((id) => !selectedIds.includes(id));
+  
+    if (remainingIds.length === 0) {
+      alert("All available components have already been added.");
+      return;
+    }
+  
+    // Add a blank row for selecting a new component
     setSelectedComponents([
       ...selectedComponents,
-      { component: null, quantity: 1, vendor: { vendor_name: "N/A" } }, // Check here
+      { component: null, quantity: 1, vendor: { vendor_name: "N/A" } },
     ]);
   };
 
@@ -95,39 +109,48 @@ const RequestForm = () => {
     const selectedComponent = availableComponents.find(
       (comp) => comp.component_id === componentId
     );
-    console.log("Fetched component id: ", componentId);
-
+  
+    if (!selectedComponent) {
+      alert("Invalid component selected.");
+      return;
+    }
+  
+    // Check if the component is already in the table
+    const isComponentAlreadySelected = selectedComponents.some(
+      (comp, i) =>
+        comp.component?.component_id === selectedComponent.component_id && i !== index
+    );
+  
+    if (isComponentAlreadySelected) {
+      alert("This component is already in the table.");
+      return;
+    }
+  
     const updatedComponents = [...selectedComponents];
     updatedComponents[index].component = selectedComponent;
-    // updatedComponents[index].component.id = 3;
-
-    console.log("Added component API response:", selectedComponent);
-
+  
     // Step 1: Find vendor_id from vendor_master using component_id
     const vendorData = vendorMaster.find(
-      (vendor) => vendor.product_id === selectedComponent.product_id // Vendor master has component_id as component
+      (vendor) => vendor.product_id === selectedComponent.product_id
     );
-    console.log("Selected components API response:", selectedComponents);
-    console.log("fetched vendor response:", vendorData);
-
+  
     // Step 2: Use vendor_id to find vendor_name from vendor_list
     if (vendorData) {
       const vendor = vendorList.find(
-        (v) => v.vendor_id === vendorData.vendor // Vendor master also has vendor_id as vendor
+        (v) => v.vendor_id === vendorData.vendor
       );
       updatedComponents[index].vendor = {
-        vendor_name: vendor ? vendor.vendor_name : "iruku",
+        vendor_name: vendor ? vendor.vendor_name : "N/A",
         vendor_id: vendor ? vendor.vendor_id : "",
         product_id: vendor ? vendor.product_id : "",
       };
     } else {
-      updatedComponents[index].vendor = { vendor_name: "illa" };
+      updatedComponents[index].vendor = { vendor_name: "N/A" };
     }
-
-    //updatedComponents[index].vendor_name = vendor ? vendor.product_id : "N/A";
+  
     setSelectedComponents(updatedComponents);
   };
-
+  
   // const bom_id_list = selectedBom ? selectedBom.bom_id : "";
   // const firstComponentId = selectedComponents[0]?.id || 3; // Default component added
 
@@ -207,29 +230,74 @@ const RequestForm = () => {
 
   return (
     <div>
-      <h1>Create a Request</h1>
-      <div>
-        <label>Requester Name:</label>
+    <div
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "flex-start",
+      height: "55vh",
+      paddingTop: "20px",
+    }}
+  >
+    <h1 style={{ marginBottom: "20px" }}>Create a Request</h1>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-start",
+        padding: "20px",
+        borderRadius: "5px",
+        boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+        width: "300px",
+      }}
+    >
+      <div style={{ marginBottom: "15px", width: "100%" }}>
+        <label style={{ display: "block", marginBottom: "5px" }}>
+          Requester Name:
+        </label>
         <input
           type="text"
           value={requesterName}
           onChange={(e) => setRequesterName(e.target.value)}
           placeholder="Enter requester name"
           required
+          style={{
+            width: "100%",
+            padding: "8px",
+            borderRadius: "4px",
+            border: "1px solid #ccc",
+          }}
         />
       </div>
-      <div>
-        <label>Date:</label>
+      <div style={{ marginBottom: "15px", width: "100%" }}>
+        <label style={{ display: "block", marginBottom: "5px" }}>Date:</label>
         <input
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
           required
+          style={{
+            width: "100%",
+            padding: "8px",
+            borderRadius: "4px",
+            border: "1px solid #ccc",
+          }}
         />
       </div>
-      <div>
-        <label>Select BOM:</label>
-        <select onChange={handleBomChange}>
+      <div style={{ marginBottom: "15px", width: "100%" }}>
+        <label style={{ display: "block", marginBottom: "5px" }}>
+          Select BOM:
+        </label>
+        <select
+          onChange={handleBomChange}
+          style={{
+            width: "100%",
+            padding: "8px",
+            borderRadius: "4px",
+            border: "1px solid #ccc",
+          }}
+        >
           <option value="">Select BOM</option>
           {boms.map((bom) => (
             <option key={bom.bom_id} value={bom.bom_id}>
@@ -238,6 +306,8 @@ const RequestForm = () => {
           ))}
         </select>
       </div>
+    </div>
+  </div>
 
       {selectedBom && (
         <div>
@@ -309,12 +379,44 @@ const RequestForm = () => {
               ))}
             </tbody>
           </table>
-          <button onClick={handleAddComponent}>Add Component</button>
+          <button onClick={handleAddComponent} 
+             style={{
+              padding: "10px 20px",
+              borderRadius: "5px",
+              border: "1px solid #ccc",
+              // backgroundColor: "#6c757d",
+              // color: "#fff",
+              cursor: "pointer",
+            }}>Add Component</button>
         </div>
       )}
 
-      <button onClick={handleSubmit}>Submit Request</button>
-      <button onClick={() => navigate("/")}>Save and exit</button>
+       <button
+      onClick={handleSubmit}
+      style={{
+        padding: "10px 20px",
+        borderRadius: "5px",
+        border: "1px solid #ccc",
+        // backgroundColor: "#007bff",
+        // color: "#fff",
+        cursor: "pointer",
+      }}
+    >
+      Submit Request
+    </button>
+    <button
+      onClick={() => navigate("/")}
+      style={{
+        padding: "10px 20px",
+        borderRadius: "5px",
+        border: "1px solid #ccc",
+        // backgroundColor: "#6c757d",
+        // color: "#fff",
+        cursor: "pointer",
+      }}
+    >
+      Save and Exit
+    </button>
     </div>
   );
 };

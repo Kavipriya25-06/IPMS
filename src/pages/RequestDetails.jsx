@@ -692,108 +692,172 @@ const RequestDetails = () => {
   const fetchCartItems = async () => {
     try {
       const response = await fetch("http://127.0.0.1:8000/cart/");
+      if (!response.ok) {
+        console.error("Error fetching cart items:", response.statusText);
+        alert("Failed to fetch cart items.");
+        return;
+      }
+  
       const data = await response.json();
-
-      const groupedByVendor = data.grouped_data.reduce((acc, vendorGroup) => {
-        const { vendor_id, vendor_name, requests } = vendorGroup;
-        acc[vendor_name] = acc[vendor_name] || [];
-        acc[vendor_name].push(
-          ...requests.map((request) => ({
-            ...request,
-            vendor_id,
-            vendor_name,
-          }))
-        );
-        return acc;
-      }, {});
-
-      setCartItems(groupedByVendor);
+  
+      // Set cart items directly from grouped data
+      setCartItems(data);
     } catch (error) {
       console.error("Error fetching cart items:", error);
+      alert("An error occurred while fetching cart items.");
     }
   };
 
-
   const handleOrder = async (detail) => {
-      if (!detail.vendor_name) {
-           alert("Please select a vendor for this component.");
-           return;
-         }
-    
-         const selectedVendor = vendorNames.find(
-           (vendor) => vendor.vendor_name === detail.vendor_name
-         );
-         const vendor_id = selectedVendor ? selectedVendor.vendor_id : null;
-    
-         if (!vendor_id) {
-           alert("Invalid vendor selected.");
-           return;
-         }
-
-           // Check if component is already in the cart for this vendor
-          if (cartItems[vendor_id] && cartItems[vendor_id][detail.component_id]) {
-            alert(`Component ${detail.component_id} is already in the cart.`);
-            return;
-          }
-    
-         const orderData = {
-           component_id: detail.component_id,
-           component_type: detail.component_type,
-           component_specification: detail.component_specification,
-           quantity: detail.qty,
-           request_id: requestId,
-           vendor_name: detail.vendor_name,
-           vendor_id: vendor_id,
-           category: detail.category,
-           unit_of_measurement: detail.unit_of_measurement,
-         };
-    
-         try {
-           const response = await fetch("http://127.0.0.1:8000/cart/", {
-             method: "POST",
-             headers: {
-               "Content-Type": "application/json",
-             },
-             body: JSON.stringify(orderData),
-           });
-    
-           if (response.ok) {
-             alert(`Component ${detail.component_id} added to cart.`);
-            // Update qty to 0 in frontend
-           setDetails((prevDetails) =>
-           prevDetails.map((d) =>
-            d.component_id === detail.component_id ? { ...d, qty: 0 } : d
-          )
-        );
-
-        // Update qty to 0 in backend request_master table
-         // Update qty to 0 and set required fields in the backend
-      const requestMasterPayload = {
-        qty: 0,
-        status: "Added to cart", // Set status as "Added to cart"
-        assign: true, // Set assign as true
-      };
-
-      const requestMasterResponse = await fetch(`http://127.0.0.1:8000/request_master/${requestId}/`, {
-        method: "PUT",
+    if (!detail.vendor_name) {
+      alert("Please select a vendor for this component.");
+      return;
+    }
+  
+    const selectedVendor = vendorNames.find(
+      (vendor) => vendor.vendor_name === detail.vendor_name
+    );
+    const vendor_id = selectedVendor ? selectedVendor.vendor_id : null;
+  
+    if (!vendor_id) {
+      alert("Invalid vendor selected.");
+      return;
+    }
+  
+    let productId = null;
+    let price = 0;
+    let tax = 0;
+  
+    try {
+      // Fetch product_id from the component API
+      const componentResponse = await fetch("http://127.0.0.1:8000/component/");
+      if (!componentResponse.ok) {
+        console.error("Error fetching component data.");
+        alert("Failed to fetch component data.");
+        return;
+      }
+  
+      const componentData = await componentResponse.json();
+      const component = componentData.find(
+        (comp) => comp.component_id === detail.component_id
+      );
+  
+      if (component) {
+        productId = component.product_id; // Extract product_id
+      } else {
+        alert(`Component data not found for component_id: ${detail.component_id}`);
+        return;
+      }
+  
+      // Fetch price and tax from the price table API
+      const priceTableResponse = await fetch("http://127.0.0.1:8000/price_tables/");
+      if (!priceTableResponse.ok) {
+        console.error("Error fetching price table data.");
+        alert("Failed to fetch price table data.");
+        return;
+      }
+  
+      const priceTableData = await priceTableResponse.json();
+      const priceEntry = priceTableData.find(
+        (entry) => entry.product === productId
+      );
+  
+      if (priceEntry) {
+        price = priceEntry.price;
+        tax = priceEntry.tax;
+      } else {
+        alert(`Price table data not found for product_id: ${productId}`);
+        return;
+      }
+    } catch (error) {
+      console.error("Error fetching required data:", error);
+      alert("An error occurred while fetching data.");
+      return;
+    }
+  
+    // Calculate total cost
+    const gstAmount = (price * tax) / 100;
+    const totalCost = (price + gstAmount) * detail.qty;
+  
+    // Prepare payload for cart API
+    const orderData = {
+      component_id: detail.component_id,
+      component_type: detail.component_type,
+      component_specification: detail.component_specification,
+      quantity: detail.qty,
+      request_id: detail.request_id,
+      vendor_name: detail.vendor_name,
+      vendor_id: vendor_id,
+      category: detail.category,
+      unit_of_measurement: detail.unit_of_measurement,
+      unit_price: price, // Add price as unit_price
+      GST: tax, // Add tax as GST
+      total_cost: totalCost, // Add calculated total cost
+      assign: true, // Set assign to true after adding to cart
+    };
+  
+    try {
+      const response = await fetch("http://127.0.0.1:8000/cart/", {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(requestMasterPayload),
+        body: JSON.stringify(orderData),
       });
-
-      if (requestMasterResponse.ok) {
-        fetchCartItems(); // Refresh the cart items
+  
+      if (response.ok) {
+        alert(`Component ${detail.component_id} added to cart.`);
+        
+        // Update the request_master API to mark the item as assigned
+        const updatePayload = {
+          request_id: detail.request_id,
+          component_id: detail.component_id,
+          status: detail.status,
+          vendor_id: vendor_id,
+          component_type: detail.component_type,
+          component_specification: detail.component_specification,
+          unit_of_measurement: detail.unit_of_measurement,
+          category: detail.category,
+          qty: 0, // Set quantity to 0
+          assign: true, // Mark as assigned
+        };
+  
+        const updateResponse = await fetch(
+          `http://127.0.0.1:8000/request_master/${detail.request_id}/${detail.id}/`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(updatePayload),
+          }
+        );
+  
+        if (!updateResponse.ok) {
+          const errorDetails = await updateResponse.json();
+          console.error("Error updating request master:", errorDetails);
+          alert(`Failed to update request master: ${errorDetails.error}`);
+          return;
+        }
+  
+        // Refresh cart and update UI
+        fetchCartItems();
+        setDetails((prevDetails) =>
+          prevDetails.map((d) =>
+            d.component_id === detail.component_id
+              ? { ...d, qty: 0, assign: true } // Update qty to 0 and assign to true
+              : d
+          )
+        );
       } else {
-        console.error("Error updating request master status:", requestMasterResponse.statusText);
+        const errorResponse = await response.json();
+        console.error("Error adding component to cart:", errorResponse);
+        alert(`Failed to add component to cart: ${JSON.stringify(errorResponse)}`);
       }
-    } else {
-      console.error("Error adding component to cart:", response.statusText);
+    } catch (error) {
+      console.error("Error posting to cart:", error);
     }
-  } catch (error) {
-    console.error("Error posting to cart:", error);
-  }
-};
+  };
     
 
 const handleAssign = async (componentId, qty) => {
@@ -845,23 +909,27 @@ const handleConfirmAssignment = async () => {
   setShowSerialPopup(false);
 
   try {
+    // Fetch the ID for the selected component's request master
+    const selectedDetail = details.find(
+      (detail) => detail.component_id === selectedComponent
+    );
+
+    if (!selectedDetail || !selectedDetail.id) {
+      console.error("Request ID not found for the selected component.");
+      alert("Error: Unable to find the request ID for the selected component.");
+      return;
+    }
+
+    const { id } = selectedDetail; // Extract the `id` from the selected detail
+    const requestId = selectedDetail.request_id; // Extract the `request_id` if needed
+
     // Update inventory serial numbers
     for (const serialNumber of selectedSerialNumbers) {
-      const selectedDetail = details.find(
-        (detail) => detail.component_id === selectedComponent
-      );
-
-      if (!selectedDetail) {
-        console.error("Component details not found.");
-        return;
-      }
-
       const inventoryPayload = {
         component: selectedComponent,
         serial_number: serialNumber,
         vendor: selectedDetail.vendor_name || "V_00001",
         com_id: selectedComponent,
-        // qty: 1,
         status: false, // Mark as assigned
       };
 
@@ -883,9 +951,9 @@ const handleConfirmAssignment = async () => {
       }
     }
 
-    // Fetch current qty from request master
+    // Fetch current qty from request master using the ID
     const requestMasterFetchResponse = await fetch(
-      `http://127.0.0.1:8000/request_master/${requestId}/`
+      `http://127.0.0.1:8000/request_master/${requestId}/${id}/`
     );
 
     if (!requestMasterFetchResponse.ok) {
@@ -895,7 +963,6 @@ const handleConfirmAssignment = async () => {
     }
 
     const requestMasterData = await requestMasterFetchResponse.json();
-    // const currentQty = requestMasterData.qty || 1; // Keep the current qty value
 
     // Prepare request master payload
     const requestMasterPayload = {
@@ -905,11 +972,12 @@ const handleConfirmAssignment = async () => {
     };
 
     console.log("Request ID:", requestId); // Debug
+    console.log("Request Master ID:", id); // Debug
     console.log("Request Master Payload:", requestMasterPayload); // Debug
 
     // Update request_master
     const requestMasterResponse = await fetch(
-      `http://127.0.0.1:8000/request_master/${requestId}/`,
+      `http://127.0.0.1:8000/request_master/${requestId}/${id}/`,
       {
         method: "PUT",
         headers: {
@@ -958,108 +1026,108 @@ const handleConfirmAssignment = async () => {
 
 
 
-const handleUnassign = async (componentId,newQty) => {
-  try {
-    const componentData = inventoryData[componentId];
-    const assignedSerials = componentData.serialNumbers.filter(
-      (sn) => sn.status === false
-    );
+// const handleUnassign = async (componentId,newQty) => {
+//   try {
+//     const componentData = inventoryData[componentId];
+//     const assignedSerials = componentData.serialNumbers.filter(
+//       (sn) => sn.status === false
+//     );
 
-    if (assignedSerials.length === 0) {
-      alert("No assigned serial numbers found to unassign.");
-      return;
-    }
+//     if (assignedSerials.length === 0) {
+//       alert("No assigned serial numbers found to unassign.");
+//       return;
+//     }
 
-    // Unassign each assigned serial number
-    for (const serial of assignedSerials) {
-      const inventoryPayload = {
-        component: componentId,
-        serial_number: serial.serialNumber,
-        vendor: componentData.vendor || "V_00001",
-        com_id: componentId,
-        // qty: 1,
-        status: true, // Reverting status to true in inventory
-      };
+//     // Unassign each assigned serial number
+//     for (const serial of assignedSerials) {
+//       const inventoryPayload = {
+//         component: componentId,
+//         serial_number: serial.serialNumber,
+//         vendor: componentData.vendor || "V_00001",
+//         com_id: componentId,
+//         // qty: 1,
+//         status: true, // Reverting status to true in inventory
+//       };
 
-      // Update each serial in inventory to set status back to true
-      const inventoryResponse = await fetch(
-        `http://127.0.0.1:8000/inventory/${serial.serialNumber}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(inventoryPayload),
-        }
-      );
+//       // Update each serial in inventory to set status back to true
+//       const inventoryResponse = await fetch(
+//         `http://127.0.0.1:8000/inventory/${serial.serialNumber}`,
+//         {
+//           method: "PUT",
+//           headers: {
+//             "Content-Type": "application/json",
+//           },
+//           body: JSON.stringify(inventoryPayload),
+//         }
+//       );
 
-      if (!inventoryResponse.ok) {
-        console.error("Error unassigning serial number in inventory.");
-        alert("Could not unassign the serial number. Please try again.");
-        return;
-      }
-    }
+//       if (!inventoryResponse.ok) {
+//         console.error("Error unassigning serial number in inventory.");
+//         alert("Could not unassign the serial number. Please try again.");
+//         return;
+//       }
+//     }
 
-    // Update request_master to reflect all quantities are unassigned
-    const updatedQty = componentData.qty ; // Recalculate the qty
-    const requestMasterPayload = {
-      request_id: requestId,
-      component_id: componentId,
-      bom_master_id: componentData.bom_master_id,
-      status: "Unassigned",
-      vendor_id: componentData.vendor || "V_00001",
-      component_type: componentData.component_type,
-      component_specification: componentData.component_specification,
-      unit_of_measurement: componentData.unit_of_measurement,
-      category: componentData.category,
-      bom_detail: componentData.bom_detail,
-      bom_name: componentData.bom_name,
-      quantity: componentData.quantity,
-      qty: newQty, // Set qty back with total after unassigning all serials
-      assign: false,
-    };
+//     // Update request_master to reflect all quantities are unassigned
+//     const updatedQty = componentData.qty ; // Recalculate the qty
+//     const requestMasterPayload = {
+//       request_id: requestId,
+//       component_id: componentId,
+//       bom_master_id: componentData.bom_master_id,
+//       status: "Unassigned",
+//       vendor_id: componentData.vendor || "V_00001",
+//       component_type: componentData.component_type,
+//       component_specification: componentData.component_specification,
+//       unit_of_measurement: componentData.unit_of_measurement,
+//       category: componentData.category,
+//       bom_detail: componentData.bom_detail,
+//       bom_name: componentData.bom_name,
+//       quantity: componentData.quantity,
+//       qty: newQty, // Set qty back with total after unassigning all serials
+//       assign: false,
+//     };
 
-    // Update request_master with the new qty and assign status
-    const requestMasterResponse = await fetch(
-      `http://127.0.0.1:8000/request_master/${requestId}/`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestMasterPayload),
-      }
-    );
+//     // Update request_master with the new qty and assign status
+//     const requestMasterResponse = await fetch(
+//       `http://127.0.0.1:8000/request_master/${requestId}/`,
+//       {
+//         method: "PUT",
+//         headers: {
+//           "Content-Type": "application/json",
+//         },
+//         body: JSON.stringify(requestMasterPayload),
+//       }
+//     );
 
-    if (requestMasterResponse.ok) {
-      setInventoryData((prevData) => {
-        const currentComponentData = prevData[componentId] || {};
-        const updatedSerialNumbers = currentComponentData.serialNumbers.map(
-          (sn) => (assignedSerials.includes(sn.serialNumber) ? { ...sn, status: true } : sn)
-        );
+//     if (requestMasterResponse.ok) {
+//       setInventoryData((prevData) => {
+//         const currentComponentData = prevData[componentId] || {};
+//         const updatedSerialNumbers = currentComponentData.serialNumbers.map(
+//           (sn) => (assignedSerials.includes(sn.serialNumber) ? { ...sn, status: true } : sn)
+//         );
 
-        return {
-          ...prevData,
-          [componentId]: {
-            ...currentComponentData,
-            qty: updatedQty, // Update with the new qty after unassigning all serials
-            serialNumbers: updatedSerialNumbers,
-          },
-        };
-      });
+//         return {
+//           ...prevData,
+//           [componentId]: {
+//             ...currentComponentData,
+//             qty: updatedQty, // Update with the new qty after unassigning all serials
+//             serialNumbers: updatedSerialNumbers,
+//           },
+//         };
+//       });
 
-      setAssignedComponents((prevAssigned) => ({
-        ...prevAssigned,
-        [componentId]: false,
-      }));
-    } else {
-      console.error("Error updating request master status.");
-      alert("Could not update the request master status.");
-    }
-  } catch (error) {
-    console.error("Error unassigning serial numbers:", error);
-  }
-};
+//       setAssignedComponents((prevAssigned) => ({
+//         ...prevAssigned,
+//         [componentId]: false,
+//       }));
+//     } else {
+//       console.error("Error updating request master status.");
+//       alert("Could not update the request master status.");
+//     }
+//   } catch (error) {
+//     console.error("Error unassigning serial numbers:", error);
+//   }
+// };
 
 
 
@@ -1072,7 +1140,6 @@ const handleUnassign = async (componentId,newQty) => {
     });
     setDetails(updatedDetails);
   };
-
 
 
   const toggleCartView = async () => {
@@ -1092,40 +1159,46 @@ const handleUnassign = async (componentId,newQty) => {
       {showCart ? (
         <div>
           <h3>Cart</h3>
-          {Object.keys(cartItems).length === 0 ? (
-            <p>Your cart is empty.</p>
-          ) : (
-            Object.keys(cartItems).map((vendorName) => (
-              <div key={vendorName}>
-                <h4>Vendor: {vendorName}</h4>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Component ID</th>
-                      <th>Component Type</th>
-                      <th>Specification</th>
-                      <th>Quantity</th>
-                      <th>Category</th>
-                      <th>Unit of Measurement</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {cartItems[vendorName].map((item, index) => (
-                      <tr key={index}>
-                        <td>{item.component_id}</td>
-                        <td>{item.component_type}</td>
-                        <td>{item.component_specification}</td>
-                        <td>{item.quantity}</td>
-                        <td>{item.category}</td>
-                        <td>{item.unit_of_measurement}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ))
-          )}
+    {cartItems.length === 0 ? (
+      <p>Your cart is empty.</p>
+    ) : (
+      cartItems.map((group, groupIndex) => (
+        <div key={group.vendor_id || groupIndex}>
+          <h4>Vendor: {group.vendor_name}</h4>
+          <table>
+            <thead>
+              <tr>
+                <th>Component ID</th>
+                <th>Component Type</th>
+                <th>Specification</th>
+                <th>Quantity</th>
+                <th>Category</th>
+                <th>Unit of Measurement</th>
+                <th>Unit Price</th>
+                <th>GST (%)</th>
+                <th>Total Cost</th>
+              </tr>
+            </thead>
+            <tbody>
+              {group.requests.map((item, index) => (
+                <tr key={index}>
+                  <td>{item.component_id}</td>
+                  <td>{item.component_type}</td>
+                  <td>{item.component_specification}</td>
+                  <td>{item.quantity}</td>
+                  <td>{item.category}</td>
+                  <td>{item.unit_of_measurement}</td>
+                  <td>{item.unit_price}</td>
+                  <td>{item.GST}</td>
+                  <td>{item.total_cost}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
+      ))
+    )}
+  </div>
       ) : (
         <>
           {details.length === 0 ? (
@@ -1178,29 +1251,64 @@ const handleUnassign = async (componentId,newQty) => {
                       <td>{detail.assign ? 0 : detail.qty}</td>
                      
                       <td>{availableQty}</td>
+
                       <td>
-                      {detail.assign || availableQty === 0 || detail.qty === 0 ? (
-                        <button
+                      {detail.assign || detail.qty === 0 ? (
+                          <button
+                          style={{
+                            padding: '10px 20px',
+                            fontSize: '14px',
+                            borderRadius: '5px',
+                            border: '1px solid #ccc',
+                            cursor: detail.assign ? 'pointer' : 'not-allowed',
+                            marginRight: '10px',
+                            width: '100px', // Fixed width
+                            height: '40px', // Fixed height
+                            textAlign: 'center', // Center-align text
+                            transition: 'background-color 0.3s ease',
+                          }}
                           onClick={() => handleUnassign(detail.component_id, detail.qty)}
-                          disabled={!detail.assign} // Disable if not assigned
+                          disabled={!detail.assign}
                         >
-                          Unassign
+                          Assigned
                         </button>
                       ) : (
                         <button
+                          style={{
+                            padding: '10px 20px',
+                            fontSize: '14px',
+                            borderRadius: '5px',
+                            border: '1px solid #ccc',
+                            cursor: availableQty < detail.qty || detail.qty === 0 || detail.assign ? 'not-allowed' : 'pointer',
+                            marginRight: '10px',
+                            width: '100px', // Fixed width
+                            height: '40px', // Fixed height
+                            textAlign: 'center', // Center-align text
+                            transition: 'background-color 0.3s ease',
+                          }}
                           onClick={() => handleAssign(detail.component_id, detail.qty)}
                           disabled={availableQty < detail.qty || detail.qty === 0 || detail.assign}
                         >
                           Assign
                         </button>
-                        )}
-                       <button
-                          onClick={() => handleOrder(detail)}
-                          disabled={detail.qty === 0}
-                        >
-                          Add to Cart
-                        </button>
-                      </td>
+                      )}
+                     <button
+                      style={{
+                        padding: '10px 20px',
+                        fontSize: '14px',
+                        borderRadius: '5px',
+                        border: '1px solid #ccc',
+                        cursor: detail.qty === 0 || detail.assign ? 'not-allowed' : 'pointer',
+                        // backgroundColor: detail.qty === 0 || detail.assign ? '#e0e0e0' : '#2196f3',
+                        // color: detail.qty === 0 || detail.assign ? '#a0a0a0' : '#ffffff',
+                        transition: 'background-color 0.3s ease',
+                      }}
+                      onClick={() => handleOrder(detail)}
+                      disabled={detail.qty === 0 || detail.assign}
+                    >
+                      {detail.assign ? 'Added to cart' : 'Add to Cart'}
+                    </button>
+                    </td>
                     </tr>
                   );
                 })}
