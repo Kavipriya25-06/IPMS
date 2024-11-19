@@ -613,7 +613,7 @@ const VendorDetails = () => {
               handleInputChange("product_description", e.target.value, true)
             }
           />
-          <input
+          {/* <input
             type="number"
             placeholder="Last Price"
             value={editProduct.last_price || ""}
@@ -626,7 +626,7 @@ const VendorDetails = () => {
             placeholder="Tax"
             value={editProduct.tax || ""}
             onChange={(e) => handleInputChange("tax", e.target.value, true)}
-          />
+          /> */}
           <select
             value={editProduct.category || ""}
             onChange={(e) =>
