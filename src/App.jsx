@@ -18,6 +18,9 @@ import BOMDetails from "./pages/BOMDetails";
 import "./App.css";
 import RequestForm from "./pages/RequestForm";
 import HomePage from "./pages/HomePage";
+import POOrderMaster from "./pages/POOrderMaster";
+import POOrderList from "./pages/POList";
+import PODetails from "./pages/PODetails";
 
 function App() {
   return (
@@ -70,6 +73,14 @@ function App() {
                 Requests
               </NavLink>
             </li>
+            <li>
+              <NavLink
+                to="/po"
+                className={({ isActive }) => (isActive ? "active" : "")}
+              >
+                PO Order List
+              </NavLink>
+            </li>
           </ul>
         </nav>
         <Routes>
@@ -83,6 +94,8 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="request-form" element={<RequestForm />} />
           <Route path="/requests/:requestId" element={<RequestDetails />} />
+          <Route path="/po" element={<POOrderList />} />
+          <Route path="/po/:poId" element={<PODetails />} />
         </Routes>
       </div>
     </Router>

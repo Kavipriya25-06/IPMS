@@ -250,8 +250,69 @@ const VendorDetails = () => {
       attachments, // Destructure to exclude
       ...editableFields
     } = productToEdit;
-    setEditProduct({ ...editableFields });
+    setEditProduct({ ...productToEdit });
     setShowEditProductForm(true);
+  };
+
+  const saveImage = async (index) => {
+    const formData = new FormData();
+    formData.append("img", selectedVendorData[index].img);
+
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/vendor_master/${selectedVendorData[index].product_id}/`, // Use a specific endpoint for updating the image
+        {
+          method: "PUT",
+          body: formData,
+        }
+      );
+
+      if (response.ok) {
+        const updatedProduct = await response.json();
+        setSelectedVendorData((prevState) => {
+          const updatedProducts = [...prevState];
+          updatedProducts[index] = { ...updatedProduct, isEditingImage: false };
+          return updatedProducts;
+        }); // Update state with the new image
+        alert("Image updated successfully!");
+      } else {
+        console.error("Failed to update image:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error updating image:", error);
+    }
+  };
+
+  const saveAttachment = async (index) => {
+    const formData = new FormData();
+    formData.append("attachments", selectedVendorData[index].attachments);
+
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/vendor_master/${selectedVendorData[index].product_id}/`, // Use a specific endpoint for updating the attachment
+        {
+          method: "PUT",
+          body: formData,
+        }
+      );
+
+      if (response.ok) {
+        const updatedProduct = await response.json();
+        setSelectedVendorData((prevState) => {
+          const updatedProducts = [...prevState];
+          updatedProducts[index] = {
+            ...updatedProduct,
+            isEditingAttachment: false,
+          };
+          return updatedProducts;
+        });
+        alert("Attachment updated successfully!");
+      } else {
+        console.error("Failed to update attachment:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error updating attachment:", error);
+    }
   };
 
   const handleSaveEditProduct = async () => {
@@ -303,6 +364,42 @@ const VendorDetails = () => {
     } catch (error) {
       console.error("Error updating product:", error);
     }
+  };
+
+  // Handler for updating the image
+  const handleImageChange = (index, file) => {
+    setSelectedVendorData((prevState) => {
+      const updatedProducts = [...prevState];
+      updatedProducts[index] = { ...updatedProducts[index], img: file };
+      return updatedProducts;
+    });
+  };
+
+  // Handler for updating the attachment
+  const handleAttachmentChange = (index, file) => {
+    setSelectedVendorData((prevState) => {
+      const updatedProducts = [...prevState];
+      updatedProducts[index] = { ...updatedProducts[index], attachments: file };
+      return updatedProducts;
+    });
+  };
+
+  // Enable edit field
+  const enableEditField = (index, field) => {
+    setSelectedVendorData((prevState) => {
+      const updatedProducts = [...prevState];
+      updatedProducts[index] = { ...updatedProducts[index], [field]: true };
+      return updatedProducts;
+    });
+  };
+
+  // Cancelling field
+  const cancelEditField = (index, field) => {
+    setSelectedVendorData((prevState) => {
+      const updatedProducts = [...prevState];
+      updatedProducts[index] = { ...updatedProducts[index], [field]: false };
+      return updatedProducts;
+    });
   };
 
   const handleAddNewProduct = async () => {
@@ -787,6 +884,7 @@ const VendorDetails = () => {
                   {product.last_price}
                 </td>
                 <td>{product.tax}</td>
+                {/* Image editing section */}
                 <td>
                   {product.img ? (
                     <img
@@ -797,7 +895,31 @@ const VendorDetails = () => {
                   ) : (
                     "No Image"
                   )}
+                  {product.isEditingImage ? (
+                    <>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) =>
+                          handleImageChange(index, e.target.files[0])
+                        }
+                      />
+                      <button onClick={() => saveImage(index)}>Save</button>
+                      <button
+                        onClick={() => cancelEditField(index, "isEditingImage")}
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => enableEditField(index, "isEditingImage")}
+                    >
+                      Edit Image
+                    </button>
+                  )}
                 </td>
+                {/* Attachment Editing Section */}
                 <td>
                   {product.attachments ? (
                     <a
@@ -809,6 +931,34 @@ const VendorDetails = () => {
                     </a>
                   ) : (
                     "No Attachments"
+                  )}
+                  {product.isEditingAttachment ? (
+                    <>
+                      <input
+                        type="file"
+                        onChange={(e) =>
+                          handleAttachmentChange(index, e.target.files[0])
+                        }
+                      />
+                      <button onClick={() => saveAttachment(index)}>
+                        Save
+                      </button>
+                      <button
+                        onClick={() =>
+                          cancelEditField(index, "isEditingAttachment")
+                        }
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() =>
+                        enableEditField(index, "isEditingAttachment")
+                      }
+                    >
+                      Edit Attachment
+                    </button>
                   )}
                 </td>
                 <td>
