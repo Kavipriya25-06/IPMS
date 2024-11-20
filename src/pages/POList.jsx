@@ -1,12 +1,9 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const POOrderList = () => {
   const [poOrders, setPOOrders] = useState([]); // State to store PO orders
-  const [statusMessage, setStatusMessage] = useState(""); // State to display the status message
-  const [showPopup, setShowPopup] = useState(false); // State to control popup visibility
-  const [statusInput, setStatusInput] = useState(""); // State to store status input
-  const [dateInput, setDateInput] = useState(""); // State to store date input
-  const [imageInput, setImageInput] = useState(null); // State to store uploaded image
+  const navigate = useNavigate(); // Navigation hook
 
   // Function to fetch PO orders from the API
   const fetchPOOrders = async () => {
@@ -15,8 +12,8 @@ const POOrderList = () => {
       const result = await response.json();
       console.log("API Response:", result);
 
-      if (result && result.message === "All POs retrieved successfully.") {
-        setPOOrders(result.data); // Use the array directly
+      if (Array.isArray(result)) {
+        setPOOrders(result); // Use the array directly
       } else {
         console.error("Unexpected API response format:", result);
         setPOOrders([]); // Reset to empty state if the response is invalid
@@ -31,28 +28,6 @@ const POOrderList = () => {
     fetchPOOrders();
   }, []);
 
-  // Handle button click to show popup
-  const handleButtonClick = (status) => {
-    setStatusInput(status);
-    setShowPopup(true);
-  };
-
-  // Handle form submission in the popup
-  const handleFormSubmit = (e) => {
-    e.preventDefault();
-    console.log("Date:", dateInput, "Status:", statusInput, "Image:", imageInput);
-
-    // Example: Update status logic here (API call if necessary)
-    setStatusMessage(
-      `Status updated to "${statusInput}" with date: ${dateInput} ${
-        imageInput ? "and an uploaded image." : ""
-      }`
-    );
-    setShowPopup(false); // Close the popup
-    setDateInput(""); // Clear inputs
-    setImageInput(null);
-  };
-
   // Render the table
   return (
     <div>
@@ -64,86 +39,29 @@ const POOrderList = () => {
           <thead>
             <tr>
               <th>PO ID</th>
-              <th>Component ID</th>
-              <th>Category</th>
-              <th>Component Type</th>
-              <th>Specification</th>
-              <th>UOM</th>
               <th>Vendor Name</th>
-              <th>Quantity</th>
-              <th>Unit Price</th>
-              <th>GST</th>
-              <th>Total Cost</th>
               <th>Status</th>
+              <th>Total Cost</th>
+              <th>Date</th>
             </tr>
           </thead>
           <tbody>
-            {poOrders.map((order, index) => (
-              <tr key={index}>
-                <td>{order.PO_id}</td>
-                <td>{order.cart_details.component_id}</td>
-                <td>{order.cart_details.category}</td>
-                <td>{order.cart_details.component_type}</td>
-                <td>{order.cart_details.component_specification}</td>
-                <td>{order.cart_details.unit_of_measurement}</td>
+            {poOrders.map((order) => (
+              <tr key={order.id}>
+                <td
+                  style={{ cursor: "pointer", textDecoration: "underline" }}
+                  onClick={() => navigate(`/po-details/${order.id}`)} // Navigate to PO details
+                >
+                  {order.id}
+                </td>
                 <td>{order.cart_details.vendor_name}</td>
-                <td>{order.cart_details.quantity}</td>
-                <td>{order.cart_details.unit_price}</td>
-                <td>{order.cart_details.GST}</td>
-                <td>{order.cart_details.total_cost}</td>
                 <td>{order.status}</td>
+                <td>{order.cart_details.total_cost}</td>
+                <td>{order.date}</td>
               </tr>
             ))}
           </tbody>
         </table>
-      )}
-
-      {/* Buttons below the table */}
-      <div style={{ marginTop: "20px" }}>
-        <button onClick={() => handleButtonClick("Order Placed")}>
-          Order Placed
-        </button>
-        <button onClick={() => handleButtonClick("Shipped")}>Shipped</button>
-        <button onClick={() => handleButtonClick("Received")}>Received</button>
-      </div>
-
-      {/* Status message */}
-      {statusMessage && <p style={{ marginTop: "10px" }}>{statusMessage}</p>}
-
-      {/* Popup for updating date, status, and image */}
-      {showPopup && (
-        <div className="popup">
-          <form onSubmit={handleFormSubmit}>
-            <h3>Update Status</h3>
-            <label>
-              Date:
-              <input
-                type="date"
-                value={dateInput}
-                onChange={(e) => setDateInput(e.target.value)}
-                required
-              />
-            </label>
-            <label>
-              Status:
-              <input type="text" value={statusInput} readOnly />
-            </label>
-            {statusInput === "Received" && (
-              <label>
-                Upload Image:
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setImageInput(e.target.files[0])}
-                />
-              </label>
-            )}
-            <button type="submit">Submit</button>
-            <button type="button" onClick={() => setShowPopup(false)}>
-              Cancel
-            </button>
-          </form>
-        </div>
       )}
     </div>
   );
