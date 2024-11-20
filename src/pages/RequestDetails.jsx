@@ -610,6 +610,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import CustomMessagebox from "./CustomMessageBox.jsx";
 
 const RequestDetails = () => {
   const { requestId } = useParams();
@@ -625,6 +626,8 @@ const RequestDetails = () => {
   const [assignedComponents, setAssignedComponents] = useState({}); // Track assigned components
   const [selectedSerialNumbers, setSelectedSerialNumbers] = useState([]);
   const [requiredQty, setRequiredQty] = useState(0); 
+  const [showMessageBox, setShowMessageBox] = useState(false);
+  const [messageBoxContent, setMessageBoxContent] = useState("");
   
 
   useEffect(() => {
@@ -710,7 +713,8 @@ const RequestDetails = () => {
 
   const handleOrder = async (detail) => {
     if (!detail.vendor_name) {
-      alert("Please select a vendor for this component.");
+      setMessageBoxContent("Please select a vendor for this component.");
+      setShowMessageBox(true);
       return;
     }
   
@@ -806,7 +810,8 @@ const RequestDetails = () => {
       });
   
       if (response.ok) {
-        alert(`Component ${detail.component_id} added to cart.`);
+        setMessageBoxContent(`Component ${detail.component_id} added to cart.`);
+        setShowMessageBox(true);
         
         // Update the request_master API to mark the item as assigned
         const updatePayload = {
@@ -1129,7 +1134,115 @@ const handleConfirmAssignment = async () => {
 //   }
 // };
 
+const handleCartOrder = async (item) => {
+  try {
+    // Step 1: Construct the payload for po_list
+    const payloadForPoList = {
+      status: "In Progress", // Order status
+      cart_id: item.id, // Use `item.id` as the cart_id
+    };
 
+    console.log("Payload to POST (po_list):", payloadForPoList); // Debug the payload
+
+    // POST request to the po_list API
+    const poListResponse = await fetch("http://127.0.0.1:8000/po_list/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payloadForPoList),
+    });
+
+    if (!poListResponse.ok) {
+      const error = await poListResponse.json();
+      console.error("Error from po_list API:", error);
+      alert(`Failed to place order in po_list: ${JSON.stringify(error)}`);
+      return;
+    }
+
+    // Extract the generated po_id from the response
+    const poListData = await poListResponse.json();
+    const PO_id = poListData.id; // Assuming the API returns an `id` field
+
+    console.log("Generated po_id:", PO_id); // Debug the po_id
+
+    // Step 2: Construct the payload for po_master
+    const payloadForPoMaster = {
+      PO_id, // Use the po_id from po_list response
+      status: "In Progress", // Order status
+      cart_id: item.id, // Use the same cart_id
+    };
+
+    console.log("Payload to POST (po_master):", payloadForPoMaster); // Debug the payload
+
+    // POST request to the po_master API
+    const poMasterResponse = await fetch("http://127.0.0.1:8000/po_master/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payloadForPoMaster),
+    });
+
+    if (!poMasterResponse.ok) {
+      const error = await poMasterResponse.json();
+      console.error("Error from po_master API:", error);
+      alert(`Failed to record order in po_master: ${JSON.stringify(error)}`);
+      return;
+    }
+
+    // Step 3: PUT to cart API to set `order_placed` to true
+    const cartDetailsResponse = await fetch(`http://127.0.0.1:8000/cart/${item.id}/`);
+    if (!cartDetailsResponse.ok) {
+      const error = await cartDetailsResponse.json();
+      console.error("Error retrieving cart details:", error);
+      alert(`Failed to retrieve cart details: ${JSON.stringify(error)}`);
+      return;
+    }
+
+    const cartDetails = await cartDetailsResponse.json();
+    console.log("Cart details retrieved:", cartDetails);
+
+    // Construct the PUT payload
+    const putPayload = {
+      ...cartDetails.requests[0], // Assuming a single request
+      vendor_id: cartDetails.vendor_id,
+      vendor_name: cartDetails.vendor_name,
+      order_placed: true, // Set order_placed to true
+    };
+
+    console.log("Payload to PUT (cart):", putPayload);
+
+    // PUT request to update cart
+    const cartResponse = await fetch(`http://127.0.0.1:8000/cart/${item.id}/`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(putPayload),
+    });
+
+    if (!cartResponse.ok) {
+      const error = await cartResponse.json();
+      console.error("Error updating cart API:", error);
+      alert(`Failed to update cart: ${JSON.stringify(error)}`);
+      return;
+    }
+
+    // Step 4: Update the UI to disable the Order button
+    setCartItems((prevCartItems) =>
+      prevCartItems.map((cartItem) =>
+        cartItem.id === item.id
+          ? { ...cartItem, order_placed: true }
+          : cartItem
+      )
+    );
+
+    alert("Order placed successfully!");
+  } catch (error) {
+    console.error("Error handling cart order:", error);
+    alert("An error occurred while processing the order.");
+  }
+};
+
+
+
+
+////////
 
   const handleVendorChange = (component_id, selectedVendorName) => {
     const updatedDetails = details.map((detail) => {
@@ -1155,6 +1268,14 @@ const handleConfirmAssignment = async () => {
       <button onClick={toggleCartView}>
         {showCart ? "Hide Cart" : "View Cart"}
       </button>
+
+       {/* Render CustomMessagebox when showMessageBox is true */}
+    {showMessageBox && (
+      <CustomMessagebox
+        message={messageBoxContent}
+        onClose={() => setShowMessageBox(false)}
+      />
+    )}
   
       {showCart ? (
         <div>
@@ -1177,6 +1298,7 @@ const handleConfirmAssignment = async () => {
                 <th>Unit Price</th>
                 <th>GST (%)</th>
                 <th>Total Cost</th>
+                <th>Order</th> {/* New column header for Order button */}
               </tr>
             </thead>
             <tbody>
@@ -1191,6 +1313,14 @@ const handleConfirmAssignment = async () => {
                   <td>{item.unit_price}</td>
                   <td>{item.GST}</td>
                   <td>{item.total_cost}</td>
+                  <td>
+                  <button
+                      onClick={() => handleCartOrder(item)}
+                      disabled={item.order_placed}
+                    >
+                      {item.order_placed ? "Order Placed" : "Place Order"}
+                    </button>
+                      </td>
                 </tr>
               ))}
             </tbody>
