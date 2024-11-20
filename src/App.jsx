@@ -20,6 +20,7 @@ import RequestForm from "./pages/RequestForm";
 import HomePage from "./pages/HomePage";
 import POOrderMaster from "./pages/POOrderMaster";
 import POOrderList from "./pages/POList";
+import Inward from "./pages/Inward";
 // import PODetails from "./pages/PODetails";
 
 function App() {
@@ -81,6 +82,14 @@ function App() {
                 PO Order List
               </NavLink>
             </li>
+            <li>
+              <NavLink
+                to="/inward"
+                className={({ isActive }) => (isActive ? "active" : "")}
+              >
+                Inward
+              </NavLink>
+            </li>
           </ul>
         </nav>
         <Routes>
@@ -96,6 +105,7 @@ function App() {
           <Route path="/requests/:requestId" element={<RequestDetails />} />
           <Route path="/po-list" element={<POOrderList />} />
           <Route path="/po-details/:poId" element={<POOrderMaster />} />
+          <Route path="/inward" element={<Inward />} />
         </Routes>
       </div>
     </Router>
