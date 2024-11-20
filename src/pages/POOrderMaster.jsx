@@ -187,10 +187,6 @@
 
 // export default POOrderMaster;
 
-
-
-
-
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
@@ -251,27 +247,112 @@ const POOrderMaster = () => {
   };
 
   // Update Order Status
+  // const updateOrderStatus = async (status) => {
+  //   if (!poDetails) return;
+
+  //   try {
+  //     const payload = {
+  //       order_placed_status:
+  //         status === "Order Placed"
+  //           ? "Ordered"
+  //           : orderStatus?.order_placed_status || "",
+  //       order_placed_date_time:
+  //         status === "Order Placed"
+  //           ? new Date().toISOString()
+  //           : orderStatus?.order_placed_date_time || null,
+  //       customer_status:
+  //         status === "Shipped" ? "Shipped" : orderStatus?.customer_status || "",
+  //       customer_date_time:
+  //         status === "Shipped"
+  //           ? new Date().toISOString()
+  //           : orderStatus?.customer_date_time || null,
+  //       received_status:
+  //         status === "Received"
+  //           ? "Received"
+  //           : orderStatus?.received_status || "",
+  //       received_date:
+  //         status === "Received"
+  //           ? new Date().toISOString()
+  //           : orderStatus?.received_date || null,
+  //       po_master_id: poDetails.id,
+  //     };
+
+  //     const method = orderStatus ? "PUT" : "POST";
+  //     const apiUrl = orderStatus
+  //       ? `http://127.0.0.1:8000/order_view/${orderStatus.id}/`
+  //       : `http://127.0.0.1:8000/order_view/`;
+
+  //     const response = await fetch(apiUrl, {
+  //       method,
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify(payload),
+  //     });
+  //     console.log("Response from order status",response)
+
+  //     if (response.ok) {
+  //       console.log(`${status} status updated successfully.`);
+  //       fetchOrderStatus(); // Refresh the order status
+  //     } else {
+  //       console.error("Error updating status:", response.statusText);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error updating order status:", error);
+  //   }
+  // };
+
   const updateOrderStatus = async () => {
     if (!poDetails) return;
+
     try {
+      // Construct the payload based on the statusInput
       const payload = {
-        order_placed_status: statusInput === "Order Placed" ? "Ordered" : "",
+        order_placed_status:
+          statusInput === "Order Placed"
+            ? "Ordered"
+            : orderStatus?.order_placed_status || "",
         order_placed_date_time:
-          statusInput === "Order Placed" ? new Date().toISOString() : null,
-        customer_status: statusInput === "Shipped" ? "Shipped" : "",
+          statusInput === "Order Placed"
+            ? new Date().toISOString()
+            : orderStatus?.order_placed_date_time || null,
+        customer_status:
+          statusInput === "Shipped"
+            ? "Shipped"
+            : orderStatus?.customer_status || "",
         customer_date_time:
-          statusInput === "Shipped" ? new Date().toISOString() : null,
-        received_status: statusInput === "Received" ? "Received" : "",
+          statusInput === "Shipped"
+            ? new Date().toISOString()
+            : orderStatus?.customer_date_time || null,
+        received_status:
+          statusInput === "Received"
+            ? "Received"
+            : orderStatus?.received_status || "",
         received_date:
-          statusInput === "Received" ? new Date().toISOString() : null,
-        po_master_id: poDetails.id,
+          statusInput === "Received"
+            ? new Date().toISOString()
+            : orderStatus?.received_date || null,
+        po_master_id: poDetails.id, // This field should match the API requirements
       };
 
+      console.log("Payload being sent:", payload);
+
+      // Determine method and URL based on whether the orderStatus already exists
       const method = orderStatus ? "PUT" : "POST";
       const apiUrl = orderStatus
-        ? `http://127.0.0.1:8000/order_view/${orderStatus.id}/`
+        ? `http://127.0.0.1:8000/order_view/${orderStatus.id}`
         : `http://127.0.0.1:8000/order_view/`;
 
+      // Verify existence with a GET request
+      if (method === "PUT") {
+        const verifyResponse = await fetch(apiUrl);
+        if (!verifyResponse.ok) {
+          console.error("Resource not found for PUT request:", apiUrl);
+          return;
+        }
+      }
+
+      // Make the API call
       const response = await fetch(apiUrl, {
         method,
         headers: {
@@ -279,13 +360,15 @@ const POOrderMaster = () => {
         },
         body: JSON.stringify(payload),
       });
-      console.log("The response",response);
+
+      console.log("Response from order status:", response);
 
       if (response.ok) {
         console.log(`${statusInput} status updated successfully.`);
         fetchOrderStatus(); // Refresh the order status
       } else {
-        console.error("Error updating status:", response.statusText);
+        const errorResponse = await response.json();
+        console.error("Error updating status:", errorResponse);
       }
     } catch (error) {
       console.error("Error updating order status:", error);
@@ -316,15 +399,7 @@ const POOrderMaster = () => {
     setImageInput(null);
   };
 
-  if (loading) {
-    return <p>Loading PO Details...</p>;
-  }
-
-  if (error) {
-    return <p>Error: {error}</p>;
-  }
-
-  if (!poDetails) {
+  if (!poDetails || !poDetails.cart_details) {
     return <p>No details found for this PO.</p>;
   }
 
@@ -359,7 +434,12 @@ const POOrderMaster = () => {
             <td>{poDetails.cart_details.unit_price}</td>
             <td>{poDetails.cart_details.GST}</td>
             <td>{poDetails.cart_details.total_cost}</td>
-            <td>{orderStatus?.received_status || orderStatus?.customer_status || orderStatus?.order_placed_status || "Pending"}</td>
+            <td>
+              {orderStatus?.received_status ||
+                orderStatus?.customer_status ||
+                orderStatus?.order_placed_status ||
+                "Pending"}
+            </td>
           </tr>
         </tbody>
       </table>
