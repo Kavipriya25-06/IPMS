@@ -215,6 +215,8 @@
 // };
 
 // export default Inventory;
+
+
 import React, { useState, useEffect } from "react";
 // import config from "../Config"; // Import config for API endpoints
 

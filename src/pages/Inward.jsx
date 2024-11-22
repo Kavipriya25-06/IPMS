@@ -486,6 +486,8 @@ const Inward = () => {
               <td>{item.quality_check}</td>
               <td>
                 <button onClick={() => handleQCClick(item)}>QC</button>
+                {/* <button >Generate SN</button> */}
+                <button>Move to Inventory</button>
               </td>
             </tr>
           ))}
