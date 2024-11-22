@@ -1,205 +1,17 @@
-// import React, { useEffect, useState } from "react";
-// import { useParams } from "react-router-dom";
-
-// const POOrderMaster = () => {
-//   const { poId } = useParams(); // Extract PO ID from the route
-//   const [poDetails, setPODetails] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState(null);
-//   const [showPopup, setShowPopup] = useState(false);
-//   const [statusInput, setStatusInput] = useState("");
-//   const [dateInput, setDateInput] = useState("");
-//   const [imageInput, setImageInput] = useState(null);
-
-//   const fetchPODetails = async () => {
-//     try {
-//       const response = await fetch("http://127.0.0.1:8000/po_master/");
-//       const result = await response.json();
-
-//       if (Array.isArray(result)) {
-//         const filteredPO = result.filter((order) => order.PO_id === poId);
-//         if (filteredPO.length > 0) {
-//           setPODetails(filteredPO);
-//         } else {
-//           setError("No details found for this PO ID.");
-//         }
-//       } else {
-//         console.error("Unexpected API response format:", result);
-//         setError("Failed to retrieve PO details.");
-//       }
-//     } catch (error) {
-//       console.error("Error fetching PO details:", error);
-//       setError(error.message);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   useEffect(() => {
-//     fetchPODetails();
-//   }, [poId]);
-
-//   const handleButtonClick = (status) => {
-//     setStatusInput(status);
-//     setShowPopup(true);
-//   };
-
-//   const handleFormSubmit = async (e) => {
-//     e.preventDefault();
-//     console.log(
-//       "Date:",
-//       dateInput,
-//       "Status:",
-//       statusInput,
-//       "Image:",
-//       imageInput
-//     );
-
-//     // Add your API update logic here
-//     // Example: Send a PUT request to update the PO status
-//     try {
-//       const formData = new FormData();
-//       formData.append("status", statusInput);
-//       formData.append("date", dateInput);
-//       if (imageInput) {
-//         formData.append("image", imageInput);
-//       }
-
-//       const response = await fetch(
-//         `http://127.0.0.1:8000/po_master/${poId}/update/`,
-//         {
-//           method: "PUT",
-//           body: formData,
-//         }
-//       );
-
-//       if (response.ok) {
-//         console.log("Status updated successfully");
-//         fetchPODetails(); // Refresh PO details
-//       } else {
-//         console.error("Error updating status:", response.statusText);
-//       }
-//     } catch (error) {
-//       console.error("Error submitting form:", error);
-//     }
-
-//     setShowPopup(false);
-//     setDateInput("");
-//     setImageInput(null);
-//   };
-
-//   if (loading) {
-//     return <p>Loading PO Details...</p>;
-//   }
-
-//   if (error) {
-//     return <p>Error: {error}</p>;
-//   }
-
-//   if (poDetails.length === 0) {
-//     return <p>No details found for this PO.</p>;
-//   }
-
-//   return (
-//     <div>
-//       <h2>PO Details</h2>
-//       <table>
-//         <thead>
-//           <tr>
-//             <th>Component ID</th>
-//             <th>Category</th>
-//             <th>Component Type</th>
-//             <th>Specification</th>
-//             <th>UOM</th>
-//             <th>Vendor Name</th>
-//             <th>Quantity</th>
-//             <th>Unit Price</th>
-//             <th>GST</th>
-//             <th>Total Cost</th>
-//             <th>Status</th>
-//           </tr>
-//         </thead>
-//         <tbody>
-//           {poDetails.map((order, index) => (
-//             <tr key={index}>
-//               <td>{order.cart_details.component_id}</td>
-//               <td>{order.cart_details.category}</td>
-//               <td>{order.cart_details.component_type}</td>
-//               <td>{order.cart_details.component_specification}</td>
-//               <td>{order.cart_details.unit_of_measurement}</td>
-//               <td>{order.cart_details.vendor_name}</td>
-//               <td>{order.cart_details.quantity}</td>
-//               <td>{order.cart_details.unit_price}</td>
-//               <td>{order.cart_details.GST}</td>
-//               <td>{order.cart_details.total_cost}</td>
-//               <td>{order.status}</td>
-//             </tr>
-//           ))}
-//         </tbody>
-//       </table>
-//       {/* Buttons */}
-//       <div style={{ marginTop: "20px" }}>
-//         <button onClick={() => handleButtonClick("Order Placed")}>
-//           Order Placed
-//         </button>
-//         <button onClick={() => handleButtonClick("Shipped")}>Shipped</button>
-//         <button onClick={() => handleButtonClick("Received")}>Received</button>
-//       </div>
-
-//       {/* Popup for updating status */}
-//       {showPopup && (
-//         <div className="popup">
-//           <form onSubmit={handleFormSubmit}>
-//             <h3>Update Status</h3>
-//             <label>
-//               Date:
-//               <input
-//                 type="date"
-//                 value={dateInput}
-//                 onChange={(e) => setDateInput(e.target.value)}
-//                 required
-//               />
-//             </label>
-//             <label>
-//               Status:
-//               <input type="text" value={statusInput} readOnly />
-//             </label>
-//             {statusInput === "Received" && (
-//               <label>
-//                 Upload Image:
-//                 <input
-//                   type="file"
-//                   accept="image/*"
-//                   onChange={(e) => setImageInput(e.target.files[0])}
-//                 />
-//               </label>
-//             )}
-//             <button type="submit">Submit</button>
-//             <button type="button" onClick={() => setShowPopup(false)}>
-//               Cancel
-//             </button>
-//           </form>
-//         </div>
-//       )}
-//     </div>
-//   );
-// };
-
-// export default POOrderMaster;
-
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
 const POOrderMaster = () => {
   const { poId } = useParams(); // Extract PO ID from the route
-  const [poDetails, setPODetails] = useState(null);
-  const [orderStatus, setOrderStatus] = useState(null);
+  const [poDetails, setPODetails] = useState([]);
+  const [orderStatus, setOrderStatus] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
   const [statusInput, setStatusInput] = useState("");
   const [dateInput, setDateInput] = useState("");
   const [imageInput, setImageInput] = useState(null);
+  const [selectedComponent, setSelectedComponent] = useState(null);
 
   // Fetch PO Details
   const fetchPODetails = async () => {
@@ -208,19 +20,16 @@ const POOrderMaster = () => {
       const result = await response.json();
 
       if (Array.isArray(result)) {
-        const filteredPO = result.find((order) => order.PO_id === poId);
-        if (filteredPO) {
-          setPODetails(filteredPO);
-        } else {
+        const filteredPO = result.filter((order) => order.PO_id === poId);
+        setPODetails(filteredPO);
+        if (filteredPO.length === 0)
           setError("No details found for this PO ID.");
-        }
       } else {
-        console.error("Unexpected API response format:", result);
-        setError("Failed to retrieve PO details.");
+        throw new Error("Unexpected API response format");
       }
     } catch (error) {
-      console.error("Error fetching PO details:", error);
-      setError(error.message);
+      console.error("Error fetching PO details:", error.message);
+      setError("Failed to retrieve PO details.");
     } finally {
       setLoading(false);
     }
@@ -233,54 +42,61 @@ const POOrderMaster = () => {
       const result = await response.json();
 
       if (Array.isArray(result)) {
-        const filteredStatus = result.find(
-          (order) => order.po_master_id === poDetails.id
+        const filteredStatus = result.filter((status) =>
+          poDetails.some(
+            (po) =>
+              po.id === status.po_master_id 
+          )
         );
-        setOrderStatus(filteredStatus || null);
+        setOrderStatus(filteredStatus);
       } else {
-        console.error("Unexpected API response format:", result);
-        setOrderStatus(null);
+        throw new Error("Unexpected API response format");
       }
     } catch (error) {
-      console.error("Error fetching order status:", error);
+      console.error("Error fetching order status:", error.message);
     }
   };
 
   // Update Order Status
-  // const updateOrderStatus = async (status) => {
-  //   if (!poDetails) return;
+  // const updateOrderStatus = async () => {
+  //   if (!poDetails.length || !selectedComponent) return;
 
   //   try {
   //     const payload = {
   //       order_placed_status:
-  //         status === "Order Placed"
+  //         statusInput === "Order Placed"
   //           ? "Ordered"
-  //           : orderStatus?.order_placed_status || "",
+  //           : orderStatus[0]?.order_placed_status || "",
   //       order_placed_date_time:
-  //         status === "Order Placed"
+  //         statusInput === "Order Placed"
   //           ? new Date().toISOString()
-  //           : orderStatus?.order_placed_date_time || null,
+  //           : orderStatus[0]?.order_placed_date_time || null,
   //       customer_status:
-  //         status === "Shipped" ? "Shipped" : orderStatus?.customer_status || "",
+  //         statusInput === "Shipped"
+  //           ? "Shipped"
+  //           : orderStatus[0]?.customer_status || "",
   //       customer_date_time:
-  //         status === "Shipped"
+  //         statusInput === "Shipped"
   //           ? new Date().toISOString()
-  //           : orderStatus?.customer_date_time || null,
+  //           : orderStatus[0]?.customer_date_time || null,
   //       received_status:
-  //         status === "Received"
+  //         statusInput === "Received"
   //           ? "Received"
-  //           : orderStatus?.received_status || "",
+  //           : orderStatus[0]?.received_status || "",
   //       received_date:
-  //         status === "Received"
+  //         statusInput === "Received"
   //           ? new Date().toISOString()
-  //           : orderStatus?.received_date || null,
-  //       po_master_id: poDetails.id,
+  //           : orderStatus[0]?.received_date || null,
+  //       po_master_id: poDetails[0].id, // Assume the first PO for this operation
   //     };
 
-  //     const method = orderStatus ? "PUT" : "POST";
-  //     const apiUrl = orderStatus
-  //       ? `http://127.0.0.1:8000/order_view/${orderStatus.id}/`
-  //       : `http://127.0.0.1:8000/order_view/`;
+  //     console.log("Payload being sent:", payload);
+
+  //     const method = orderStatus.length > 0 ? "PUT" : "POST";
+  //     const apiUrl =
+  //       orderStatus.length > 0
+  //         ? `http://127.0.0.1:8000/order_view/${orderStatus[0].id}/`
+  //         : `http://127.0.0.1:8000/order_view/`;
 
   //     const response = await fetch(apiUrl, {
   //       method,
@@ -289,70 +105,78 @@ const POOrderMaster = () => {
   //       },
   //       body: JSON.stringify(payload),
   //     });
-  //     console.log("Response from order status",response)
 
   //     if (response.ok) {
-  //       console.log(`${status} status updated successfully.`);
+  //       console.log(`${statusInput} status updated successfully.`);
   //       fetchOrderStatus(); // Refresh the order status
   //     } else {
-  //       console.error("Error updating status:", response.statusText);
+  //       const errorDetails = await response.json();
+  //       console.error(
+  //         "Error updating status:",
+  //         response.statusText,
+  //         errorDetails
+  //       );
   //     }
   //   } catch (error) {
-  //     console.error("Error updating order status:", error);
+  //     console.error("Error updating order status:", error.message);
   //   }
   // };
 
   const updateOrderStatus = async () => {
-    if (!poDetails) return;
+    if (!poDetails.length || !selectedComponent) return;
 
     try {
-      // Construct the payload based on the statusInput
       const payload = {
         order_placed_status:
           statusInput === "Order Placed"
             ? "Ordered"
-            : orderStatus?.order_placed_status || "",
+            : orderStatus.find(
+                (status) => status.component_id === selectedComponent
+              )?.order_placed_status || "",
         order_placed_date_time:
           statusInput === "Order Placed"
-            ? new Date().toISOString()
-            : orderStatus?.order_placed_date_time || null,
+            ? dateInput // Use the selected date
+            : orderStatus.find(
+                (status) => status.component_id === selectedComponent
+              )?.order_placed_date_time || null,
         customer_status:
           statusInput === "Shipped"
             ? "Shipped"
-            : orderStatus?.customer_status || "",
+            : orderStatus.find(
+                (status) => status.component_id === selectedComponent
+              )?.customer_status || "",
         customer_date_time:
           statusInput === "Shipped"
-            ? new Date().toISOString()
-            : orderStatus?.customer_date_time || null,
+            ? dateInput // Use the selected date
+            : orderStatus.find(
+                (status) => status.component_id === selectedComponent
+              )?.customer_date_time || null,
         received_status:
           statusInput === "Received"
             ? "Received"
-            : orderStatus?.received_status || "",
+            : orderStatus.find(
+                (status) => status.component_id === selectedComponent
+              )?.received_status || "",
         received_date:
           statusInput === "Received"
-            ? new Date().toISOString()
-            : orderStatus?.received_date || null,
-        po_master_id: poDetails.id, // This field should match the API requirements
+            ? dateInput // Use the selected date
+            : orderStatus.find(
+                (status) => status.component_id === selectedComponent
+              )?.received_date || null,
+        po_master_id: poDetails[0].id, // Assume the first PO for this operation
+        component_id: selectedComponent, // Selected component for the operation
       };
 
       console.log("Payload being sent:", payload);
 
-      // Determine method and URL based on whether the orderStatus already exists
-      const method = orderStatus ? "PUT" : "POST";
-      const apiUrl = orderStatus
-        ? `http://127.0.0.1:8000/order_view/${orderStatus.id}`
+      const existingStatus = orderStatus.find(
+        (status) => status.component_id === selectedComponent
+      );
+      const method = existingStatus ? "PUT" : "POST";
+      const apiUrl = existingStatus
+        ? `http://127.0.0.1:8000/order_view/${existingStatus.id}/`
         : `http://127.0.0.1:8000/order_view/`;
 
-      // Verify existence with a GET request
-      if (method === "PUT") {
-        const verifyResponse = await fetch(apiUrl);
-        if (!verifyResponse.ok) {
-          console.error("Resource not found for PUT request:", apiUrl);
-          return;
-        }
-      }
-
-      // Make the API call
       const response = await fetch(apiUrl, {
         method,
         headers: {
@@ -361,17 +185,15 @@ const POOrderMaster = () => {
         body: JSON.stringify(payload),
       });
 
-      console.log("Response from order status:", response);
-
       if (response.ok) {
         console.log(`${statusInput} status updated successfully.`);
-        fetchOrderStatus(); // Refresh the order status
+        await fetchOrderStatus(); // Refresh the order status
       } else {
-        const errorResponse = await response.json();
-        console.error("Error updating status:", errorResponse);
+        const errorDetails = await response.json();
+        console.error("Error updating status:", errorDetails);
       }
     } catch (error) {
-      console.error("Error updating order status:", error);
+      console.error("Error updating order status:", error.message);
     }
   };
 
@@ -381,13 +203,14 @@ const POOrderMaster = () => {
   }, [poId]);
 
   useEffect(() => {
-    if (poDetails) {
+    if (poDetails.length > 0) {
       fetchOrderStatus();
     }
   }, [poDetails]);
 
-  const handleButtonClick = (status) => {
+  const handleButtonClick = (status, componentId) => {
     setStatusInput(status);
+    setSelectedComponent(componentId);
     setShowPopup(true);
   };
 
@@ -399,61 +222,132 @@ const POOrderMaster = () => {
     setImageInput(null);
   };
 
-  if (!poDetails || !poDetails.cart_details) {
-    return <p>No details found for this PO.</p>;
-  }
-
   return (
     <div>
       <h2>PO Details</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Component ID</th>
-            <th>Category</th>
-            <th>Component Type</th>
-            <th>Specification</th>
-            <th>UOM</th>
-            <th>Vendor Name</th>
-            <th>Quantity</th>
-            <th>Unit Price</th>
-            <th>GST</th>
-            <th>Total Cost</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>{poDetails.cart_details.component_id}</td>
-            <td>{poDetails.cart_details.category}</td>
-            <td>{poDetails.cart_details.component_type}</td>
-            <td>{poDetails.cart_details.component_specification}</td>
-            <td>{poDetails.cart_details.unit_of_measurement}</td>
-            <td>{poDetails.cart_details.vendor_name}</td>
-            <td>{poDetails.cart_details.quantity}</td>
-            <td>{poDetails.cart_details.unit_price}</td>
-            <td>{poDetails.cart_details.GST}</td>
-            <td>{poDetails.cart_details.total_cost}</td>
-            <td>
-              {orderStatus?.received_status ||
-                orderStatus?.customer_status ||
-                orderStatus?.order_placed_status ||
-                "Pending"}
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      {loading ? (
+        <p>Loading...</p>
+      ) : error ? (
+        <p>{error}</p>
+      ) : (
+        <table>
+          <thead>
+            <tr>
+              <th>Component ID</th>
+              <th>Category</th>
+              <th>Component Type</th>
+              <th>Specification</th>
+              <th>UOM</th>
+              <th>Vendor Name</th>
+              <th>Quantity</th>
+              <th>Unit Price</th>
+              <th>GST</th>
+              <th>Total Cost</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {poDetails.map((po, index) => (
+              <tr key={index}>
+                <td>{po.cart_details.component_id}</td>
+                <td>{po.cart_details.category}</td>
+                <td>{po.cart_details.component_type}</td>
+                <td>{po.cart_details.component_specification}</td>
+                <td>{po.cart_details.unit_of_measurement}</td>
+                <td>{po.cart_details.vendor_name}</td>
+                <td>{po.cart_details.quantity}</td>
+                <td>{po.cart_details.unit_price}</td>
+                <td>{po.cart_details.GST}</td>
+                <td>{po.cart_details.total_cost}</td>
+                <td>
+                  {orderStatus.some(
+                    (status) =>
+                      status.component_id === po.cart_details.component_id
+                  ) ? (
+                    orderStatus
+                      .filter(
+                        (status) =>
+                          status.component_id === po.cart_details.component_id
+                      )
+                      .map((status, idx) => (
+                        <div key={idx}>
+                          {status.received_status ||
+                            status.customer_status ||
+                            status.order_placed_status ||
+                            "Pending"}
+                        </div>
+                      ))
+                  ) : (
+                    <div>Pending</div>
+                  )}
+                </td>
 
-      {/* Buttons */}
-      <div style={{ marginTop: "20px" }}>
+                <td>
+                  <button
+                    onClick={() =>
+                      handleButtonClick(
+                        "Order Placed",
+                        po.cart_details.component_id
+                      )
+                    }
+                    disabled={orderStatus.some(
+                      (status) =>
+                        status.component_id === po.cart_details.component_id
+                    )}
+                  >
+                    Order Placed
+                  </button>
+                  <button
+                    onClick={() =>
+                      handleButtonClick("Shipped", po.cart_details.component_id)
+                    }
+                    disabled={
+                      !orderStatus.some(
+                        (status) =>
+                          status.component_id ===
+                            po.cart_details.component_id &&
+                          status.order_placed_status === "Ordered" &&
+                          status.customer_status !== "Shipped"
+                      )
+                    }
+                  >
+                    Shipped
+                  </button>
+                  <button
+                    onClick={() =>
+                      handleButtonClick(
+                        "Received",
+                        po.cart_details.component_id
+                      )
+                    }
+                    disabled={
+                      !orderStatus.some(
+                        (status) =>
+                          status.component_id ===
+                            po.cart_details.component_id &&
+                          status.customer_status === "Shipped" &&
+                          status.received_status !== "Received"
+                      )
+                    }
+                  >
+                    Received
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      {/* <div style={{ marginTop: "20px" }}>
         <button onClick={() => handleButtonClick("Order Placed")}>
           Order Placed
         </button>
         <button onClick={() => handleButtonClick("Shipped")}>Shipped</button>
         <button onClick={() => handleButtonClick("Received")}>Received</button>
-      </div>
+      </div> */}
 
-      {/* Popup for updating status */}
       {showPopup && (
         <div className="popup">
           <form onSubmit={handleFormSubmit}>

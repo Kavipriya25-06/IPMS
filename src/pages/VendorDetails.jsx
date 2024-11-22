@@ -563,12 +563,27 @@ const VendorDetails = () => {
             }
           >
             <option value="">Select Component Type</option>
-            <option value="type-1">component_type-1</option>
-            <option value="type-2">component_type-2</option>
-            <option value="type-3">component_type-3</option>
-            <option value="type-4">component_type-4</option>
-            <option value="type-5">component_type-5</option>
-            <option value="type-6">component_type-6</option>
+            <option value="Controller">Controller</option>
+            <option value="Frame parts & Tank">Frame parts & Tank</option>
+            <option value="Battery">Battery</option>
+            <option value="Sensor">Sensor</option>
+            <option value="Motors ESC & Propeller Combo">
+              Motors ESC & Propeller Combo
+            </option>
+            <option value="Flight controller">Flight controller</option>
+            <option value="3D Printed parts">3D Printed parts</option>
+            <option value="Carrycase">Carrycase</option>
+            <option value="Battery Charger">Battery Charger</option>
+            <option value="GPS">GPS</option>
+            <option value="Aluminium Mount">Aluminium Mount</option>
+            <option value="CF Sheet">CF Sheet</option>
+            <option value="Sprayer System">Sprayer System</option>
+            <option value="BEC">BEC</option>
+            <option value="PDB">PDB</option>
+            <option value="Connectors">Connectors</option>
+            <option value="Cables">Cables</option>
+            <option value="Water Jet cutting">Water Jet cutting</option>
+            <option value="Consumables">Consumables</option>
           </select>
           <input
             type="text"
@@ -648,12 +663,27 @@ const VendorDetails = () => {
             }
           >
             <option value="">Select Component Type</option>
-            <option value="type-1">component_type-1</option>
-            <option value="type-2">component_type-2</option>
-            <option value="type-3">component_type-3</option>
-            <option value="type-4">component_type-4</option>
-            <option value="type-5">component_type-5</option>
-            <option value="type-6">component_type-6</option>
+            <option value="Controller">Controller</option>
+            <option value="Frame parts & Tank">Frame parts & Tank</option>
+            <option value="Battery">Battery</option>
+            <option value="Sensor">Sensor</option>
+            <option value="Motors ESC & Propeller Combo">
+              Motors ESC & Propeller Combo
+            </option>
+            <option value="Flight controller">Flight controller</option>
+            <option value="3D Printed parts">3D Printed parts</option>
+            <option value="Carrycase">Carrycase</option>
+            <option value="Battery Charger">Battery Charger</option>
+            <option value="GPS">GPS</option>
+            <option value="Aluminium Mount">Aluminium Mount</option>
+            <option value="CF Sheet">CF Sheet</option>
+            <option value="Sprayer System">Sprayer System</option>
+            <option value="BEC">BEC</option>
+            <option value="PDB">PDB</option>
+            <option value="Connectors">Connectors</option>
+            <option value="Cables">Cables</option>
+            <option value="Water Jet cutting">Water Jet cutting</option>
+            <option value="Consumables">Consumables</option>
           </select>
 
           <input
