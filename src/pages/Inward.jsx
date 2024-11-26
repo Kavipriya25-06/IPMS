@@ -333,125 +333,150 @@ import React, { useEffect, useState } from "react";
 
 const Inward = () => {
   const [inwardData, setInwardData] = useState([]); // State to store inward data
-  const [poMasterData, setPOMasterData] = useState([]); // State to store PO Master data
   const [showQCPopup, setShowQCPopup] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
-  const [qcQuestions, setQCQuestions] = useState([]); // State to store QC questions
   const [newQuestion, setNewQuestion] = useState({
     qc_select: "",
     description: "",
     Good: false,
     bad: false,
     remark: "",
+    component_id: null,
   }); // State for new question
 
-  // Fetch PO Master Data
-  const fetchPOMasterData = async () => {
+  // Utility function to safely access nested fields
+  const getNestedValue = (obj, keyPath, defaultValue = "Not Available") => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/po_master/");
+      return keyPath.split(".").reduce((acc, key) => acc && acc[key], obj) || defaultValue;
+    } catch {
+      return defaultValue;
+    }
+  };
+
+  // Fetch Inward Data
+  const fetchInwardData = async () => {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/inward/");
       const result = await response.json();
 
       if (Array.isArray(result)) {
-        setPOMasterData(result);
+        setInwardData(result);
       } else {
         console.error("Unexpected API response format:", result);
       }
     } catch (err) {
-      console.error("Error fetching PO Master data:", err);
+      console.error("Error fetching inward data:", err);
     }
   };
 
-  // Add Row
-  const handleAddRow = () => {
-    const newRow = {
-      component_id: "",
-      component_specification: "",
-      vendor_name: "",
-      serial_number: "",
-      date: new Date().toLocaleDateString(),
-      quality_check: "Pending",
-    };
-    setInwardData([...inwardData, newRow]);
-  };
-
-  // Handle Component Selection
-  const handleComponentSelect = (index, selectedComponentId) => {
-    const selectedComponent = poMasterData.find(
-      (po) => po.cart_details.component_id === selectedComponentId
-    );
-
-    if (selectedComponent) {
-      const componentDetails = Array(selectedComponent.cart_details.quantity)
-        .fill(null)
-        .map(() => ({
-          component_id: selectedComponent.cart_details.component_id,
-          component_specification:
-            selectedComponent.cart_details.component_specification,
-          vendor_name: selectedComponent.cart_details.vendor_name,
-          serial_number: "",
-          date: new Date().toLocaleDateString(),
-          quality_check: "Pending",
-        }));
-
-      setInwardData([
-        ...inwardData.slice(0, index),
-        ...componentDetails,
-        ...inwardData.slice(index + 1),
-      ]);
-    }
-  };
-
-  // Open QC Popup
   const handleQCClick = (item) => {
-    setSelectedItem(item);
-    setShowQCPopup(true);
-  };
-
-  // Add QC Question
-  const handleAddQCQuestion = () => {
-    setQCQuestions([
-      ...qcQuestions,
-      { ...newQuestion, component_id: selectedItem.component_id },
-    ]);
+    setSelectedItem(item); // Ensure the entire selected item is stored
     setNewQuestion({
       qc_select: "",
       description: "",
       Good: false,
       bad: false,
       remark: "",
+      component_id: getNestedValue(item, "po_master.cart.component_id"),
     });
+    setShowQCPopup(true);
   };
 
-  // Save QC Questions
   const handleSaveQC = async () => {
-    try {
-      const response = await fetch("http://127.0.0.1:8000/qc/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(qcQuestions),
-      });
-      console.log("QC response", response);
-
-      if (response.ok) {
-        console.log("QC saved successfully.");
-      } else {
-        console.error("Error saving QC:", response.statusText);
-      }
-    } catch (error) {
-      console.error("Error saving QC:", error);
+    // Validate fields
+    if (
+      !newQuestion.qc_select ||
+      !newQuestion.description ||
+      newQuestion.Good === null ||
+      newQuestion.bad === null ||
+      !newQuestion.remark
+    ) {
+      alert("Please fill in all required fields.");
+      return;
     }
-    setShowQCPopup(false);
+  
+    try {
+      const inwardId = selectedItem?.inward_id || getNestedValue(selectedItem, "inward_id");
+  
+      if (!inwardId || inwardId === "Not Available") {
+        alert("Inward ID not found. Unable to update.");
+        return;
+      }
+  
+      // Fetch the detailed inward data to get the component_id and po_master_id
+      const inwardDetailsResponse = await fetch(`http://127.0.0.1:8000/inward/${inwardId}/`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+  
+      if (!inwardDetailsResponse.ok) {
+        const errorDetails = await inwardDetailsResponse.json();
+        console.error("Error fetching inward details:", errorDetails);
+        alert("Failed to fetch inward details.");
+        return;
+      }
+  
+      const inwardDetails = await inwardDetailsResponse.json();
+      const poMasterId = inwardDetails?.po_master_id || null; // Updated path
+      const componentId = inwardDetails?.po_master?.cart?.component_id || null; // Retained as-is
+  
+      // Debugging: Log the fetched data
+      console.log("Fetched Inward Details:", inwardDetails);
+      console.log("Extracted PO Master ID:", poMasterId);
+      console.log("Extracted Component ID:", componentId);
+  
+      if (!poMasterId || !componentId) {
+        alert("Required fields are missing: component_id or po_master_id.");
+        return;
+      }
+  
+      // If Good is checked, update the inward API
+      if (newQuestion.Good) {
+        const updateResponse = await fetch(`http://127.0.0.1:8000/inward/${inwardId}/`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            quality_check: "Pass",
+            component_id: componentId,
+            po_master_id: poMasterId,
+          }),
+        });
+  
+        if (!updateResponse.ok) {
+          const updateError = await updateResponse.json();
+          console.error("Error updating inward data:", updateError);
+          alert(
+            `Failed to update inward data: ${
+              updateError.detail || "Unknown error"
+            }`
+          );
+          return;
+        }
+  
+        alert("Quality check passed and serial number generated.");
+      } else {
+        alert("Quality check marked as Bad. No serial number generated.");
+      }
+  
+      setShowQCPopup(false);
+      fetchInwardData(); // Refresh data after updating
+    } catch (error) {
+      console.error("Error updating inward data:", error);
+      alert("An error occurred while updating inward data.");
+    }
   };
+  
+
+  
 
   useEffect(() => {
-    fetchPOMasterData();
+    fetchInwardData();
   }, []);
 
   return (
     <div>
       <h2>Inward</h2>
-      <button onClick={handleAddRow}>Add Row</button>
-      <table>
+      <table> 
         <thead>
           <tr>
             <th>Component ID</th>
@@ -466,28 +491,14 @@ const Inward = () => {
         <tbody>
           {inwardData.map((item, index) => (
             <tr key={index}>
-              <td>
-                <select
-                  onChange={(e) => handleComponentSelect(index, e.target.value)}
-                  value={item.component_id}
-                >
-                  <option value="">Select Component</option>
-                  {poMasterData.map((po) => (
-                    <option key={po.id} value={po.cart_details.component_id}>
-                      {po.cart_details.component_id}
-                    </option>
-                  ))}
-                </select>
-              </td>
-              <td>{item.component_specification || "N/A"}</td>
-              <td>{item.vendor_name || "N/A"}</td>
-              <td>{item.serial_number || "N/A"}</td>
-              <td>{item.date}</td>
-              <td>{item.quality_check}</td>
+              <td>{getNestedValue(item, "po_master.cart.component_id")}</td>
+              <td>{getNestedValue(item, "po_master.cart.component_specification")}</td>
+              <td>{getNestedValue(item, "po_master.cart.vendor_name")}</td>
+              <td>{item.serial_number || "Not Available"}</td>
+              <td>{new Date(item.date).toLocaleDateString() || "Not Available"}</td>
+              <td>{item.quality_check || "Not Available"}</td>
               <td>
                 <button onClick={() => handleQCClick(item)}>QC</button>
-                {/* <button >Generate SN</button> */}
-                <button>Move to Inventory</button>
               </td>
             </tr>
           ))}
@@ -497,23 +508,8 @@ const Inward = () => {
       {/* QC Popup */}
       {showQCPopup && selectedItem && (
         <div className="popup">
-          <h3>Quality Check for {selectedItem.component_id}</h3>
+          <h3>Quality Check for {getNestedValue(selectedItem, "po_master.cart.component_id")}</h3>
           <div>
-            <h4>Questions</h4>
-            {qcQuestions
-              .filter((q) => q.component_id === selectedItem.component_id)
-              .map((q, idx) => (
-                <div key={idx}>
-                  <p>{q.description}</p>
-                  <p>
-                    Good: {q.Good ? "Yes" : "No"}, Bad: {q.bad ? "Yes" : "No"}
-                  </p>
-                  <p>Remark: {q.remark}</p>
-                </div>
-              ))}
-          </div>
-          <div>
-            <h4>Add Question</h4>
             <label>
               Type:
               <select
@@ -528,15 +524,12 @@ const Inward = () => {
               </select>
             </label>
             <label>
-              Question:
+              Description:
               <input
                 type="text"
                 value={newQuestion.description}
                 onChange={(e) =>
-                  setNewQuestion({
-                    ...newQuestion,
-                    description: e.target.value,
-                  })
+                  setNewQuestion({ ...newQuestion, description: e.target.value })
                 }
               />
             </label>
@@ -570,10 +563,9 @@ const Inward = () => {
                 }
               />
             </label>
-            <button onClick={handleAddQCQuestion}>Add Question</button>
+            <button onClick={handleSaveQC}>Save QC</button>
+            <button onClick={() => setShowQCPopup(false)}>Close</button>
           </div>
-          <button onClick={handleSaveQC}>Save QC</button>
-          <button onClick={() => setShowQCPopup(false)}>Close</button>
         </div>
       )}
     </div>

@@ -93,7 +93,7 @@ const RequestDetails = () => {
   
       const data = await response.json();
   
-      // Set cart items directly from grouped data
+      // Ensure po_master_id is included in cart items
       setCartItems(data);
     } catch (error) {
       console.error("Error fetching cart items:", error);
@@ -627,8 +627,6 @@ const handleCartOrder = async (item) => {
   }
 };
 
-////////
-
   const handleVendorChange = (component_id, selectedVendorName) => {
     const updatedDetails = details.map((detail) => {
       if (detail.component_id === component_id) {
@@ -700,11 +698,11 @@ const handleCartOrder = async (item) => {
                   <td>{item.total_cost}</td>
                   <td>
                   <button
-                      onClick={() => handleCartOrder(item)}
-                      disabled={item.order_placed}
-                    >
-                      {item.order_placed ? "Order Placed" : "Place Order"}
-                    </button>
+                    onClick={() => handleCartOrder(item)}
+                    disabled={item.order_placed}
+                  >
+                    {item.order_placed ? "Order Placed" : "Place Order"}
+                  </button>
                       </td>
                 </tr>
               ))}
