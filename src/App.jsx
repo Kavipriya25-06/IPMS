@@ -107,7 +107,7 @@ function App() {
           <Route path="/po-list" element={<POOrderList />} />
           <Route path="/po-details/:poId" element={<POOrderMaster />} />
           <Route path="/inward" element={<Inward />} />
-          <Route path="/purchase-order" element={<PurchaseOrder />} />
+          <Route path="/purchase-order/:id" element={<PurchaseOrder />} />
         </Routes>
       </div>
     </Router>

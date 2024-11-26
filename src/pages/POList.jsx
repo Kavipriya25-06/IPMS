@@ -419,16 +419,16 @@ const POOrderList = () => {
                     {order.id}
                   </td>
                   <td>{order.cart_details.vendor_name}</td>
-                  <td
-                    style={{ cursor: "pointer", color: "blue" }}
-                    onClick={() => handleStatusClick(order.id)}
-                  >
-                    {status}
-                  </td>
+                  <td>{status}</td>
                   <td>{order.cart_details.total_cost}</td>
                   <td>{order.date}</td>
                   <td>
-                  <button onClick={POviewclick}> Download </button>
+                    <button
+                      onClick={() => navigate(`/purchase-order/${order.id}`)}
+                    >
+                      {" "}
+                      Download{" "}
+                    </button>
                   </td>
                 </tr>
               );
