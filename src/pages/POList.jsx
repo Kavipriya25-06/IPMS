@@ -266,6 +266,10 @@ const POOrderList = () => {
   const [statusPopup, setStatusPopup] = useState(null); // State for status popup
   const navigate = useNavigate(); // Navigation hook
 
+  const POviewclick = () => {
+    navigate("/purchase-order");
+  };
+
   // Fetch PO orders
   const fetchPOOrders = async () => {
     try {
@@ -400,6 +404,7 @@ const POOrderList = () => {
               <th>Status</th>
               <th>Total Cost</th>
               <th>Date</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -422,6 +427,9 @@ const POOrderList = () => {
                   </td>
                   <td>{order.cart_details.total_cost}</td>
                   <td>{order.date}</td>
+                  <td>
+                  <button onClick={POviewclick}> Download </button>
+                  </td>
                 </tr>
               );
             })}

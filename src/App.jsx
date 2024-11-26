@@ -21,6 +21,7 @@ import HomePage from "./pages/HomePage";
 import POOrderMaster from "./pages/POOrderMaster";
 import POOrderList from "./pages/POList";
 import Inward from "./pages/Inward";
+import PurchaseOrder from "./pages/POTemplate";
 // import PODetails from "./pages/PODetails";
 
 function App() {
@@ -106,6 +107,7 @@ function App() {
           <Route path="/po-list" element={<POOrderList />} />
           <Route path="/po-details/:poId" element={<POOrderMaster />} />
           <Route path="/inward" element={<Inward />} />
+          <Route path="/purchase-order" element={<PurchaseOrder />} />
         </Routes>
       </div>
     </Router>
