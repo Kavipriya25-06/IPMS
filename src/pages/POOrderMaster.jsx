@@ -114,6 +114,63 @@ const POOrderMaster = () => {
     }
   };
 
+  // const handleInward = async (item) => {
+  //   try {
+  //     // Destructure the necessary fields from the item
+  //     const {
+  //       component_id,
+  //       component_type,
+  //       component_specification,
+  //       category,
+  //       unit_of_measurement,
+  //       quantity,
+  //       vendor_name,
+  //       vendor_id,
+  //     } = item;
+
+  //     // Hardcode po_master_id
+  //     const po_master_id = 1; // Hardcoded
+
+  //     // Loop through the quantity to post each unit individually
+  //     for (let i = 0; i < quantity; i++) {
+  //       const inwardPayload = {
+  //         component_id,
+  //         component_type,
+  //         component_specification,
+  //         category,
+  //         unit_of_measurement,
+  //         unit: 1, // Post each unit as 1
+  //         vendor_name,
+  //         vendor_id,
+  //         po_master_id, // Include the hardcoded po_master_id
+  //         quality_check: "Pending", // Set quality_check as "Pending"
+  //       };
+
+  //       // POST request to the inward API
+  //       const response = await fetch("http://127.0.0.1:8000/inward/", {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify(inwardPayload),
+  //       });
+
+  //       if (!response.ok) {
+  //         const error = await response.json();
+  //         console.error(`Error posting inward data for unit ${i + 1}:`, error);
+  //         alert(`Failed to post inward data for unit ${i + 1}.`);
+  //         return;
+  //       }
+  //     }
+
+  //     // Success message after all POST requests
+  //     alert(
+  //       `Inward operation completed successfully for ${quantity} units of Component ID: ${component_id}.`
+  //     );
+  //   } catch (error) {
+  //     console.error("Error during inward operation:", error);
+  //     alert("An error occurred while performing the inward operation.");
+  //   }
+  // };
+
   const handleInward = async (item) => {
     try {
       // Destructure the necessary fields from the item
@@ -128,8 +185,28 @@ const POOrderMaster = () => {
         vendor_id,
       } = item;
 
-      // Hardcode po_master_id
-      const po_master_id = 1; // Hardcoded
+      // Fetch PO details from the API
+      const poResponse = await fetch("http://127.0.0.1:8000/po_master/");
+      if (!poResponse.ok) {
+        throw new Error("Failed to fetch PO Master data.");
+      }
+      const poData = await poResponse.json();
+
+      // Find the PO Master ID (id) that matches the current item
+      const matchedPO = poData.find(
+        (po) =>
+          po.cart_details.component_id === component_id &&
+          po.cart_details.vendor_id === vendor_id &&
+          po.cart_details.component_type === component_type &&
+          po.cart_details.component_specification === component_specification
+      );
+
+      if (!matchedPO) {
+        alert("No matching PO Master ID found for the selected item.");
+        return;
+      }
+
+      const po_master_id = matchedPO.id; // Get the matched PO ID
 
       // Loop through the quantity to post each unit individually
       for (let i = 0; i < quantity; i++) {
