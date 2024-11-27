@@ -226,7 +226,7 @@ const PurchaseOrder = () => {
               <td style={thTdStyle}>Voucher No.</td>
               <td style={thTdStyle}>11/24-25</td>
               <td style={thTdStyle}>Dated</td>
-              <td style={thTdStyle}>19-Oct-24</td>
+              <td style={thTdStyle}>{poListData.date}</td>
             </tr>
             <tr>
               <td style={thTdStyle}>Mode/Terms of Payment</td>
