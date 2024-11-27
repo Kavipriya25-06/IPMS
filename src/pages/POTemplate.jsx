@@ -1,4 +1,5 @@
 import React, { useRef } from "react";
+import toWords from "num-to-words"; // Import the library
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import { useParams } from "react-router-dom";
@@ -7,7 +8,10 @@ import { useEffect, useState } from "react";
 const PurchaseOrder = () => {
   const formRef = useRef();
   const { id } = useParams(); // Extract the PO ID from the route
-  const [poData, setPOData] = useState(null); // State to store PO data
+  const [poData, setPOData] = useState([]); // State to store PO data
+  const [poListData, setPOListData] = useState(null);
+  const [vendorContact, setVendorContact] = useState(null);
+  const [vendorName, setVendorName] = useState(null);
   const [loading, setLoading] = useState(true); // State to manage loading
   const [error, setError] = useState(null); // State to manage errors
 
@@ -16,6 +20,7 @@ const PurchaseOrder = () => {
     try {
       const response = await fetch("http://127.0.0.1:8000/po_master/");
       const result = await response.json();
+      console.log("PO master data", response, "And the result", result);
 
       if (Array.isArray(result)) {
         // Filter the array for matching PO ID and set state with the result
@@ -42,6 +47,60 @@ const PurchaseOrder = () => {
     fetchPOData();
   }, [id]);
 
+  // Fetch PO data
+  const fetchPOListData = async () => {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/po_list/");
+      const result = await response.json();
+      console.log("PO list data", response, "And the result", result);
+      const filteredPO = result.find((po) => po.id === id);
+      if (filteredPO) {
+        setPOListData(filteredPO);
+        fetchVendorDetails(filteredPO.cart_details.vendor_id);
+      } else {
+        setError("Purchase Order not found.");
+      }
+    } catch (err) {
+      setError("Error fetching Purchase Order data.");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch Vendor Contact and Name
+  const fetchVendorDetails = async (vendorId) => {
+    try {
+      // Fetch vendor contact details
+      const contactResponse = await fetch(
+        "http://127.0.0.1:8000/vendor_sub_list/"
+      );
+      const contactResult = await contactResponse.json();
+      const contactDetails = contactResult.find(
+        (contact) => contact.vendor === vendorId
+      );
+      console.log("Fetched vendor", vendorId);
+      console.log("Contact details", contactResult);
+
+      // Fetch vendor name
+      const vendorResponse = await fetch("http://127.0.0.1:8000/vendor_list/");
+      const vendorResult = await vendorResponse.json();
+      const vendorDetails = vendorResult.find(
+        (vendor) => vendor.vendor_id === vendorId
+      );
+
+      setVendorContact(contactDetails);
+      setVendorName(vendorDetails?.vendor_name);
+    } catch (err) {
+      console.error("Error fetching vendor details:", err);
+    }
+  };
+
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchPOListData();
+  }, [id]);
+
   // Render content
   if (loading) return <p>Loading...</p>;
   if (error) return <p>{error}</p>;
@@ -64,6 +123,34 @@ const PurchaseOrder = () => {
       pdf.save("PurchaseOrder.pdf");
     });
   };
+
+  const convertNumberToWords = (number) => {
+    const rupees = Math.floor(number); // Get the rupee part
+    const paise = Math.round((number - rupees) * 100); // Get the paise part
+
+    const rupeesInWords = `${toWords(rupees)} Rupees`;
+    const paiseInWords = paise > 0 ? ` and ${toWords(paise)} Paise` : "";
+
+    return `${rupeesInWords}${paiseInWords} Only`.replace(/\b\w/g, (char) =>
+      char.toUpperCase()
+    );
+  };
+
+  {
+    /* Calculate the grand total */
+  }
+  const grandTotal = (
+    poData.reduce((sum, po) => {
+      const total = po.cart_details.unit_price * po.cart_details.quantity || 0;
+      return sum + total;
+    }, 0) * 1.18
+  ).toFixed(2);
+
+  // Convert grand total to words
+  // const totalInWords = grandTotal
+  //   ? toWords(parseFloat(grandTotal).toFixed(0)) + " Rupees Only"
+  //   : "";
+  const totalInWords = convertNumberToWords(parseFloat(grandTotal));
 
   const containerStyle = {
     width: "210mm", // Match A4 width
@@ -182,9 +269,9 @@ const PurchaseOrder = () => {
               <td style={thTdStyle} colSpan="4">
                 <h3>Supplier (Bill from)</h3>
                 <p>
-                  <strong>Amuse</strong>
+                  <strong>{vendorName || "N/A"}</strong>
                   <br />
-                  No.8 Oil Monger Street, Triplicane
+                  {vendorContact?.location || "Location not available"}
                   <br />
                   GSTIN/UIN: 33ABPFA9368K1ZS
                   <br />
@@ -208,30 +295,116 @@ const PurchaseOrder = () => {
             </tr>
           </thead>
           <tbody>
-            {poData.map((po, index) => (
-              <tr key={po.id}>
-                <td style={thTdStyle}>{index + 1}</td>
-                <td style={thTdStyle}>
-                  {po.cart_details.component_specification}
+            {poData && poData.length > 0 ? (
+              poData.map((po, index) => (
+                <tr key={po.id}>
+                  <td style={thTdStyle}>{index + 1}</td>
+                  <td style={thTdStyle}>
+                    {po.cart_details.component_specification}
+                  </td>
+                  <td style={thTdStyle}>{po.due_date || "N/A"}</td>
+                  {""}
+
+                  <td style={thTdStyle}>
+                    {po.cart_details.quantity}
+                    {""}
+                    {po.cart_details.unit_of_measurement}
+                  </td>
+                  <td style={thTdStyle}>{po.cart_details.unit_price}</td>
+                  <td style={thTdStyle}>
+                    {po.cart_details.unit_of_measurement}
+                  </td>
+                  <td style={thTdStyle}>
+                    {po.cart_details.unit_price && po.cart_details.quantity
+                      ? (
+                          po.cart_details.unit_price * po.cart_details.quantity
+                        ).toFixed(2)
+                      : "0.00"}
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td style={thTdStyle} colSpan="7">
+                  No Purchase Orders found.
                 </td>
-                <td style={thTdStyle}>{po.due_date || "N/A"}</td>{""}
-                
-                <td style={thTdStyle}>
-                  {po.cart_details.quantity}{""}
-                  {po.cart_details.unit_of_measurement}
-                </td>
-                <td style={thTdStyle}>{po.cart_details.unit_price}</td>
-                <td style={thTdStyle}>{po.cart_details.unit_of_measurement}</td>
-                <td style={thTdStyle}>{po.cart_details.total_cost}</td>
               </tr>
-            ))}
+            )}
+
+            {/* Total Row */}
+            <tr>
+              <td align="right" colSpan="6">
+                Total
+              </td>
+              <td>
+                {poData
+                  .reduce((sum, po) => {
+                    const total =
+                      po.cart_details.unit_price * po.cart_details.quantity ||
+                      0;
+                    return sum + total;
+                  }, 0)
+                  .toFixed(2)}
+              </td>
+            </tr>
+            {/* CGST Row */}
+            <tr>
+              <td align="right" colSpan="6">
+                CGST (9%)
+              </td>
+              <td>
+                {(
+                  poData.reduce((sum, po) => {
+                    const total =
+                      po.cart_details.unit_price * po.cart_details.quantity ||
+                      0;
+                    return sum + total;
+                  }, 0) * 0.09
+                ).toFixed(2)}
+              </td>
+            </tr>
+
+            {/* SGST Row */}
+            <tr>
+              <td align="right" colSpan="6">
+                SGST (9%)
+              </td>
+              <td>
+                {(
+                  poData.reduce((sum, po) => {
+                    const total =
+                      po.cart_details.unit_price * po.cart_details.quantity ||
+                      0;
+                    return sum + total;
+                  }, 0) * 0.09
+                ).toFixed(2)}
+              </td>
+            </tr>
+
+            {/* Grand Total Row */}
+            <tr>
+              <td colSpan="6">Grand Total</td>
+              <td>
+                {(
+                  poData.reduce((sum, po) => {
+                    const total =
+                      po.cart_details.unit_price * po.cart_details.quantity ||
+                      0;
+                    return sum + total;
+                  }, 0) * 1.18
+                ).toFixed(2)}
+              </td>
+            </tr>
           </tbody>
         </table>
 
-        <p style={totalStyle}>Total: ₹ 913.32</p>
-        <p>
+        {/* <p style={totalStyle}>Total: ₹ 913.32</p> */}
+        {/* <p>
           Amount Chargeable (in words): INR Nine Hundred Thirteen and Thirty Two
           Paise Only
+        </p> */}
+        <p>
+          Amount Chargeable (in words): <strong>INR {totalInWords}</strong>
         </p>
         <p style={footerStyle}>
           E. & O.E
