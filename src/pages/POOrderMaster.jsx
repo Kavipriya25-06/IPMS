@@ -184,30 +184,47 @@ const POOrderMaster = () => {
         vendor_name,
         vendor_id,
       } = item;
-
+  
       // Fetch PO details from the API
       const poResponse = await fetch("http://127.0.0.1:8000/po_master/");
       if (!poResponse.ok) {
         throw new Error("Failed to fetch PO Master data.");
       }
       const poData = await poResponse.json();
-
+  
+      // Log PO Data to verify its structure
+      console.log("PO Data:", poData);  // Check the structure and contents of poData
+  
       // Find the PO Master ID (id) that matches the current item
-      const matchedPO = poData.find(
+      const matchedPO = poData.filter(
         (po) =>
-          po.cart_details.component_id === component_id &&
-          po.cart_details.vendor_id === vendor_id &&
-          po.cart_details.component_type === component_type &&
-          po.cart_details.component_specification === component_specification
+          po.cart_details?.component_id === component_id &&
+          po.cart_details?.vendor_id === vendor_id &&
+          po.cart_details?.component_type === component_type &&
+          po.cart_details?.component_specification === component_specification &&
+          po.cart_details?.category === category &&
+          po.cart_details?.unit_of_measurement === unit_of_measurement &&
+          po.cart_details?.vendor_name === vendor_name
       );
-
-      if (!matchedPO) {
+  
+      // Log matched PO for debugging
+      console.log("Matched PO:", matchedPO);  // Check if filtering is correct
+  
+      if (matchedPO.length === 0) {
         alert("No matching PO Master ID found for the selected item.");
         return;
       }
-
-      const po_master_id = matchedPO.id; // Get the matched PO ID
-
+  
+      // Access the first matched PO (assuming you want to use the first match)
+      const po_master_id = matchedPO[0].id; // Get the matched PO ID
+      console.log("Matched PO Master ID:", po_master_id);  // Verify the correct PO Master ID
+  
+      // Ensure that po_master_id is correct before proceeding to POST
+      if (!po_master_id) {
+        alert("Invalid PO Master ID.");
+        return;
+      }
+  
       // Loop through the quantity to post each unit individually
       for (let i = 0; i < quantity; i++) {
         const inwardPayload = {
@@ -219,17 +236,20 @@ const POOrderMaster = () => {
           unit: 1, // Post each unit as 1
           vendor_name,
           vendor_id,
-          po_master_id, // Include the hardcoded po_master_id
+          po_master_id, // Correct po_master_id here
           quality_check: "Pending", // Set quality_check as "Pending"
         };
-
+  
+        // Log to ensure the correct data is being posted
+        console.log("Inward Payload:", inwardPayload);
+  
         // POST request to the inward API
         const response = await fetch("http://127.0.0.1:8000/inward/", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(inwardPayload),
         });
-
+  
         if (!response.ok) {
           const error = await response.json();
           console.error(`Error posting inward data for unit ${i + 1}:`, error);
@@ -237,7 +257,7 @@ const POOrderMaster = () => {
           return;
         }
       }
-
+  
       // Success message after all POST requests
       alert(
         `Inward operation completed successfully for ${quantity} units of Component ID: ${component_id}.`
@@ -247,6 +267,9 @@ const POOrderMaster = () => {
       alert("An error occurred while performing the inward operation.");
     }
   };
+  
+  
+  
 
   useEffect(() => {
     fetchPODetails();

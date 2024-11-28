@@ -218,7 +218,6 @@
 
 
 import React, { useState, useEffect } from "react";
-// import config from "../Config"; // Import config for API endpoints
 
 const Inventory = () => {
   const [inventoryData, setInventoryData] = useState([]);
@@ -250,6 +249,7 @@ const Inventory = () => {
     try {
       const response = await fetch("http://127.0.0.1:8000/component/");
       const data = await response.json();
+      // Create an object where the key is component_id and the value is the component details
       const formattedData = data.reduce((acc, component) => {
         acc[component.component_id] = component;
         return acc;
@@ -259,7 +259,6 @@ const Inventory = () => {
       console.error("Error fetching component data:", error);
     }
   };
-  console.log("Retrieved component data", componentData);
 
   const fetchVendorMasterData = async () => {
     try {
@@ -270,7 +269,6 @@ const Inventory = () => {
         return acc;
       }, {});
       setVendorData(formattedData);
-      console.log("Retrieved vendor data", formattedData);
     } catch (error) {
       console.error("Error fetching vendor data:", error);
     }
@@ -409,21 +407,21 @@ const Inventory = () => {
         <tbody>
           {inventoryData.length > 0 ? (
             inventoryData.map((item, index) => {
-              const component = componentData[item.com_id] || {};
+              const component = componentData[item.component_id] || {};
 
               const isDisabled = item.status === false;
 
               return (
                 <tr key={index} className={isDisabled ? "disabled-row" : ""}>
-                  <td>{item.com_id}</td>
+                  <td>{item.component_id}</td>
                   <td>{item.serial_number}</td>
                   <td>{component.category || ""}</td>
                   <td>{component.component_type || ""}</td>
-                  <td>{component.component_specification || ""}</td>
-                  <td>{component.unit_of_measurement || ""}</td>
-                  <td>{item.vendor || ""}</td>
+                  <td>{item.specification || ""}</td> {/* Ensure specification is shown */}
+                  <td>{item.UOM || ""}</td> {/* Ensure UOM is shown */}
+                  <td>{item.vendor_name || ""}</td>
                   <td>
-                    {item.created_date || new Date().toLocaleDateString()}
+                    {item.create_date || new Date().toLocaleDateString()}
                   </td>
                   <td>
                     <button

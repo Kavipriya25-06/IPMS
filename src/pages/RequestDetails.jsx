@@ -46,15 +46,15 @@ const RequestDetails = () => {
       const data = await response.json();
 
       const inventoryMap = data.reduce((acc, item) => {
-        if (!acc[item.com_id]) {
-          acc[item.com_id] = { qty: 0, serialNumbers: [] };
+        if (!acc[item.component_id]) {
+          acc[item.component_id] = { qty: 0, serialNumbers: [] };
         }
 
         if (item.status === true) {
-          acc[item.com_id].qty += 1; // Increment qty if status is true
+          acc[item.component_id].qty += 1; // Increment qty if status is true
         }
 
-        acc[item.com_id].serialNumbers.push({
+        acc[item.component_id].serialNumbers.push({
           serialNumber: item.serial_number,
           status: item.status,
         });
@@ -320,16 +320,35 @@ const handleConfirmAssignment = async () => {
 
     // Update inventory serial numbers
     for (const serialNumber of selectedSerialNumbers) {
+      // First, fetch the existing inventory data for the serial number
+      const inventoryResponse = await fetch(
+        `http://127.0.0.1:8000/inventory/${serialNumber}/`
+      );
+
+      if (!inventoryResponse.ok) {
+        console.error(`Error fetching inventory data for serial: ${serialNumber}`);
+        alert(`Could not fetch data for serial number ${serialNumber}`);
+        return;
+      }
+
+      const inventoryData = await inventoryResponse.json();
+
+      // Create payload with the current data and change only the status to false
       const inventoryPayload = {
-        component: selectedComponent,
+        component: inventoryData.component,
         serial_number: serialNumber,
-        vendor: selectedDetail.vendor_name || "V_00001",
-        com_id: selectedComponent,
+        vendor_name: inventoryData.vendor_name || "V_00001",  // Use existing vendor if present
+        component_id: inventoryData.component_id,  // Use existing component_id
+        component_type: inventoryData.component_type, // Retain existing component_type
+        category: inventoryData.category, // Retain existing category
+        specification: inventoryData.specification, // Retain existing specification
+        UOM: inventoryData.UOM, // Retain existing UOM
         status: false, // Mark as assigned
       };
 
-      const inventoryResponse = await fetch(
-        `http://127.0.0.1:8000/inventory/${serialNumber}`,
+      // Update the inventory status for the serial number
+      const updateResponse = await fetch(
+        `http://127.0.0.1:8000/inventory/${serialNumber}/`,
         {
           method: "PUT",
           headers: {
@@ -339,7 +358,7 @@ const handleConfirmAssignment = async () => {
         }
       );
 
-      if (!inventoryResponse.ok) {
+      if (!updateResponse.ok) {
         console.error(`Error updating inventory for serial: ${serialNumber}`);
         alert(`Could not update inventory for serial number ${serialNumber}`);
         return;
@@ -356,6 +375,7 @@ const handleConfirmAssignment = async () => {
       alert("Could not fetch the current quantity for the request.");
       return;
     }
+
 
     const requestMasterData = await requestMasterFetchResponse.json();
 
@@ -418,109 +438,7 @@ const handleConfirmAssignment = async () => {
   }
 };
 
-                                                              // UNASSIGN FUNCTION 
-// const handleUnassign = async (componentId,newQty) => {
-//   try {
-//     const componentData = inventoryData[componentId];
-//     const assignedSerials = componentData.serialNumbers.filter(
-//       (sn) => sn.status === false
-//     );
 
-//     if (assignedSerials.length === 0) {
-//       alert("No assigned serial numbers found to unassign.");
-//       return;
-//     }
-
-//     // Unassign each assigned serial number
-//     for (const serial of assignedSerials) {
-//       const inventoryPayload = {
-//         component: componentId,
-//         serial_number: serial.serialNumber,
-//         vendor: componentData.vendor || "V_00001",
-//         com_id: componentId,
-//         // qty: 1,
-//         status: true, // Reverting status to true in inventory
-//       };
-
-//       // Update each serial in inventory to set status back to true
-//       const inventoryResponse = await fetch(
-//         `http://127.0.0.1:8000/inventory/${serial.serialNumber}`,
-//         {
-//           method: "PUT",
-//           headers: {
-//             "Content-Type": "application/json",
-//           },
-//           body: JSON.stringify(inventoryPayload),
-//         }
-//       );
-
-//       if (!inventoryResponse.ok) {
-//         console.error("Error unassigning serial number in inventory.");
-//         alert("Could not unassign the serial number. Please try again.");
-//         return;
-//       }
-//     }
-
-//     // Update request_master to reflect all quantities are unassigned
-//     const updatedQty = componentData.qty ; // Recalculate the qty
-//     const requestMasterPayload = {
-//       request_id: requestId,
-//       component_id: componentId,
-//       bom_master_id: componentData.bom_master_id,
-//       status: "Unassigned",
-//       vendor_id: componentData.vendor || "V_00001",
-//       component_type: componentData.component_type,
-//       component_specification: componentData.component_specification,
-//       unit_of_measurement: componentData.unit_of_measurement,
-//       category: componentData.category,
-//       bom_detail: componentData.bom_detail,
-//       bom_name: componentData.bom_name,
-//       quantity: componentData.quantity,
-//       qty: newQty, // Set qty back with total after unassigning all serials
-//       assign: false,
-//     };
-
-//     // Update request_master with the new qty and assign status
-//     const requestMasterResponse = await fetch(
-//       `http://127.0.0.1:8000/request_master/${requestId}/`,
-//       {
-//         method: "PUT",
-//         headers: {
-//           "Content-Type": "application/json",
-//         },
-//         body: JSON.stringify(requestMasterPayload),
-//       }
-//     );
-
-//     if (requestMasterResponse.ok) {
-//       setInventoryData((prevData) => {
-//         const currentComponentData = prevData[componentId] || {};
-//         const updatedSerialNumbers = currentComponentData.serialNumbers.map(
-//           (sn) => (assignedSerials.includes(sn.serialNumber) ? { ...sn, status: true } : sn)
-//         );
-
-//         return {
-//           ...prevData,
-//           [componentId]: {
-//             ...currentComponentData,
-//             qty: updatedQty, // Update with the new qty after unassigning all serials
-//             serialNumbers: updatedSerialNumbers,
-//           },
-//         };
-//       });
-
-//       setAssignedComponents((prevAssigned) => ({
-//         ...prevAssigned,
-//         [componentId]: false,
-//       }));
-//     } else {
-//       console.error("Error updating request master status.");
-//       alert("Could not update the request master status.");
-//     }
-//   } catch (error) {
-//     console.error("Error unassigning serial numbers:", error);
-//   }
-// };
 
 const handleCartOrder = async (item) => {
   try {
@@ -895,3 +813,110 @@ const handleCartOrder = async (item) => {
 
 export default RequestDetails;
 
+
+
+
+
+                                                              // UNASSIGN FUNCTION 
+// const handleUnassign = async (componentId,newQty) => {
+//   try {
+//     const componentData = inventoryData[componentId];
+//     const assignedSerials = componentData.serialNumbers.filter(
+//       (sn) => sn.status === false
+//     );
+
+//     if (assignedSerials.length === 0) {
+//       alert("No assigned serial numbers found to unassign.");
+//       return;
+//     }
+
+//     // Unassign each assigned serial number
+//     for (const serial of assignedSerials) {
+//       const inventoryPayload = {
+//         component: componentId,
+//         serial_number: serial.serialNumber,
+//         vendor: componentData.vendor || "V_00001",
+//         com_id: componentId,
+//         // qty: 1,
+//         status: true, // Reverting status to true in inventory
+//       };
+
+//       // Update each serial in inventory to set status back to true
+//       const inventoryResponse = await fetch(
+//         `http://127.0.0.1:8000/inventory/${serial.serialNumber}`,
+//         {
+//           method: "PUT",
+//           headers: {
+//             "Content-Type": "application/json",
+//           },
+//           body: JSON.stringify(inventoryPayload),
+//         }
+//       );
+
+//       if (!inventoryResponse.ok) {
+//         console.error("Error unassigning serial number in inventory.");
+//         alert("Could not unassign the serial number. Please try again.");
+//         return;
+//       }
+//     }
+
+//     // Update request_master to reflect all quantities are unassigned
+//     const updatedQty = componentData.qty ; // Recalculate the qty
+//     const requestMasterPayload = {
+//       request_id: requestId,
+//       component_id: componentId,
+//       bom_master_id: componentData.bom_master_id,
+//       status: "Unassigned",
+//       vendor_id: componentData.vendor || "V_00001",
+//       component_type: componentData.component_type,
+//       component_specification: componentData.component_specification,
+//       unit_of_measurement: componentData.unit_of_measurement,
+//       category: componentData.category,
+//       bom_detail: componentData.bom_detail,
+//       bom_name: componentData.bom_name,
+//       quantity: componentData.quantity,
+//       qty: newQty, // Set qty back with total after unassigning all serials
+//       assign: false,
+//     };
+
+//     // Update request_master with the new qty and assign status
+//     const requestMasterResponse = await fetch(
+//       `http://127.0.0.1:8000/request_master/${requestId}/`,
+//       {
+//         method: "PUT",
+//         headers: {
+//           "Content-Type": "application/json",
+//         },
+//         body: JSON.stringify(requestMasterPayload),
+//       }
+//     );
+
+//     if (requestMasterResponse.ok) {
+//       setInventoryData((prevData) => {
+//         const currentComponentData = prevData[componentId] || {};
+//         const updatedSerialNumbers = currentComponentData.serialNumbers.map(
+//           (sn) => (assignedSerials.includes(sn.serialNumber) ? { ...sn, status: true } : sn)
+//         );
+
+//         return {
+//           ...prevData,
+//           [componentId]: {
+//             ...currentComponentData,
+//             qty: updatedQty, // Update with the new qty after unassigning all serials
+//             serialNumbers: updatedSerialNumbers,
+//           },
+//         };
+//       });
+
+//       setAssignedComponents((prevAssigned) => ({
+//         ...prevAssigned,
+//         [componentId]: false,
+//       }));
+//     } else {
+//       console.error("Error updating request master status.");
+//       alert("Could not update the request master status.");
+//     }
+//   } catch (error) {
+//     console.error("Error unassigning serial numbers:", error);
+//   }
+// };

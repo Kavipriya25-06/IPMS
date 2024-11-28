@@ -403,7 +403,7 @@ const Inward = () => {
         return;
       }
   
-      // Fetch the detailed inward data to get the component_id and po_master_id
+      // Fetch the detailed inward data
       const inwardDetailsResponse = await fetch(`http://127.0.0.1:8000/inward/${inwardId}/`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
@@ -417,46 +417,73 @@ const Inward = () => {
       }
   
       const inwardDetails = await inwardDetailsResponse.json();
-      const poMasterId = inwardDetails?.po_master_id || null; // Updated path
-      const componentId = inwardDetails?.po_master?.cart?.component_id || null; // Retained as-is
+      const componentId = inwardDetails?.po_master?.cart?.component_id || null; // Extract component_id
   
       // Debugging: Log the fetched data
       console.log("Fetched Inward Details:", inwardDetails);
-      console.log("Extracted PO Master ID:", poMasterId);
       console.log("Extracted Component ID:", componentId);
   
-      if (!poMasterId || !componentId) {
-        alert("Required fields are missing: component_id or po_master_id.");
+      if (!componentId) {
+        alert("Required field is missing: component_id.");
         return;
       }
   
-      // If Good is checked, update the inward API
-      if (newQuestion.Good) {
-        const updateResponse = await fetch(`http://127.0.0.1:8000/inward/${inwardId}/`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            quality_check: "Pass",
-            component_id: componentId,
-            po_master_id: poMasterId,
-          }),
-        });
+      // Fetch the PO Master details to get the po_master_id
+      const poMasterResponse = await fetch(`http://127.0.0.1:8000/po_master/`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
   
-        if (!updateResponse.ok) {
-          const updateError = await updateResponse.json();
-          console.error("Error updating inward data:", updateError);
-          alert(
-            `Failed to update inward data: ${
-              updateError.detail || "Unknown error"
-            }`
-          );
-          return;
-        }
-  
-        alert("Quality check passed and serial number generated.");
-      } else {
-        alert("Quality check marked as Bad. No serial number generated.");
+      if (!poMasterResponse.ok) {
+        const poMasterError = await poMasterResponse.json();
+        console.error("Error fetching PO Master details:", poMasterError);
+        alert("Failed to fetch PO Master details.");
+        return;
       }
+  
+      const poMasterData = await poMasterResponse.json();
+  
+      // Find the matching PO Master entry for the component ID
+      const poMasterEntry = poMasterData.find(
+        (entry) => entry.cart_details.component_id === componentId
+      );
+  
+      const poMasterId = poMasterEntry?.id || null;
+  
+      if (!poMasterId) {
+        alert("Required field is missing: po_master_id.");
+        return;
+      }
+  
+      // Debugging: Log the matched PO Master entry
+      console.log("Matched PO Master Entry:", poMasterEntry);
+      console.log("Extracted PO Master ID:", poMasterId);
+  
+      // Proceed based on Good/Bad QC
+      const payload = {
+        quality_check: newQuestion.Good ? "Pass" : "Fail",
+        component_id: componentId,
+        po_master_id: poMasterId, // Include po_master_id in the payload
+      };
+  
+      const updateResponse = await fetch(`http://127.0.0.1:8000/inward/${inwardId}/`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+  
+      if (!updateResponse.ok) {
+        const updateError = await updateResponse.json();
+        console.error("Error updating inward data:", updateError);
+        alert(`Failed to update inward data: ${updateError.detail || "Unknown error"}`);
+        return;
+      }
+  
+      alert(
+        newQuestion.Good
+          ? "Quality check passed. Serial number will be generated automatically."
+          : "Quality check marked as Bad. No serial number generated."
+      );
   
       setShowQCPopup(false);
       fetchInwardData(); // Refresh data after updating
@@ -466,7 +493,90 @@ const Inward = () => {
     }
   };
   
+  
+  const handleMoveToInventory = async (item) => {
+    // Extract necessary values using getNestedValue and ensure data integrity
+    const componentId = getNestedValue(item, "po_master.cart.component_id");
+    const componentSpecification = getNestedValue(item, "po_master.cart.component_specification");
+    const vendorName = getNestedValue(item, "po_master.cart.vendor_name");
+    const serialNumber = item.serial_number || "Not Available";  // Ensure serial number is available
+    const date = item.date || new Date().toISOString();  // Use current date if not available
+    const qualityCheck = item.quality_check || "Not Available";  // Default to "Not Available" if no quality check
+    const qty = 1;  // Default quantity to 1 as specified
+  
 
+    if (qualityCheck !== "Pass") {
+      alert("The quality check has not passed. Cannot move to inventory.");
+      return;
+    }
+
+    // Fetch the components from the component API
+    try {
+      const componentResponse = await fetch("http://127.0.0.1:8000/component/");
+  
+      if (!componentResponse.ok) {
+        const errorDetails = await componentResponse.json();
+        console.error("Error fetching component details:", errorDetails);
+        alert("Failed to retrieve component details.");
+        return;
+      }
+  
+      // Extract the component list from the response
+      const components = await componentResponse.json();
+      
+      // Filter the components based on the component_id
+      const selectedComponent = components.find(component => component.component_id === componentId);
+  
+      if (!selectedComponent) {
+        console.error(`Component with ID ${componentId} not found.`);
+        alert("Component not found.");
+        return;
+      }
+  
+      // Extract the component type and category from the selected component
+      const componentType = selectedComponent.component_type || "DefaultComponentType"; // Default if not available
+      const category = selectedComponent.category || "DefaultCategory"; // Default if not available
+  
+      // Prepare the data for posting to the inventory API
+      const postData = {
+        component_id: componentId,
+        component_specification: componentSpecification,
+        vendor_name: vendorName,
+        serial_number: serialNumber,
+        date: date,
+        quality_check: qualityCheck,
+        qty: qty, // Using the default qty value
+        component_type: componentType,  // Dynamic value fetched from component API
+        category: category,  // Dynamic value fetched from component API
+        specification: componentSpecification, // Mapping component_specification to specification
+        UOM: "Nos",  // Unit of measurement is set to "Nos"
+      };
+  
+      // Make the POST request to the inventory API
+      const response = await fetch("http://127.0.0.1:8000/inventory/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(postData),
+      });
+  
+      // Check for successful response
+      if (!response.ok) {
+        const errorDetails = await response.json();
+        console.error("Error posting to inventory:", errorDetails);
+        alert("All ready added to inventory");
+        return;
+      }
+  
+      // If successful, show an alert and refresh inward data
+      alert("Successfully moved to inventory.");
+      fetchInwardData(); // Refresh data after posting
+    } catch (error) {
+      // Handle any error that occurs during the fetch
+      console.error("Error moving to inventory:", error);
+      alert("An error occurred while moving to inventory.");
+    }
+  };
+  
   
 
   useEffect(() => {
@@ -499,6 +609,7 @@ const Inward = () => {
               <td>{item.quality_check || "Not Available"}</td>
               <td>
                 <button onClick={() => handleQCClick(item)}>QC</button>
+                <button onClick={() => handleMoveToInventory(item)}>Move to Inventory</button>
               </td>
             </tr>
           ))}
