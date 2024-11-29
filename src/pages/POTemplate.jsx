@@ -1,14 +1,342 @@
-import React, { useRef } from "react";
-import toWords from "num-to-words"; // Import the library
+import React, { useRef, useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import toWords from "num-to-words";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
-import { useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
 
+const EditableField = ({ value, onChange, type = "text", style }) => (
+  <input
+    type={type}
+    value={value}
+    onChange={(e) => onChange(e.target.value)}
+    style={{
+      border: "1px solid #ccc",
+      padding: "4px",
+      width: "100%",
+      ...style,
+    }}
+  />
+);
+
+const FirstSection = ({ vendorName, vendorContact, poListData }) => {
+  const containerStyle = {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "stretch", // Ensure both panels span the same height
+    borderBottom: "1px solid black",
+    marginBottom: "20px",
+    paddingBottom: "10px",
+  };
+
+  const leftPanelStyle = {
+    width: "50%",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between", // Distribute the sections evenly
+  };
+
+  const rightPanelStyle = {
+    width: "50%",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between", // Align grid and terms of delivery
+  };
+
+  const gridStyle = {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, 1fr)",
+    rowGap: "0", // Remove spacing between rows
+    columnGap: "0", // Remove spacing between columns
+    flexGrow: 1, // Allow the grid to grow
+  };
+
+  const gridCellStyle = {
+    border: "1px solid #000",
+    padding: "0", // Remove padding inside cells
+    fontWeight: "bold",
+  };
+
+  const gridValueStyle = {
+    border: "1px solid #000",
+    padding: "0", // Remove padding inside cells
+  };
+
+  const termsStyle = {
+    border: "1px solid #000",
+    padding: "0", // Remove padding inside "Terms of Delivery"
+    marginTop: "0", // Remove margin between grid and "Terms of Delivery"
+    fontWeight: "bold",
+    textAlign: "center",
+    flexGrow: 1, // Allow the terms section to grow
+  };
+
+  return (
+    <div style={containerStyle}>
+      {/* Left Panel */}
+      <div style={leftPanelStyle}>
+        {/* "Invoice To" Section */}
+        <div>
+          <h3>Invoice To</h3>
+          <p>
+            <strong>Dronix Technologies Pvt Ltd</strong>
+            <br />
+            No.7, KRJ Building, 3rd Floor, Welders Street,
+            <br />
+            Mount Road, Chennai - 600002.
+            <br />
+            GSTIN/UIN: 33AAGCD1081K1ZS
+            <br />
+            State Name: Tamil Nadu, Code: 33
+            <br />
+            E-Mail:{" "}
+            <a href="mailto:finance@aero360.co.in">finance@aero360.co.in</a>
+          </p>
+        </div>
+
+        {/* "Consignee (Ship to)" Section */}
+        <div>
+          <h3>Consignee (Ship to)</h3>
+          <p>
+            <strong>Dronix Technologies Pvt Ltd</strong>
+            <br />
+            No.7, KRJ Building, 3rd Floor, Welders Street,
+            <br />
+            Mount Road, Chennai - 600002.
+            <br />
+            GSTIN/UIN: 33AAGCD1081K1ZS
+            <br />
+            State Name: Tamil Nadu, Code: 33
+            <br />
+            E-Mail:{" "}
+            <a href="mailto:operations@aero360.co.in">
+              operations@aero360.co.in
+            </a>
+          </p>
+        </div>
+
+        {/* "Supplier (Bill from)" Section */}
+        <div>
+          <h3>Supplier (Bill from)</h3>
+          <p>
+            <strong>{vendorName || "N/A"}</strong>
+            <br />
+            {vendorContact?.location || "Location not available"}
+            <br />
+            GSTIN/UIN: 33ABPFA9368K1ZS
+            <br />
+            State Name: Tamil Nadu, Code: 33
+          </p>
+        </div>
+      </div>
+
+      {/* Right Panel */}
+      <div style={rightPanelStyle}>
+        {/* 2x4 Grid */}
+        <div style={gridStyle}>
+          <div style={gridCellStyle}>PO. No.</div>
+          <div style={gridCellStyle}>Date {poListData?.date || ""}</div>
+          <div style={gridCellStyle}></div>
+          <div style={gridCellStyle}>Mode/Terms of Payment</div>
+          <div style={gridCellStyle}>Reference No. and Date</div>
+          <div style={gridCellStyle}>Other References</div>
+          <div style={gridCellStyle}>Dispatched through</div>
+          <div style={gridCellStyle}>Destination</div>
+        </div>
+
+        {/* "Terms of Delivery" Section */}
+        <div style={termsStyle}>
+          <h3>Terms of Delivery</h3>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Middle Section Component
+const MiddleSection = ({ poData }) => {
+  const tableStyle = {
+    width: "100%",
+    borderCollapse: "collapse",
+    marginBottom: "20px",
+  };
+
+  const thTdStyle = {
+    border: "1px solid #000",
+    padding: "6px",
+    textAlign: "left",
+  };
+
+  const handleRowChange = (index, field, value) => {
+    const updatedData = [...poData];
+    updatedData[index][field] = value;
+    onUpdatePoData(updatedData);
+  };
+
+  return (
+    <table style={tableStyle}>
+      <thead>
+        <tr>
+          <th style={thTdStyle}>Sl No.</th>
+          <th style={thTdStyle}>Description of Goods</th>
+          <th style={thTdStyle}>Due on</th>
+          <th style={thTdStyle}>Quantity</th>
+          <th style={thTdStyle}>Rate</th>
+          <th style={thTdStyle}>UOM</th>
+          <th style={thTdStyle}>Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {poData.map((po, index) => (
+          <tr key={po.id}>
+            <td style={thTdStyle}>{index + 1}</td>
+            <td style={thTdStyle}>{po.cart_details.component_specification}</td>
+            <td style={thTdStyle}>{po.due_date || "N/A"}</td>
+            <td style={thTdStyle}>{po.cart_details.quantity}</td>
+            <td style={thTdStyle}>{po.cart_details.unit_price}</td>
+            <td style={thTdStyle}>{po.cart_details.unit_of_measurement}</td>
+            <td style={thTdStyle}>
+              {(po.cart_details.unit_price * po.cart_details.quantity).toFixed(
+                2
+              )}
+            </td>
+          </tr>
+        ))}
+
+        {/* Total Row */}
+        <tr>
+          <td align="right" colSpan="6">
+            Sub Total
+          </td>
+          <td>
+            {poData
+              .reduce((sum, po) => {
+                const total =
+                  po.cart_details.unit_price * po.cart_details.quantity || 0;
+                return sum + total;
+              }, 0)
+              .toFixed(2)}
+          </td>
+        </tr>
+        {/* CGST Row */}
+        <tr>
+          <td align="right" colSpan="6">
+            CGST (9%)
+          </td>
+          <td>
+            {(
+              poData.reduce((sum, po) => {
+                const total =
+                  po.cart_details.unit_price * po.cart_details.quantity || 0;
+                return sum + total;
+              }, 0) * 0.09
+            ).toFixed(2)}
+          </td>
+        </tr>
+
+        {/* SGST Row */}
+        <tr>
+          <td align="right" colSpan="6">
+            SGST (9%)
+          </td>
+          <td>
+            {(
+              poData.reduce((sum, po) => {
+                const total =
+                  po.cart_details.unit_price * po.cart_details.quantity || 0;
+                return sum + total;
+              }, 0) * 0.09
+            ).toFixed(2)}
+          </td>
+        </tr>
+
+        {/* Grand Total Row */}
+        <tr>
+          <td align="right" colSpan="6">
+            Total
+          </td>
+          <td>
+            {(
+              poData.reduce((sum, po) => {
+                const total =
+                  po.cart_details.unit_price * po.cart_details.quantity || 0;
+                return sum + total;
+              }, 0) * 1.18
+            ).toFixed(2)}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  );
+};
+
+// Bottom Section Component
+const BottomSection = ({ grandTotal, totalInWords }) => {
+  const footerStyle = {
+    textAlign: "right",
+    marginTop: "30px",
+    fontStyle: "italic",
+  };
+
+  const computerStyle = {
+    alignItems: "center",
+    textAlign: "center",
+    fontStyle: "italic",
+  };
+
+  return (
+    <div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <p>
+          Amount Chargeable (in words): <br />
+          <strong>INR {totalInWords}</strong>
+        </p>
+        <p style={{ margin: 0 }}>E. & O.E</p>
+      </div>
+      <br />
+      <br />
+      <br />
+      <br />
+      <br />
+      <br />
+      <br />
+      <br />
+      <br />
+      <br />
+      <br />
+      <br />
+      <br />
+      <br />
+      <br />
+      <br />
+
+      <p style={footerStyle}>
+        <br />
+        <strong>for Dronix Technologies Pvt Ltd</strong>
+        <br />
+        <br />
+        <br />
+        <br />
+        Authorised Signatory
+        <br />
+      </p>
+      <p style={computerStyle}>
+        <small>This is a Computer Generated Document</small>
+      </p>
+    </div>
+  );
+};
+
+// Main PurchaseOrder Component
 const PurchaseOrder = () => {
   const formRef = useRef();
-  const { id } = useParams(); // Extract the PO ID from the route
-  const [poData, setPOData] = useState([]); // State to store PO data
+  const { id } = useParams();
+  const [poData, setPOData] = useState([]);
   const [poListData, setPOListData] = useState(null);
   const [vendorContact, setVendorContact] = useState(null);
   const [vendorName, setVendorName] = useState(null);
@@ -105,25 +433,6 @@ const PurchaseOrder = () => {
   if (loading) return <p>Loading...</p>;
   if (error) return <p>{error}</p>;
 
-  const handleDownload = () => {
-    const input = formRef.current;
-    html2canvas(input, { scale: 2 }).then((canvas) => {
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("p", "mm", "a4"); // A4 size: Portrait mode, mm units
-      const pdfWidth = 210; // A4 width in mm
-      const pdfHeight = 297; // A4 height in mm
-      const canvasWidth = canvas.width;
-      const canvasHeight = canvas.height;
-      const aspectRatio = canvasHeight / canvasWidth;
-
-      const imageHeight = pdfWidth * aspectRatio; // Scale height proportionally to fit A4 width
-
-      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, imageHeight);
-
-      pdf.save("PurchaseOrder.pdf");
-    });
-  };
-
   const convertNumberToWords = (number) => {
     const rupees = Math.floor(number); // Get the rupee part
     const paise = Math.round((number - rupees) * 100); // Get the paise part
@@ -146,276 +455,40 @@ const PurchaseOrder = () => {
     }, 0) * 1.18
   ).toFixed(2);
 
-  // Convert grand total to words
-  // const totalInWords = grandTotal
-  //   ? toWords(parseFloat(grandTotal).toFixed(0)) + " Rupees Only"
-  //   : "";
   const totalInWords = convertNumberToWords(parseFloat(grandTotal));
 
   const containerStyle = {
-    width: "210mm", // Match A4 width
+    width: "210mm", // A4 width
+    height: "297mm", // A4 height
     margin: "0 auto",
-    padding: "20px",
-    border: "2px solid #000",
-    fontFamily: "Arial, sans-serif",
-    fontSize: "12px",
-  };
-
-  const titleStyle = {
-    textAlign: "center",
-    fontSize: "16px",
-    fontWeight: "bold",
-    textDecoration: "underline",
-    marginBottom: "20px",
-  };
-
-  const sectionStyle = {
-    marginBottom: "20px",
-    lineHeight: "1.5",
-  };
-
-  const tableStyle = {
-    width: "100%",
-    borderCollapse: "collapse",
-    marginBottom: "20px",
-  };
-
-  const thTdStyle = {
+    padding: "10mm", // Add a small padding for aesthetics
+    boxSizing: "border-box",
     border: "1px solid #000",
-    padding: "6px",
-    textAlign: "left",
+    fontFamily: "Arial, sans-serif",
+    fontSize: "10px",
   };
 
-  const totalStyle = {
-    textAlign: "right",
-    fontWeight: "bold",
-    marginRight: "20px",
-  };
-
-  const footerStyle = {
-    textAlign: "center",
-    marginTop: "30px",
-    fontStyle: "italic",
+  const handleDownload = () => {
+    const input = formRef.current;
+    html2canvas(input, { scale: 2 }).then((canvas) => {
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      pdf.addImage(imgData, "PNG", 0, 0, 210, 297);
+      pdf.save("PurchaseOrder.pdf");
+    });
   };
 
   return (
     <div>
       <div ref={formRef} style={containerStyle}>
-        <h1 style={titleStyle}>PURCHASE ORDER</h1>
-
-        <div style={sectionStyle}>
-          <h3>Invoice To</h3>
-          <p>
-            <strong>Dronix Technologies Pvt Ltd</strong>
-            <br />
-            No.7, KRJ Building, 3rd Floor, Welders Street, Mount Road, Chennai -
-            600002.
-            <br />
-            GSTIN/UIN: 33AAGCD1081K1ZS
-            <br />
-            State Name: Tamil Nadu, Code: 33
-            <br />
-            E-Mail:{" "}
-            <a href="mailto:finance@aero360.co.in">finance@aero360.co.in</a>
-          </p>
-        </div>
-
-        <table style={tableStyle}>
-          <tbody>
-            <tr>
-              <td style={thTdStyle}>Voucher No.</td>
-              <td style={thTdStyle}>11/24-25</td>
-              <td style={thTdStyle}>Dated</td>
-              <td style={thTdStyle}>{poListData.date}</td>
-            </tr>
-            <tr>
-              <td style={thTdStyle}>Mode/Terms of Payment</td>
-              <td style={thTdStyle}></td>
-              <td style={thTdStyle}>Reference No. & Date</td>
-              <td style={thTdStyle}>11/24-25</td>
-            </tr>
-            <tr>
-              <td style={thTdStyle}>Other References</td>
-              <td style={thTdStyle}></td>
-              <td style={thTdStyle}>Dispatched through</td>
-              <td style={thTdStyle}></td>
-            </tr>
-          </tbody>
-        </table>
-
-        <table style={tableStyle}>
-          <tbody>
-            <tr>
-              <td style={thTdStyle} colSpan="4">
-                <h3>Consignee (Ship to)</h3>
-                <p>
-                  <strong>Dronix Technologies Pvt Ltd</strong>
-                  <br />
-                  No.7, KRJ Building, 3rd Floor, Welders Street, Mount Road,
-                  Chennai - 600002.
-                  <br />
-                  E-Mail:{" "}
-                  <a href="mailto:finance@aero360.co.in">
-                    finance@aero360.co.in
-                  </a>
-                  <br />
-                  GSTIN/UIN: 33AAGCD1081K1ZS
-                  <br />
-                  State Name: Tamil Nadu, Code: 33
-                </p>
-              </td>
-            </tr>
-            <tr>
-              <td style={thTdStyle} colSpan="4">
-                <h3>Supplier (Bill from)</h3>
-                <p>
-                  <strong>{vendorName || "N/A"}</strong>
-                  <br />
-                  {vendorContact?.location || "Location not available"}
-                  <br />
-                  GSTIN/UIN: 33ABPFA9368K1ZS
-                  <br />
-                  State Name: Tamil Nadu, Code: 33
-                </p>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        <table style={tableStyle}>
-          <thead>
-            <tr>
-              <th style={thTdStyle}>Sl No.</th>
-              <th style={thTdStyle}>Description of Goods</th>
-              <th style={thTdStyle}>Due on</th>
-              <th style={thTdStyle}>Quantity</th>
-              <th style={thTdStyle}>Rate</th>
-              <th style={thTdStyle}>Per</th>
-              <th style={thTdStyle}>Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {poData && poData.length > 0 ? (
-              poData.map((po, index) => (
-                <tr key={po.id}>
-                  <td style={thTdStyle}>{index + 1}</td>
-                  <td style={thTdStyle}>
-                    {po.cart_details.component_specification}
-                  </td>
-                  <td style={thTdStyle}>{po.due_date || "N/A"}</td>
-                  {""}
-
-                  <td style={thTdStyle}>
-                    {po.cart_details.quantity}
-                    {""}
-                    {po.cart_details.unit_of_measurement}
-                  </td>
-                  <td style={thTdStyle}>{po.cart_details.unit_price}</td>
-                  <td style={thTdStyle}>
-                    {po.cart_details.unit_of_measurement}
-                  </td>
-                  <td style={thTdStyle}>
-                    {po.cart_details.unit_price && po.cart_details.quantity
-                      ? (
-                          po.cart_details.unit_price * po.cart_details.quantity
-                        ).toFixed(2)
-                      : "0.00"}
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td style={thTdStyle} colSpan="7">
-                  No Purchase Orders found.
-                </td>
-              </tr>
-            )}
-
-            {/* Total Row */}
-            <tr>
-              <td align="right" colSpan="6">
-                Total
-              </td>
-              <td>
-                {poData
-                  .reduce((sum, po) => {
-                    const total =
-                      po.cart_details.unit_price * po.cart_details.quantity ||
-                      0;
-                    return sum + total;
-                  }, 0)
-                  .toFixed(2)}
-              </td>
-            </tr>
-            {/* CGST Row */}
-            <tr>
-              <td align="right" colSpan="6">
-                CGST (9%)
-              </td>
-              <td>
-                {(
-                  poData.reduce((sum, po) => {
-                    const total =
-                      po.cart_details.unit_price * po.cart_details.quantity ||
-                      0;
-                    return sum + total;
-                  }, 0) * 0.09
-                ).toFixed(2)}
-              </td>
-            </tr>
-
-            {/* SGST Row */}
-            <tr>
-              <td align="right" colSpan="6">
-                SGST (9%)
-              </td>
-              <td>
-                {(
-                  poData.reduce((sum, po) => {
-                    const total =
-                      po.cart_details.unit_price * po.cart_details.quantity ||
-                      0;
-                    return sum + total;
-                  }, 0) * 0.09
-                ).toFixed(2)}
-              </td>
-            </tr>
-
-            {/* Grand Total Row */}
-            <tr>
-              <td colSpan="6">Grand Total</td>
-              <td>
-                {(
-                  poData.reduce((sum, po) => {
-                    const total =
-                      po.cart_details.unit_price * po.cart_details.quantity ||
-                      0;
-                    return sum + total;
-                  }, 0) * 1.18
-                ).toFixed(2)}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        {/* <p style={totalStyle}>Total: ₹ 913.32</p> */}
-        {/* <p>
-          Amount Chargeable (in words): INR Nine Hundred Thirteen and Thirty Two
-          Paise Only
-        </p> */}
-        <p>
-          Amount Chargeable (in words): <strong>INR {totalInWords}</strong>
-        </p>
-        <p style={footerStyle}>
-          E. & O.E
-          <br />
-          <strong>for Dronix Technologies Pvt Ltd</strong>
-          <br />
-          <br />
-          Authorised Signatory
-          <br />
-          <small>This is a Computer Generated Document</small>
-        </p>
+        <h3 style={{ textAlign: "center" }}>PURCHASE ORDER</h3>
+        <FirstSection
+          vendorName={vendorName}
+          vendorContact={vendorContact}
+          poListData={poListData}
+        />
+        <MiddleSection poData={poData} />
+        <BottomSection grandTotal={grandTotal} totalInWords={totalInWords} />
       </div>
       <button
         onClick={handleDownload}
