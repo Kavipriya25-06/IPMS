@@ -578,54 +578,63 @@ const handleCartOrder = async (item) => {
       />
     )}
   
-      {showCart ? (
-        <div>
-          <h3>Cart</h3>
+  {showCart ? (
+  <div>
+    <h3>Cart</h3>
     {cartItems.length === 0 ? (
       <p>Your cart is empty.</p>
     ) : (
       cartItems.map((group, groupIndex) => (
         <div key={group.vendor_id || groupIndex}>
           <h4>Vendor: {group.vendor_name}</h4>
-          <table>
-            <thead>
-              <tr>
-                <th>Component ID</th>
-                <th>Component Type</th>
-                <th>Specification</th>
-                <th>Quantity</th>
-                <th>Category</th>
-                <th>Unit of Measurement</th>
-                <th>Unit Price</th>
-                <th>GST (%)</th>
-                <th>Total Cost</th>
-                <th>Order</th> {/* New column header for Order button */}
-              </tr>
-            </thead>
-            <tbody>
-              {group.requests.map((item, index) => (
-                <tr key={index}>
-                  <td>{item.component_id}</td>
-                  <td>{item.component_type}</td>
-                  <td>{item.component_specification}</td>
-                  <td>{item.quantity}</td>
-                  <td>{item.category}</td>
-                  <td>{item.unit_of_measurement}</td>
-                  <td>{item.unit_price}</td>
-                  <td>{item.GST}</td>
-                  <td>{item.total_cost}</td>
-                  <td>
-                  <button
-                    onClick={() => handleCartOrder(item)}
-                    disabled={item.order_placed}
-                  >
-                    {item.order_placed ? "Order Placed" : "Place Order"}
-                  </button>
-                      </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {Object.entries(group.requests_by_date).map(([date, requests]) => {
+            const allOrdered = requests.every((item) => item.order_placed);
+            return (
+              <div key={date}>
+                <h5>Date: {date}</h5>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Component ID</th>
+                      <th>Component Type</th>
+                      <th>Specification</th>
+                      <th>Quantity</th>
+                      <th>Category</th>
+                      <th>Unit of Measurement</th>
+                      <th>Unit Price</th>
+                      <th>GST (%)</th>
+                      <th>Total Cost</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {requests.map((item) => (
+                      <tr key={item.id}>
+                        <td>{item.component_id}</td>
+                        <td>{item.component_type}</td>
+                        <td>{item.component_specification}</td>
+                        <td>{item.quantity}</td>
+                        <td>{item.category}</td>
+                        <td>{item.unit_of_measurement}</td>
+                        <td>{item.unit_price}</td>
+                        <td>{item.GST}</td>
+                        <td>{item.total_cost}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <button
+                  onClick={() => {
+                    requests.forEach((item) => {
+                      if (!item.order_placed) handleCartOrder(item);
+                    });
+                  }}
+                  disabled={allOrdered}
+                >
+                  {allOrdered ? "Order Placed" : "Place Order"}
+                </button>
+              </div>
+            );
+          })}
         </div>
       ))
     )}
