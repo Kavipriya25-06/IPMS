@@ -123,7 +123,7 @@ const BOMDetails = () => {
           <p>
             <strong>BOM ID:</strong> {selectedBom.bom_id}
           </p>
-          <h4>Components:</h4>
+          {/* <h4>Components:</h4> */}
           <table border="1" style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr>

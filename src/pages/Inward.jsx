@@ -569,6 +569,32 @@ const Inward = () => {
   
       // If successful, show an alert and refresh inward data
       alert("Successfully moved to inventory.");
+
+     // Update mode_to_inventory to false via a PUT request
+     const updatePayload = {
+      mode_to_inventory: false,
+      quality_check: item.quality_check, // Include existing quality_check value
+      component_id: item.po_master.cart.component_id, // Include component_id
+      po_master_id: item.po_master.id, // Include po_master_id
+    };
+
+    const updateResponse = await fetch(
+      `http://127.0.0.1:8000/inward/${item.inward_id}/`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatePayload),
+      }
+    );
+
+    if (!updateResponse.ok) {
+      const updateError = await updateResponse.json();
+      console.error("Error updating mode_to_inventory:", updateError);
+      alert("Failed to update mode_to_inventory.");
+      return;
+    }
+
+
       fetchInwardData(); // Refresh data after posting
     } catch (error) {
       // Handle any error that occurs during the fetch
@@ -609,7 +635,12 @@ const Inward = () => {
               <td>{item.quality_check || "Not Available"}</td>
               <td>
                 <button onClick={() => handleQCClick(item)}>QC</button>
-                <button onClick={() => handleMoveToInventory(item)}>Move to Inventory</button>
+                <button
+                  onClick={() => handleMoveToInventory(item)}
+                  disabled={item.mode_to_inventory === false} // Disable button if mode_to_inventory is false
+                >
+                  Move to Inventory
+                </button>
               </td>
             </tr>
           ))}

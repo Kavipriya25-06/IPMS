@@ -193,7 +193,7 @@ const POOrderMaster = () => {
       const poData = await poResponse.json();
   
       // Log PO Data to verify its structure
-      console.log("PO Data:", poData);  // Check the structure and contents of poData
+      console.log("PO Data:", poData); // Check the structure and contents of poData
   
       // Find the PO Master ID (id) that matches the current item
       const matchedPO = poData.filter(
@@ -208,7 +208,7 @@ const POOrderMaster = () => {
       );
   
       // Log matched PO for debugging
-      console.log("Matched PO:", matchedPO);  // Check if filtering is correct
+      console.log("Matched PO:", matchedPO); // Check if filtering is correct
   
       if (matchedPO.length === 0) {
         alert("No matching PO Master ID found for the selected item.");
@@ -217,7 +217,7 @@ const POOrderMaster = () => {
   
       // Access the first matched PO (assuming you want to use the first match)
       const po_master_id = matchedPO[0].id; // Get the matched PO ID
-      console.log("Matched PO Master ID:", po_master_id);  // Verify the correct PO Master ID
+      console.log("Matched PO Master ID:", po_master_id); // Verify the correct PO Master ID
   
       // Ensure that po_master_id is correct before proceeding to POST
       if (!po_master_id) {
@@ -241,7 +241,7 @@ const POOrderMaster = () => {
         };
   
         // Log to ensure the correct data is being posted
-        console.log("Inward Payload:", inwardPayload);
+        console.log(`Inward Payload (Unit ${i + 1}):`, inwardPayload);
   
         // POST request to the inward API
         const response = await fetch("http://127.0.0.1:8000/inward/", {
@@ -262,11 +262,35 @@ const POOrderMaster = () => {
       alert(
         `Inward operation completed successfully for ${quantity} units of Component ID: ${component_id}.`
       );
+  
+      // Update inward_status to false for the matched PO Master
+      const updatePayload = {
+        inward_status: false, // Update to false
+      };
+  
+      const updateResponse = await fetch(
+        `http://127.0.0.1:8000/po_master/${po_master_id}/`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updatePayload),
+        }
+      );
+  
+      if (!updateResponse.ok) {
+        const updateError = await updateResponse.json();
+        console.error("Error updating inward_status:", updateError);
+        alert("Failed to update inward status.");
+        return;
+      }
+  
+      console.log("Inward status updated successfully.");
     } catch (error) {
       console.error("Error during inward operation:", error);
       alert("An error occurred while performing the inward operation.");
     }
   };
+  
   
   
   
