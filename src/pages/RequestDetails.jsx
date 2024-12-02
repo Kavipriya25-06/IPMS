@@ -15,10 +15,9 @@ const RequestDetails = () => {
   const [disabledSerialNumbers, setDisabledSerialNumbers] = useState([]);
   const [assignedComponents, setAssignedComponents] = useState({}); // Track assigned components
   const [selectedSerialNumbers, setSelectedSerialNumbers] = useState([]);
-  const [requiredQty, setRequiredQty] = useState(0); 
+  const [requiredQty, setRequiredQty] = useState(0);
   const [showMessageBox, setShowMessageBox] = useState(false);
   const [messageBoxContent, setMessageBoxContent] = useState("");
-  
 
   useEffect(() => {
     fetchRequestDetails();
@@ -90,9 +89,9 @@ const RequestDetails = () => {
         alert("Failed to fetch cart items.");
         return;
       }
-  
+
       const data = await response.json();
-  
+
       // Ensure po_master_id is included in cart items
       setCartItems(data);
     } catch (error) {
@@ -107,21 +106,21 @@ const RequestDetails = () => {
       setShowMessageBox(true);
       return;
     }
-  
+
     const selectedVendor = vendorNames.find(
       (vendor) => vendor.vendor_name === detail.vendor_name
     );
     const vendor_id = selectedVendor ? selectedVendor.vendor_id : null;
-  
+
     if (!vendor_id) {
       alert("Invalid vendor selected.");
       return;
     }
-  
+
     let productId = null;
     let price = 0;
     let tax = 0;
-  
+
     try {
       // Fetch product_id from the component API
       const componentResponse = await fetch("http://127.0.0.1:8000/component/");
@@ -130,32 +129,36 @@ const RequestDetails = () => {
         alert("Failed to fetch component data.");
         return;
       }
-  
+
       const componentData = await componentResponse.json();
       const component = componentData.find(
         (comp) => comp.component_id === detail.component_id
       );
-  
+
       if (component) {
         productId = component.product_id; // Extract product_id
       } else {
-        alert(`Component data not found for component_id: ${detail.component_id}`);
+        alert(
+          `Component data not found for component_id: ${detail.component_id}`
+        );
         return;
       }
-  
+
       // Fetch price and tax from the price table API
-      const priceTableResponse = await fetch("http://127.0.0.1:8000/price_tables/");
+      const priceTableResponse = await fetch(
+        "http://127.0.0.1:8000/price_tables/"
+      );
       if (!priceTableResponse.ok) {
         console.error("Error fetching price table data.");
         alert("Failed to fetch price table data.");
         return;
       }
-  
+
       const priceTableData = await priceTableResponse.json();
       const priceEntry = priceTableData.find(
         (entry) => entry.product === productId
       );
-  
+
       if (priceEntry) {
         price = priceEntry.price;
         tax = priceEntry.tax;
@@ -168,11 +171,11 @@ const RequestDetails = () => {
       alert("An error occurred while fetching data.");
       return;
     }
-  
+
     // Calculate total cost
     const gstAmount = (price * tax) / 100;
     const totalCost = (price + gstAmount) * detail.qty;
-  
+
     // Prepare payload for cart API
     const orderData = {
       component_id: detail.component_id,
@@ -189,7 +192,7 @@ const RequestDetails = () => {
       total_cost: totalCost, // Add calculated total cost
       assign: true, // Set assign to true after adding to cart
     };
-  
+
     try {
       const response = await fetch("http://127.0.0.1:8000/cart/", {
         method: "POST",
@@ -198,11 +201,11 @@ const RequestDetails = () => {
         },
         body: JSON.stringify(orderData),
       });
-  
+
       if (response.ok) {
         setMessageBoxContent(`Component ${detail.component_id} added to cart.`);
         setShowMessageBox(true);
-        
+
         // Update the request_master API to mark the item as assigned
         const updatePayload = {
           request_id: detail.request_id,
@@ -216,7 +219,7 @@ const RequestDetails = () => {
           qty: 0, // Set quantity to 0
           assign: true, // Mark as assigned
         };
-  
+
         const updateResponse = await fetch(
           `http://127.0.0.1:8000/request_master/${detail.request_id}/${detail.id}/`,
           {
@@ -227,14 +230,14 @@ const RequestDetails = () => {
             body: JSON.stringify(updatePayload),
           }
         );
-  
+
         if (!updateResponse.ok) {
           const errorDetails = await updateResponse.json();
           console.error("Error updating request master:", errorDetails);
           alert(`Failed to update request master: ${errorDetails.error}`);
           return;
         }
-  
+
         // Refresh cart and update UI
         fetchCartItems();
         setDetails((prevDetails) =>
@@ -247,303 +250,309 @@ const RequestDetails = () => {
       } else {
         const errorResponse = await response.json();
         console.error("Error adding component to cart:", errorResponse);
-        alert(`Failed to add component to cart: ${JSON.stringify(errorResponse)}`);
+        alert(
+          `Failed to add component to cart: ${JSON.stringify(errorResponse)}`
+        );
       }
     } catch (error) {
       console.error("Error posting to cart:", error);
     }
   };
-    
 
-const handleAssign = async (componentId, qty) => {
-  const componentData = inventoryData[componentId];
+  const handleAssign = async (componentId, qty) => {
+    const componentData = inventoryData[componentId];
 
-  if (!componentData) {
-    alert("Component data not found in inventory.");
-    return;
-  }
-
-  if (componentData.qty >= qty) {
-    const availableSerialNumbers = componentData.serialNumbers
-      .filter((sn) => sn.status === true)
-      .map((sn) => sn.serialNumber);
-
-    if (availableSerialNumbers.length >= qty) {
-      setSerialNumbers(availableSerialNumbers); // Set available serials
-      setSelectedComponent(componentId);
-      setSelectedSerialNumbers([]); // Reset selection
-      setRequiredQty(qty); // Set required quantity for exact selection
-      setShowSerialPopup(true);
-    } else {
-      alert("Insufficient available serial numbers in inventory for this component.");
-    }
-  } else {
-    alert("Insufficient quantity in inventory.");
-  }
-};
-
-const handleSerialSelection = (serialNumber) => {
-  setSelectedSerialNumbers((prevSelectedSerials) => {
-    if (prevSelectedSerials.includes(serialNumber)) {
-      return prevSelectedSerials.filter((sn) => sn !== serialNumber);
-    } else if (prevSelectedSerials.length < requiredQty) {
-      return [...prevSelectedSerials, serialNumber];
-    } else {
-      alert(`You must select exactly ${requiredQty} serial numbers.`);
-      return prevSelectedSerials;
-    }
-  });
-};
-
-const handleConfirmAssignment = async () => {
-  if (selectedSerialNumbers.length !== requiredQty) {
-    alert(`Please select exactly ${requiredQty} serial numbers.`);
-    return;
-  }
-
-  setShowSerialPopup(false);
-
-  try {
-    // Fetch the ID for the selected component's request master
-    const selectedDetail = details.find(
-      (detail) => detail.component_id === selectedComponent
-    );
-
-    if (!selectedDetail || !selectedDetail.id) {
-      console.error("Request ID not found for the selected component.");
-      alert("Error: Unable to find the request ID for the selected component.");
+    if (!componentData) {
+      alert("Component data not found in inventory.");
       return;
     }
 
-    const { id } = selectedDetail; // Extract the `id` from the selected detail
-    const requestId = selectedDetail.request_id; // Extract the `request_id` if needed
+    if (componentData.qty >= qty) {
+      const availableSerialNumbers = componentData.serialNumbers
+        .filter((sn) => sn.status === true)
+        .map((sn) => sn.serialNumber);
 
-    // Update inventory serial numbers
-    for (const serialNumber of selectedSerialNumbers) {
-      // First, fetch the existing inventory data for the serial number
-      const inventoryResponse = await fetch(
-        `http://127.0.0.1:8000/inventory/${serialNumber}/`
+      if (availableSerialNumbers.length >= qty) {
+        setSerialNumbers(availableSerialNumbers); // Set available serials
+        setSelectedComponent(componentId);
+        setSelectedSerialNumbers([]); // Reset selection
+        setRequiredQty(qty); // Set required quantity for exact selection
+        setShowSerialPopup(true);
+      } else {
+        alert(
+          "Insufficient available serial numbers in inventory for this component."
+        );
+      }
+    } else {
+      alert("Insufficient quantity in inventory.");
+    }
+  };
+
+  const handleSerialSelection = (serialNumber) => {
+    setSelectedSerialNumbers((prevSelectedSerials) => {
+      if (prevSelectedSerials.includes(serialNumber)) {
+        return prevSelectedSerials.filter((sn) => sn !== serialNumber);
+      } else if (prevSelectedSerials.length < requiredQty) {
+        return [...prevSelectedSerials, serialNumber];
+      } else {
+        alert(`You must select exactly ${requiredQty} serial numbers.`);
+        return prevSelectedSerials;
+      }
+    });
+  };
+
+  const handleConfirmAssignment = async () => {
+    if (selectedSerialNumbers.length !== requiredQty) {
+      alert(`Please select exactly ${requiredQty} serial numbers.`);
+      return;
+    }
+
+    setShowSerialPopup(false);
+
+    try {
+      // Fetch the ID for the selected component's request master
+      const selectedDetail = details.find(
+        (detail) => detail.component_id === selectedComponent
       );
 
-      if (!inventoryResponse.ok) {
-        console.error(`Error fetching inventory data for serial: ${serialNumber}`);
-        alert(`Could not fetch data for serial number ${serialNumber}`);
+      if (!selectedDetail || !selectedDetail.id) {
+        console.error("Request ID not found for the selected component.");
+        alert(
+          "Error: Unable to find the request ID for the selected component."
+        );
         return;
       }
 
-      const inventoryData = await inventoryResponse.json();
+      const { id } = selectedDetail; // Extract the `id` from the selected detail
+      const requestId = selectedDetail.request_id; // Extract the `request_id` if needed
 
-      // Create payload with the current data and change only the status to false
-      const inventoryPayload = {
-        component: inventoryData.component,
-        serial_number: serialNumber,
-        vendor_name: inventoryData.vendor_name || "V_00001",  // Use existing vendor if present
-        component_id: inventoryData.component_id,  // Use existing component_id
-        component_type: inventoryData.component_type, // Retain existing component_type
-        category: inventoryData.category, // Retain existing category
-        specification: inventoryData.specification, // Retain existing specification
-        UOM: inventoryData.UOM, // Retain existing UOM
-        status: false, // Mark as assigned
+      // Update inventory serial numbers
+      for (const serialNumber of selectedSerialNumbers) {
+        // First, fetch the existing inventory data for the serial number
+        const inventoryResponse = await fetch(
+          `http://127.0.0.1:8000/inventory/${serialNumber}/`
+        );
+
+        if (!inventoryResponse.ok) {
+          console.error(
+            `Error fetching inventory data for serial: ${serialNumber}`
+          );
+          alert(`Could not fetch data for serial number ${serialNumber}`);
+          return;
+        }
+
+        const inventoryData = await inventoryResponse.json();
+
+        // Create payload with the current data and change only the status to false
+        const inventoryPayload = {
+          component: inventoryData.component,
+          serial_number: serialNumber,
+          vendor_name: inventoryData.vendor_name || "V_00001", // Use existing vendor if present
+          component_id: inventoryData.component_id, // Use existing component_id
+          component_type: inventoryData.component_type, // Retain existing component_type
+          category: inventoryData.category, // Retain existing category
+          specification: inventoryData.specification, // Retain existing specification
+          UOM: inventoryData.UOM, // Retain existing UOM
+          status: false, // Mark as assigned
+        };
+
+        // Update the inventory status for the serial number
+        const updateResponse = await fetch(
+          `http://127.0.0.1:8000/inventory/${serialNumber}/`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(inventoryPayload),
+          }
+        );
+
+        if (!updateResponse.ok) {
+          console.error(`Error updating inventory for serial: ${serialNumber}`);
+          alert(`Could not update inventory for serial number ${serialNumber}`);
+          return;
+        }
+      }
+
+      // Fetch current qty from request master using the ID
+      const requestMasterFetchResponse = await fetch(
+        `http://127.0.0.1:8000/request_master/${requestId}/${id}/`
+      );
+
+      if (!requestMasterFetchResponse.ok) {
+        console.error("Error fetching request master data.");
+        alert("Could not fetch the current quantity for the request.");
+        return;
+      }
+
+      const requestMasterData = await requestMasterFetchResponse.json();
+
+      // Prepare request master payload
+      const requestMasterPayload = {
+        assign: true, // Mark as assigned
+        qty: requiredQty, // Use the current qty value
+        status: "Assigned", // Update status
       };
 
-      // Update the inventory status for the serial number
-      const updateResponse = await fetch(
-        `http://127.0.0.1:8000/inventory/${serialNumber}/`,
+      console.log("Request ID:", requestId); // Debug
+      console.log("Request Master ID:", id); // Debug
+      console.log("Request Master Payload:", requestMasterPayload); // Debug
+
+      // Update request_master
+      const requestMasterResponse = await fetch(
+        `http://127.0.0.1:8000/request_master/${requestId}/${id}/`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(inventoryPayload),
+          body: JSON.stringify(requestMasterPayload),
         }
       );
 
-      if (!updateResponse.ok) {
-        console.error(`Error updating inventory for serial: ${serialNumber}`);
-        alert(`Could not update inventory for serial number ${serialNumber}`);
+      if (!requestMasterResponse.ok) {
+        const errorDetails = await requestMasterResponse.json(); // Capture backend error
+        console.error("Request Master Error:", errorDetails);
+        alert("Error updating request master: " + JSON.stringify(errorDetails));
         return;
       }
-    }
 
-    // Fetch current qty from request master using the ID
-    const requestMasterFetchResponse = await fetch(
-      `http://127.0.0.1:8000/request_master/${requestId}/${id}/`
-    );
-
-    if (!requestMasterFetchResponse.ok) {
-      console.error("Error fetching request master data.");
-      alert("Could not fetch the current quantity for the request.");
-      return;
-    }
-
-
-    const requestMasterData = await requestMasterFetchResponse.json();
-
-    // Prepare request master payload
-    const requestMasterPayload = {
-      assign: true, // Mark as assigned
-      qty: requiredQty, // Use the current qty value
-      status: "Assigned", // Update status
-    };
-
-    console.log("Request ID:", requestId); // Debug
-    console.log("Request Master ID:", id); // Debug
-    console.log("Request Master Payload:", requestMasterPayload); // Debug
-
-    // Update request_master
-    const requestMasterResponse = await fetch(
-      `http://127.0.0.1:8000/request_master/${requestId}/${id}/`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestMasterPayload),
-      }
-    );
-
-    if (!requestMasterResponse.ok) {
-      const errorDetails = await requestMasterResponse.json(); // Capture backend error
-      console.error("Request Master Error:", errorDetails);
-      alert("Error updating request master: " + JSON.stringify(errorDetails));
-      return;
-    }
-
-    // Update the frontend state
-    setDetails((prevDetails) =>
-      prevDetails.map((detail) =>
-        detail.component_id === selectedComponent
-          ? { ...detail, assign: true } // Update assign status in the UI
-          : detail
-      )
-    );
-
-    setInventoryData((prevData) => {
-      const currentComponentData = prevData[selectedComponent] || {};
-      const updatedSerialNumbers = currentComponentData.serialNumbers.filter(
-        (sn) => !selectedSerialNumbers.includes(sn.serialNumber)
+      // Update the frontend state
+      setDetails((prevDetails) =>
+        prevDetails.map((detail) =>
+          detail.component_id === selectedComponent
+            ? { ...detail, assign: true } // Update assign status in the UI
+            : detail
+        )
       );
 
-      return {
-        ...prevData,
-        [selectedComponent]: {
-          ...currentComponentData,
-          serialNumbers: updatedSerialNumbers, // Remove used serial numbers
-        },
+      setInventoryData((prevData) => {
+        const currentComponentData = prevData[selectedComponent] || {};
+        const updatedSerialNumbers = currentComponentData.serialNumbers.filter(
+          (sn) => !selectedSerialNumbers.includes(sn.serialNumber)
+        );
+
+        return {
+          ...prevData,
+          [selectedComponent]: {
+            ...currentComponentData,
+            serialNumbers: updatedSerialNumbers, // Remove used serial numbers
+          },
+        };
+      });
+    } catch (error) {
+      console.error("Error confirming assignment:", error);
+      alert("An error occurred while confirming assignment.");
+    }
+  };
+
+  // handle place order button version 2
+
+  const getFirstItemId = (group) => {
+    // Get the requests_by_date object
+    const requestsByDate = group.requests_by_date;
+
+    // Get the first date key (assuming it's sorted or you don't care about order)
+    const firstDateKey = Object.keys(requestsByDate)[0];
+
+    // Get the first item from the array of the first date
+    const firstItem = requestsByDate[firstDateKey][0];
+
+    // Return the id of the first item
+    return firstItem?.id || null; // Use optional chaining to avoid errors
+  };
+
+  const handlePlaceOrder = async (group) => {
+    try {
+      // Get the cart_id from the first item's ID
+      const cartId = getFirstItemId(group);
+
+      if (!cartId) {
+        alert("Unable to find a valid cart_id for the group.");
+        return;
+      }
+
+      console.log("Input group", group);
+      // Step 1: Post to PO_list and retrieve PO ID
+      const poListPayload = {
+        status: "In Progress", // Order status
+        cart_id: cartId,
       };
-    });
-  } catch (error) {
-    console.error("Error confirming assignment:", error);
-    alert("An error occurred while confirming assignment.");
-  }
-};
 
+      console.log("PO list sending payload", poListPayload);
 
+      const poListResponse = await fetch("http://127.0.0.1:8000/po_list/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(poListPayload),
+      });
 
-const handleCartOrder = async (item) => {
-  try {
-    // Step 1: Construct the payload for po_list
-    const payloadForPoList = {
-      status: "In Progress", // Order status
-      cart_id: item.id, // Use `item.id` as the cart_id
-    };
+      if (!poListResponse.ok) {
+        const error = await poListResponse.json();
+        console.error("Error posting to PO_list:", error);
+        alert(`Failed to create PO_list: ${JSON.stringify(error)}`);
+        return;
+      }
 
-    console.log("Payload to POST (po_list):", payloadForPoList); // Debug the payload
+      const poListData = await poListResponse.json();
+      const poListId = poListData.id;
 
-    // POST request to the po_list API
-    const poListResponse = await fetch("http://127.0.0.1:8000/po_list/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payloadForPoList),
-    });
+      console.log("Created PO_list entry with ID:", poListId);
+      console.log("Created PO_list payload with ID:", poListData);
 
-    if (!poListResponse.ok) {
-      const error = await poListResponse.json();
-      console.error("Error from po_list API:", error);
-      alert(`Failed to place order in po_list: ${JSON.stringify(error)}`);
-      return;
+      // Step 2: Post each item in the group to PO_master
+      const poMasterPromises = Object.entries(group.requests_by_date)
+        .flatMap(([date, requests]) => requests) // Flatten arrays from all dates
+        .map((item) => {
+          const poMasterPayload = {
+            PO_id: poListId, // Use the generated PO_list ID
+            cart_id: item.id, // Use the cart item ID
+            status: "In Progress", // Order status
+          };
+
+          return fetch("http://127.0.0.1:8000/po_master/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(poMasterPayload),
+          });
+        });
+
+      const poMasterResponses = await Promise.all(poMasterPromises);
+
+      const failedResponses = poMasterResponses.filter((res) => !res.ok);
+      if (failedResponses.length > 0) {
+        console.error("Some items failed to post to PO_master.");
+        alert("Failed to post some items to PO_master.");
+      } else {
+        console.log("All items posted to PO_master successfully.");
+      }
+
+      // Step 3: Mark all items in the group as ordered in the UI
+      setCartItems((prevCartItems) =>
+        prevCartItems.map((cartItem) =>
+          cartItem.vendor_id === group.vendor_id
+            ? {
+                ...cartItem,
+                requests_by_date: Object.fromEntries(
+                  Object.entries(cartItem.requests_by_date).map(
+                    ([date, requests]) => [
+                      date,
+                      requests.map((item) => ({ ...item, order_placed: true })),
+                    ]
+                  )
+                ),
+              }
+            : cartItem
+        )
+      );
+
+      alert("Order placed successfully!");
+    } catch (error) {
+      console.error("Error placing order:", error);
+      alert("An error occurred while placing the order.");
     }
-
-    // Extract the generated po_id from the response
-    const poListData = await poListResponse.json();
-    const PO_id = poListData.id; // Assuming the API returns an `id` field
-
-    console.log("Generated po_id:", PO_id); // Debug the po_id
-
-    // Step 2: Construct the payload for po_master
-    const payloadForPoMaster = {
-      PO_id, // Use the po_id from po_list response
-      status: "In Progress", // Order status
-      cart_id: item.id, // Use the same cart_id
-    };
-
-    console.log("Payload to POST (po_master):", payloadForPoMaster); // Debug the payload
-
-    // POST request to the po_master API
-    const poMasterResponse = await fetch("http://127.0.0.1:8000/po_master/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payloadForPoMaster),
-    });
-
-    if (!poMasterResponse.ok) {
-      const error = await poMasterResponse.json();
-      console.error("Error from po_master API:", error);
-      alert(`Failed to record order in po_master: ${JSON.stringify(error)}`);
-      return;
-    }
-
-    // Step 3: PUT to cart API to set `order_placed` to true
-    const cartDetailsResponse = await fetch(`http://127.0.0.1:8000/cart/${item.id}/`);
-    if (!cartDetailsResponse.ok) {
-      const error = await cartDetailsResponse.json();
-      console.error("Error retrieving cart details:", error);
-      alert(`Failed to retrieve cart details: ${JSON.stringify(error)}`);
-      return;
-    }
-
-    const cartDetails = await cartDetailsResponse.json();
-    console.log("Cart details retrieved:", cartDetails);
-
-    // Construct the PUT payload
-    const putPayload = {
-      ...cartDetails.requests[0], // Assuming a single request
-      vendor_id: cartDetails.vendor_id,
-      vendor_name: cartDetails.vendor_name,
-      order_placed: true, // Set order_placed to true
-    };
-
-    console.log("Payload to PUT (cart):", putPayload);
-
-    // PUT request to update cart
-    const cartResponse = await fetch(`http://127.0.0.1:8000/cart/${item.id}/`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(putPayload),
-    });
-
-    if (!cartResponse.ok) {
-      const error = await cartResponse.json();
-      console.error("Error updating cart API:", error);
-      alert(`Failed to update cart: ${JSON.stringify(error)}`);
-      return;
-    }
-
-    // Step 4: Update the UI to disable the Order button
-    setCartItems((prevCartItems) =>
-      prevCartItems.map((cartItem) =>
-        cartItem.id === item.id
-          ? { ...cartItem, order_placed: true }
-          : cartItem
-      )
-    );
-
-    alert("Order placed successfully!");
-  } catch (error) {
-    console.error("Error handling cart order:", error);
-    alert("An error occurred while processing the order.");
-  }
-};
+  };
 
   const handleVendorChange = (component_id, selectedVendorName) => {
     const updatedDetails = details.map((detail) => {
@@ -554,7 +563,6 @@ const handleCartOrder = async (item) => {
     });
     setDetails(updatedDetails);
   };
-
 
   const toggleCartView = async () => {
     if (!showCart) {
@@ -570,75 +578,77 @@ const handleCartOrder = async (item) => {
         {showCart ? "Hide Cart" : "View Cart"}
       </button>
 
-       {/* Render CustomMessagebox when showMessageBox is true */}
-    {showMessageBox && (
-      <CustomMessagebox
-        message={messageBoxContent}
-        onClose={() => setShowMessageBox(false)}
-      />
-    )}
-  
-  {showCart ? (
-  <div>
-    <h3>Cart</h3>
-    {cartItems.length === 0 ? (
-      <p>Your cart is empty.</p>
-    ) : (
-      cartItems.map((group, groupIndex) => (
-        <div key={group.vendor_id || groupIndex}>
-          <h4>Vendor: {group.vendor_name}</h4>
-          {Object.entries(group.requests_by_date).map(([date, requests]) => {
-            const allOrdered = requests.every((item) => item.order_placed);
-            return (
-              <div key={date}>
-                <h5>Date: {date}</h5>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Component ID</th>
-                      <th>Component Type</th>
-                      <th>Specification</th>
-                      <th>Quantity</th>
-                      <th>Category</th>
-                      <th>Unit of Measurement</th>
-                      <th>Unit Price</th>
-                      <th>GST (%)</th>
-                      <th>Total Cost</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {requests.map((item) => (
-                      <tr key={item.id}>
-                        <td>{item.component_id}</td>
-                        <td>{item.component_type}</td>
-                        <td>{item.component_specification}</td>
-                        <td>{item.quantity}</td>
-                        <td>{item.category}</td>
-                        <td>{item.unit_of_measurement}</td>
-                        <td>{item.unit_price}</td>
-                        <td>{item.GST}</td>
-                        <td>{item.total_cost}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <button
-                  onClick={() => {
-                    requests.forEach((item) => {
-                      if (!item.order_placed) handleCartOrder(item);
-                    });
-                  }}
-                  disabled={allOrdered}
-                >
-                  {allOrdered ? "Order Placed" : "Place Order"}
-                </button>
+      {/* Render CustomMessagebox when showMessageBox is true */}
+      {showMessageBox && (
+        <CustomMessagebox
+          message={messageBoxContent}
+          onClose={() => setShowMessageBox(false)}
+        />
+      )}
+
+      {showCart ? (
+        <div>
+          <h3>Cart</h3>
+          {cartItems.length === 0 ? (
+            <p>Your cart is empty.</p>
+          ) : (
+            cartItems.map((group, groupIndex) => (
+              <div key={group.vendor_id || groupIndex}>
+                <h4>Vendor: {group.vendor_name}</h4>
+                {Object.entries(group.requests_by_date).map(
+                  ([date, requests]) => {
+                    const allOrdered = requests.every(
+                      (item) => item.order_placed
+                    );
+                    return (
+                      <div key={date}>
+                        <h5>Date: {date}</h5>
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Component ID</th>
+                              <th>Component Type</th>
+                              <th>Specification</th>
+                              <th>Quantity</th>
+                              <th>Category</th>
+                              <th>Unit of Measurement</th>
+                              <th>Unit Price</th>
+                              <th>GST (%)</th>
+                              <th>Total Cost</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {requests.map((item) => (
+                              <tr key={item.id}>
+                                <td>{item.component_id}</td>
+                                <td>{item.component_type}</td>
+                                <td>{item.component_specification}</td>
+                                <td>{item.quantity}</td>
+                                <td>{item.category}</td>
+                                <td>{item.unit_of_measurement}</td>
+                                <td>{item.unit_price}</td>
+                                <td>{item.GST}</td>
+                                <td>{item.total_cost}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        <button
+                          onClick={() => {
+                            handlePlaceOrder(group); // Pass the entire group to handlePlaceOrder
+                          }}
+                          disabled={allOrdered}
+                        >
+                          {allOrdered ? "Order Placed" : "Place Order"}
+                        </button>
+                      </div>
+                    );
+                  }
+                )}
               </div>
-            );
-          })}
+            ))
+          )}
         </div>
-      ))
-    )}
-  </div>
       ) : (
         <>
           {details.length === 0 ? (
@@ -661,10 +671,11 @@ const handleCartOrder = async (item) => {
               </thead>
               <tbody>
                 {details.map((detail) => {
-                  const availableQty = inventoryData[detail.component_id]?.qty || 0;
-                  const isAssigned = assignedComponents[detail.component_id] || detail.qty === 0;
-                  
-  
+                  const availableQty =
+                    inventoryData[detail.component_id]?.qty || 0;
+                  const isAssigned =
+                    assignedComponents[detail.component_id] || detail.qty === 0;
+
                   return (
                     <tr key={detail.component_id}>
                       <td>{detail.status}</td>
@@ -676,12 +687,18 @@ const handleCartOrder = async (item) => {
                         <select
                           value={detail.vendor_name || ""}
                           onChange={(e) =>
-                            handleVendorChange(detail.component_id, e.target.value)
+                            handleVendorChange(
+                              detail.component_id,
+                              e.target.value
+                            )
                           }
                         >
                           <option value="">Select Vendor</option>
                           {vendorNames.map((vendor) => (
-                            <option key={vendor.vendor_id} value={vendor.vendor_name}>
+                            <option
+                              key={vendor.vendor_id}
+                              value={vendor.vendor_name}
+                            >
                               {vendor.vendor_name}
                             </option>
                           ))}
@@ -689,66 +706,82 @@ const handleCartOrder = async (item) => {
                       </td>
                       {/* <td>{detail.bom_name}</td> */}
                       <td>{detail.assign ? 0 : detail.qty}</td>
-                     
+
                       <td>{availableQty}</td>
 
                       <td>
-                      {detail.assign || detail.qty === 0 ? (
+                        {detail.assign || detail.qty === 0 ? (
                           <button
-                          style={{
-                            padding: '10px 20px',
-                            fontSize: '14px',
-                            borderRadius: '5px',
-                            border: '1px solid #ccc',
-                            cursor: detail.assign ? 'pointer' : 'not-allowed',
-                            marginRight: '10px',
-                            width: '100px', // Fixed width
-                            height: '40px', // Fixed height
-                            textAlign: 'center', // Center-align text
-                            transition: 'background-color 0.3s ease',
-                          }}
-                          onClick={() => handleUnassign(detail.component_id, detail.qty)}
-                          disabled={!detail.assign}
-                        >
-                          Assigned
-                        </button>
-                      ) : (
+                            style={{
+                              padding: "10px 20px",
+                              fontSize: "14px",
+                              borderRadius: "5px",
+                              border: "1px solid #ccc",
+                              cursor: detail.assign ? "pointer" : "not-allowed",
+                              marginRight: "10px",
+                              width: "100px", // Fixed width
+                              height: "40px", // Fixed height
+                              textAlign: "center", // Center-align text
+                              transition: "background-color 0.3s ease",
+                            }}
+                            onClick={() =>
+                              handleUnassign(detail.component_id, detail.qty)
+                            }
+                            disabled={!detail.assign}
+                          >
+                            Assigned
+                          </button>
+                        ) : (
+                          <button
+                            style={{
+                              padding: "10px 20px",
+                              fontSize: "14px",
+                              borderRadius: "5px",
+                              border: "1px solid #ccc",
+                              cursor:
+                                availableQty < detail.qty ||
+                                detail.qty === 0 ||
+                                detail.assign
+                                  ? "not-allowed"
+                                  : "pointer",
+                              marginRight: "10px",
+                              width: "100px", // Fixed width
+                              height: "40px", // Fixed height
+                              textAlign: "center", // Center-align text
+                              transition: "background-color 0.3s ease",
+                            }}
+                            onClick={() =>
+                              handleAssign(detail.component_id, detail.qty)
+                            }
+                            disabled={
+                              availableQty < detail.qty ||
+                              detail.qty === 0 ||
+                              detail.assign
+                            }
+                          >
+                            Assign
+                          </button>
+                        )}
                         <button
                           style={{
-                            padding: '10px 20px',
-                            fontSize: '14px',
-                            borderRadius: '5px',
-                            border: '1px solid #ccc',
-                            cursor: availableQty < detail.qty || detail.qty === 0 || detail.assign ? 'not-allowed' : 'pointer',
-                            marginRight: '10px',
-                            width: '100px', // Fixed width
-                            height: '40px', // Fixed height
-                            textAlign: 'center', // Center-align text
-                            transition: 'background-color 0.3s ease',
+                            padding: "10px 20px",
+                            fontSize: "14px",
+                            borderRadius: "5px",
+                            border: "1px solid #ccc",
+                            cursor:
+                              detail.qty === 0 || detail.assign
+                                ? "not-allowed"
+                                : "pointer",
+                            // backgroundColor: detail.qty === 0 || detail.assign ? '#e0e0e0' : '#2196f3',
+                            // color: detail.qty === 0 || detail.assign ? '#a0a0a0' : '#ffffff',
+                            transition: "background-color 0.3s ease",
                           }}
-                          onClick={() => handleAssign(detail.component_id, detail.qty)}
-                          disabled={availableQty < detail.qty || detail.qty === 0 || detail.assign}
+                          onClick={() => handleOrder(detail)}
+                          disabled={detail.qty === 0 || detail.assign}
                         >
-                          Assign
+                          {detail.assign ? "Added to cart" : "Add to Cart"}
                         </button>
-                      )}
-                     <button
-                      style={{
-                        padding: '10px 20px',
-                        fontSize: '14px',
-                        borderRadius: '5px',
-                        border: '1px solid #ccc',
-                        cursor: detail.qty === 0 || detail.assign ? 'not-allowed' : 'pointer',
-                        // backgroundColor: detail.qty === 0 || detail.assign ? '#e0e0e0' : '#2196f3',
-                        // color: detail.qty === 0 || detail.assign ? '#a0a0a0' : '#ffffff',
-                        transition: 'background-color 0.3s ease',
-                      }}
-                      onClick={() => handleOrder(detail)}
-                      disabled={detail.qty === 0 || detail.assign}
-                    >
-                      {detail.assign ? 'Added to cart' : 'Add to Cart'}
-                    </button>
-                    </td>
+                      </td>
                     </tr>
                   );
                 })}
@@ -757,38 +790,40 @@ const handleCartOrder = async (item) => {
           )}
         </>
       )}
-  
-  {showSerialPopup && (
-      <div className="popup">
-        <div className="modal-content">
-          <h3>Select Serial Numbers</h3>
-          <ul>
-            {serialNumbers.map((serial, index) => (
-              <li key={index}>
-                <button
-                  onClick={() => handleSerialSelection(serial)}
-                  style={{
-                    color: selectedSerialNumbers.includes(serial) ? "blue" : "black",
-                    cursor: "pointer",
-                  }}
-                >
-                  {serial}
-                </button>
-              </li>
-            ))}
-          </ul>
-          <button
-            onClick={handleConfirmAssignment}
-            disabled={selectedSerialNumbers.length !== requiredQty}
-          >
-            Confirm Assignment
-          </button>
-          <button onClick={() => setShowSerialPopup(false)}>Close</button>
+
+      {showSerialPopup && (
+        <div className="popup">
+          <div className="modal-content">
+            <h3>Select Serial Numbers</h3>
+            <ul>
+              {serialNumbers.map((serial, index) => (
+                <li key={index}>
+                  <button
+                    onClick={() => handleSerialSelection(serial)}
+                    style={{
+                      color: selectedSerialNumbers.includes(serial)
+                        ? "blue"
+                        : "black",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {serial}
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <button
+              onClick={handleConfirmAssignment}
+              disabled={selectedSerialNumbers.length !== requiredQty}
+            >
+              Confirm Assignment
+            </button>
+            <button onClick={() => setShowSerialPopup(false)}>Close</button>
+          </div>
         </div>
-      </div>
       )}
-  
-      <style >{`
+
+      <style>{`
         .modal {
           position: fixed;
           top: 0;
@@ -818,15 +853,11 @@ const handleCartOrder = async (item) => {
       `}</style>
     </div>
   );
-  };
+};
 
 export default RequestDetails;
 
-
-
-
-
-                                                              // UNASSIGN FUNCTION 
+// UNASSIGN FUNCTION
 // const handleUnassign = async (componentId,newQty) => {
 //   try {
 //     const componentData = inventoryData[componentId];
