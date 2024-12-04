@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import CustomMessagebox from "./CustomMessageBox.jsx";
 
 const VendorDetails = () => {
   const { vendorId } = useParams();
@@ -14,6 +15,8 @@ const VendorDetails = () => {
   const [editProduct, setEditProduct] = useState({}); // State to hold product data for editing
   const [showAddPriceEntryForm, setShowAddPriceEntryForm] = useState(false); // State to control Add Price Entry modal
   const [currentProductId, setCurrentProductId] = useState(""); // State to store the product ID for adding price entries
+  const [showMessageBox, setShowMessageBox] = useState(false);
+  const [messageBoxContent, setMessageBoxContent] = useState("");
   const [newPriceEntry, setNewPriceEntry] = useState({
     date: "",
     price: "",
@@ -419,11 +422,12 @@ const VendorDetails = () => {
     );
   
     if (emptyFields.length > 0) {
-      alert(
+      setMessageBoxContent(
         `Please fill in the following fields: ${emptyFields
           .map((field) => field.replace(/_/g, " "))
           .join(", ")}`
       );
+      setShowMessageBox(true);
       return; // Stop execution if validation fails
     }
   
@@ -542,6 +546,14 @@ const VendorDetails = () => {
       <button onClick={() => setShowAddProductForm(!showAddProductForm)}>
         {showAddProductForm ? "Cancel New Product" : "Add New Product"}
       </button>
+
+                {/* Render CustomMessagebox when showMessageBox is true */}
+    {showMessageBox && (
+      <CustomMessagebox
+        message={messageBoxContent}
+        onClose={() => setShowMessageBox(false)}
+      />
+    )}
 
       {/* Add Product Modal */}
       {showAddProductForm && (

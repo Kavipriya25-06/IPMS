@@ -1,11 +1,44 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
+
+let highestZIndex = 1000; // Static variable to track the highest zIndex
 
 const CustomMessagebox = ({ message, onClose }) => {
+  const closeButtonRef = useRef(null);
+  const [zIndex, setZIndex] = useState(highestZIndex);
+
+  useEffect(() => {
+    // Increment the zIndex for each new pop-up
+    highestZIndex += 10;
+    setZIndex(highestZIndex);
+
+    // Focus the "OK" button when the component is mounted
+    if (closeButtonRef.current) {
+      closeButtonRef.current.focus();
+    }
+
+    // Handle the Escape key to close the pop-up
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose]);
+
   return (
-    <div style={styles.overlay}>
+    <div style={{ ...styles.overlay, zIndex }}>
       <div style={styles.messageBox}>
         <p>{message}</p>
-        <button onClick={onClose} style={styles.closeButton}>
+        <button
+          onClick={onClose}
+          style={styles.closeButton}
+          ref={closeButtonRef}
+        >
           OK
         </button>
       </div>
@@ -24,10 +57,9 @@ const styles = {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    zIndex: 1000,
   },
   messageBox: {
-    backgroundColor: "white",
+    backgroundColor: "white",  
     padding: "20px",
     borderRadius: "10px",
     textAlign: "center",

@@ -330,11 +330,14 @@
 // export default Inward;
 
 import React, { useEffect, useState } from "react";
+import CustomMessagebox from "./CustomMessageBox.jsx";
 
 const Inward = () => {
   const [inwardData, setInwardData] = useState([]); // State to store inward data
   const [showQCPopup, setShowQCPopup] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [showMessageBox, setShowMessageBox] = useState(false);
+  const [messageBoxContent, setMessageBoxContent] = useState("");
   const [newQuestion, setNewQuestion] = useState({
     qc_select: "",
     description: "",
@@ -442,13 +445,15 @@ const Inward = () => {
       }
   
       const poMasterData = await poMasterResponse.json();
-  
+
       // Find the matching PO Master entry for the component ID
       const poMasterEntry = poMasterData.find(
         (entry) => entry.cart_details.component_id === componentId
       );
   
+      // Find the matching PO Master entry for the component ID
       const poMasterId = poMasterEntry?.id || null;
+      const price = poMasterEntry?.cart_details?.unit_price || "Not Available"; // Extract price (unit_price)
   
       if (!poMasterId) {
         alert("Required field is missing: po_master_id.");
@@ -458,12 +463,14 @@ const Inward = () => {
       // Debugging: Log the matched PO Master entry
       console.log("Matched PO Master Entry:", poMasterEntry);
       console.log("Extracted PO Master ID:", poMasterId);
-  
+      console.log("Extracted Price:", price);
+
       // Proceed based on Good/Bad QC
       const payload = {
         quality_check: newQuestion.Good ? "Pass" : "Fail",
         component_id: componentId,
         po_master_id: poMasterId, // Include po_master_id in the payload
+        price: price, // Include price in the payload
       };
   
       const updateResponse = await fetch(`http://127.0.0.1:8000/inward/${inwardId}/`, {
@@ -479,11 +486,13 @@ const Inward = () => {
         return;
       }
   
-      alert(
+       // Show success message in pop-up
+       setMessageBoxContent(
         newQuestion.Good
           ? "Quality check passed. Serial number will be generated automatically."
           : "Quality check marked as Bad. No serial number generated."
       );
+      setShowMessageBox(true);
   
       setShowQCPopup(false);
       fetchInwardData(); // Refresh data after updating
@@ -495,25 +504,46 @@ const Inward = () => {
   
   
   const handleMoveToInventory = async (item) => {
-    // Extract necessary values using getNestedValue and ensure data integrity
-    const componentId = getNestedValue(item, "po_master.cart.component_id");
-    const componentSpecification = getNestedValue(item, "po_master.cart.component_specification");
-    const vendorName = getNestedValue(item, "po_master.cart.vendor_name");
-    const serialNumber = item.serial_number || "Not Available";  // Ensure serial number is available
-    const date = item.date || new Date().toISOString();  // Use current date if not available
-    const qualityCheck = item.quality_check || "Not Available";  // Default to "Not Available" if no quality check
-    const qty = 1;  // Default quantity to 1 as specified
-  
-
-    if (qualityCheck !== "Pass") {
-      alert("The quality check has not passed. Cannot move to inventory.");
-      return;
-    }
-
-    // Fetch the components from the component API
     try {
-      const componentResponse = await fetch("http://127.0.0.1:8000/component/");
+      // Extract necessary values using getNestedValue and ensure data integrity
+      const componentId = getNestedValue(item, "po_master.cart.component_id");
+      const componentSpecification = getNestedValue(item, "po_master.cart.component_specification");
+      const vendorName = getNestedValue(item, "po_master.cart.vendor_name");
+      const serialNumber = item.serial_number || "Not Available"; // Ensure serial number is available
+      const date = item.date || new Date().toISOString(); // Use current date if not available
+      const qualityCheck = item.quality_check || "Not Available"; // Default to "Not Available" if no quality check
+      const qty = 1; // Default quantity to 1 as specified
   
+      if (qualityCheck !== "Pass") {
+        alert("The quality check has not passed. Cannot move to inventory.");
+        return;
+      }
+  
+      // Fetch the PO Master details to get the price (unit_price)
+      const poMasterResponse = await fetch("http://127.0.0.1:8000/po_master/");
+      if (!poMasterResponse.ok) {
+        const poMasterError = await poMasterResponse.json();
+        console.error("Error fetching PO Master details:", poMasterError);
+        alert("Failed to fetch PO Master details.");
+        return;
+      }
+  
+      const poMasterData = await poMasterResponse.json();
+  
+      // Find the matching PO Master entry for the component ID
+      const poMasterEntry = poMasterData.find(
+        (entry) => entry.cart_details.component_id === componentId
+      );
+  
+      const price = poMasterEntry?.cart_details?.unit_price || "Not Available"; // Extract price (unit_price)
+  
+      if (!price || price === "Not Available") {
+        alert("Price not found in PO Master details. Cannot move to inventory.");
+        return;
+      }
+  
+      // Fetch the components from the component API
+      const componentResponse = await fetch("http://127.0.0.1:8000/component/");
       if (!componentResponse.ok) {
         const errorDetails = await componentResponse.json();
         console.error("Error fetching component details:", errorDetails);
@@ -523,9 +553,9 @@ const Inward = () => {
   
       // Extract the component list from the response
       const components = await componentResponse.json();
-      
+  
       // Filter the components based on the component_id
-      const selectedComponent = components.find(component => component.component_id === componentId);
+      const selectedComponent = components.find((component) => component.component_id === componentId);
   
       if (!selectedComponent) {
         console.error(`Component with ID ${componentId} not found.`);
@@ -546,10 +576,11 @@ const Inward = () => {
         date: date,
         quality_check: qualityCheck,
         qty: qty, // Using the default qty value
-        component_type: componentType,  // Dynamic value fetched from component API
-        category: category,  // Dynamic value fetched from component API
+        component_type: componentType, // Dynamic value fetched from component API
+        category: category, // Dynamic value fetched from component API
         specification: componentSpecification, // Mapping component_specification to specification
-        UOM: "Nos",  // Unit of measurement is set to "Nos"
+        UOM: "Nos", // Unit of measurement is set to "Nos"
+        price: price, // Include price from PO Master
       };
   
       // Make the POST request to the inventory API
@@ -568,33 +599,34 @@ const Inward = () => {
       }
   
       // If successful, show an alert and refresh inward data
-      alert("Successfully moved to inventory.");
-
-     // Update mode_to_inventory to false via a PUT request
-     const updatePayload = {
-      mode_to_inventory: false,
-      quality_check: item.quality_check, // Include existing quality_check value
-      component_id: item.po_master.cart.component_id, // Include component_id
-      po_master_id: item.po_master.id, // Include po_master_id
-    };
-
-    const updateResponse = await fetch(
-      `http://127.0.0.1:8000/inward/${item.inward_id}/`,
-      {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatePayload),
+      setMessageBoxContent("Successfully moved to inventory.");
+      setShowMessageBox(true);
+  
+      // Update mode_to_inventory to false via a PUT request
+      const updatePayload = {
+        mode_to_inventory: false,
+        quality_check: item.quality_check, // Include existing quality_check value
+        component_id: item.po_master.cart.component_id, // Include component_id
+        po_master_id: item.po_master.id, // Include po_master_id
+        price: price,
+      };
+  
+      const updateResponse = await fetch(
+        `http://127.0.0.1:8000/inward/${item.inward_id}/`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updatePayload),
+        }
+      );
+  
+      if (!updateResponse.ok) {
+        const updateError = await updateResponse.json();
+        console.error("Error updating mode_to_inventory:", updateError);
+        alert("Failed to update mode_to_inventory.");
+        return;
       }
-    );
-
-    if (!updateResponse.ok) {
-      const updateError = await updateResponse.json();
-      console.error("Error updating mode_to_inventory:", updateError);
-      alert("Failed to update mode_to_inventory.");
-      return;
-    }
-
-
+  
       fetchInwardData(); // Refresh data after posting
     } catch (error) {
       // Handle any error that occurs during the fetch
@@ -612,6 +644,16 @@ const Inward = () => {
   return (
     <div>
       <h2>Inward</h2>
+
+          {/* Render CustomMessagebox when showMessageBox is true */}
+    {showMessageBox && (
+      <CustomMessagebox
+        message={messageBoxContent}
+        onClose={() => setShowMessageBox(false)}
+      />
+    )}
+  
+  
       <table> 
         <thead>
           <tr>

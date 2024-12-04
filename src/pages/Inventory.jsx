@@ -278,24 +278,24 @@ const Inventory = () => {
     setShowForm(true);
   };
 
-  const handleDeleteClick = async (serialNumber) => {
-    try {
-      const response = await fetch(
-        `http://127.0.0.1:8000/inventory/${serialNumber}`,
-        {
-          method: "DELETE",
-        }
-      );
-      if (response.ok) {
-        console.log("Item deleted successfully");
-        fetchInventoryData(); // Refresh data to reflect deletion
-      } else {
-        console.error("Error deleting item:", response.statusText);
-      }
-    } catch (error) {
-      console.error("Error deleting inventory item:", error);
-    }
-  };
+  // const handleDeleteClick = async (serialNumber) => {
+  //   try {
+  //     const response = await fetch(
+  //       `http://127.0.0.1:8000/inventory/${serialNumber}`,
+  //       {
+  //         method: "DELETE",
+  //       }
+  //     );
+  //     if (response.ok) {
+  //       console.log("Item deleted successfully");
+  //       fetchInventoryData(); // Refresh data to reflect deletion
+  //     } else {
+  //       console.error("Error deleting item:", response.statusText);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error deleting inventory item:", error);
+  //   }
+  // };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -344,13 +344,13 @@ const Inventory = () => {
     setCreatedDate("");
     setShowForm(false);
   };
-
+ 
   return (
     <div className="inventory-container">
       <h4>Inventory Data</h4>
-      <button onClick={handleAddItemClick} className="add-item-button">
+      {/* <button onClick={handleAddItemClick} className="add-item-button">
         Add Item
-      </button>
+      </button> */}
       {showForm && (
         <form onSubmit={handleSubmit} className="add-item-form">
           <label>Component:</label>
@@ -401,7 +401,8 @@ const Inventory = () => {
             <th>UOM</th>
             <th>Vendor</th>
             <th>Created Date</th>
-            <th>Actions</th>
+            <th>Price</th>
+            {/* <th>Actions</th> */}
           </tr>
         </thead>
         <tbody>
@@ -423,13 +424,14 @@ const Inventory = () => {
                   <td>
                     {item.create_date || new Date().toLocaleDateString()}
                   </td>
-                  <td>
+                  <td>{item.price}</td>
+                  {/* <td>
                     <button
                       onClick={() => handleDeleteClick(item.serial_number)}
                     >
                       Delete
                     </button>
-                  </td>
+                  </td> */}
                 </tr>
               );
             })

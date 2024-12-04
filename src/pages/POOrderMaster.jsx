@@ -173,124 +173,126 @@ const POOrderMaster = () => {
 
   const handleInward = async (item) => {
     try {
-      // Destructure the necessary fields from the item
-      const {
-        component_id,
-        component_type,
-        component_specification,
-        category,
-        unit_of_measurement,
-        quantity,
-        vendor_name,
-        vendor_id,
-      } = item;
-  
-      // Fetch PO details from the API
-      const poResponse = await fetch("http://127.0.0.1:8000/po_master/");
-      if (!poResponse.ok) {
-        throw new Error("Failed to fetch PO Master data.");
-      }
-      const poData = await poResponse.json();
-  
-      // Log PO Data to verify its structure
-      console.log("PO Data:", poData); // Check the structure and contents of poData
-  
-      // Find the PO Master ID (id) that matches the current item
-      const matchedPO = poData.filter(
-        (po) =>
-          po.cart_details?.component_id === component_id &&
-          po.cart_details?.vendor_id === vendor_id &&
-          po.cart_details?.component_type === component_type &&
-          po.cart_details?.component_specification === component_specification &&
-          po.cart_details?.category === category &&
-          po.cart_details?.unit_of_measurement === unit_of_measurement &&
-          po.cart_details?.vendor_name === vendor_name
-      );
-  
-      // Log matched PO for debugging
-      console.log("Matched PO:", matchedPO); // Check if filtering is correct
-  
-      if (matchedPO.length === 0) {
-        alert("No matching PO Master ID found for the selected item.");
-        return;
-      }
-  
-      // Access the first matched PO (assuming you want to use the first match)
-      const po_master_id = matchedPO[0].id; // Get the matched PO ID
-      console.log("Matched PO Master ID:", po_master_id); // Verify the correct PO Master ID
-  
-      // Ensure that po_master_id is correct before proceeding to POST
-      if (!po_master_id) {
-        alert("Invalid PO Master ID.");
-        return;
-      }
-  
-      // Loop through the quantity to post each unit individually
-      for (let i = 0; i < quantity; i++) {
-        const inwardPayload = {
-          component_id,
-          component_type,
-          component_specification,
-          category,
-          unit_of_measurement,
-          unit: 1, // Post each unit as 1
-          vendor_name,
-          vendor_id,
-          po_master_id, // Correct po_master_id here
-          quality_check: "Pending", // Set quality_check as "Pending"
+        const {
+            component_id,
+            component_type,
+            component_specification,
+            category,
+            unit_of_measurement,
+            quantity,
+            vendor_name,
+            vendor_id,
+        } = item;
+
+        // Fetch PO Master Data
+        const poResponse = await fetch("http://127.0.0.1:8000/po_master/");
+        if (!poResponse.ok) {
+            throw new Error("Failed to fetch PO Master data.");
+        }
+
+        const poData = await poResponse.json();
+
+        // Debug: Log the fetched PO Master data
+        console.log("Fetched PO Master Data:", poData);
+
+        // Filter to find the matching PO entry
+        const matchedPO = poData.filter(
+            (po) =>
+                po.cart_details?.component_id === component_id &&
+                po.cart_details?.vendor_id === vendor_id &&
+                po.cart_details?.component_type === component_type &&
+                po.cart_details?.component_specification === component_specification &&
+                po.cart_details?.category === category &&
+                po.cart_details?.unit_of_measurement === unit_of_measurement &&
+                po.cart_details?.vendor_name === vendor_name
+        );
+
+        // Debug: Log matched PO entries
+        console.log("Matched PO Entries:", matchedPO);
+
+        if (matchedPO.length === 0) {
+            alert("No matching PO Master ID found for the selected item.");
+            return;
+        }
+
+        const po_master_id = matchedPO[0]?.id;
+        const unit_price = matchedPO[0]?.cart_details?.unit_price || 0;
+
+        // Debug: Log the extracted PO Master ID and Unit Price
+        console.log("PO Master ID:", po_master_id);
+        console.log("Unit Price:", unit_price);
+
+        // Perform inward operations for the quantity specified
+        for (let i = 0; i < quantity; i++) {
+            const inwardPayload = {
+                component_id,
+                component_type,
+                component_specification,
+                category,
+                unit_of_measurement,
+                unit: 1,
+                vendor_name,
+                vendor_id,
+                po_master_id,
+                quality_check: "Pending",
+                price: unit_price,
+            };
+
+            // Debug: Log the inward payload before sending the request
+            console.log(`Inward Payload for Unit ${i + 1}:`, inwardPayload);
+
+            const response = await fetch("http://127.0.0.1:8000/inward/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(inwardPayload),
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                console.error(`Error posting inward data for unit ${i + 1}:`, error);
+                alert(`Failed to post inward data for unit ${i + 1}.`);
+                return;
+            }
+        }
+
+        alert(
+            `Inward operation completed successfully for ${quantity} units of Component ID: ${component_id}.`
+        );
+
+        // Update PO Master Status
+        const updatePayload = {
+            PO_id: matchedPO[0]?.PO_id,
+            status: matchedPO[0]?.status,
+            cart_id: matchedPO[0]?.cart_id,
+            inward_status: false,
         };
-  
-        // Log to ensure the correct data is being posted
-        console.log(`Inward Payload (Unit ${i + 1}):`, inwardPayload);
-  
-        // POST request to the inward API
-        const response = await fetch("http://127.0.0.1:8000/inward/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(inwardPayload),
-        });
-  
-        if (!response.ok) {
-          const error = await response.json();
-          console.error(`Error posting inward data for unit ${i + 1}:`, error);
-          alert(`Failed to post inward data for unit ${i + 1}.`);
-          return;
+
+        // Debug: Log the update payload
+        console.log("Update Payload for PO Master:", updatePayload);
+
+        const updateResponse = await fetch(
+            `http://127.0.0.1:8000/po_master/${po_master_id}/`,
+            {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(updatePayload),
+            }
+        );
+
+        if (!updateResponse.ok) {
+            const updateError = await updateResponse.json();
+            console.error("Error updating PO Master status:", updateError);
+            alert("Failed to update PO Master status.");
+            return;
         }
-      }
-  
-      // Success message after all POST requests
-      alert(
-        `Inward operation completed successfully for ${quantity} units of Component ID: ${component_id}.`
-      );
-  
-      // Update inward_status to false for the matched PO Master
-      const updatePayload = {
-        inward_status: false, // Update to false
-      };
-  
-      const updateResponse = await fetch(
-        `http://127.0.0.1:8000/po_master/${po_master_id}/`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(updatePayload),
-        }
-      );
-  
-      if (!updateResponse.ok) {
-        const updateError = await updateResponse.json();
-        console.error("Error updating inward_status:", updateError);
-        alert("Failed to update inward status.");
-        return;
-      }
-  
-      console.log("Inward status updated successfully.");
+
+        // Refresh PO Details
+        fetchPODetails();
     } catch (error) {
-      console.error("Error during inward operation:", error);
-      alert("An error occurred while performing the inward operation.");
+        console.error("Error in handleInward function:", error);
+        alert("An error occurred while performing the inward operation.");
     }
-  };
-  
+};
   
   
   
@@ -383,7 +385,10 @@ const POOrderMaster = () => {
                   <td>{po.cart_details.GST}</td>
                   <td>{po.cart_details.total_cost}</td>
                   <td>
-                    <button onClick={() => handleInward(po.cart_details)}>
+                    <button
+                      onClick={() => handleInward(po.cart_details)}
+                      disabled={!po.inward_status} // Disable button if inward_status is false
+                    >
                       Inward
                     </button>
                   </td>
