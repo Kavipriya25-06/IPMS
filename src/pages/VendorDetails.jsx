@@ -416,11 +416,11 @@ const VendorDetails = () => {
       "component_specification",
       "unit_of_measurement",
     ];
-  
+
     const emptyFields = requiredFields.filter(
       (field) => !newProduct[field] || newProduct[field].trim() === ""
     );
-  
+
     if (emptyFields.length > 0) {
       setMessageBoxContent(
         `Please fill in the following fields: ${emptyFields
@@ -430,25 +430,25 @@ const VendorDetails = () => {
       setShowMessageBox(true);
       return; // Stop execution if validation fails
     }
-  
+
     const formData = new FormData();
-  
+
     // Append each property of newProduct to formData
     Object.entries(newProduct).forEach(([key, value]) => {
       if (value !== null) {
         formData.append(key, value);
       }
     });
-  
+
     // Set the vendor ID explicitly
     formData.append("vendor", vendorId);
-  
+
     try {
       const response = await fetch("http://127.0.0.1:8000/vendor_master/", {
         method: "POST",
         body: formData, // Send formData instead of JSON
       });
-  
+
       if (response.ok) {
         const addedProduct = await response.json();
         setSelectedVendorData([...selectedVendorData, addedProduct]);
@@ -465,10 +465,10 @@ const VendorDetails = () => {
           vendor: vendorId,
         });
         setShowAddProductForm(false);
-  
+
         // Extract price and tax from the added product
         const { last_price, tax, product_id } = addedProduct;
-  
+
         // Second API call to update the price_tables with tax and price
         const priceTablePayload = {
           current_time: new Date().toISOString(), // Set the current date and time
@@ -476,7 +476,7 @@ const VendorDetails = () => {
           price: last_price,
           product: product_id,
         };
-  
+
         const priceResponse = await fetch(
           "http://127.0.0.1:8000/price_tables/",
           {
@@ -487,7 +487,7 @@ const VendorDetails = () => {
             body: JSON.stringify(priceTablePayload),
           }
         );
-  
+
         if (!priceResponse.ok) {
           console.error(
             "Error updating price table:",
@@ -501,7 +501,6 @@ const VendorDetails = () => {
       console.error("Error adding product:", error);
     }
   };
-  
 
   // Handle Add button click
   const handleAddComponent = async (product) => {
@@ -547,13 +546,13 @@ const VendorDetails = () => {
         {showAddProductForm ? "Cancel New Product" : "Add New Product"}
       </button>
 
-                {/* Render CustomMessagebox when showMessageBox is true */}
-    {showMessageBox && (
-      <CustomMessagebox
-        message={messageBoxContent}
-        onClose={() => setShowMessageBox(false)}
-      />
-    )}
+      {/* Render CustomMessagebox when showMessageBox is true */}
+      {showMessageBox && (
+        <CustomMessagebox
+          message={messageBoxContent}
+          onClose={() => setShowMessageBox(false)}
+        />
+      )}
 
       {/* Add Product Modal */}
       {showAddProductForm && (
@@ -925,6 +924,7 @@ const VendorDetails = () => {
           <tr>
             <th>Product ID</th>
             <th>Product Description</th>
+            <th>Component Type</th>
             <th>UOM</th>
             <th>Component ID</th>
             <th>Last Price</th>
@@ -942,6 +942,7 @@ const VendorDetails = () => {
               <tr key={product.product_id || index}>
                 <td>{product.product_id}</td>
                 <td>{product.product_description}</td>
+                <td>{product.component_type}</td>
                 <td>{product.unit_of_measurement}</td>
                 <td>{getComponentId(product.product_id)}</td>
                 <td

@@ -86,7 +86,7 @@ const RequestDetails = () => {
       const response = await fetch("http://127.0.0.1:8000/cart/");
       if (!response.ok) {
         console.error("Error fetching cart items:", response.statusText);
-        alert("Failed to fetch cart items.");
+        // alert("Failed to fetch cart items.");
         return;
       }
 
@@ -96,7 +96,7 @@ const RequestDetails = () => {
       setCartItems(data);
     } catch (error) {
       console.error("Error fetching cart items:", error);
-      alert("An error occurred while fetching cart items.");
+      // alert("An error occurred while fetching cart items.");
     }
   };
 
@@ -174,7 +174,8 @@ const RequestDetails = () => {
 
     // Calculate total cost
     const gstAmount = (price * tax) / 100;
-    const totalCost = (price + gstAmount) * detail.qty;
+    //const totalCost = (price + gstAmount) * detail.qty;
+    const totalCost = Math.round((price + gstAmount) * detail.qty * 100) / 100;
 
     // Prepare payload for cart API
     const orderData = {
