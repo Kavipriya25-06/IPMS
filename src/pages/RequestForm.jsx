@@ -2,6 +2,7 @@
 // Eighth set of code
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import CustomMessagebox from "./CustomMessageBox.jsx";
 
 const RequestForm = () => {
   const [boms, setBoms] = useState([]);
@@ -12,6 +13,8 @@ const RequestForm = () => {
   const [vendorMaster, setVendorMaster] = useState([]); // Store data from vendor_master
   const [vendorList, setVendorList] = useState([]); // Store data from vendor_list
   const [requesterName, setRequesterName] = useState("");
+  const [showMessageBox, setShowMessageBox] = useState(false);
+  const [messageBoxContent, setMessageBoxContent] = useState("");
   const [date, setDate] = useState("");
 
   useEffect(() => {
@@ -221,14 +224,18 @@ const RequestForm = () => {
 
       await Promise.all(requestMasterPromises);
       console.log("All request master entries successfully added.");
-      alert("Request added successfully!");
-      navigate("/");
+      setMessageBoxContent("Request added successfully!");
+      setShowMessageBox(true);
+      // Delay navigation to show the message box
+      setTimeout(() => navigate("/"), 3000);
     } catch (error) {
       console.error("Error in submission process:", error);
     }
   };
 
   return (
+
+    
     <div>
     <div
     style={{
@@ -240,6 +247,15 @@ const RequestForm = () => {
       paddingTop: "20px",
     }}
   >
+
+      {/* Render CustomMessagebox when showMessageBox is true */}
+      {showMessageBox && (
+      <CustomMessagebox
+        message={messageBoxContent}
+        onClose={() => setShowMessageBox(false)}
+      />
+    )}
+
     <h1 style={{ marginBottom: "20px" }}>Create a Request</h1>
     <div
       style={{

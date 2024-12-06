@@ -372,135 +372,196 @@ const Inward = () => {
     }
   };
 
-  const handleQCClick = (item) => {
-    setSelectedItem(item); // Ensure the entire selected item is stored
-    setNewQuestion({
-      qc_select: "",
-      description: "",
-      Good: false,
-      bad: false,
-      remark: "",
-      component_id: getNestedValue(item, "po_master.cart.component_id"),
-    });
-    setShowQCPopup(true);
-  };
+  /////////
+  ////////////////////
 
-  const handleSaveQC = async () => {
-    // Validate fields
-    if (
-      !newQuestion.qc_select ||
-      !newQuestion.description ||
-      newQuestion.Good === null ||
-      newQuestion.bad === null ||
-      !newQuestion.remark
-    ) {
-      alert("Please fill in all required fields.");
+  const handleQCClick = async (item) => {
+    const componentType = getNestedValue(item, "po_master.cart.component_type");
+  
+    if (!componentType) {
+      alert("Component Type not available. Cannot fetch QC questions.");
       return;
     }
   
     try {
-      const inwardId = selectedItem?.inward_id || getNestedValue(selectedItem, "inward_id");
-  
-      if (!inwardId || inwardId === "Not Available") {
-        alert("Inward ID not found. Unable to update.");
+      const response = await fetch("http://127.0.0.1:8000/qc_question/");
+      if (!response.ok) {
+        console.error("Error fetching QC questions:", await response.text());
+        alert("Failed to fetch QC questions.");
         return;
       }
   
-      // Fetch the detailed inward data
-      const inwardDetailsResponse = await fetch(`http://127.0.0.1:8000/inward/${inwardId}/`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
+      const qcQuestions = await response.json();
   
-      if (!inwardDetailsResponse.ok) {
-        const errorDetails = await inwardDetailsResponse.json();
-        console.error("Error fetching inward details:", errorDetails);
-        alert("Failed to fetch inward details.");
-        return;
-      }
-  
-      const inwardDetails = await inwardDetailsResponse.json();
-      const componentId = inwardDetails?.po_master?.cart?.component_id || null; // Extract component_id
-  
-      // Debugging: Log the fetched data
-      console.log("Fetched Inward Details:", inwardDetails);
-      console.log("Extracted Component ID:", componentId);
-  
-      if (!componentId) {
-        alert("Required field is missing: component_id.");
-        return;
-      }
-  
-      // Fetch the PO Master details to get the po_master_id
-      const poMasterResponse = await fetch(`http://127.0.0.1:8000/po_master/`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
-  
-      if (!poMasterResponse.ok) {
-        const poMasterError = await poMasterResponse.json();
-        console.error("Error fetching PO Master details:", poMasterError);
-        alert("Failed to fetch PO Master details.");
-        return;
-      }
-  
-      const poMasterData = await poMasterResponse.json();
-
-      // Find the matching PO Master entry for the component ID
-      const poMasterEntry = poMasterData.find(
-        (entry) => entry.cart_details.component_id === componentId
+      // Filter questions based on the component_type
+      const filteredQuestions = qcQuestions.filter(
+        (question) => question.component_type === componentType
       );
   
-      // Find the matching PO Master entry for the component ID
-      const poMasterId = poMasterEntry?.id || null;
-      const price = poMasterEntry?.cart_details?.unit_price || "Not Available"; // Extract price (unit_price)
-  
-      if (!poMasterId) {
-        alert("Required field is missing: po_master_id.");
+      if (filteredQuestions.length === 0) {
+        alert("No questions available for the selected component type.");
         return;
       }
   
-      // Debugging: Log the matched PO Master entry
-      console.log("Matched PO Master Entry:", poMasterEntry);
-      console.log("Extracted PO Master ID:", poMasterId);
-      console.log("Extracted Price:", price);
-
-      // Proceed based on Good/Bad QC
-      const payload = {
-        quality_check: newQuestion.Good ? "Pass" : "Fail",
-        component_id: componentId,
-        po_master_id: poMasterId, // Include po_master_id in the payload
-        price: price, // Include price in the payload
-      };
-  
-      const updateResponse = await fetch(`http://127.0.0.1:8000/inward/${inwardId}/`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      // Store the filtered questions and selected item
+      setSelectedItem(item);
+      setNewQuestion({
+        qc_select: "",
+        description: "",
+        Good: false,
+        bad: false,
+        remark: "",
+        component_id: getNestedValue(item, "po_master.cart.component_id"),
       });
-  
-      if (!updateResponse.ok) {
-        const updateError = await updateResponse.json();
-        console.error("Error updating inward data:", updateError);
-        alert(`Failed to update inward data: ${updateError.detail || "Unknown error"}`);
-        return;
-      }
-  
-       // Show success message in pop-up
-       setMessageBoxContent(
-        newQuestion.Good
-          ? "Quality check passed. Serial number will be generated automatically."
-          : "Quality check marked as Bad. No serial number generated."
-      );
-      setShowMessageBox(true);
-  
-      setShowQCPopup(false);
-      fetchInwardData(); // Refresh data after updating
+      setNewQuestion((prev) => ({
+        ...prev,
+        qcQuestions: filteredQuestions.map((q) => ({
+          id: q.id,
+          question: q.question,
+          answer: null, // Initialize answer as null
+        })),
+      }));
+      setShowQCPopup(true);
     } catch (error) {
-      console.error("Error updating inward data:", error);
-      alert("An error occurred while updating inward data.");
+      console.error("Error fetching QC questions:", error);
+      alert("An error occurred while fetching QC questions.");
     }
   };
+  
+  const handleQuestionAnswer = (questionId, answer) => {
+    setNewQuestion((prev) => ({
+      ...prev,
+      qcQuestions: prev.qcQuestions.map((q) =>
+        q.id === questionId ? { ...q, answer } : q
+      ),
+    }));
+  };
+
+  ///////////////////////////////////////////
+
+  const handleSubmitQC = async () => {
+    if (!newQuestion.qcQuestions || newQuestion.qcQuestions.length === 0) {
+      alert("No questions available to submit.");
+      return;
+    }
+  
+    // Validate that all questions have been answered
+    const unanswered = newQuestion.qcQuestions.filter((q) => q.answer === null);
+    if (unanswered.length > 0) {
+      alert("Please answer all questions before submitting.");
+      return;
+    }
+  
+    const inwardId = selectedItem?.inward_id || getNestedValue(selectedItem, "inward_id");
+  
+    if (!inwardId || inwardId === "Not Available") {
+      alert("Inward ID not found. Unable to submit QC answers.");
+      return;
+    }
+  
+    try {
+      // Iterate over each question and make a separate POST request
+      for (const question of newQuestion.qcQuestions) {
+        const payload = {
+          Inward_id: inwardId,
+          qc_question: question.id,
+          yes: question.answer === "Yes",
+          no: question.answer === "No",
+        };
+  
+        const response = await fetch("http://127.0.0.1:8000/qc_answer/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+  
+        if (!response.ok) {
+          const errorDetails = await response.json();
+          console.error(`Error submitting QC answer for question ${question.id}:`, errorDetails);
+          alert(`Failed to submit QC answer for question ${question.id}: ${JSON.stringify(errorDetails)}`);
+          return; // Stop further submissions on failure
+        }
+      }
+  
+      // Extract the price from the selectedItem
+      const price = selectedItem?.price || getNestedValue(selectedItem, "price");
+  
+      if (!price || isNaN(price)) {
+        alert("Invalid price. Unable to update QC status.");
+        return;
+      }
+  
+      // Prepare the PATCH payload with all required fields
+      const patchPayload = {
+        quality_check: newQuestion.overallStatus, // Pass or Fail
+        component_id: getNestedValue(selectedItem, "po_master.cart.component_id"),
+        price: parseInt(price, 10), // Ensure the price is a valid integer
+        po_master_id: getNestedValue(selectedItem, "po_master.id"),
+      };
+  
+      // PATCH request to update the overall status in the inward API
+      const patchResponse = await fetch(`http://127.0.0.1:8000/inward/${inwardId}/`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patchPayload),
+      });
+  
+      if (!patchResponse.ok) {
+        const patchError = await patchResponse.json();
+        console.error("Error updating QC status in inward:", patchError);
+        alert("Failed to update QC status.");
+        return;
+      }
+  
+      // Success feedback
+      setMessageBoxContent("QC process completed successfully!");
+      setShowMessageBox(true);
+      setShowQCPopup(false);
+      fetchInwardData(); // Refresh the inward data
+    } catch (error) {
+      console.error("Error during QC submission process:", error);
+      alert("An error occurred while submitting QC answers.");
+    }
+  };
+  
+  ////////////////////////
+
+  const handleOverallStatusUpdate = async (overallStatus) => {
+    const inwardId = selectedItem?.inward_id || getNestedValue(selectedItem, "inward_id");
+  
+    if (!inwardId || inwardId === "Not Available") {
+      alert("Inward ID not found. Unable to update overall status.");
+      return;
+    }
+  
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/inward/${inwardId}/`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quality_check: overallStatus }),
+      });
+  
+      if (!response.ok) {
+        const errorDetails = await response.json();
+        console.error("Error updating overall QC status:", errorDetails);
+        alert("Failed to update overall QC status.");
+        return;
+      }
+  
+      // Success feedback
+      setMessageBoxContent(`QC status updated to: ${overallStatus}`);
+      setShowMessageBox(true);
+      setShowQCPopup(false);
+      fetchInwardData(); // Refresh the inward data
+    } catch (error) {
+      console.error("Error updating overall QC status:", error);
+      alert("An error occurred while updating QC status.");
+    }
+  };
+  
+  
+  ///////////
+  /////////////////
   
   
   const handleMoveToInventory = async (item) => {
@@ -515,9 +576,12 @@ const Inward = () => {
       const qty = 1; // Default quantity to 1 as specified
   
       if (qualityCheck !== "Pass") {
-        alert("The quality check has not passed. Cannot move to inventory.");
+        setMessageBoxContent("The quality check has not passed. Cannot move to inventory.");
+        setShowMessageBox(true);
         return;
       }
+    
+      
   
       // Fetch the PO Master details to get the price (unit_price)
       const poMasterResponse = await fetch("http://127.0.0.1:8000/po_master/");
@@ -676,7 +740,8 @@ const Inward = () => {
               <td>{new Date(item.date).toLocaleDateString() || "Not Available"}</td>
               <td>{item.quality_check || "Not Available"}</td>
               <td>
-                <button onClick={() => handleQCClick(item)}>QC</button>
+                <button onClick={() => handleQCClick(item)}
+                  disabled={item.quality_check === "Pass" || item.quality_check === "Fail"}>QC</button>
                 <button
                   onClick={() => handleMoveToInventory(item)}
                   disabled={item.mode_to_inventory === false} // Disable button if mode_to_inventory is false
@@ -689,67 +754,54 @@ const Inward = () => {
         </tbody>
       </table>
 
-      {/* QC Popup */}
+      
       {showQCPopup && selectedItem && (
         <div className="popup">
           <h3>Quality Check for {getNestedValue(selectedItem, "po_master.cart.component_id")}</h3>
           <div>
-            <label>
-              Type:
-              <select
-                value={newQuestion.qc_select}
-                onChange={(e) =>
-                  setNewQuestion({ ...newQuestion, qc_select: e.target.value })
-                }
-              >
-                <option value="">Select</option>
-                <option value="visual_check">Visual Check</option>
-                <option value="function_check">Function Check</option>
-              </select>
-            </label>
-            <label>
-              Description:
-              <input
-                type="text"
-                value={newQuestion.description}
-                onChange={(e) =>
-                  setNewQuestion({ ...newQuestion, description: e.target.value })
-                }
-              />
-            </label>
-            <label>
-              Good:
-              <input
-                type="checkbox"
-                checked={newQuestion.Good}
-                onChange={(e) =>
-                  setNewQuestion({ ...newQuestion, Good: e.target.checked })
-                }
-              />
-            </label>
-            <label>
-              Bad:
-              <input
-                type="checkbox"
-                checked={newQuestion.bad}
-                onChange={(e) =>
-                  setNewQuestion({ ...newQuestion, bad: e.target.checked })
-                }
-              />
-            </label>
-            <label>
-              Remark:
-              <input
-                type="text"
-                value={newQuestion.remark}
-                onChange={(e) =>
-                  setNewQuestion({ ...newQuestion, remark: e.target.value })
-                }
-              />
-            </label>
-            <button onClick={handleSaveQC}>Save QC</button>
-            <button onClick={() => setShowQCPopup(false)}>Close</button>
+            {newQuestion.qcQuestions?.map((q) => (
+              <div key={q.id}>
+                <p>{q.question}</p>
+                <label>
+                  Yes
+                  <input
+                    type="radio"
+                    name={`question-${q.id}`}
+                    onChange={() => handleQuestionAnswer(q.id, "Yes")}
+                  />
+                </label>
+                <label>
+                  No
+                  <input
+                    type="radio"
+                    name={`question-${q.id}`}
+                    onChange={() => handleQuestionAnswer(q.id, "No")}
+                  />
+                </label>
+              </div>
+            ))}
           </div>
+          <div>
+            <h4>Overall Status</h4>
+            <label>
+              Pass
+              <input
+                type="radio"
+                name="overall-status"
+                onChange={() => setNewQuestion((prev) => ({ ...prev, overallStatus: "Pass" }))}
+              />
+            </label>
+            <label>
+              Fail
+              <input
+                type="radio"
+                name="overall-status"
+                onChange={() => setNewQuestion((prev) => ({ ...prev, overallStatus: "Fail" }))}
+              />
+            </label>
+          </div>
+          <button onClick={handleSubmitQC}>Submit QC</button>
+          <button onClick={() => setShowQCPopup(false)}>Close</button>
         </div>
       )}
     </div>

@@ -174,6 +174,7 @@ const POOrderMaster = () => {
   const handleInward = async (item) => {
     try {
         const {
+            id,
             component_id,
             component_type,
             component_specification,
@@ -196,16 +197,32 @@ const POOrderMaster = () => {
         console.log("Fetched PO Master Data:", poData);
 
         // Filter to find the matching PO entry
-        const matchedPO = poData.filter(
-            (po) =>
+        const matchedPO = poData.filter((po) => {
+            const matches =
+                po.cart_details?.po_master_id === id &&
                 po.cart_details?.component_id === component_id &&
                 po.cart_details?.vendor_id === vendor_id &&
                 po.cart_details?.component_type === component_type &&
                 po.cart_details?.component_specification === component_specification &&
                 po.cart_details?.category === category &&
                 po.cart_details?.unit_of_measurement === unit_of_measurement &&
-                po.cart_details?.vendor_name === vendor_name
-        );
+                po.cart_details?.vendor_name?.toLowerCase().trim() === vendor_name.toLowerCase().trim();
+
+            // Log each condition for debugging
+            console.log(`PO ID ${po.id}:`, {
+                po_master_id_match: po.cart_details?.po_master_id === id,
+                component_id_match: po.cart_details?.component_id === component_id,
+                vendor_id_match: po.cart_details?.vendor_id === vendor_id,
+                component_type_match: po.cart_details?.component_type === component_type,
+                specification_match: po.cart_details?.component_specification === component_specification,
+                category_match: po.cart_details?.category === category,
+                uom_match: po.cart_details?.unit_of_measurement === unit_of_measurement,
+                vendor_name_match:
+                    po.cart_details?.vendor_name?.toLowerCase().trim() === vendor_name.toLowerCase().trim(),
+            });
+
+            return matches;
+        });
 
         // Debug: Log matched PO entries
         console.log("Matched PO Entries:", matchedPO);
@@ -219,8 +236,13 @@ const POOrderMaster = () => {
         const unit_price = matchedPO[0]?.cart_details?.unit_price || 0;
 
         // Debug: Log the extracted PO Master ID and Unit Price
-        console.log("PO Master ID:", po_master_id);
-        console.log("Unit Price:", unit_price);
+        console.log("Extracted PO Master ID:", po_master_id);
+        console.log("Unit Price for PO:", unit_price);
+
+        if (!po_master_id) {
+            alert("PO Master ID is missing or invalid.");
+            return;
+        }
 
         // Perform inward operations for the quantity specified
         for (let i = 0; i < quantity; i++) {
@@ -238,7 +260,6 @@ const POOrderMaster = () => {
                 price: unit_price,
             };
 
-            // Debug: Log the inward payload before sending the request
             console.log(`Inward Payload for Unit ${i + 1}:`, inwardPayload);
 
             const response = await fetch("http://127.0.0.1:8000/inward/", {
@@ -264,10 +285,9 @@ const POOrderMaster = () => {
             PO_id: matchedPO[0]?.PO_id,
             status: matchedPO[0]?.status,
             cart_id: matchedPO[0]?.cart_id,
-            inward_status: false,
+            inward_status: true,
         };
 
-        // Debug: Log the update payload
         console.log("Update Payload for PO Master:", updatePayload);
 
         const updateResponse = await fetch(
@@ -293,6 +313,7 @@ const POOrderMaster = () => {
         alert("An error occurred while performing the inward operation.");
     }
 };
+
   
   
   
