@@ -45,6 +45,7 @@ nav ul li a {
   color: white;
   text-decoration: none;
   border-radius: 5px;
+  transition: background-color 0.3s ease, opacity 0.3s ease;
 }
 
 nav ul li a:hover {
@@ -52,6 +53,91 @@ nav ul li a:hover {
 }
 
 nav ul li a.active {
+  background-color: #cb6c13;
+}
+
+/* Disabled tab styles */
+nav ul li.disabled {
+  opacity: 0;
+  pointer-events: none; /* Prevent clicking on the disabled tab */
+  cursor: not-allowed; /* Show a not-allowed cursor */
+}
+
+nav ul li.disabled a {
+  background-color: #f0f0f0; /* Light grey background */
+  color: #b0b0b0; /* Soft grey text */
+  border: 1px solid #d0d0d0; /* Add a subtle border for better visibility */
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1); /* Soft inset shadow for depth */
+}
+
+nav ul li.disabled a:hover {
+  background-color: #f0f0f0; /* Maintain the same color on hover for disabled tabs */
+}
+
+/* Container for the entire login box */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: max-content;
+  background-color: #f4f4f4;
+}
+
+/* Logo container on the left */
+.logo-container {
+  margin-right: 20px;
+}
+
+.logo-container img {
+  width: 400px; /* Adjust the size of the logo */
+  height: auto;
+  object-fit: contain;
+}
+
+/* Centered login box */
+.login-box {
+  width: 350px;
+  padding: 20px;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+/* Form group styling */
+.form-group {
+  margin-bottom: 15px;
+  text-align: left;
+  margin-right: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+/* Login button styling */
+.login-button {
+  width: 100%;
+  padding: 10px;
+  background-color: #f58720;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+}
+
+.login-button:hover {
   background-color: #cb6c13;
 }
 
