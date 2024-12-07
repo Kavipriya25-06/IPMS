@@ -529,7 +529,34 @@ const RequestDetails = () => {
         console.log("All items posted to PO_master successfully.");
       }
 
-      // Step 3: Mark all items in the group as ordered in the UI
+
+
+      
+          // Step 3: Patch each item's `order_placed` status in the cart API
+          const cartPatchPromises = Object.entries(group.requests_by_date)
+          .flatMap(([date, requests]) => requests)
+          .map((item) => {
+            const patchPayload = { order_placed: true };
+    
+            return fetch(`http://127.0.0.1:8000/cart/${item.id}/`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(patchPayload),
+            });
+          });
+    
+        const patchResponses = await Promise.all(cartPatchPromises);
+    
+        const failedPatches = patchResponses.filter((res) => !res.ok);
+        if (failedPatches.length > 0) {
+          console.error("Some items failed to update in the cart API.");
+          alert("Failed to update some items in the cart.");
+        } else {
+          console.log("All items updated in the cart API successfully.");
+        }
+    
+
+      // Step 4: Mark all items in the group as ordered in the UI
       setCartItems((prevCartItems) =>
         prevCartItems.map((cartItem) =>
           cartItem.vendor_id === group.vendor_id
