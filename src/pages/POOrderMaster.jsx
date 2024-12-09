@@ -285,7 +285,7 @@ const POOrderMaster = () => {
             PO_id: matchedPO[0]?.PO_id,
             status: matchedPO[0]?.status,
             cart_id: matchedPO[0]?.cart_id,
-            inward_status: true,
+            inward_status: false,
         };
 
         console.log("Update Payload for PO Master:", updatePayload);

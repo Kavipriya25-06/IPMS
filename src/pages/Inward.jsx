@@ -399,7 +399,8 @@ const Inward = () => {
       );
   
       if (filteredQuestions.length === 0) {
-        alert("No questions available for the selected component type.");
+        setMessageBoxContent("No questions available for the selected component type.");
+        setShowMessageBox(true);
         return;
       }
   
