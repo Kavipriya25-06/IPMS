@@ -59,7 +59,7 @@ function App() {
               to="/"
               style={{ textDecoration: "none", color: "inherit" }}
             >
-              Inventory Management
+              Inventory and Procurement Management
             </NavLink>
           </h1>
           {user ? (
