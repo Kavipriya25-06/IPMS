@@ -1,14 +1,31 @@
-import React, { createContext, useState, useContext } from "react";
+import React, { createContext, useState, useContext, useEffect } from "react";
 
 // Create AuthContext
 const AuthContext = createContext();
 
 // Custom hook to use AuthContext
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};
 
 // AuthProvider Component
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null); // Stores user info (email and role)
+  const [user, setUser] = useState(() => {
+    const storedUser = localStorage.getItem("user");
+    return storedUser ? JSON.parse(storedUser) : null;
+  }); // Stores user info (email and role)
+
+  // On initial load, retrieve user from localStorage
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
 
   const login = async (email, password) => {
     try {
@@ -20,7 +37,10 @@ export const AuthProvider = ({ children }) => {
       );
 
       if (foundUser) {
-        setUser({ email: foundUser.email, role: foundUser.role });
+        const loggedInUser = { email: foundUser.email, role: foundUser.role };
+
+        setUser(loggedInUser);
+        localStorage.setItem("user", JSON.stringify(loggedInUser)); // Persist user state
         return true;
       } else {
         throw new Error("Invalid email or password");
@@ -31,10 +51,16 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => setUser(null);
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem("user"); // Clear persisted user state
+  };
+
+  // Utility to check if user has a specific role
+  const hasRole = (role) => user?.role === role;
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, hasRole }}>
       {children}
     </AuthContext.Provider>
   );

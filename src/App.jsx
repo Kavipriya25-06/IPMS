@@ -1,6 +1,7 @@
 // src/App.jsx
 import React from "react";
 import "./App.css";
+import { useAuth } from "./AuthContext";
 import {
   BrowserRouter as Router,
   Route,
@@ -23,7 +24,7 @@ import Inward from "./pages/Inward";
 import PurchaseOrder from "./pages/POTemplate";
 import Login from "./pages/Login";
 import ProtectedRoute from "./ProtectedRoute";
-import { useAuth } from "./AuthContext";
+// import { useAuth } from "./AuthContext";
 // import PODetails from "./pages/PODetails";
 
 function App() {
