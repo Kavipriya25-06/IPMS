@@ -1,4 +1,10 @@
-import React, { createContext, useState, useContext, useEffect } from "react";
+import React, {
+  createContext,
+  useState,
+  useContext,
+  useEffect,
+  useCallback,
+} from "react";
 
 // Create AuthContext
 const AuthContext = createContext();
@@ -13,7 +19,7 @@ export const useAuth = () => {
 };
 
 // AuthProvider Component
-export const AuthProvider = ({ children }) => {
+const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     const storedUser = localStorage.getItem("user");
     return storedUser ? JSON.parse(storedUser) : null;
@@ -41,6 +47,7 @@ export const AuthProvider = ({ children }) => {
 
         setUser(loggedInUser);
         localStorage.setItem("user", JSON.stringify(loggedInUser)); // Persist user state
+        resetInactivityTimer(); // Start inactivity timer on login
         return true;
       } else {
         throw new Error("Invalid email or password");
@@ -51,10 +58,43 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
+  // const logout = () => {
+  //   setUser(null);
+  //   localStorage.removeItem("user"); // Clear persisted user state
+  // };
+
+  const logout = useCallback(() => {
     setUser(null);
-    localStorage.removeItem("user"); // Clear persisted user state
-  };
+    localStorage.removeItem("user");
+    clearTimeout(inactivityTimer); // Clear inactivity timer
+  }, []);
+
+  const resetInactivityTimer = useCallback(() => {
+    clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(() => {
+      alert("You have been logged out due to inactivity.");
+      logout();
+    }, 10 * 60 * 1000); // 10 minutes until logout
+  }, [logout]);
+
+  useEffect(() => {
+    if (user) {
+      resetInactivityTimer();
+
+      const handleActivity = () => resetInactivityTimer();
+      window.addEventListener("mousemove", handleActivity);
+      window.addEventListener("keydown", handleActivity);
+      window.addEventListener("click", handleActivity);
+
+      return () => {
+        window.removeEventListener("mousemove", handleActivity);
+        window.removeEventListener("keydown", handleActivity);
+        window.removeEventListener("click", handleActivity);
+      };
+    }
+  }, [user, resetInactivityTimer]);
+
+  let inactivityTimer;
 
   // Utility to check if user has a specific role
   const hasRole = (role) => user?.role === role;
@@ -65,3 +105,5 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+
+export default AuthProvider;
