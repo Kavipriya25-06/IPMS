@@ -1,5 +1,3 @@
-//
-// Eighth set of code
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import CustomMessagebox from "./CustomMessageBox.jsx";
@@ -16,6 +14,14 @@ const RequestForm = () => {
   const [showMessageBox, setShowMessageBox] = useState(false);
   const [messageBoxContent, setMessageBoxContent] = useState("");
   const [date, setDate] = useState("");
+  const [showPopup, setShowPopup] = useState(false); // State to manage the popup visibility
+  const [newComponentsAdded, setNewComponentsAdded] = useState(false);
+  const [newComponentsDeleted, setNewComponentsDeleted] = useState(false);
+  const [popupData, setPopupData] = useState({
+    name: "",
+    projectName: "",
+    bomId: "",
+  }); // State to manage popup input fields
 
   useEffect(() => {
     fetch("http://127.0.0.1:8000/bom_list/")
@@ -77,10 +83,11 @@ const RequestForm = () => {
   };
 
   const handleAddComponent = () => {
-    // Get the list of component IDs that have already been selected
-    const selectedIds = selectedComponents.map(
-      (comp) => comp.component?.component_id
-    );
+    setSelectedComponents([
+      ...selectedComponents,
+      { component: null, quantity: 1, vendor: { vendor_name: "N/A" } },
+    ]);
+    setNewComponentsAdded(true); // Mark that a new component has been added
   
     // Check if all components are already added
     const availableIds = availableComponents.map((comp) => comp.component_id);
@@ -100,7 +107,9 @@ const RequestForm = () => {
 
   const handleDeleteComponent = (index) => {
     setSelectedComponents(selectedComponents.filter((_, i) => i !== index));
+    setNewComponentsDeleted(true);
   };
+  
 
   const handleQuantityChange = (index, quantity) => {
     const updatedComponents = [...selectedComponents];
@@ -157,18 +166,80 @@ const RequestForm = () => {
   // const bom_id_list = selectedBom ? selectedBom.bom_id : "";
   // const firstComponentId = selectedComponents[0]?.id || 3; // Default component added
 
-  const handleSubmit = async () => {
+  const handlePopupSubmit = async () => {
+    // Validate popup input fields
+    if (!popupData.name || !popupData.projectName || !popupData.bomId) {
+      alert("Please fill in all fields.");
+      return;
+    }
+  
     try {
-      const newRequest = {
-        requester_name: requesterName,
-        date: date,
-        status: "In Progress",
-        last_modified_by: "Arun",
-        // bom: firstComponentId,
-        // bom_id: bom_id_list,
+      const bom_list = {
+        bom_name: popupData.projectName,
+        bom_id: popupData.bomId,
+        created_by: popupData.name,
+        last_modified_by: popupData.name,
+        number_of_components: 1,
       };
 
-      // Step 1: Submit to request_list to get the generated request_id
+
+      
+  
+      const bomlistresponse = await fetch(
+        "http://127.0.0.1:8000/bom_list/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(bom_list),
+        }
+      );
+  
+      if (!bomlistresponse.ok) {
+        const errorData = await bomlistresponse.json();
+        console.error("Error in BOM list submission:", errorData);
+        alert("Failed to save BOM. Please check the inputs.");
+        return;
+      }
+
+      console.log("BOM list added successfully.");
+
+      // Step 2: Fetch the bom_id to use for BOM Master
+      const bomlistData = await bomlistresponse.json();
+      const bomId = bomlistData.bom_id;
+  
+      // Step 3: POST to bom_master for each selected component
+      const bomMasterEntries = selectedComponents.map((component) => ({
+        bom: bomId,
+        component: component.component.component_id,
+        vendor: component.vendor.vendor_id,
+        quantity: component.quantity,
+      }));
+  
+      const bomMasterPromises = bomMasterEntries.map((entry) =>
+        fetch("http://127.0.0.1:8000/bom_master/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(entry),
+        })
+      );
+  
+      await Promise.all(bomMasterPromises);
+      console.log("All BOM master entries successfully added.");
+      
+  
+      const newRequest = {
+        requester_name: popupData.name,
+        project_name: popupData.projectName,
+        bom_id: popupData.bomId,
+        date: date,
+        status: "In Progress",
+        last_modified_by: popupData.name,
+      };
+  
       const requestListResponse = await fetch(
         "http://127.0.0.1:8000/request_list/",
         {
@@ -179,152 +250,271 @@ const RequestForm = () => {
           body: JSON.stringify(newRequest),
         }
       );
-
-      if (requestListResponse) {
-        console.log("Response", requestListResponse);
+  
+      if (!requestListResponse.ok) {
+        const errorData = await requestListResponse.json();
+        console.error("Error in request list submission:", errorData);
+        alert("Failed to save the request. Please try again.");
+        return;
       }
-
+  
       const requestListData = await requestListResponse.json();
-
-      // Debugging log to inspect API response
-      console.log("request_list API response:", requestListData);
-
       const generatedRequestId = requestListData.request_id;
-      console.log("Generated Request ID:", generatedRequestId);
-
-      if (!generatedRequestId) {
-        throw new Error("Request ID was not generated or returned.");
-      }
-
-      // Step 2: Submit each entry to request_master with the generated request_id
+  
       const requestMasterEntries = selectedComponents.map((component) => ({
         request: generatedRequestId,
         component: component.component.component_id,
         vendor: component.vendor.vendor_id,
-        // bom: component.id ? component.id : 3, // For the components added we give a default bom master id
         qty: component.quantity,
         status: "pending",
         assign: false,
       }));
-
-      const requestMasterPromises = requestMasterEntries.map((entry) =>
-        fetch("http://127.0.0.1:8000/request_master/", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(entry),
-        })
-          .then((response) => response.json())
-          .then((data) => console.log("Request Master Entry Added:", data))
-          .catch((error) =>
-            console.error("Error updating request master entry:", error)
-          )
+  
+      await Promise.all(
+        requestMasterEntries.map((entry) =>
+          fetch("http://127.0.0.1:8000/request_master/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(entry),
+          })
+        )
       );
-
-      await Promise.all(requestMasterPromises);
+  
       console.log("All request master entries successfully added.");
-      setMessageBoxContent("Request added successfully!");
       setShowMessageBox(true);
-      // Delay navigation to show the message box
+      setMessageBoxContent("Request and BOM added successfully!");
       setTimeout(() => navigate("/"), 3000);
     } catch (error) {
       console.error("Error in submission process:", error);
+      alert("An error occurred during submission. Please try again.");
+    } finally {
+      setShowPopup(false);
+    }
+  };
+  
+  const handleSubmit = async () => {
+    if (newComponentsAdded  || newComponentsDeleted) {
+      // Show popup for entering details if new components are added
+      setShowPopup(true);
+    } else {
+      // Directly submit the request without showing the popup
+      try {
+        const requestListResponse = await fetch(
+          "http://127.0.0.1:8000/request_list/",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              requester_name: requesterName,
+              project_name: selectedBom ? selectedBom.bom_name : "Unnamed Project",
+              bom_id: selectedBom ? selectedBom.bom_id : "",
+              date,
+              status: "In Progress",
+              last_modified_by: requesterName,
+            }),
+          }
+        );
+  
+        if (!requestListResponse.ok) {
+          const errorData = await requestListResponse.json();
+          console.error("Error in request list submission:", errorData);
+          alert("Failed to save the request. Please try again.");
+          return;
+        }
+  
+        const requestListData = await requestListResponse.json();
+        const generatedRequestId = requestListData.request_id;
+  
+        const requestMasterEntries = selectedComponents.map((component) => ({
+          request: generatedRequestId,
+          component: component.component.component_id,
+          vendor: component.vendor.vendor_id,
+          qty: component.quantity,
+          status: "pending",
+          assign: false,
+        }));
+  
+        await Promise.all(
+          requestMasterEntries.map((entry) =>
+            fetch("http://127.0.0.1:8000/request_master/", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(entry),
+            })
+          )
+        );
+  
+        console.log("All request master entries successfully added.");
+        setShowMessageBox(true);
+        setMessageBoxContent("Request submitted successfully!");
+        setTimeout(() => navigate("/"), 3000);
+      } catch (error) {
+        console.error("Error in submission process:", error);
+        alert("An error occurred during submission. Please try again.");
+      }
     }
   };
 
+
   return (
-
-    
     <div>
-    <div
-    style={{
-      display: "flex",
-      flexDirection: "column",
-      // alignItems: "center",
-      justifyContent: "flex-start",
-      height: "55vh",
-      paddingTop: "20px",
-    }}
-  >
-
-      {/* Render CustomMessagebox when showMessageBox is true */}
-      {showMessageBox && (
-      <CustomMessagebox
-        message={messageBoxContent}
-        onClose={() => setShowMessageBox(false)}
-      />
-    )}
-
-    <h1 style={{ marginBottom: "20px" }}>Create a Request</h1>
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "flex-start",
-        padding: "20px",
-        borderRadius: "5px",
-        boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-        width: "300px",
-      }}
-    >
-      <div style={{ marginBottom: "15px", width: "100%" }}>
-        <label style={{ display: "block", marginBottom: "5px" }}>
-          Requester Name:
-        </label>
-        <input
-          type="text"
-          value={requesterName}
-          onChange={(e) => setRequesterName(e.target.value)}
-          placeholder="Enter requester name"
-          required
+      {/* Render Popup when showPopup is true */}
+      {showPopup && (
+        <div className="popup">
+          <div className="popup-content">
+            <h3>Enter Submission Details</h3>
+            <label>Name:</label>
+            <input
+              type="text"
+              value={popupData.name}
+              onChange={(e) =>
+                setPopupData({ ...popupData, name: e.target.value })
+              }
+              placeholder="Enter Name"
+            />
+            <label>Project Name:</label>
+            <input
+              type="text"
+              value={popupData.projectName}
+              onChange={(e) =>
+                setPopupData({ ...popupData, projectName: e.target.value })
+              }
+              placeholder="Enter Project Name"
+            />
+            <label>BOM ID:</label>
+            <input
+              type="text"
+              value={popupData.bomId}
+              onChange={(e) =>
+                setPopupData({ ...popupData, bomId: e.target.value })
+              }
+              placeholder="Enter BOM ID"
+            />
+            <div style={{ marginTop: "10px" }}>
+              <button
+                onClick={handlePopupSubmit}
+                // style={{
+                //   padding: "10px",
+                //   marginRight: "10px",
+                //   borderRadius: "5px",
+                //   backgroundColor: "#007bff",
+                //   color: "#fff",
+                //   cursor: "pointer",
+                //   border: "none",
+                // }}
+              >
+                Submit
+              </button>
+              <button
+                onClick={() => setShowPopup(false)}
+                // style={{
+                //   padding: "10px",
+                //   borderRadius: "5px",
+                //   backgroundColor: "#6c757d",
+                //   color: "#fff",
+                //   cursor: "pointer",
+                //   border: "none",
+                // }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+  
+      <div
+        // style={{
+        //   display: "flex",
+        //   flexDirection: "column",
+        //   justifyContent: "flex-start",
+        //   height: "55vh",
+        //   paddingTop: "20px",
+        // }}
+      >
+        {/* Render CustomMessagebox when showMessageBox is true */}
+        {showMessageBox && (
+          <CustomMessagebox
+            message={messageBoxContent}
+            onClose={() => setShowMessageBox(false)}
+          />
+        )}
+  
+        <h1 style={{ marginBottom: "20px" }}>Create a Request</h1>
+        <div
           style={{
-            width: "100%",
-            padding: "8px",
-            borderRadius: "4px",
-            border: "1px solid #ccc",
-          }}
-        />
-      </div>
-      <div style={{ marginBottom: "15px", width: "100%" }}>
-        <label style={{ display: "block", marginBottom: "5px" }}>Date:</label>
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          required
-          style={{
-            width: "100%",
-            padding: "8px",
-            borderRadius: "4px",
-            border: "1px solid #ccc",
-          }}
-        />
-      </div>
-      <div style={{ marginBottom: "15px", width: "100%" }}>
-        <label style={{ display: "block", marginBottom: "5px" }}>
-          Select BOM:
-        </label>
-        <select
-          onChange={handleBomChange}
-          style={{
-            width: "100%",
-            padding: "8px",
-            borderRadius: "4px",
-            border: "1px solid #ccc",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-start",
+            padding: "20px",
+            borderRadius: "5px",
+            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+            width: "300px",
           }}
         >
-          <option value="">Select BOM</option>
-          {boms.map((bom) => (
-            <option key={bom.bom_id} value={bom.bom_id}>
-              {bom.bom_name}
-            </option>
-          ))}
-        </select>
+          <div style={{ marginBottom: "15px", width: "100%" }}>
+            <label style={{ display: "block", marginBottom: "5px" }}>
+              Requester Name:
+            </label>
+            <input
+              type="text"
+              value={requesterName}
+              onChange={(e) => setRequesterName(e.target.value)}
+              placeholder="Enter requester name"
+              required
+              style={{
+                width: "100%",
+                padding: "8px",
+                borderRadius: "4px",
+                border: "1px solid #ccc",
+              }}
+            />
+          </div>
+          <div style={{ marginBottom: "15px", width: "100%" }}>
+            <label style={{ display: "block", marginBottom: "5px" }}>Date:</label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              required
+              style={{
+                width: "100%",
+                padding: "8px",
+                borderRadius: "4px",
+                border: "1px solid #ccc",
+              }}
+            />
+          </div>
+          <div style={{ marginBottom: "15px", width: "100%" }}>
+            <label style={{ display: "block", marginBottom: "5px" }}>
+              Select BOM:
+            </label>
+            <select
+              onChange={handleBomChange}
+              style={{
+                width: "100%",
+                padding: "8px",
+                borderRadius: "4px",
+                border: "1px solid #ccc",
+              }}
+            >
+              <option value="">Select BOM</option>
+              {boms.map((bom) => (
+                <option key={bom.bom_id} value={bom.bom_id}>
+                  {bom.bom_name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-
+  
       {selectedBom && (
         <div>
           <h3>Selected BOM: {selectedBom.bom_name}</h3>
@@ -374,7 +564,7 @@ const RequestForm = () => {
                       ? component.component.unit_of_measurement
                       : "-"}
                   </td>
-
+  
                   <td>
                     <input
                       type="number"
@@ -395,46 +585,44 @@ const RequestForm = () => {
               ))}
             </tbody>
           </table>
-          <button onClick={handleAddComponent} 
-             style={{
+          <button
+            onClick={handleAddComponent}
+            style={{
               padding: "10px 20px",
               borderRadius: "5px",
               border: "1px solid #ccc",
-              // backgroundColor: "#6c757d",
-              // color: "#fff",
               cursor: "pointer",
-            }}>Add Component</button>
+            }}
+          >
+            Add Component
+          </button>
         </div>
       )}
-
-       <button
-      onClick={handleSubmit}
-      style={{
-        padding: "10px 20px",
-        borderRadius: "5px",
-        border: "1px solid #ccc",
-        // backgroundColor: "#007bff",
-        // color: "#fff",
-        cursor: "pointer",
-      }}
-    >
-      Submit Request
-    </button>
-    <button
-      onClick={() => navigate("/")}
-      style={{
-        padding: "10px 20px",
-        borderRadius: "5px",
-        border: "1px solid #ccc",
-        // backgroundColor: "#6c757d",
-        // color: "#fff",
-        cursor: "pointer",
-      }}
-    >
-      Save and Exit
-    </button>
+  
+      <button
+        onClick={handleSubmit}
+        style={{
+          padding: "10px 20px",
+          borderRadius: "5px",
+          border: "1px solid #ccc",
+          cursor: "pointer",
+        }}
+      >
+        Submit Request
+      </button>
+      <button
+        onClick={() => navigate("/")}
+        style={{
+          padding: "10px 20px",
+          borderRadius: "5px",
+          border: "1px solid #ccc",
+          cursor: "pointer",
+        }}
+      >
+        Save and Exit
+      </button>
     </div>
   );
-};
+  };
 
 export default RequestForm;
