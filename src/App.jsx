@@ -121,7 +121,7 @@ function App() {
                   : "disabled"
               }
             >
-              <NavLink to="/po-list">PO Order List</NavLink>
+              <NavLink to="/po-list">PO List</NavLink>
             </li>
             <li
               className={isTabEnabled(["Admin", "Inventory"]) ? "" : "disabled"}
