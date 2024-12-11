@@ -4,13 +4,14 @@ import React, {
   useContext,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
 
 // Create AuthContext
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
 // Custom hook to use AuthContext
-export const useAuth = () => {
+const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
@@ -25,6 +26,8 @@ const AuthProvider = ({ children }) => {
     return storedUser ? JSON.parse(storedUser) : null;
   }); // Stores user info (email and role)
 
+  const inactivityTimer = useRef(null); // Store inactivity timer reference
+
   // On initial load, retrieve user from localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -33,6 +36,7 @@ const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  // Login function
   const login = async (email, password) => {
     try {
       // Call API to authenticate user
@@ -58,20 +62,21 @@ const AuthProvider = ({ children }) => {
     }
   };
 
-  // const logout = () => {
-  //   setUser(null);
-  //   localStorage.removeItem("user"); // Clear persisted user state
-  // };
-
   const logout = useCallback(() => {
     setUser(null);
     localStorage.removeItem("user");
-    clearTimeout(inactivityTimer); // Clear inactivity timer
+    if (inactivityTimer.current) {
+      clearTimeout(inactivityTimer.current);
+    }
+    // clearTimeout(inactivityTimer.current); // Clear inactivity timer
   }, []);
 
   const resetInactivityTimer = useCallback(() => {
-    clearTimeout(inactivityTimer);
-    inactivityTimer = setTimeout(() => {
+    // clearTimeout(inactivityTimer.current); // clear existing timer
+    if (inactivityTimer.current) {
+      clearTimeout(inactivityTimer.current);
+    }
+    inactivityTimer.current = setTimeout(() => {
       alert("You have been logged out due to inactivity.");
       logout();
     }, 10 * 60 * 1000); // 10 minutes until logout
@@ -94,8 +99,6 @@ const AuthProvider = ({ children }) => {
     }
   }, [user, resetInactivityTimer]);
 
-  let inactivityTimer;
-
   // Utility to check if user has a specific role
   const hasRole = (role) => user?.role === role;
 
@@ -106,4 +109,7 @@ const AuthProvider = ({ children }) => {
   );
 };
 
-export default AuthProvider;
+// export default AuthProvider;
+
+// Named exports for consistency
+export { AuthProvider, useAuth };

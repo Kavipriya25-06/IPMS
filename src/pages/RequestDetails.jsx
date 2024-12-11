@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import CustomMessagebox from "./CustomMessageBox.jsx";
+import Cart from "./Cart.jsx";
 
 const RequestDetails = () => {
   const { requestId } = useParams();
@@ -18,8 +19,10 @@ const RequestDetails = () => {
   const [requiredQty, setRequiredQty] = useState(0);
   const [showMessageBox, setShowMessageBox] = useState(false);
   const [messageBoxContent, setMessageBoxContent] = useState("");
+  const [priceViewData, setPriceViewData] = useState([]);
 
   useEffect(() => {
+    fetchPriceViewData();
     fetchRequestDetails();
     fetchInventoryData();
     fetchVendorList();
@@ -529,32 +532,28 @@ const RequestDetails = () => {
         console.log("All items posted to PO_master successfully.");
       }
 
+      // Step 3: Patch each item's `order_placed` status in the cart API
+      const cartPatchPromises = Object.entries(group.requests_by_date)
+        .flatMap(([date, requests]) => requests)
+        .map((item) => {
+          const patchPayload = { order_placed: true };
 
-
-      
-          // Step 3: Patch each item's `order_placed` status in the cart API
-          const cartPatchPromises = Object.entries(group.requests_by_date)
-          .flatMap(([date, requests]) => requests)
-          .map((item) => {
-            const patchPayload = { order_placed: true };
-    
-            return fetch(`http://127.0.0.1:8000/cart/${item.id}/`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(patchPayload),
-            });
+          return fetch(`http://127.0.0.1:8000/cart/${item.id}/`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(patchPayload),
           });
-    
-        const patchResponses = await Promise.all(cartPatchPromises);
-    
-        const failedPatches = patchResponses.filter((res) => !res.ok);
-        if (failedPatches.length > 0) {
-          console.error("Some items failed to update in the cart API.");
-          alert("Failed to update some items in the cart.");
-        } else {
-          console.log("All items updated in the cart API successfully.");
-        }
-    
+        });
+
+      const patchResponses = await Promise.all(cartPatchPromises);
+
+      const failedPatches = patchResponses.filter((res) => !res.ok);
+      if (failedPatches.length > 0) {
+        console.error("Some items failed to update in the cart API.");
+        alert("Failed to update some items in the cart.");
+      } else {
+        console.log("All items updated in the cart API successfully.");
+      }
 
       // Step 4: Mark all items in the group as ordered in the UI
       setCartItems((prevCartItems) =>
@@ -582,14 +581,84 @@ const RequestDetails = () => {
     }
   };
 
-  const handleVendorChange = (component_id, selectedVendorName) => {
+  // const handleVendorChange = (component_id, selectedVendorName) => {
+  //   const updatedDetails = details.map((detail) => {
+  //     if (detail.component_id === component_id) {
+  //       return { ...detail, vendor_name: selectedVendorName };
+  //     }
+  //     return detail;
+  //   });
+  //   setDetails(updatedDetails);
+  // };
+
+  const handleVendorChange = (componentId, selectedVendorName) => {
     const updatedDetails = details.map((detail) => {
-      if (detail.component_id === component_id) {
-        return { ...detail, vendor_name: selectedVendorName };
+      if (detail.component_id === componentId) {
+        const selectedVendor = vendorNames.find(
+          (vendor) => vendor.vendor_name === selectedVendorName
+        );
+
+        const vendorId = selectedVendor?.vendor_id || "";
+        console.log("Price data", priceViewData);
+
+        // Find matching price in cached priceViewData
+        const matchingEntry = priceViewData.flatMap((entry) =>
+          entry.vendor_details
+            .filter(
+              (vendorDetail) =>
+                vendorDetail.component_type === detail.component_type &&
+                vendorDetail.component_specification ===
+                  detail.component_specification
+            )
+            .map((vendorDetail) => ({
+              vendor: entry.vendor, // Assuming `vendor` is a field in priceViewData
+              price: vendorDetail.latest_price?.price || "N/A",
+              product_id: vendorDetail.product_id,
+            }))
+        );
+
+        console.log("Matching entries", matchingEntry);
+
+        // Extract price if found
+        // const price =
+        //   matchingEntry?.vendor_details.find(
+        //     (vendorDetail) =>
+        //       vendorDetail.component_type === detail.component_type &&
+        //       vendorDetail.component_specification ===
+        //         detail.component_specification
+        //   )?.latest_price?.price || null;
+
+        // extract prices
+        // const prices = matchingEntry.map((vendorDetail) => ({
+        //   vendor: entry.vendor, // Assuming `vendor` is at the top level of `priceViewData`
+        //   price: vendorDetail.latest_price?.price || "N/A",
+        //   product_id: vendorDetail.product_id,
+        // }));
+
+        return {
+          ...detail,
+          vendor_name: selectedVendorName,
+          prices: matchingEntry,
+          vendor_id: selectedVendor?.vendor_id || "", // Add vendor_id
+        };
       }
       return detail;
     });
+
     setDetails(updatedDetails);
+  };
+
+  const fetchPriceViewData = async () => {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/price_view/");
+      if (!response.ok) {
+        throw new Error(`Failed to fetch price data: ${response.statusText}`);
+      }
+      const data = await response.json();
+      setPriceViewData(data); // Cache the entire price view payload
+    } catch (error) {
+      console.error("Error fetching price view data:", error);
+    }
   };
 
   const toggleCartView = async () => {
@@ -691,7 +760,7 @@ const RequestDetails = () => {
                   <th>Unit of Measurement</th>
                   <th>Category</th>
                   <th>Vendor Name</th>
-                  {/* <th>BOM Name</th> */}
+                  <th>Price</th>
                   <th>Quantity</th>
                   <th>Available Quantity</th>
                   <th>Actions</th>
@@ -732,7 +801,22 @@ const RequestDetails = () => {
                           ))}
                         </select>
                       </td>
-                      {/* <td>{detail.bom_name}</td> */}
+                      <td>
+                        {detail.prices?.length > 0
+                          ? (() => {
+                              // Find the first matching price for the selected vendor
+                              const matchingPrice = detail.prices.find(
+                                (priceDetail) =>
+                                  priceDetail.vendor === detail.vendor_id
+                              );
+                              return matchingPrice ? (
+                                <span>₹{matchingPrice.price}</span>
+                              ) : (
+                                "Kaasu illa pa"
+                              );
+                            })()
+                          : "No Prices Available"}
+                      </td>
                       <td>{detail.assign ? 0 : detail.qty}</td>
 
                       <td>{availableQty}</td>
