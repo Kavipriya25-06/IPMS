@@ -5,13 +5,18 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
-const POOrderMaster = () => {
+const POOrderMaster = ({ user }) => {
   const { poId } = useParams(); // Extract PO ID from the route
   const [poDetails, setPODetails] = useState([]);
   const [poData, setPOData] = useState(null); // State for storing PO data
   const [orderStatus, setOrderStatus] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // The user object is now passed as a prop
+  const isAdmin = user?.role === "Admin";
+  const isProcurement = user?.role === "Procurement";
+  const isFinance = user?.role === "Finance";
 
   // Fetch PO Details
   const fetchPODetails = async () => {
@@ -173,150 +178,153 @@ const POOrderMaster = () => {
 
   const handleInward = async (item) => {
     try {
-        const {
-            id,
-            component_id,
-            component_type,
+      const {
+        id,
+        component_id,
+        component_type,
+        component_specification,
+        category,
+        unit_of_measurement,
+        quantity,
+        vendor_name,
+        vendor_id,
+      } = item;
+
+      // Fetch PO Master Data
+      const poResponse = await fetch("http://127.0.0.1:8000/po_master/");
+      if (!poResponse.ok) {
+        throw new Error("Failed to fetch PO Master data.");
+      }
+
+      const poData = await poResponse.json();
+
+      // Debug: Log the fetched PO Master data
+      console.log("Fetched PO Master Data:", poData);
+
+      // Filter to find the matching PO entry
+      const matchedPO = poData.filter((po) => {
+        const matches =
+          po.cart_details?.po_master_id === id &&
+          po.cart_details?.component_id === component_id &&
+          po.cart_details?.vendor_id === vendor_id &&
+          po.cart_details?.component_type === component_type &&
+          po.cart_details?.component_specification ===
+            component_specification &&
+          po.cart_details?.category === category &&
+          po.cart_details?.unit_of_measurement === unit_of_measurement &&
+          po.cart_details?.vendor_name?.toLowerCase().trim() ===
+            vendor_name.toLowerCase().trim();
+
+        // Log each condition for debugging
+        console.log(`PO ID ${po.id}:`, {
+          po_master_id_match: po.cart_details?.po_master_id === id,
+          component_id_match: po.cart_details?.component_id === component_id,
+          vendor_id_match: po.cart_details?.vendor_id === vendor_id,
+          component_type_match:
+            po.cart_details?.component_type === component_type,
+          specification_match:
+            po.cart_details?.component_specification ===
             component_specification,
-            category,
-            unit_of_measurement,
-            quantity,
-            vendor_name,
-            vendor_id,
-        } = item;
-
-        // Fetch PO Master Data
-        const poResponse = await fetch("http://127.0.0.1:8000/po_master/");
-        if (!poResponse.ok) {
-            throw new Error("Failed to fetch PO Master data.");
-        }
-
-        const poData = await poResponse.json();
-
-        // Debug: Log the fetched PO Master data
-        console.log("Fetched PO Master Data:", poData);
-
-        // Filter to find the matching PO entry
-        const matchedPO = poData.filter((po) => {
-            const matches =
-                po.cart_details?.po_master_id === id &&
-                po.cart_details?.component_id === component_id &&
-                po.cart_details?.vendor_id === vendor_id &&
-                po.cart_details?.component_type === component_type &&
-                po.cart_details?.component_specification === component_specification &&
-                po.cart_details?.category === category &&
-                po.cart_details?.unit_of_measurement === unit_of_measurement &&
-                po.cart_details?.vendor_name?.toLowerCase().trim() === vendor_name.toLowerCase().trim();
-
-            // Log each condition for debugging
-            console.log(`PO ID ${po.id}:`, {
-                po_master_id_match: po.cart_details?.po_master_id === id,
-                component_id_match: po.cart_details?.component_id === component_id,
-                vendor_id_match: po.cart_details?.vendor_id === vendor_id,
-                component_type_match: po.cart_details?.component_type === component_type,
-                specification_match: po.cart_details?.component_specification === component_specification,
-                category_match: po.cart_details?.category === category,
-                uom_match: po.cart_details?.unit_of_measurement === unit_of_measurement,
-                vendor_name_match:
-                    po.cart_details?.vendor_name?.toLowerCase().trim() === vendor_name.toLowerCase().trim(),
-            });
-
-            return matches;
+          category_match: po.cart_details?.category === category,
+          uom_match:
+            po.cart_details?.unit_of_measurement === unit_of_measurement,
+          vendor_name_match:
+            po.cart_details?.vendor_name?.toLowerCase().trim() ===
+            vendor_name.toLowerCase().trim(),
         });
 
-        // Debug: Log matched PO entries
-        console.log("Matched PO Entries:", matchedPO);
+        return matches;
+      });
 
-        if (matchedPO.length === 0) {
-            alert("No matching PO Master ID found for the selected item.");
-            return;
-        }
+      // Debug: Log matched PO entries
+      console.log("Matched PO Entries:", matchedPO);
 
-        const po_master_id = matchedPO[0]?.id;
-        const unit_price = matchedPO[0]?.cart_details?.unit_price || 0;
+      if (matchedPO.length === 0) {
+        alert("No matching PO Master ID found for the selected item.");
+        return;
+      }
 
-        // Debug: Log the extracted PO Master ID and Unit Price
-        console.log("Extracted PO Master ID:", po_master_id);
-        console.log("Unit Price for PO:", unit_price);
+      const po_master_id = matchedPO[0]?.id;
+      const unit_price = matchedPO[0]?.cart_details?.unit_price || 0;
 
-        if (!po_master_id) {
-            alert("PO Master ID is missing or invalid.");
-            return;
-        }
+      // Debug: Log the extracted PO Master ID and Unit Price
+      console.log("Extracted PO Master ID:", po_master_id);
+      console.log("Unit Price for PO:", unit_price);
 
-        // Perform inward operations for the quantity specified
-        for (let i = 0; i < quantity; i++) {
-            const inwardPayload = {
-                component_id,
-                component_type,
-                component_specification,
-                category,
-                unit_of_measurement,
-                unit: 1,
-                vendor_name,
-                vendor_id,
-                po_master_id,
-                quality_check: "Pending",
-                price: unit_price,
-            };
+      if (!po_master_id) {
+        alert("PO Master ID is missing or invalid.");
+        return;
+      }
 
-            console.log(`Inward Payload for Unit ${i + 1}:`, inwardPayload);
-
-            const response = await fetch("http://127.0.0.1:8000/inward/", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(inwardPayload),
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                console.error(`Error posting inward data for unit ${i + 1}:`, error);
-                alert(`Failed to post inward data for unit ${i + 1}.`);
-                return;
-            }
-        }
-
-        alert(
-            `Inward operation completed successfully for ${quantity} units of Component ID: ${component_id}.`
-        );
-
-        // Update PO Master Status
-        const updatePayload = {
-            PO_id: matchedPO[0]?.PO_id,
-            status: matchedPO[0]?.status,
-            cart_id: matchedPO[0]?.cart_id,
-            inward_status: false,
+      // Perform inward operations for the quantity specified
+      for (let i = 0; i < quantity; i++) {
+        const inwardPayload = {
+          component_id,
+          component_type,
+          component_specification,
+          category,
+          unit_of_measurement,
+          unit: 1,
+          vendor_name,
+          vendor_id,
+          po_master_id,
+          quality_check: "Pending",
+          price: unit_price,
         };
 
-        console.log("Update Payload for PO Master:", updatePayload);
+        console.log(`Inward Payload for Unit ${i + 1}:`, inwardPayload);
 
-        const updateResponse = await fetch(
-            `http://127.0.0.1:8000/po_master/${po_master_id}/`,
-            {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(updatePayload),
-            }
-        );
+        const response = await fetch("http://127.0.0.1:8000/inward/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(inwardPayload),
+        });
 
-        if (!updateResponse.ok) {
-            const updateError = await updateResponse.json();
-            console.error("Error updating PO Master status:", updateError);
-            alert("Failed to update PO Master status.");
-            return;
+        if (!response.ok) {
+          const error = await response.json();
+          console.error(`Error posting inward data for unit ${i + 1}:`, error);
+          alert(`Failed to post inward data for unit ${i + 1}.`);
+          return;
         }
+      }
 
-        // Refresh PO Details
-        fetchPODetails();
+      alert(
+        `Inward operation completed successfully for ${quantity} units of Component ID: ${component_id}.`
+      );
+
+      // Update PO Master Status
+      const updatePayload = {
+        PO_id: matchedPO[0]?.PO_id,
+        status: matchedPO[0]?.status,
+        cart_id: matchedPO[0]?.cart_id,
+        inward_status: false,
+      };
+
+      console.log("Update Payload for PO Master:", updatePayload);
+
+      const updateResponse = await fetch(
+        `http://127.0.0.1:8000/po_master/${po_master_id}/`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updatePayload),
+        }
+      );
+
+      if (!updateResponse.ok) {
+        const updateError = await updateResponse.json();
+        console.error("Error updating PO Master status:", updateError);
+        alert("Failed to update PO Master status.");
+        return;
+      }
+
+      // Refresh PO Details
+      fetchPODetails();
     } catch (error) {
-        console.error("Error in handleInward function:", error);
-        alert("An error occurred while performing the inward operation.");
+      console.error("Error in handleInward function:", error);
+      alert("An error occurred while performing the inward operation.");
     }
-};
-
-  
-  
-  
+  };
 
   useEffect(() => {
     fetchPODetails();
@@ -364,18 +372,18 @@ const POOrderMaster = () => {
   //   };
   // };
 
-   // Compute Total Price, GST, and Final Total
-   const computeTotals = () => {
+  // Compute Total Price, GST, and Final Total
+  const computeTotals = () => {
     const totals = poDetails.reduce(
       (acc, po) => {
-        const totalquantity = parseFloat(po.cart_details.quantity || 0 );
+        const totalquantity = parseFloat(po.cart_details.quantity || 0);
         const totalcost = parseFloat(po.cart_details.total_cost || 0);
         acc.totalquantity += totalquantity; // Exclude GST from total price
         acc.totalcost += totalcost;
         // acc.finalTotal += totalCost + gst; // Include GST in final total
         return acc;
       },
-      { totalquantity: 0, totalcost: 0}
+      { totalquantity: 0, totalcost: 0 }
     );
 
     return {
@@ -386,7 +394,7 @@ const POOrderMaster = () => {
   };
 
   const vendorName = poData?.cart_details?.vendor_name || "N/A";
-  const { totalquantity, totalcost} = computeTotals();
+  const { totalquantity, totalcost } = computeTotals();
 
   return (
     <div>
@@ -411,7 +419,7 @@ const POOrderMaster = () => {
                 <th>Unit Price</th>
                 <th>GST</th>
                 <th>Total Cost</th>
-                <th>Actions</th>
+                {(isAdmin || isProcurement) && <th>Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -426,14 +434,16 @@ const POOrderMaster = () => {
                   <td>{po.cart_details.unit_price}</td>
                   <td>{po.cart_details.GST}</td>
                   <td>{po.cart_details.total_cost}</td>
-                  <td>
-                    <button
-                      onClick={() => handleInward(po.cart_details)}
-                      disabled={!po.inward_status} // Disable button if inward_status is false
-                    >
-                      Inward
-                    </button>
-                  </td>
+                  {(isAdmin || isProcurement) && (
+                    <td>
+                      <button
+                        onClick={() => handleInward(po.cart_details)}
+                        disabled={!po.inward_status} // Disable button if inward_status is false
+                      >
+                        Inward
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
 
@@ -449,32 +459,34 @@ const POOrderMaster = () => {
           </table>
 
           {/* Order Status Buttons */}
-          <div style={{ marginTop: "20px" }}>
-            <button
-              onClick={() => updateOrderStatus("Ordered")}
-              disabled={orderStatus.order_placed_status === "Ordered"}
-            >
-              Order Placed
-            </button>
-            <button
-              onClick={() => updateOrderStatus("Shipped")}
-              disabled={
-                orderStatus.customer_status === "Shipped" ||
-                orderStatus.order_placed_status !== "Ordered"
-              }
-            >
-              Shipped
-            </button>
-            <button
-              onClick={() => updateOrderStatus("Received")}
-              disabled={
-                orderStatus.received_status === "Received" ||
-                orderStatus.customer_status !== "Shipped"
-              }
-            >
-              Received
-            </button>
-          </div>
+          {(isAdmin || isProcurement) && (
+            <div style={{ marginTop: "20px" }}>
+              <button
+                onClick={() => updateOrderStatus("Ordered")}
+                disabled={orderStatus.order_placed_status === "Ordered"}
+              >
+                Order Placed
+              </button>
+              <button
+                onClick={() => updateOrderStatus("Shipped")}
+                disabled={
+                  orderStatus.customer_status === "Shipped" ||
+                  orderStatus.order_placed_status !== "Ordered"
+                }
+              >
+                Shipped
+              </button>
+              <button
+                onClick={() => updateOrderStatus("Received")}
+                disabled={
+                  orderStatus.received_status === "Received" ||
+                  orderStatus.customer_status !== "Shipped"
+                }
+              >
+                Received
+              </button>
+            </div>
+          )}
 
           {/* Current Status */}
           <div style={{ marginTop: "10px" }}>
