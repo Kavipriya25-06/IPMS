@@ -77,7 +77,7 @@ function App() {
           <ul>
             <li
               className={
-                isTabEnabled(["Admin", "Procurement", "Finance"])
+                isTabEnabled(["Admin", "Procurement", "Finance", "Inventory"])
                   ? ""
                   : "disabled"
               }
@@ -100,7 +100,7 @@ function App() {
             </li>
             <li
               className={
-                isTabEnabled(["Admin", "Procurement", "Finance"])
+                isTabEnabled(["Admin", "Procurement"])
                   ? ""
                   : "disabled"
               }
@@ -109,7 +109,7 @@ function App() {
             </li>
             <li
               className={
-                isTabEnabled(["Admin", "User", "Procurement", "Inventory"]) ? "" : "disabled"
+                isTabEnabled(["Admin", "Procurement"]) ? "" : "disabled"
               }
             >
               <NavLink to="/requests">Requests</NavLink>
@@ -267,7 +267,7 @@ function App() {
             path="/components"
             element={
               <ProtectedRoute
-                allowedRoles={["Admin", "Procurement", "Finance"]}
+                allowedRoles={["Admin", "Procurement", "Finance", "Inventory"]}
               >
                 <Components />
               </ProtectedRoute>
@@ -287,7 +287,7 @@ function App() {
             path="/vendor"
             element={
               <ProtectedRoute
-                allowedRoles={["Admin", "Procurement", "Finance"]}
+                allowedRoles={["Admin", "Procurement"]}
               >
                 <Vendors />
               </ProtectedRoute>
@@ -297,7 +297,7 @@ function App() {
             path="/vendor/:vendorId"
             element={
               <ProtectedRoute
-                allowedRoles={["Admin", "Procurement", "Finance"]}
+                allowedRoles={["Admin", "Procurement"]}
               >
                 <VendorDetails />
               </ProtectedRoute>
@@ -307,7 +307,7 @@ function App() {
             path="/bom"
             element={
               <ProtectedRoute
-                allowedRoles={["Admin", "Procurement", "Finance"]}
+                allowedRoles={["Admin", "Procurement"]}
               >
                 <BOMDisplay />
               </ProtectedRoute>
@@ -317,7 +317,7 @@ function App() {
             path="/bom/:bomId"
             element={
               <ProtectedRoute
-                allowedRoles={["Admin", "Procurement", "Finance"]}
+                allowedRoles={["Admin", "Procurement"]}
               >
                 <BOMDetails />
               </ProtectedRoute>

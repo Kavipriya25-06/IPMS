@@ -26,6 +26,7 @@ const AuthProvider = ({ children }) => {
     return storedUser ? JSON.parse(storedUser) : null;
   }); // Stores user info (email and role)
 
+  const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutes
   const inactivityTimer = useRef(null); // Store inactivity timer reference
 
   // On initial load, retrieve user from localStorage
@@ -68,23 +69,46 @@ const AuthProvider = ({ children }) => {
     if (inactivityTimer.current) {
       clearTimeout(inactivityTimer.current);
     }
+    localStorage.removeItem("lastActivity");
     // clearTimeout(inactivityTimer.current); // Clear inactivity timer
   }, []);
 
+  // const resetInactivityTimer = useCallback(() => {
+  //   // clearTimeout(inactivityTimer.current); // clear existing timer
+  //   if (inactivityTimer.current) {
+  //     clearTimeout(inactivityTimer.current);
+  //   }
+  //   inactivityTimer.current = setTimeout(() => {
+  //     alert("You have been logged out due to inactivity.");
+  //     logout();
+  //   }, 10 * 60 * 1000); // 10 minutes until logout
+  // }, [logout]);
+
   const resetInactivityTimer = useCallback(() => {
-    // clearTimeout(inactivityTimer.current); // clear existing timer
-    if (inactivityTimer.current) {
-      clearTimeout(inactivityTimer.current);
-    }
-    inactivityTimer.current = setTimeout(() => {
-      alert("You have been logged out due to inactivity.");
+    const now = Date.now();
+    localStorage.setItem("lastActivity", now.toString());
+  }, []);
+
+  // Check for inactivity on page load
+  useEffect(() => {
+    const storedLastActivity = localStorage.getItem("lastActivity");
+    const now = Date.now();
+
+    if (
+      storedLastActivity &&
+      now - parseInt(storedLastActivity, 10) > INACTIVITY_TIMEOUT
+    ) {
+      // If inactivity timeout has passed, logout
       logout();
-    }, 10 * 60 * 1000); // 10 minutes until logout
-  }, [logout]);
+    } else {
+      // Otherwise, reset the timer
+      resetInactivityTimer();
+    }
+  }, [logout, resetInactivityTimer]);
 
   useEffect(() => {
     if (user) {
-      resetInactivityTimer();
+      // resetInactivityTimer();
 
       const handleActivity = () => resetInactivityTimer();
       window.addEventListener("mousemove", handleActivity);
