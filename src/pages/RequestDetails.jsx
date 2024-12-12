@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import CustomMessagebox from "./CustomMessageBox.jsx";
 import Cart from "./Cart.jsx";
 
-const RequestDetails = ({ user }) => {
+const RequestDetails = () => {
   const { requestId } = useParams();
   const [details, setDetails] = useState([]);
   const [vendorNames, setVendorNames] = useState([]);
@@ -20,10 +21,6 @@ const RequestDetails = ({ user }) => {
   const [showMessageBox, setShowMessageBox] = useState(false);
   const [messageBoxContent, setMessageBoxContent] = useState("");
   const [priceViewData, setPriceViewData] = useState([]);
-
-  // The user object is now passed as a prop
-  const isAdmin = user?.role === "Admin";
-  const isProcurement = user?.role === "Procurement";
 
   useEffect(() => {
     fetchPriceViewData();
@@ -460,103 +457,94 @@ const RequestDetails = ({ user }) => {
   const getFirstItemId = (group) => {
     // Get the requests_by_date object
     const requestsByDate = group.requests_by_date;
-
+  
     if (!requestsByDate || typeof requestsByDate !== "object") {
       console.error("Invalid requests_by_date structure:", requestsByDate);
       return null;
     }
-
+  
     console.log("Requests grouped by date:", requestsByDate);
-
+  
     // Get the first date key
     const firstDateKey = Object.keys(requestsByDate)[0];
-
+  
     if (!firstDateKey) {
       console.error("No dates found in requests_by_date.");
       return null;
     }
-
+  
     // Get requests grouped by status for the first date
     const requestsGroupedByStatus = requestsByDate[firstDateKey];
-
-    if (
-      !requestsGroupedByStatus ||
-      typeof requestsGroupedByStatus !== "object"
-    ) {
-      console.error(
-        "Invalid requestsGroupedByStatus structure:",
-        requestsGroupedByStatus
-      );
+   
+    if (!requestsGroupedByStatus || typeof requestsGroupedByStatus !== "object") {
+      console.error("Invalid requestsGroupedByStatus structure:", requestsGroupedByStatus);
       return null;
     }
-
-    console.log(
-      "Requests grouped by status for date:",
-      firstDateKey,
-      requestsGroupedByStatus
-    );
-
+  
+    console.log("Requests grouped by status for date:", firstDateKey, requestsGroupedByStatus);
+  
     // Get the first status key (e.g., "true" or "false")
     const firstStatusKey = Object.keys(requestsGroupedByStatus)[0];
-
+  
     if (!firstStatusKey) {
       console.error("No statuses found in requestsGroupedByStatus.");
       return null;
     }
-
+  
     // Get the array of requests for the first status
     const requests = requestsGroupedByStatus[firstStatusKey];
-
+  
     if (!Array.isArray(requests) || requests.length === 0) {
       console.error("No valid requests found for status:", firstStatusKey);
       return null;
     }
-
+  
     // Return the ID of the first request
     return requests[0]?.id || null; // Use optional chaining to avoid errors
   };
+
 
   const handlePlaceOrder = async (group) => {
     try {
       // Get the cart_id from the first item's ID
       const cartId = getFirstItemId(group);
-
+  
       if (!cartId) {
         alert("Unable to find a valid cart_id for the group.");
         return;
       }
-
+  
       console.log("Input group:", group);
-
+  
       // Step 1: Post to PO_list and retrieve PO ID
       const poListPayload = {
         status: "In Progress", // Order status
         cart_id: cartId,
       };
-
+  
       console.log("PO list sending payload:", poListPayload);
-
+  
       const poListResponse = await fetch("http://127.0.0.1:8000/po_list/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(poListPayload),
       });
-
+  
       if (!poListResponse.ok) {
         const error = await poListResponse.json();
         console.error("Error posting to PO_list:", error);
         alert(`Failed to create PO_list: ${JSON.stringify(error)}`);
         return;
       }
-
+  
       const poListData = await poListResponse.json();
       const poListId = poListData.id;
-
+  
       console.log("Created PO_list entry with ID:", poListId);
-
+  
       // Step 2: Post each item with `order_placed: false` in the group to PO_master
-      const poMasterPromises = Object.entries(group.requests_by_date).flatMap(
-        ([date, statusGroupedRequests]) =>
+      const poMasterPromises = Object.entries(group.requests_by_date)
+        .flatMap(([date, statusGroupedRequests]) =>
           Object.entries(statusGroupedRequests)
             .filter(([status]) => status === "false") // Only process items with `order_placed: false`
             .flatMap(([status, requests]) =>
@@ -566,7 +554,7 @@ const RequestDetails = ({ user }) => {
                   cart_id: item.id, // Use the cart item ID
                   status: "In Progress", // Order status
                 };
-
+  
                 return fetch("http://127.0.0.1:8000/po_master/", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
@@ -574,10 +562,10 @@ const RequestDetails = ({ user }) => {
                 });
               })
             )
-      );
-
+        );
+  
       const poMasterResponses = await Promise.all(poMasterPromises);
-
+  
       const failedResponses = poMasterResponses.filter((res) => !res.ok);
       if (failedResponses.length > 0) {
         console.error("Some items failed to post to PO_master.");
@@ -585,16 +573,16 @@ const RequestDetails = ({ user }) => {
       } else {
         console.log("All items posted to PO_master successfully.");
       }
-
+  
       // Step 3: Patch each item's `order_placed` status in the cart API
-      const cartPatchPromises = Object.entries(group.requests_by_date).flatMap(
-        ([date, statusGroupedRequests]) =>
+      const cartPatchPromises = Object.entries(group.requests_by_date)
+        .flatMap(([date, statusGroupedRequests]) =>
           Object.entries(statusGroupedRequests)
             .filter(([status]) => status === "false") // Only process items with `order_placed: false`
             .flatMap(([status, requests]) =>
               requests.map((item) => {
                 const patchPayload = { order_placed: true };
-
+  
                 return fetch(`http://127.0.0.1:8000/cart/${item.id}/`, {
                   method: "PATCH",
                   headers: { "Content-Type": "application/json" },
@@ -602,10 +590,10 @@ const RequestDetails = ({ user }) => {
                 });
               })
             )
-      );
-
+        );
+  
       const patchResponses = await Promise.all(cartPatchPromises);
-
+  
       const failedPatches = patchResponses.filter((res) => !res.ok);
       if (failedPatches.length > 0) {
         console.error("Some items failed to update in the cart API.");
@@ -613,7 +601,7 @@ const RequestDetails = ({ user }) => {
       } else {
         console.log("All items updated in the cart API successfully.");
       }
-
+  
       // Step 4: Mark all items with `order_placed: false` in the group as ordered in the UI
       setCartItems((prevCartItems) =>
         prevCartItems.map((cartItem) =>
@@ -643,14 +631,14 @@ const RequestDetails = ({ user }) => {
             : cartItem
         )
       );
-
+  
       alert("Order placed successfully!");
     } catch (error) {
       console.error("Error placing order:", error);
       alert("An error occurred while placing the order.");
     }
   };
-
+  
   // const handleVendorChange = (component_id, selectedVendorName) => {
   //   const updatedDetails = details.map((detail) => {
   //     if (detail.component_id === component_id) {
@@ -741,11 +729,9 @@ const RequestDetails = ({ user }) => {
   return (
     <div>
       <h2>Request Details for {requestId}</h2>
-      {(isAdmin || isProcurement) && (
-        <button onClick={toggleCartView}>
-          {showCart ? "Hide Cart" : "View Cart"}
-        </button>
-      )}
+      <button onClick={toggleCartView}>
+        {showCart ? "Hide Cart" : "View Cart"}
+      </button>
 
       {/* Render CustomMessagebox when showMessageBox is true */}
       {showMessageBox && (
@@ -755,87 +741,87 @@ const RequestDetails = ({ user }) => {
         />
       )}
 
-      {showCart ? (
-        <div>
-          <h3>Cart</h3>
-          {cartItems.length === 0 ? (
-            <p>Your cart is empty.</p>
-          ) : (
-            cartItems.map((group, groupIndex) => (
-              <div key={group.vendor_id || groupIndex}>
-                <h4>Vendor: {group.vendor_name}</h4>
-                {Object.entries(group.requests_by_date || {}).map(
-                  ([date, requestsGroupedByStatus]) => (
-                    <div key={date}>
-                      <h5>Date: {date}</h5>
-                      {/* Group by `order_placed` */}
-                      {Object.entries(requestsGroupedByStatus || {}).map(
-                        ([orderPlaced, requests]) => (
-                          <div key={orderPlaced}>
-                            <h6>
-                              {orderPlaced === "true"
-                                ? "Order Placed"
-                                : "Pending Orders"}
-                            </h6>
-                            {Array.isArray(requests) && requests.length > 0 ? (
-                              <>
-                                <table>
-                                  <thead>
-                                    <tr>
-                                      <th>Component ID</th>
-                                      <th>Component Type</th>
-                                      <th>Specification</th>
-                                      <th>Quantity</th>
-                                      <th>Category</th>
-                                      <th>Unit of Measurement</th>
-                                      <th>Unit Price</th>
-                                      <th>GST (%)</th>
-                                      <th>Total Cost</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {requests.map((item) => (
-                                      <tr key={item.id}>
-                                        <td>{item.component_id}</td>
-                                        <td>{item.component_type}</td>
-                                        <td>{item.component_specification}</td>
-                                        <td>{item.quantity}</td>
-                                        <td>{item.category}</td>
-                                        <td>{item.unit_of_measurement}</td>
-                                        <td>{item.unit_price}</td>
-                                        <td>{item.GST}</td>
-                                        <td>{item.total_cost}</td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                                {/* Render Place Order button for pending orders only */}
-                                {orderPlaced === "false" && (
-                                  <button
-                                    onClick={() =>
-                                      handlePlaceOrder(group, date)
-                                    }
-                                    disabled={requests.every(
-                                      (item) => item.order_placed
-                                    )}
-                                  >
-                                    Place Order
-                                  </button>
-                                )}
-                              </>
-                            ) : (
-                              <p>No items in this category.</p>
-                            )}
-                          </div>
-                        )
-                      )}
-                    </div>
-                  )
-                )}
+{showCart ? (
+  <div>
+    <h3>Cart</h3>
+    {cartItems.length === 0 ? (
+  <p>Your cart is empty.</p>
+) : (
+  cartItems
+    .filter((group) =>
+      Object.values(group.requests_by_date || {}).some((requestsGroupedByStatus) =>
+        Object.values(requestsGroupedByStatus || {}).some((requests) =>
+          requests.some((item) => !item.order_placed)
+        )
+      )
+    ) // Filter out groups where all items are `order_placed`
+    .map((group, groupIndex) => (
+      <div key={group.vendor_id || groupIndex}>
+        <h4>Vendor: {group.vendor_name}</h4>
+        {Object.entries(group.requests_by_date || {})
+          .filter(([_, requestsGroupedByStatus]) =>
+            Object.values(requestsGroupedByStatus || {}).some((requests) =>
+              requests.some((item) => !item.order_placed)
+            )
+          ) // Filter out dates where all items are `order_placed`
+          .map(([date, requestsGroupedByStatus]) => (
+            <div key={date}>
+              <h5>Date: {date}</h5>
+              {Object.entries(requestsGroupedByStatus || {})
+                .filter(([_, requests]) =>
+                  requests.some((item) => !item.order_placed)
+                ) // Filter out order statuses where all items are `order_placed`
+                .map(([orderPlaced, requests]) => (
+                  orderPlaced === "false" &&
+                  requests.filter((item) => !item.order_placed).length > 0 && (
+                    <div key={orderPlaced}>
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Component ID</th>
+                            <th>Component Type</th>
+                            <th>Specification</th>
+                            <th>Quantity</th>
+                            <th>Category</th>
+                            <th>Unit of Measurement</th>
+                            <th>Unit Price</th>
+                            <th>GST (%)</th>
+                            <th>Total Cost</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {requests
+                            .filter((item) => !item.order_placed)
+                            .map((item) => (
+                              <tr key={item.id}>
+                                <td>{item.component_id}</td>
+                                <td>{item.component_type}</td>
+                                <td>{item.component_specification}</td>
+                                <td>{item.quantity}</td>
+                                <td>{item.category}</td>
+                                <td>{item.unit_of_measurement}</td>
+                                <td>{item.unit_price}</td>
+                                <td>{item.GST}</td>
+                                <td>{item.total_cost}</td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                      <button
+                        onClick={() => handlePlaceOrder(group, date)}
+                        disabled={requests.every((item) => item.order_placed)}
+                      >
+                        Place Order
+                      </button>
               </div>
-            ))
-          )}
+            )
+          ))}
         </div>
+      ))}
+    </div>
+      ))
+    )}
+  </div>
       ) : (
         <>
           {details.length === 0 ? (
@@ -850,19 +836,17 @@ const RequestDetails = ({ user }) => {
                   <th>Unit of Measurement</th>
                   <th>Category</th>
                   <th>Vendor Name</th>
-                  {(isAdmin || isProcurement) && <th>Price</th>}
-                  {""}
-                  {/* Price column for Admin only */}
+                  <th>Price</th>
                   <th>Quantity</th>
                   <th>Available Quantity</th>
-                  {(isAdmin || isProcurement) && <th>Actions</th>}
-                  {""}
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {details.map((detail) => {
-                  const availableQty =
-                    inventoryData[detail.component_id]?.qty || 0;
+              {details
+                .filter((detail) => !detail.order_placed) // Exclude rows where order_placed is true
+                .map((detail) => {
+                  const availableQty = inventoryData[detail.component_id]?.qty || 0;
                   const isAssigned =
                     assignedComponents[detail.component_id] || detail.qty === 0;
 
@@ -877,101 +861,57 @@ const RequestDetails = ({ user }) => {
                         <select
                           value={detail.vendor_name || ""}
                           onChange={(e) =>
-                            handleVendorChange(
-                              detail.component_id,
-                              e.target.value
-                            )
+                            handleVendorChange(detail.component_id, e.target.value)
                           }
                         >
                           <option value="">Select Vendor</option>
                           {vendorNames.map((vendor) => (
-                            <option
-                              key={vendor.vendor_id}
-                              value={vendor.vendor_name}
-                            >
+                            <option key={vendor.vendor_id} value={vendor.vendor_name}>
                               {vendor.vendor_name}
                             </option>
                           ))}
                         </select>
                       </td>
-                      {(isAdmin || isProcurement) && (
-                        <td>
-                          {detail.prices?.length > 0
-                            ? (() => {
-                                // Find the first matching price for the selected vendor
-                                const matchingPrice = detail.prices.find(
-                                  (priceDetail) =>
-                                    priceDetail.vendor === detail.vendor_id
-                                );
-                                return matchingPrice ? (
-                                  <span>₹{matchingPrice.price}</span>
-                                ) : (
-                                  "Kaasu illa pa"
-                                );
-                              })()
-                            : "No Prices Available"}
-                        </td>
-                      )}
+                      <td>
+                        {detail.prices?.length > 0
+                          ? (() => {
+                              // Find the first matching price for the selected vendor
+                              const matchingPrice = detail.prices.find(
+                                (priceDetail) => priceDetail.vendor === detail.vendor_id
+                              );
+                              return matchingPrice ? (
+                                <span>₹{matchingPrice.price}</span>
+                              ) : (
+                                "No Prices Available"
+                              );
+                            })()
+                          : "No Prices Available"}
+                      </td>
                       <td>{detail.assign ? 0 : detail.qty}</td>
-
                       <td>{availableQty}</td>
-
-                      {(isAdmin || isProcurement) && (
-                        <td>
-                          {detail.assign || detail.qty === 0 ? (
-                            <button
-                              style={{
-                                padding: "10px 20px",
-                                fontSize: "14px",
-                                borderRadius: "5px",
-                                border: "1px solid #ccc",
-                                cursor: detail.assign
-                                  ? "pointer"
-                                  : "not-allowed",
-                                marginRight: "10px",
-                                width: "100px", // Fixed width
-                                height: "40px", // Fixed height
-                                textAlign: "center", // Center-align text
-                                transition: "background-color 0.3s ease",
-                              }}
-                              onClick={() =>
-                                handleUnassign(detail.component_id, detail.qty)
-                              }
-                              disabled={!detail.assign}
-                            >
-                              Assigned
-                            </button>
-                          ) : (
-                            <button
-                              style={{
-                                padding: "10px 20px",
-                                fontSize: "14px",
-                                borderRadius: "5px",
-                                border: "1px solid #ccc",
-                                cursor:
-                                  availableQty < detail.qty ||
-                                  detail.qty === 0 ||
-                                  detail.assign
-                                    ? "not-allowed"
-                                    : "pointer",
-                                marginRight: "10px",
-                                width: "100px", // Fixed width
-                                height: "40px", // Fixed height
-                                textAlign: "center", // Center-align text
-                                transition: "background-color 0.3s ease",
-                              }}
-                              onClick={() =>
-                                handleAssign(detail.component_id, detail.qty)
-                              }
-                              disabled={
-                                availableQty < detail.qty ||
-                                detail.qty === 0 ||
-                                detail.assign
-                              }
-                            >
-                              Assign
-                            </button>
-                          )}
+                      <td>
+                        {detail.assign || detail.qty === 0 ? (
+                          <button
+                            style={{
+                              padding: "10px 20px",
+                              fontSize: "14px",
+                              borderRadius: "5px",
+                              border: "1px solid #ccc",
+                              cursor: detail.assign ? "pointer" : "not-allowed",
+                              marginRight: "10px",
+                              width: "100px",
+                              height: "40px",
+                              textAlign: "center",
+                              transition: "background-color 0.3s ease",
+                            }}
+                            onClick={() =>
+                              handleUnassign(detail.component_id, detail.qty)
+                            }
+                            disabled={!detail.assign}
+                          >
+                            Assigned
+                          </button>
+                        ) : (
                           <button
                             style={{
                               padding: "10px 20px",
@@ -979,24 +919,51 @@ const RequestDetails = ({ user }) => {
                               borderRadius: "5px",
                               border: "1px solid #ccc",
                               cursor:
-                                detail.qty === 0 || detail.assign
+                                availableQty < detail.qty ||
+                                detail.qty === 0 ||
+                                detail.assign
                                   ? "not-allowed"
                                   : "pointer",
-                              // backgroundColor: detail.qty === 0 || detail.assign ? '#e0e0e0' : '#2196f3',
-                              // color: detail.qty === 0 || detail.assign ? '#a0a0a0' : '#ffffff',
+                              marginRight: "10px",
+                              width: "100px",
+                              height: "40px",
+                              textAlign: "center",
                               transition: "background-color 0.3s ease",
                             }}
-                            onClick={() => handleOrder(detail)}
-                            disabled={detail.qty === 0 || detail.assign}
+                            onClick={() =>
+                              handleAssign(detail.component_id, detail.qty)
+                            }
+                            disabled={
+                              availableQty < detail.qty ||
+                              detail.qty === 0 ||
+                              detail.assign
+                            }
                           >
-                            {detail.assign ? "Added to cart" : "Add to Cart"}
+                            Assign
                           </button>
-                        </td>
-                      )}
+                        )}
+                        <button
+                          style={{
+                            padding: "10px 20px",
+                            fontSize: "14px",
+                            borderRadius: "5px",
+                            border: "1px solid #ccc",
+                            cursor:
+                              detail.qty === 0 || detail.assign
+                                ? "not-allowed"
+                                : "pointer",
+                            transition: "background-color 0.3s ease",
+                          }}
+                          onClick={() => handleOrder(detail)}
+                          disabled={detail.qty === 0 || detail.assign}
+                        >
+                          {detail.assign ? "Added to cart" : "Add to Cart"}
+                        </button>
+                      </td>
                     </tr>
                   );
                 })}
-              </tbody>
+            </tbody>
             </table>
           )}
         </>
