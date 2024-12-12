@@ -59,7 +59,7 @@ function App() {
               to="/"
               style={{ textDecoration: "none", color: "inherit" }}
             >
-              Inventory and Procurement Management
+              Procurement and Inventory Management
             </NavLink>
           </h1>
           {user ? (
@@ -109,7 +109,7 @@ function App() {
             </li>
             <li
               className={
-                isTabEnabled(["Admin", "User", "Procurement"]) ? "" : "disabled"
+                isTabEnabled(["Admin", "User", "Procurement", "Inventory"]) ? "" : "disabled"
               }
             >
               <NavLink to="/requests">Requests</NavLink>
@@ -326,7 +326,7 @@ function App() {
           <Route
             path="/requests"
             element={
-              <ProtectedRoute allowedRoles={["Admin", "User", "Procurement"]}>
+              <ProtectedRoute allowedRoles={["Admin", "User", "Procurement", "Inventory"]}>
                 <Requests />
               </ProtectedRoute>
             }
@@ -342,8 +342,10 @@ function App() {
           <Route
             path="/requests/:requestId"
             element={
-              <ProtectedRoute allowedRoles={["Admin", "User", "Procurement"]}>
-                <RequestDetails />
+              <ProtectedRoute
+                allowedRoles={["Admin", "User", "Procurement", "Inventory"]}
+              >
+                <RequestDetails user={user} />
               </ProtectedRoute>
             }
           />
