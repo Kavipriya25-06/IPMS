@@ -343,29 +343,50 @@ const POOrderMaster = () => {
 
   const currentStatus = getCurrentStatus();
 
-  // Compute Total Price, GST, and Final Total
-  const computeTotals = () => {
+  // // Compute Total Price, GST, and Final Total
+  // const computeTotals = () => {
+  //   const totals = poDetails.reduce(
+  //     (acc, po) => {
+  //       const totalCost = parseFloat(po.cart_details.unit_price || 0);
+  //       const gst = parseFloat(po.cart_details.GST || 0);
+  //       acc.totalPrice += totalCost; // Exclude GST from total price
+  //       acc.gst += gst;
+  //       acc.finalTotal += totalCost + gst; // Include GST in final total
+  //       return acc;
+  //     },
+  //     { totalPrice: 0, gst: 0, finalTotal: 0 }
+  //   );
+
+  //   return {
+  //     totalPrice: totals.totalPrice.toFixed(2),
+  //     gst: totals.gst.toFixed(2),
+  //     finalTotal: totals.finalTotal.toFixed(2),
+  //   };
+  // };
+
+   // Compute Total Price, GST, and Final Total
+   const computeTotals = () => {
     const totals = poDetails.reduce(
       (acc, po) => {
-        const totalCost = parseFloat(po.cart_details.unit_price || 0);
-        const gst = parseFloat(po.cart_details.GST || 0);
-        acc.totalPrice += totalCost; // Exclude GST from total price
-        acc.gst += gst;
-        acc.finalTotal += totalCost + gst; // Include GST in final total
+        const totalquantity = parseFloat(po.cart_details.quantity || 0 );
+        const totalcost = parseFloat(po.cart_details.total_cost || 0);
+        acc.totalquantity += totalquantity; // Exclude GST from total price
+        acc.totalcost += totalcost;
+        // acc.finalTotal += totalCost + gst; // Include GST in final total
         return acc;
       },
-      { totalPrice: 0, gst: 0, finalTotal: 0 }
+      { totalquantity: 0, totalcost: 0}
     );
 
     return {
-      totalPrice: totals.totalPrice.toFixed(2),
-      gst: totals.gst.toFixed(2),
-      finalTotal: totals.finalTotal.toFixed(2),
+      totalquantity: totals.totalquantity.toFixed(),
+      totalcost: totals.totalcost.toFixed(2),
+      // finalTotal: totals.finalTotal.toFixed(2),
     };
   };
 
   const vendorName = poData?.cart_details?.vendor_name || "N/A";
-  const { totalPrice, gst, finalTotal } = computeTotals();
+  const { totalquantity, totalcost} = computeTotals();
 
   return (
     <div>
@@ -418,10 +439,11 @@ const POOrderMaster = () => {
 
               {/* Totals Row */}
               <tr style={{ fontWeight: "bold" }}>
-                <td colSpan="6">Totals</td>
-                <td>{totalPrice}</td>
-                <td>{gst}</td>
-                <td>{finalTotal}</td>
+                <td colSpan="5">Totals</td>
+                <td>{totalquantity}</td>
+                <td></td>
+                <td></td>
+                <td>{totalcost}</td>
               </tr>
             </tbody>
           </table>
