@@ -347,7 +347,7 @@ function App() {
               <ProtectedRoute
                 allowedRoles={["Admin", "Procurement", "Finance"]}
               >
-                <POOrderList />
+                <POOrderList user={user} />
               </ProtectedRoute>
             }
           />
@@ -357,7 +357,7 @@ function App() {
               <ProtectedRoute
                 allowedRoles={["Admin", "Procurement", "Finance"]}
               >
-                <POOrderMaster user={user}/>
+                <POOrderMaster user={user} />
               </ProtectedRoute>
             }
           />

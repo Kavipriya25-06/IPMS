@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 
-const POOrderList = () => {
+const POOrderList = ({ user }) => {
   const [poOrders, setPOOrders] = useState([]); // State to store PO orders
   const [poMaster, setPOMaster] = useState([]); // State to store PO master data
   const [vendorContact, setVendorContact] = useState(null);
@@ -26,6 +26,11 @@ const POOrderList = () => {
     filename: "",
   });
   const [currentPO, setCurrentPO] = useState(null); // Store the current PO for email
+
+  // The user object is now passed as a prop
+  const isAdmin = user?.role === "Admin";
+  const isProcurement = user?.role === "Procurement";
+  const isFinance = user?.role === "Finance";
 
   // Fetch Vendor Contact and Name
   const fetchVendorDetails = async (vendorId) => {
@@ -70,7 +75,10 @@ const POOrderList = () => {
       if (filteredPO) {
         setPOListData(filteredPO);
         fetchVendorDetails(filteredPO.cart_details.vendor_id); // Fetch vendor details
-        console.log("Filtered PO Vendor details", filteredPO.cart_details.vendor_id);
+        console.log(
+          "Filtered PO Vendor details",
+          filteredPO.cart_details.vendor_id
+        );
       }
     } catch (error) {
       console.error("Error fetching PO list data:", error);
@@ -127,7 +135,10 @@ const POOrderList = () => {
 
   const finalCost = (poId) => {
     const relevantPOMaster = poMaster.filter((po) => po.PO_id === poId);
-    const finalPrice = relevantPOMaster.reduce((acc, po) => {const final_cost = parseFloat(po.cart_details.total_cost || 0); return acc += final_cost;}, 0);
+    const finalPrice = relevantPOMaster.reduce((acc, po) => {
+      const final_cost = parseFloat(po.cart_details.total_cost || 0);
+      return (acc += final_cost);
+    }, 0);
     console.log(relevantPOMaster, "Ithu than");
     console.log("Final price varutha?", finalPrice);
     return finalPrice;
@@ -135,7 +146,7 @@ const POOrderList = () => {
 
   // Combine PO and Statuses
   const getAggregatedStatus = (poId) => {
-    const relevantPOMaster = poMaster.filter((po) => po.PO_id === poId);   
+    const relevantPOMaster = poMaster.filter((po) => po.PO_id === poId);
     const poMasterIds = relevantPOMaster.map((po) => po.id);
 
     const relevantStatuses = orderStatuses.filter((status) =>
@@ -369,7 +380,7 @@ const POOrderList = () => {
               <th>Status</th>
               <th>Total Cost</th>
               <th>Date</th>
-              <th>Actions</th>
+              {(isAdmin || isProcurement) && <th>Actions</th>}
             </tr>
           </thead>
           <tbody>
@@ -388,12 +399,14 @@ const POOrderList = () => {
                   <td>{status}</td>
                   <td>{finalPrice}</td>
                   <td>{order.date}</td>
-                  <td>
-                    <button onClick={() => handleOpenModal(order)}>
-                      {" "}
-                      Send Email{" "}
-                    </button>
-                  </td>
+                  {(isAdmin || isProcurement) && (
+                    <td>
+                      <button onClick={() => handleOpenModal(order)}>
+                        {" "}
+                        Send Email{" "}
+                      </button>
+                    </td>
+                  )}
                 </tr>
               );
             })}
