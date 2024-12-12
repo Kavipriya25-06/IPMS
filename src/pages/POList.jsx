@@ -125,9 +125,17 @@ const POOrderList = () => {
     }
   };
 
+  const finalCost = (poId) => {
+    const relevantPOMaster = poMaster.filter((po) => po.PO_id === poId);
+    const finalPrice = relevantPOMaster.reduce((acc, po) => {const final_cost = parseFloat(po.cart_details.total_cost || 0); return acc += final_cost;}, 0);
+    console.log(relevantPOMaster, "Ithu than");
+    console.log("Final price varutha?", finalPrice);
+    return finalPrice;
+  };
+
   // Combine PO and Statuses
   const getAggregatedStatus = (poId) => {
-    const relevantPOMaster = poMaster.filter((po) => po.PO_id === poId);
+    const relevantPOMaster = poMaster.filter((po) => po.PO_id === poId);   
     const poMasterIds = relevantPOMaster.map((po) => po.id);
 
     const relevantStatuses = orderStatuses.filter((status) =>
@@ -367,6 +375,7 @@ const POOrderList = () => {
           <tbody>
             {poOrders.map((order) => {
               const { status, mixed } = getAggregatedStatus(order.id);
+              const finalPrice = finalCost(order.id);
               return (
                 <tr key={order.id}>
                   <td
@@ -377,7 +386,7 @@ const POOrderList = () => {
                   </td>
                   <td>{order.cart_details.vendor_name}</td>
                   <td>{status}</td>
-                  <td>{order.cart_details.total_cost}</td>
+                  <td>{finalPrice}</td>
                   <td>{order.date}</td>
                   <td>
                     <button onClick={() => handleOpenModal(order)}>
