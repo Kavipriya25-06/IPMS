@@ -29,13 +29,13 @@ const AuthProvider = ({ children }) => {
   const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutes
   const inactivityTimer = useRef(null); // Store inactivity timer reference
 
-  // On initial load, retrieve user from localStorage
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-  }, []);
+  // // On initial load, retrieve user from localStorage
+  // useEffect(() => {
+  //   const storedUser = localStorage.getItem("user");
+  //   if (storedUser) {
+  //     setUser(JSON.parse(storedUser));
+  //   }
+  // }, []);
 
   // Login function
   const login = async (email, password) => {
@@ -66,10 +66,10 @@ const AuthProvider = ({ children }) => {
   const logout = useCallback(() => {
     setUser(null);
     localStorage.removeItem("user");
+    localStorage.removeItem("lastActivity");
     if (inactivityTimer.current) {
       clearTimeout(inactivityTimer.current);
     }
-    localStorage.removeItem("lastActivity");
     // clearTimeout(inactivityTimer.current); // Clear inactivity timer
   }, []);
 
@@ -87,7 +87,16 @@ const AuthProvider = ({ children }) => {
   const resetInactivityTimer = useCallback(() => {
     const now = Date.now();
     localStorage.setItem("lastActivity", now.toString());
-  }, []);
+
+    if (inactivityTimer.current) {
+      clearTimeout(inactivityTimer.current); // Clear existing timer
+    }
+
+    inactivityTimer.current = setTimeout(() => {
+      alert("You have been logged out due to inactivity.");
+      logout();
+    }, INACTIVITY_TIMEOUT);
+  }, [logout]);
 
   // Check for inactivity on page load
   useEffect(() => {
@@ -100,11 +109,11 @@ const AuthProvider = ({ children }) => {
     ) {
       // If inactivity timeout has passed, logout
       logout();
-    } else {
+    } else if (user) {
       // Otherwise, reset the timer
       resetInactivityTimer();
     }
-  }, [logout, resetInactivityTimer]);
+  }, [user, logout, resetInactivityTimer]);
 
   useEffect(() => {
     if (user) {
