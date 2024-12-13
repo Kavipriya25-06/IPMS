@@ -437,11 +437,14 @@ const POOrderMaster = ({ user }) => {
                   {(isAdmin || isProcurement) && (
                     <td>
                       <button
-                        onClick={() => handleInward(po.cart_details)}
-                        disabled={!po.inward_status} // Disable button if inward_status is false
-                      >
-                        Inward
-                      </button>
+                      onClick={() => handleInward(po.cart_details)}
+                      disabled={
+                        !po.inward_status || // Ensure inward_status is true
+                        orderStatus.received_status !== "Received" // Only enable if received status is "Received"
+                      }
+                    >
+                      Inward
+                    </button>
                     </td>
                   )}
                 </tr>
