@@ -295,72 +295,77 @@ const RequestForm = () => {
   };
   
   const handleSubmit = async () => {
-    if (newComponentsAdded  || newComponentsDeleted) {
-      // Show popup for entering details if new components are added
-      setShowPopup(true);
-    } else {
-      // Directly submit the request without showing the popup
-      try {
-        const requestListResponse = await fetch(
-          "http://127.0.0.1:8000/request_list/",
-          {
+    if (newComponentsAdded || newComponentsDeleted) {
+      // Show a confirmation dialog
+      const saveNewBom = window.confirm("Do you want to save a new BOM?");
+      
+      if (saveNewBom) {
+        // Show popup for entering details (name, BOM name, BOM ID)
+        setShowPopup(true);
+        return; // Wait for user to fill the popup and handle submission in the popup logic
+      }
+    }
+  
+    // If user doesn't want to save a new BOM or no new components were added/removed
+    try {
+      const requestListResponse = await fetch(
+        "http://127.0.0.1:8000/request_list/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            requester_name: requesterName,
+            project_name: selectedBom ? selectedBom.bom_name : "Unnamed Project",
+            bom_id: selectedBom ? selectedBom.bom_id : "",
+            date,
+            status: "In Progress",
+            last_modified_by: requesterName,
+          }),
+        }
+      );
+  
+      if (!requestListResponse.ok) {
+        const errorData = await requestListResponse.json();
+        console.error("Error in request list submission:", errorData);
+        alert("Failed to save the request. Please try again.");
+        return;
+      }
+  
+      const requestListData = await requestListResponse.json();
+      const generatedRequestId = requestListData.request_id;
+  
+      const requestMasterEntries = selectedComponents.map((component) => ({
+        request: generatedRequestId,
+        component: component.component.component_id,
+        vendor: component.vendor.vendor_id,
+        qty: component.quantity,
+        status: "pending",
+        assign: false,
+      }));
+  
+      await Promise.all(
+        requestMasterEntries.map((entry) =>
+          fetch("http://127.0.0.1:8000/request_master/", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-              requester_name: requesterName,
-              project_name: selectedBom ? selectedBom.bom_name : "Unnamed Project",
-              bom_id: selectedBom ? selectedBom.bom_id : "",
-              date,
-              status: "In Progress",
-              last_modified_by: requesterName,
-            }),
-          }
-        );
+            body: JSON.stringify(entry),
+          })
+        )
+      );
   
-        if (!requestListResponse.ok) {
-          const errorData = await requestListResponse.json();
-          console.error("Error in request list submission:", errorData);
-          alert("Failed to save the request. Please try again.");
-          return;
-        }
-  
-        const requestListData = await requestListResponse.json();
-        const generatedRequestId = requestListData.request_id;
-  
-        const requestMasterEntries = selectedComponents.map((component) => ({
-          request: generatedRequestId,
-          component: component.component.component_id,
-          vendor: component.vendor.vendor_id,
-          qty: component.quantity,
-          status: "pending",
-          assign: false,
-        }));
-  
-        await Promise.all(
-          requestMasterEntries.map((entry) =>
-            fetch("http://127.0.0.1:8000/request_master/", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify(entry),
-            })
-          )
-        );
-  
-        console.log("All request master entries successfully added.");
-        setShowMessageBox(true);
-        setMessageBoxContent("Request submitted successfully!");
-        setTimeout(() => navigate("/"), 3000);
-      } catch (error) {
-        console.error("Error in submission process:", error);
-        alert("An error occurred during submission. Please try again.");
-      }
+      console.log("All request master entries successfully added.");
+      setShowMessageBox(true);
+      setMessageBoxContent("Request submitted successfully!");
+      setTimeout(() => navigate("/"), 3000);
+    } catch (error) {
+      console.error("Error in submission process:", error);
+      alert("An error occurred during submission. Please try again.");
     }
   };
-
 
   return (
     <div>

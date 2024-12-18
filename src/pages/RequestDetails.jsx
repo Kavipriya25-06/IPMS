@@ -106,84 +106,66 @@ const RequestDetails = ({ user }) => {
       // alert("An error occurred while fetching cart items.");
     }
   };
-
   const handleOrder = async (detail) => {
     if (!detail.vendor_name) {
       setMessageBoxContent("Please select a vendor for this component.");
       setShowMessageBox(true);
       return;
     }
-
+  
     const selectedVendor = vendorNames.find(
       (vendor) => vendor.vendor_name === detail.vendor_name
     );
     const vendor_id = selectedVendor ? selectedVendor.vendor_id : null;
-
+  
     if (!vendor_id) {
       alert("Invalid vendor selected.");
       return;
     }
-
+  
     let productId = null;
     let price = 0;
     let tax = 0;
-
+  
     try {
       // Fetch product_id from the component API
       const componentResponse = await fetch("http://127.0.0.1:8000/component/");
-      if (!componentResponse.ok) {
-        console.error("Error fetching component data.");
-        alert("Failed to fetch component data.");
-        return;
-      }
-
       const componentData = await componentResponse.json();
       const component = componentData.find(
         (comp) => comp.component_id === detail.component_id
       );
-
+  
       if (component) {
-        productId = component.product_id; // Extract product_id
+        productId = component.product_id;
       } else {
-        alert(
-          `Component data not found for component_id: ${detail.component_id}`
-        );
+        alert(`Component not found for component_id: ${detail.component_id}`);
         return;
       }
-
+  
       // Fetch price and tax from the price table API
-      const priceTableResponse = await fetch(
-        "http://127.0.0.1:8000/price_tables/"
-      );
-      if (!priceTableResponse.ok) {
-        console.error("Error fetching price table data.");
-        alert("Failed to fetch price table data.");
-        return;
-      }
-
+      const priceTableResponse = await fetch("http://127.0.0.1:8000/price_tables/");
       const priceTableData = await priceTableResponse.json();
       const priceEntry = priceTableData.find(
         (entry) => entry.product === productId
       );
-
+  
       if (priceEntry) {
         price = priceEntry.price;
         tax = priceEntry.tax;
       } else {
-        alert(`Price table data not found for product_id: ${productId}`);
+        alert(`Price table not found for product_id: ${productId}`);
         return;
       }
     } catch (error) {
       console.error("Error fetching required data:", error);
-      alert("An error occurred while fetching data.");
+      alert("Error occurred while fetching data.");
       return;
     }
-
+  
     // Calculate total cost
     const gstAmount = (price * tax) / 100;
-    //const totalCost = (price + gstAmount) * detail.qty;
     const totalCost = Math.round((price + gstAmount) * detail.qty * 100) / 100;
-
+  
     // Prepare payload for cart API
     const orderData = {
       component_id: detail.component_id,
@@ -195,77 +177,67 @@ const RequestDetails = ({ user }) => {
       vendor_id: vendor_id,
       category: detail.category,
       unit_of_measurement: detail.unit_of_measurement,
-      unit_price: price, // Add price as unit_price
-      GST: tax, // Add tax as GST
-      total_cost: totalCost, // Add calculated total cost
-      assign: true, // Set assign to true after adding to cart
+      unit_price: price,
+      GST: tax,
+      total_cost: totalCost,
+      assign: true,
     };
-
+  
     try {
+      // Send POST request to add to cart
       const response = await fetch("http://127.0.0.1:8000/cart/", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderData),
       });
-
+  
       if (response.ok) {
         setMessageBoxContent(`Component ${detail.component_id} added to cart.`);
         setShowMessageBox(true);
-
-        // Update the request_master API to mark the item as assigned
+  
+        // Send PUT request to update 'assign', 'status', and 'qty'
         const updatePayload = {
-          request_id: detail.request_id,
-          component_id: detail.component_id,
-          status: detail.status,
-          vendor_id: vendor_id,
-          component_type: detail.component_type,
-          component_specification: detail.component_specification,
-          unit_of_measurement: detail.unit_of_measurement,
-          category: detail.category,
-          qty: 0, // Set quantity to 0
-          assign: true, // Mark as assigned
+          status: detail.status, // Retain existing status
+          qty: detail.qty,       // Retain existing quantity
+          cart_assign: true,          // Set cart assign to true
+          assign: false,
         };
-
+  
         const updateResponse = await fetch(
           `http://127.0.0.1:8000/request_master/${detail.request_id}/${detail.id}/`,
           {
             method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(updatePayload),
           }
         );
-
+  
         if (!updateResponse.ok) {
           const errorDetails = await updateResponse.json();
           console.error("Error updating request master:", errorDetails);
-          alert(`Failed to update request master: ${errorDetails.error}`);
+          alert(`Failed to update request: ${JSON.stringify(errorDetails)}`);
           return;
         }
-
-        // Refresh cart and update UI
-        fetchCartItems();
+  
+        // Update state to reflect assign = true
         setDetails((prevDetails) =>
           prevDetails.map((d) =>
             d.component_id === detail.component_id
-              ? { ...d, qty: 0, assign: true } // Update qty to 0 and assign to true
+              ? { ...d, cart_assign: true }
               : d
           )
         );
       } else {
         const errorResponse = await response.json();
-        console.error("Error adding component to cart:", errorResponse);
-        alert(
-          `Failed to add component to cart: ${JSON.stringify(errorResponse)}`
-        );
+        console.error("Error adding to cart:", errorResponse);
+        alert(`Failed to add to cart: ${JSON.stringify(errorResponse)}`);
       }
     } catch (error) {
-      console.error("Error posting to cart:", error);
+      console.error("Error handling order:", error);
+      alert("An error occurred while processing the order.");
     }
   };
+  
 
   const handleAssign = async (componentId, qty) => {
     const componentData = inventoryData[componentId];
@@ -362,6 +334,7 @@ const RequestDetails = ({ user }) => {
           specification: inventoryData.specification, // Retain existing specification
           UOM: inventoryData.UOM, // Retain existing UOM
           status: false, // Mark as assigned
+          price: inventoryData.price,
         };
 
         // Update the inventory status for the serial number
@@ -399,8 +372,9 @@ const RequestDetails = ({ user }) => {
       // Prepare request master payload
       const requestMasterPayload = {
         assign: true, // Mark as assigned
-        qty: requiredQty, // Use the current qty value
+        qty: 0, // Use the current qty value
         status: "Assigned", // Update status
+        cart_assign: true,
       };
 
       console.log("Request ID:", requestId); // Debug
@@ -922,7 +896,7 @@ const RequestDetails = ({ user }) => {
                               : "No Prices Available"}
                           </td>
                         )}
-                        <td>{detail.assign ? 0 : detail.qty}</td>
+                        <td>{detail.qty}</td>
                         <td>{availableQty}</td>
                         {(isAdmin || isProcurement) && (
                           <td>
@@ -983,23 +957,22 @@ const RequestDetails = ({ user }) => {
                                 Assign
                               </button>
                             )}
-                            <button
-                              style={{
-                                padding: "10px 20px",
-                                fontSize: "14px",
-                                borderRadius: "5px",
-                                border: "1px solid #ccc",
-                                cursor:
-                                  detail.qty === 0 || detail.assign
-                                    ? "not-allowed"
-                                    : "pointer",
-                                transition: "background-color 0.3s ease",
-                              }}
-                              onClick={() => handleOrder(detail)}
-                              disabled={detail.qty === 0 || detail.assign}
-                            >
-                              {detail.assign ? "Added to cart" : "Add to Cart"}
-                            </button>
+                           <button
+                            style={{
+                              padding: "10px 15px",
+                              fontSize: "14px",
+                              borderRadius: "5px",
+                              border: "1px solid #ccc",
+                              cursor: detail.cart_assign ? "not-allowed" : "pointer",
+                              backgroundColor: detail.cart_assign ? "#f0f0f0" : "#fff",
+                              color: detail.cart_assign ? "#888" : "#000",
+                              transition: "background-color 0.3s ease",
+                            }}
+                            onClick={() => handleOrder(detail)}
+                            disabled={detail.cart_assign} // Disable if cart_assign is true
+                          >
+                            {detail.cart_assign ? "Added to Cart" : "Add to Cart"}
+                          </button>
                           </td>
                         )}
                       </tr>
