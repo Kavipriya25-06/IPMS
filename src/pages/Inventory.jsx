@@ -228,6 +228,7 @@ const Inventory = () => {
   const [serialNumber, setSerialNumber] = useState("");
   const [count, setCount] = useState("");
   const [createdDate, setCreatedDate] = useState("");
+  const [expandedComponents, setExpandedComponents] = useState({});
 
   useEffect(() => {
     fetchInventoryData();
@@ -273,6 +274,20 @@ const Inventory = () => {
       console.error("Error fetching vendor data:", error);
     }
   };
+
+  const toggleExpand = (componentId) => {
+    setExpandedComponents((prev) => ({
+      ...prev,
+      [componentId]: !prev[componentId],
+    }));
+  };
+
+  const groupedData = inventoryData.reduce((acc, item) => {
+    acc[item.component_id] = acc[item.component_id] || [];
+    acc[item.component_id].push(item);
+    return acc;
+  }, {});
+
 
   const handleAddItemClick = () => {
     setShowForm(true);
@@ -406,33 +421,63 @@ const Inventory = () => {
           </tr>
         </thead>
         <tbody>
-          {inventoryData.length > 0 ? (
-            inventoryData.map((item, index) => {
-              const component = componentData[item.component_id] || {};
-
-              const isDisabled = item.status === false;
+          {Object.keys(groupedData).length > 0 ? (
+            Object.keys(groupedData).map((componentId) => {
+              const componentRows = groupedData[componentId];
+              const firstRow = componentRows[0];
+              const component = componentData[componentId] || {};
+              const isExpanded = expandedComponents[componentId];
 
               return (
-                <tr key={index} className={isDisabled ? "disabled-row" : ""}>
-                  <td>{item.component_id}</td>
-                  <td>{item.serial_number}</td>
-                  <td>{component.category || ""}</td>
-                  <td>{component.component_type || ""}</td>
-                  <td>{item.specification || ""}</td> {/* Ensure specification is shown */}
-                  <td>{item.UOM || ""}</td> {/* Ensure UOM is shown */}
-                  <td>{item.vendor_name || ""}</td>
-                  <td>
-                    {item.create_date || new Date().toLocaleDateString()}
-                  </td>
-                  <td>{item.price}</td>
-                  {/* <td>
-                    <button
-                      onClick={() => handleDeleteClick(item.serial_number)}
+                <React.Fragment key={componentId}>
+                <tr
+                    onClick={() => toggleExpand(componentId)}
+                    className="clickable-row"
+                    style={{
+                      cursor: "pointer",
+                      backgroundColor: componentRows.some(row => !row.status) ? "white" : "", // Highlight disabled rows
+                    }}
+                  >
+                    <td
+                      style={{
+                        textDecoration:
+                          componentRows.length > 1 ? "underline" : "none",
+                      }}
                     >
-                      Delete
-                    </button>
-                  </td> */}
-                </tr>
+                      {componentId}
+                    </td>
+                    <td>{component.serial_number}</td>
+                    <td>{component.category || ""}</td>
+                    <td>{component.component_type || ""}</td>
+                    <td>{component.component_specification || ""}</td>
+                    <td>{firstRow.UOM || ""}</td>
+                    <td>{firstRow.vendor_name || ""}</td>
+                    <td>{firstRow.create_date || new Date().toLocaleDateString()}</td>
+                    <td>{firstRow.price}</td>
+                  </tr>
+
+                  {isExpanded &&
+                    componentRows.map((row, index) => (
+                      <tr
+                        key={index}
+                        className="expanded-row"
+                        style={{
+                          backgroundColor: !row.status ? "#e0e0e0" : "", // Highlight disabled items
+                          color: !row.status ? "#a0a0a0" : "inherit",
+                        }}
+                      >
+                        <td>{row.component_id}</td>
+                        <td>{row.serial_number}</td>
+                        <td>{component.category || ""}</td>
+                        <td>{component.component_type || ""}</td>
+                        <td>{row.specification || ""}</td>
+                        <td>{row.UOM || ""}</td>
+                        <td>{row.vendor_name || ""}</td>
+                        <td>{row.create_date || new Date().toLocaleDateString()}</td>
+                        <td>{row.price}</td>
+                      </tr>
+                    ))}
+                </React.Fragment>
               );
             })
           ) : (
