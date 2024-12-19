@@ -1,7 +1,6 @@
 // import React, { useState, useEffect } from "react";
 // import config from "../config"; // Import config for API endpoints
 
-
 // const Component = () => {
 //   const [components, setComponents] = useState([]);
 //   const [newComponentVisible, setNewComponentVisible] = useState(false);
@@ -210,7 +209,6 @@
 // };
 
 // export default Component;
-
 
 import React, { useState, useEffect } from "react";
 import config from "../config"; // Import config for API endpoints

@@ -59,7 +59,7 @@ const styles = {
     alignItems: "center",
   },
   messageBox: {
-    backgroundColor: "white",  
+    backgroundColor: "white",
     padding: "20px",
     borderRadius: "10px",
     textAlign: "center",

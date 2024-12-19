@@ -75,18 +75,22 @@ const BOMDetails = () => {
 
   const handleAddComponent = async () => {
     try {
-
       // Check if the component already exists in the selectedComponents list
-    const exists = selectedComponents.some(
-      (component) => component.component.component_id === newComponent.component
-    );
+      const exists = selectedComponents.some(
+        (component) =>
+          component.component.component_id === newComponent.component
+      );
 
-    if (exists) {
-      alert("This component is already added to the BOM.");
-      return;
-    }
+      if (exists) {
+        alert("This component is already added to the BOM.");
+        return;
+      }
 
-      if (!newComponent.component || !newComponent.vendor || !newComponent.quantity) {
+      if (
+        !newComponent.component ||
+        !newComponent.vendor ||
+        !newComponent.quantity
+      ) {
         alert("All fields are required.");
         return;
       }
@@ -135,7 +139,10 @@ const BOMDetails = () => {
             <strong>BOM ID:</strong> {selectedBom.bom_id}
           </p>
           {/* <h4>Components:</h4> */}
-          <table border="1" style={{ width: "100%", borderCollapse: "collapse" }}>
+          <table
+            border="1"
+            style={{ width: "100%", borderCollapse: "collapse" }}
+          >
             <thead>
               <tr>
                 <th>Component Type</th>
@@ -176,110 +183,122 @@ const BOMDetails = () => {
         </>
       )}
 
-{showAddComponentForm && (
-  <div style={{ marginTop: "20px" }}>
-    <h4>Add New Component</h4>
-    <div>
-      <label>Component</label>
-      <select
-        value={newComponent.component}
-        onChange={async (e) => {
-          const componentId = e.target.value;
-          setNewComponent({ ...newComponent, component: componentId, vendor: "" });
+      {showAddComponentForm && (
+        <div style={{ marginTop: "20px" }}>
+          <h4>Add New Component</h4>
+          <div>
+            <label>Component</label>
+            <select
+              value={newComponent.component}
+              onChange={async (e) => {
+                const componentId = e.target.value;
+                setNewComponent({
+                  ...newComponent,
+                  component: componentId,
+                  vendor: "",
+                });
 
-          if (componentId) {
-            try {
-              setLoadingVendors(true);
+                if (componentId) {
+                  try {
+                    setLoadingVendors(true);
 
-              // Find the selected component from the component list
-              const selectedComp = components.find(
-                (comp) => comp.component_id === componentId
-              );
+                    // Find the selected component from the component list
+                    const selectedComp = components.find(
+                      (comp) => comp.component_id === componentId
+                    );
 
-              if (selectedComp) {
-                // Fetch data from the bom_master_view API
-                const response = await fetch(
-                  "http://127.0.0.1:8000/bom_master_view"
-                );
-                const data = await response.json();
+                    if (selectedComp) {
+                      // Fetch data from the bom_master_view API
+                      const response = await fetch(
+                        "http://127.0.0.1:8000/bom_master_view"
+                      );
+                      const data = await response.json();
 
-                // Filter matching entries based on component type and specification
-                const matchingVendors = data
-                  .filter(
-                    (entry) =>
-                      entry.component_type === selectedComp.component_type &&
-                      entry.component_specification ===
-                        selectedComp.component_specification
-                  )
-                  .map((entry) => entry.product_details.vendor);
+                      // Filter matching entries based on component type and specification
+                      const matchingVendors = data
+                        .filter(
+                          (entry) =>
+                            entry.component_type ===
+                              selectedComp.component_type &&
+                            entry.component_specification ===
+                              selectedComp.component_specification
+                        )
+                        .map((entry) => entry.product_details.vendor);
 
-                // Remove duplicate vendors by vendor_id
-                const uniqueVendors = matchingVendors.filter(
-                  (vendor, index, self) =>
-                    index ===
-                    self.findIndex((v) => v.vendor_id === vendor.vendor_id)
-                );
+                      // Remove duplicate vendors by vendor_id
+                      const uniqueVendors = matchingVendors.filter(
+                        (vendor, index, self) =>
+                          index ===
+                          self.findIndex(
+                            (v) => v.vendor_id === vendor.vendor_id
+                          )
+                      );
 
-                setVendors(uniqueVendors);
-              } else {
-                setVendors([]);
+                      setVendors(uniqueVendors);
+                    } else {
+                      setVendors([]);
+                    }
+                  } catch (error) {
+                    console.error(
+                      "Error fetching vendors for the selected component:",
+                      error
+                    );
+                  } finally {
+                    setLoadingVendors(false);
+                  }
+                } else {
+                  setVendors([]);
+                }
+              }}
+            >
+              <option value="">Select Component</option>
+              {loadingComponents ? (
+                <option>Loading components...</option>
+              ) : (
+                components.map((comp) => (
+                  <option key={comp.component_id} value={comp.component_id}>
+                    {`${comp.component_type} - ${comp.component_specification}`}
+                  </option>
+                ))
+              )}
+            </select>
+
+            <label>Quantity</label>
+            <input
+              type="number"
+              placeholder="Quantity"
+              value={newComponent.quantity}
+              onChange={(e) =>
+                setNewComponent({ ...newComponent, quantity: e.target.value })
               }
-            } catch (error) {
-              console.error("Error fetching vendors for the selected component:", error);
-            } finally {
-              setLoadingVendors(false);
-            }
-          } else {
-            setVendors([]);
-          }
-        }}
-      >
-        <option value="">Select Component</option>
-        {loadingComponents ? (
-          <option>Loading components...</option>
-        ) : (
-          components.map((comp) => (
-            <option key={comp.component_id} value={comp.component_id}>
-              {`${comp.component_type} - ${comp.component_specification}`}
-            </option>
-          ))
-        )}
-      </select>
+            />
 
-      <label>Quantity</label>
-      <input
-        type="number"
-        placeholder="Quantity"
-        value={newComponent.quantity}
-        onChange={(e) =>
-          setNewComponent({ ...newComponent, quantity: e.target.value })
-        }
-      />
+            <label>Vendor</label>
+            <select
+              value={newComponent.vendor}
+              onChange={(e) =>
+                setNewComponent({ ...newComponent, vendor: e.target.value })
+              }
+            >
+              <option value="">Select Vendor</option>
+              {loadingVendors ? (
+                <option>Loading vendors...</option>
+              ) : (
+                vendors.map((vendor) => (
+                  <option key={vendor.vendor_id} value={vendor.vendor_id}>
+                    {vendor.vendor_name}
+                  </option>
+                ))
+              )}
+            </select>
 
-      <label>Vendor</label>
-      <select
-        value={newComponent.vendor}
-        onChange={(e) =>
-          setNewComponent({ ...newComponent, vendor: e.target.value })
-        }
-      >
-        <option value="">Select Vendor</option>
-        {loadingVendors ? (
-          <option>Loading vendors...</option>
-        ) : (
-          vendors.map((vendor) => (
-            <option key={vendor.vendor_id} value={vendor.vendor_id}>
-              {vendor.vendor_name}
-            </option>
-          ))
-        )}
-      </select>
-
-      <button onClick={handleAddComponent}>Submit</button>
-      <button onClick={() => setShowAddComponentForm(false)}>Cancel</button>
-    </div>
-  </div>
-)}
+            <button onClick={handleAddComponent}>Submit</button>
+            <button onClick={() => setShowAddComponentForm(false)}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       <button
         onClick={() => navigate("/bom")}

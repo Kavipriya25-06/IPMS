@@ -88,16 +88,16 @@ const RequestForm = () => {
       { component: null, quantity: 1, vendor: { vendor_name: "N/A" } },
     ]);
     setNewComponentsAdded(true); // Mark that a new component has been added
-  
+
     // Check if all components are already added
     const availableIds = availableComponents.map((comp) => comp.component_id);
     const remainingIds = availableIds.filter((id) => !selectedIds.includes(id));
-  
+
     if (remainingIds.length === 0) {
       alert("All available components have already been added.");
       return;
     }
-  
+
     // Add a blank row for selecting a new component
     setSelectedComponents([
       ...selectedComponents,
@@ -109,7 +109,6 @@ const RequestForm = () => {
     setSelectedComponents(selectedComponents.filter((_, i) => i !== index));
     setNewComponentsDeleted(true);
   };
-  
 
   const handleQuantityChange = (index, quantity) => {
     const updatedComponents = [...selectedComponents];
@@ -121,36 +120,35 @@ const RequestForm = () => {
     const selectedComponent = availableComponents.find(
       (comp) => comp.component_id === componentId
     );
-  
+
     if (!selectedComponent) {
       alert("Invalid component selected.");
       return;
     }
-  
+
     // Check if the component is already in the table
     const isComponentAlreadySelected = selectedComponents.some(
       (comp, i) =>
-        comp.component?.component_id === selectedComponent.component_id && i !== index
+        comp.component?.component_id === selectedComponent.component_id &&
+        i !== index
     );
-  
+
     if (isComponentAlreadySelected) {
       alert("This component is already in the table.");
       return;
     }
-  
+
     const updatedComponents = [...selectedComponents];
     updatedComponents[index].component = selectedComponent;
-  
+
     // Step 1: Find vendor_id from vendor_master using component_id
     const vendorData = vendorMaster.find(
       (vendor) => vendor.product_id === selectedComponent.product_id
     );
-  
+
     // Step 2: Use vendor_id to find vendor_name from vendor_list
     if (vendorData) {
-      const vendor = vendorList.find(
-        (v) => v.vendor_id === vendorData.vendor
-      );
+      const vendor = vendorList.find((v) => v.vendor_id === vendorData.vendor);
       updatedComponents[index].vendor = {
         vendor_name: vendor ? vendor.vendor_name : "N/A",
         vendor_id: vendor ? vendor.vendor_id : "",
@@ -159,10 +157,10 @@ const RequestForm = () => {
     } else {
       updatedComponents[index].vendor = { vendor_name: "N/A" };
     }
-  
+
     setSelectedComponents(updatedComponents);
   };
-  
+
   // const bom_id_list = selectedBom ? selectedBom.bom_id : "";
   // const firstComponentId = selectedComponents[0]?.id || 3; // Default component added
 
@@ -172,7 +170,7 @@ const RequestForm = () => {
       alert("Please fill in all fields.");
       return;
     }
-  
+
     try {
       const bom_list = {
         bom_name: popupData.projectName,
@@ -182,20 +180,14 @@ const RequestForm = () => {
         number_of_components: 1,
       };
 
+      const bomlistresponse = await fetch("http://127.0.0.1:8000/bom_list/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(bom_list),
+      });
 
-      
-  
-      const bomlistresponse = await fetch(
-        "http://127.0.0.1:8000/bom_list/",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(bom_list),
-        }
-      );
-  
       if (!bomlistresponse.ok) {
         const errorData = await bomlistresponse.json();
         console.error("Error in BOM list submission:", errorData);
@@ -208,7 +200,7 @@ const RequestForm = () => {
       // Step 2: Fetch the bom_id to use for BOM Master
       const bomlistData = await bomlistresponse.json();
       const bomId = bomlistData.bom_id;
-  
+
       // Step 3: POST to bom_master for each selected component
       const bomMasterEntries = selectedComponents.map((component) => ({
         bom: bomId,
@@ -216,7 +208,7 @@ const RequestForm = () => {
         vendor: component.vendor.vendor_id,
         quantity: component.quantity,
       }));
-  
+
       const bomMasterPromises = bomMasterEntries.map((entry) =>
         fetch("http://127.0.0.1:8000/bom_master/", {
           method: "POST",
@@ -226,11 +218,10 @@ const RequestForm = () => {
           body: JSON.stringify(entry),
         })
       );
-  
+
       await Promise.all(bomMasterPromises);
       console.log("All BOM master entries successfully added.");
-      
-  
+
       const newRequest = {
         requester_name: popupData.name,
         project_name: popupData.projectName,
@@ -239,7 +230,7 @@ const RequestForm = () => {
         status: "In Progress",
         last_modified_by: popupData.name,
       };
-  
+
       const requestListResponse = await fetch(
         "http://127.0.0.1:8000/request_list/",
         {
@@ -250,17 +241,17 @@ const RequestForm = () => {
           body: JSON.stringify(newRequest),
         }
       );
-  
+
       if (!requestListResponse.ok) {
         const errorData = await requestListResponse.json();
         console.error("Error in request list submission:", errorData);
         alert("Failed to save the request. Please try again.");
         return;
       }
-  
+
       const requestListData = await requestListResponse.json();
       const generatedRequestId = requestListData.request_id;
-  
+
       const requestMasterEntries = selectedComponents.map((component) => ({
         request: generatedRequestId,
         component: component.component.component_id,
@@ -269,7 +260,7 @@ const RequestForm = () => {
         status: "pending",
         assign: false,
       }));
-  
+
       await Promise.all(
         requestMasterEntries.map((entry) =>
           fetch("http://127.0.0.1:8000/request_master/", {
@@ -281,7 +272,7 @@ const RequestForm = () => {
           })
         )
       );
-  
+
       console.log("All request master entries successfully added.");
       setShowMessageBox(true);
       setMessageBoxContent("Request and BOM added successfully!");
@@ -293,19 +284,19 @@ const RequestForm = () => {
       setShowPopup(false);
     }
   };
-  
+
   const handleSubmit = async () => {
     if (newComponentsAdded || newComponentsDeleted) {
       // Show a confirmation dialog
       const saveNewBom = window.confirm("Do you want to save a new BOM?");
-      
+
       if (saveNewBom) {
         // Show popup for entering details (name, BOM name, BOM ID)
         setShowPopup(true);
         return; // Wait for user to fill the popup and handle submission in the popup logic
       }
     }
-  
+
     // If user doesn't want to save a new BOM or no new components were added/removed
     try {
       const requestListResponse = await fetch(
@@ -317,7 +308,9 @@ const RequestForm = () => {
           },
           body: JSON.stringify({
             requester_name: requesterName,
-            project_name: selectedBom ? selectedBom.bom_name : "Unnamed Project",
+            project_name: selectedBom
+              ? selectedBom.bom_name
+              : "Unnamed Project",
             bom_id: selectedBom ? selectedBom.bom_id : "",
             date,
             status: "In Progress",
@@ -325,17 +318,17 @@ const RequestForm = () => {
           }),
         }
       );
-  
+
       if (!requestListResponse.ok) {
         const errorData = await requestListResponse.json();
         console.error("Error in request list submission:", errorData);
         alert("Failed to save the request. Please try again.");
         return;
       }
-  
+
       const requestListData = await requestListResponse.json();
       const generatedRequestId = requestListData.request_id;
-  
+
       const requestMasterEntries = selectedComponents.map((component) => ({
         request: generatedRequestId,
         component: component.component.component_id,
@@ -344,7 +337,7 @@ const RequestForm = () => {
         status: "pending",
         assign: false,
       }));
-  
+
       await Promise.all(
         requestMasterEntries.map((entry) =>
           fetch("http://127.0.0.1:8000/request_master/", {
@@ -356,7 +349,7 @@ const RequestForm = () => {
           })
         )
       );
-  
+
       console.log("All request master entries successfully added.");
       setShowMessageBox(true);
       setMessageBoxContent("Request submitted successfully!");
@@ -433,15 +426,15 @@ const RequestForm = () => {
           </div>
         </div>
       )}
-  
+
       <div
-        // style={{
-        //   display: "flex",
-        //   flexDirection: "column",
-        //   justifyContent: "flex-start",
-        //   height: "55vh",
-        //   paddingTop: "20px",
-        // }}
+      // style={{
+      //   display: "flex",
+      //   flexDirection: "column",
+      //   justifyContent: "flex-start",
+      //   height: "55vh",
+      //   paddingTop: "20px",
+      // }}
       >
         {/* Render CustomMessagebox when showMessageBox is true */}
         {showMessageBox && (
@@ -450,7 +443,7 @@ const RequestForm = () => {
             onClose={() => setShowMessageBox(false)}
           />
         )}
-  
+
         <h1 style={{ marginBottom: "20px" }}>Create a Request</h1>
         <div
           style={{
@@ -482,7 +475,9 @@ const RequestForm = () => {
             />
           </div>
           <div style={{ marginBottom: "15px", width: "100%" }}>
-            <label style={{ display: "block", marginBottom: "5px" }}>Date:</label>
+            <label style={{ display: "block", marginBottom: "5px" }}>
+              Date:
+            </label>
             <input
               type="date"
               value={date}
@@ -519,7 +514,7 @@ const RequestForm = () => {
           </div>
         </div>
       </div>
-  
+
       {selectedBom && (
         <div>
           <h3>Selected BOM: {selectedBom.bom_name}</h3>
@@ -569,7 +564,7 @@ const RequestForm = () => {
                       ? component.component.unit_of_measurement
                       : "-"}
                   </td>
-  
+
                   <td>
                     <input
                       type="number"
@@ -603,7 +598,7 @@ const RequestForm = () => {
           </button>
         </div>
       )}
-  
+
       <button
         onClick={handleSubmit}
         style={{
@@ -628,6 +623,6 @@ const RequestForm = () => {
       </button>
     </div>
   );
-  };
+};
 
 export default RequestForm;

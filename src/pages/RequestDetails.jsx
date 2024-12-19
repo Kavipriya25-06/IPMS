@@ -615,7 +615,13 @@ const RequestDetails = ({ user }) => {
     }
   };
 
-  const handleVendorChange = (componentId, vendorId, vendorName, price, tax) => {
+  const handleVendorChange = (
+    componentId,
+    vendorId,
+    vendorName,
+    price,
+    tax
+  ) => {
     // const updatedDetails = details.map((detail) =>
     //   detail.component_id === componentId
     //     ? {
@@ -632,7 +638,7 @@ const RequestDetails = ({ user }) => {
       vendorId,
       vendorName,
       price,
-      tax
+      tax,
     });
 
     setDetails((prevDetails) =>
@@ -643,7 +649,7 @@ const RequestDetails = ({ user }) => {
               vendor_id: vendorId,
               vendor_name: vendorName,
               price, // Update price here
-              tax
+              tax,
             }
           : detail
       )

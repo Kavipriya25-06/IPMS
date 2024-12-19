@@ -350,7 +350,10 @@ const Inward = () => {
   // Utility function to safely access nested fields
   const getNestedValue = (obj, keyPath, defaultValue = "Not Available") => {
     try {
-      return keyPath.split(".").reduce((acc, key) => acc && acc[key], obj) || defaultValue;
+      return (
+        keyPath.split(".").reduce((acc, key) => acc && acc[key], obj) ||
+        defaultValue
+      );
     } catch {
       return defaultValue;
     }
@@ -377,12 +380,12 @@ const Inward = () => {
 
   const handleQCClick = async (item) => {
     const componentType = getNestedValue(item, "po_master.cart.component_type");
-  
+
     if (!componentType) {
       alert("Component Type not available. Cannot fetch QC questions.");
       return;
     }
-  
+
     try {
       const response = await fetch("http://127.0.0.1:8000/qc_question/");
       if (!response.ok) {
@@ -390,20 +393,22 @@ const Inward = () => {
         alert("Failed to fetch QC questions.");
         return;
       }
-  
+
       const qcQuestions = await response.json();
-  
+
       // Filter questions based on the component_type
       const filteredQuestions = qcQuestions.filter(
         (question) => question.component_type === componentType
       );
-  
+
       if (filteredQuestions.length === 0) {
-        setMessageBoxContent("No questions available for the selected component type.");
+        setMessageBoxContent(
+          "No questions available for the selected component type."
+        );
         setShowMessageBox(true);
         return;
       }
-  
+
       // Store the filtered questions and selected item
       setSelectedItem(item);
       setNewQuestion({
@@ -428,7 +433,7 @@ const Inward = () => {
       alert("An error occurred while fetching QC questions.");
     }
   };
-  
+
   const handleQuestionAnswer = (questionId, answer) => {
     setNewQuestion((prev) => ({
       ...prev,
@@ -445,21 +450,22 @@ const Inward = () => {
       alert("No questions available to submit.");
       return;
     }
-  
+
     // Validate that all questions have been answered
     const unanswered = newQuestion.qcQuestions.filter((q) => q.answer === null);
     if (unanswered.length > 0) {
       alert("Please answer all questions before submitting.");
       return;
     }
-  
-    const inwardId = selectedItem?.inward_id || getNestedValue(selectedItem, "inward_id");
-  
+
+    const inwardId =
+      selectedItem?.inward_id || getNestedValue(selectedItem, "inward_id");
+
     if (!inwardId || inwardId === "Not Available") {
       alert("Inward ID not found. Unable to submit QC answers.");
       return;
     }
-  
+
     try {
       // Iterate over each question and make a separate POST request
       for (const question of newQuestion.qcQuestions) {
@@ -469,51 +475,65 @@ const Inward = () => {
           yes: question.answer === "Yes",
           no: question.answer === "No",
         };
-  
+
         const response = await fetch("http://127.0.0.1:8000/qc_answer/", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-  
+
         if (!response.ok) {
           const errorDetails = await response.json();
-          console.error(`Error submitting QC answer for question ${question.id}:`, errorDetails);
-          alert(`Failed to submit QC answer for question ${question.id}: ${JSON.stringify(errorDetails)}`);
+          console.error(
+            `Error submitting QC answer for question ${question.id}:`,
+            errorDetails
+          );
+          alert(
+            `Failed to submit QC answer for question ${
+              question.id
+            }: ${JSON.stringify(errorDetails)}`
+          );
           return; // Stop further submissions on failure
         }
       }
-  
+
       // Extract the price from the selectedItem
-      const price = selectedItem?.price || getNestedValue(selectedItem, "price");
-  
+      const price =
+        selectedItem?.price || getNestedValue(selectedItem, "price");
+
       if (!price || isNaN(price)) {
         alert("Invalid price. Unable to update QC status.");
         return;
       }
-  
+
       // Prepare the PATCH payload with all required fields
       const patchPayload = {
         quality_check: newQuestion.overallStatus, // Pass or Fail
-        component_id: getNestedValue(selectedItem, "po_master.cart.component_id"),
+        component_id: getNestedValue(
+          selectedItem,
+          "po_master.cart.component_id"
+        ),
         price: parseInt(price, 10), // Ensure the price is a valid integer
         po_master_id: getNestedValue(selectedItem, "po_master.id"),
       };
-  
+
       // PATCH request to update the overall status in the inward API
-      const patchResponse = await fetch(`http://127.0.0.1:8000/inward/${inwardId}/`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(patchPayload),
-      });
-  
+      const patchResponse = await fetch(
+        `http://127.0.0.1:8000/inward/${inwardId}/`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(patchPayload),
+        }
+      );
+
       if (!patchResponse.ok) {
         const patchError = await patchResponse.json();
         console.error("Error updating QC status in inward:", patchError);
         alert("Failed to update QC status.");
         return;
       }
-  
+
       // Success feedback
       setMessageBoxContent("QC process completed successfully!");
       setShowMessageBox(true);
@@ -524,31 +544,35 @@ const Inward = () => {
       alert("An error occurred while submitting QC answers.");
     }
   };
-  
+
   ////////////////////////
 
   const handleOverallStatusUpdate = async (overallStatus) => {
-    const inwardId = selectedItem?.inward_id || getNestedValue(selectedItem, "inward_id");
-  
+    const inwardId =
+      selectedItem?.inward_id || getNestedValue(selectedItem, "inward_id");
+
     if (!inwardId || inwardId === "Not Available") {
       alert("Inward ID not found. Unable to update overall status.");
       return;
     }
-  
+
     try {
-      const response = await fetch(`http://127.0.0.1:8000/inward/${inwardId}/`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quality_check: overallStatus }),
-      });
-  
+      const response = await fetch(
+        `http://127.0.0.1:8000/inward/${inwardId}/`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ quality_check: overallStatus }),
+        }
+      );
+
       if (!response.ok) {
         const errorDetails = await response.json();
         console.error("Error updating overall QC status:", errorDetails);
         alert("Failed to update overall QC status.");
         return;
       }
-  
+
       // Success feedback
       setMessageBoxContent(`QC status updated to: ${overallStatus}`);
       setShowMessageBox(true);
@@ -559,31 +583,32 @@ const Inward = () => {
       alert("An error occurred while updating QC status.");
     }
   };
-  
-  
+
   ///////////
   /////////////////
-  
-  
+
   const handleMoveToInventory = async (item) => {
     try {
       // Extract necessary values using getNestedValue and ensure data integrity
       const componentId = getNestedValue(item, "po_master.cart.component_id");
-      const componentSpecification = getNestedValue(item, "po_master.cart.component_specification");
+      const componentSpecification = getNestedValue(
+        item,
+        "po_master.cart.component_specification"
+      );
       const vendorName = getNestedValue(item, "po_master.cart.vendor_name");
       const serialNumber = item.serial_number || "Not Available"; // Ensure serial number is available
       const date = item.date || new Date().toISOString(); // Use current date if not available
       const qualityCheck = item.quality_check || "Not Available"; // Default to "Not Available" if no quality check
       const qty = 1; // Default quantity to 1 as specified
-  
+
       if (qualityCheck !== "Pass") {
-        setMessageBoxContent("The quality check has not passed. Cannot move to inventory.");
+        setMessageBoxContent(
+          "The quality check has not passed. Cannot move to inventory."
+        );
         setShowMessageBox(true);
         return;
       }
-    
-      
-  
+
       // Fetch the PO Master details to get the price (unit_price)
       const poMasterResponse = await fetch("http://127.0.0.1:8000/po_master/");
       if (!poMasterResponse.ok) {
@@ -592,21 +617,23 @@ const Inward = () => {
         alert("Failed to fetch PO Master details.");
         return;
       }
-  
+
       const poMasterData = await poMasterResponse.json();
-  
+
       // Find the matching PO Master entry for the component ID
       const poMasterEntry = poMasterData.find(
         (entry) => entry.cart_details.component_id === componentId
       );
-  
+
       const price = poMasterEntry?.cart_details?.unit_price || "Not Available"; // Extract price (unit_price)
-  
+
       if (!price || price === "Not Available") {
-        alert("Price not found in PO Master details. Cannot move to inventory.");
+        alert(
+          "Price not found in PO Master details. Cannot move to inventory."
+        );
         return;
       }
-  
+
       // Fetch the components from the component API
       const componentResponse = await fetch("http://127.0.0.1:8000/component/");
       if (!componentResponse.ok) {
@@ -615,23 +642,26 @@ const Inward = () => {
         alert("Failed to retrieve component details.");
         return;
       }
-  
+
       // Extract the component list from the response
       const components = await componentResponse.json();
-  
+
       // Filter the components based on the component_id
-      const selectedComponent = components.find((component) => component.component_id === componentId);
-  
+      const selectedComponent = components.find(
+        (component) => component.component_id === componentId
+      );
+
       if (!selectedComponent) {
         console.error(`Component with ID ${componentId} not found.`);
         alert("Component not found.");
         return;
       }
-  
+
       // Extract the component type and category from the selected component
-      const componentType = selectedComponent.component_type || "DefaultComponentType"; // Default if not available
+      const componentType =
+        selectedComponent.component_type || "DefaultComponentType"; // Default if not available
       const category = selectedComponent.category || "DefaultCategory"; // Default if not available
-  
+
       // Prepare the data for posting to the inventory API
       const postData = {
         component_id: componentId,
@@ -647,14 +677,14 @@ const Inward = () => {
         UOM: "Nos", // Unit of measurement is set to "Nos"
         price: price, // Include price from PO Master
       };
-  
+
       // Make the POST request to the inventory API
       const response = await fetch("http://127.0.0.1:8000/inventory/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(postData),
       });
-  
+
       // Check for successful response
       if (!response.ok) {
         const errorDetails = await response.json();
@@ -662,11 +692,11 @@ const Inward = () => {
         alert("All ready added to inventory");
         return;
       }
-  
+
       // If successful, show an alert and refresh inward data
       setMessageBoxContent("Successfully moved to inventory.");
       setShowMessageBox(true);
-  
+
       // Update mode_to_inventory to false via a PUT request
       const updatePayload = {
         mode_to_inventory: false,
@@ -675,7 +705,7 @@ const Inward = () => {
         po_master_id: item.po_master.id, // Include po_master_id
         price: price,
       };
-  
+
       const updateResponse = await fetch(
         `http://127.0.0.1:8000/inward/${item.inward_id}/`,
         {
@@ -684,14 +714,14 @@ const Inward = () => {
           body: JSON.stringify(updatePayload),
         }
       );
-  
+
       if (!updateResponse.ok) {
         const updateError = await updateResponse.json();
         console.error("Error updating mode_to_inventory:", updateError);
         alert("Failed to update mode_to_inventory.");
         return;
       }
-  
+
       fetchInwardData(); // Refresh data after posting
     } catch (error) {
       // Handle any error that occurs during the fetch
@@ -699,8 +729,6 @@ const Inward = () => {
       alert("An error occurred while moving to inventory.");
     }
   };
-  
-  
 
   useEffect(() => {
     fetchInwardData();
@@ -710,16 +738,15 @@ const Inward = () => {
     <div>
       <h2>Inward</h2>
 
-          {/* Render CustomMessagebox when showMessageBox is true */}
-    {showMessageBox && (
-      <CustomMessagebox
-        message={messageBoxContent}
-        onClose={() => setShowMessageBox(false)}
-      />
-    )}
-  
-  
-      <table> 
+      {/* Render CustomMessagebox when showMessageBox is true */}
+      {showMessageBox && (
+        <CustomMessagebox
+          message={messageBoxContent}
+          onClose={() => setShowMessageBox(false)}
+        />
+      )}
+
+      <table>
         <thead>
           <tr>
             <th>Component ID</th>
@@ -735,14 +762,25 @@ const Inward = () => {
           {inwardData.map((item, index) => (
             <tr key={index}>
               <td>{getNestedValue(item, "po_master.cart.component_id")}</td>
-              <td>{getNestedValue(item, "po_master.cart.component_specification")}</td>
+              <td>
+                {getNestedValue(item, "po_master.cart.component_specification")}
+              </td>
               <td>{getNestedValue(item, "po_master.cart.vendor_name")}</td>
               <td>{item.serial_number || "Not Available"}</td>
-              <td>{new Date(item.date).toLocaleDateString() || "Not Available"}</td>
+              <td>
+                {new Date(item.date).toLocaleDateString() || "Not Available"}
+              </td>
               <td>{item.quality_check || "Not Available"}</td>
               <td>
-                <button onClick={() => handleQCClick(item)}
-                  disabled={item.quality_check === "Pass" || item.quality_check === "Fail"}>QC</button>
+                <button
+                  onClick={() => handleQCClick(item)}
+                  disabled={
+                    item.quality_check === "Pass" ||
+                    item.quality_check === "Fail"
+                  }
+                >
+                  QC
+                </button>
                 <button
                   onClick={() => handleMoveToInventory(item)}
                   disabled={item.mode_to_inventory === false} // Disable button if mode_to_inventory is false
@@ -755,10 +793,12 @@ const Inward = () => {
         </tbody>
       </table>
 
-      
       {showQCPopup && selectedItem && (
         <div className="popup">
-          <h3>Quality Check for {getNestedValue(selectedItem, "po_master.cart.component_id")}</h3>
+          <h3>
+            Quality Check for{" "}
+            {getNestedValue(selectedItem, "po_master.cart.component_id")}
+          </h3>
           <div>
             {newQuestion.qcQuestions?.map((q) => (
               <div key={q.id}>
@@ -789,7 +829,9 @@ const Inward = () => {
               <input
                 type="radio"
                 name="overall-status"
-                onChange={() => setNewQuestion((prev) => ({ ...prev, overallStatus: "Pass" }))}
+                onChange={() =>
+                  setNewQuestion((prev) => ({ ...prev, overallStatus: "Pass" }))
+                }
               />
             </label>
             <label>
@@ -797,7 +839,9 @@ const Inward = () => {
               <input
                 type="radio"
                 name="overall-status"
-                onChange={() => setNewQuestion((prev) => ({ ...prev, overallStatus: "Fail" }))}
+                onChange={() =>
+                  setNewQuestion((prev) => ({ ...prev, overallStatus: "Fail" }))
+                }
               />
             </label>
           </div>
