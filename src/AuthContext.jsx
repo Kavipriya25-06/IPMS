@@ -26,7 +26,7 @@ const AuthProvider = ({ children }) => {
     return storedUser ? JSON.parse(storedUser) : null;
   }); // Stores user info (email and role)
 
-  const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutes
+  const INACTIVITY_TIMEOUT = 1000 * 60 * 1000; // 10 minutes
   const inactivityTimer = useRef(null); // Store inactivity timer reference
 
   // // On initial load, retrieve user from localStorage
