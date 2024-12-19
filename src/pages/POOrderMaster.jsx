@@ -12,6 +12,10 @@ const POOrderMaster = ({ user }) => {
   const [orderStatus, setOrderStatus] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showDateInput, setShowDateInput] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState(null);
 
   // The user object is now passed as a prop
   const isAdmin = user?.role === "Admin";
@@ -47,8 +51,12 @@ const POOrderMaster = ({ user }) => {
   };
 
   // Update Order Status
-  const updateOrderStatus = async (newStatus) => {
+  const updateOrderStatus = async (newStatus, date) => {
     if (!poDetails.length) return;
+    if (!date) {
+      alert("Please select a date before updating the status.");
+      return;
+    }
 
     const poMasterId = poDetails[0].id;
     const payload = {
@@ -58,7 +66,7 @@ const POOrderMaster = ({ user }) => {
           : orderStatus?.order_placed_status || "",
       order_placed_date_time:
         newStatus === "Ordered"
-          ? new Date().toISOString()
+          ? date
           : orderStatus?.order_placed_date_time || null,
       customer_status:
         newStatus === "Shipped"
@@ -66,16 +74,14 @@ const POOrderMaster = ({ user }) => {
           : orderStatus?.customer_status || "",
       customer_date_time:
         newStatus === "Shipped"
-          ? new Date().toISOString()
+          ? date
           : orderStatus?.customer_date_time || null,
       received_status:
         newStatus === "Received"
           ? "Received"
           : orderStatus?.received_status || "",
       received_date:
-        newStatus === "Received"
-          ? new Date().toISOString()
-          : orderStatus?.received_date || null,
+        newStatus === "Received" ? date : orderStatus?.received_date || null,
       po_master_id: poMasterId,
     };
 
@@ -94,12 +100,30 @@ const POOrderMaster = ({ user }) => {
       if (response.ok) {
         console.log(`${newStatus} status updated successfully.`);
         fetchOrderStatus(); // Refresh status
+        // setShowDateInput(false); // Hide date input
+        setSelectedDate(""); // Reset selected date
+        setSelectedStatus(null); // Reset selected status
       } else {
         console.error("Failed to update order status:", await response.json());
       }
     } catch (error) {
       console.error("Error updating order status:", error.message);
     }
+  };
+
+  const handleStatusButtonClick = (status) => {
+    setSelectedStatus(status);
+    // setShowDateInput(true);
+    setShowPopup(true); // Show the popup
+  };
+
+  const handleUpdateStatus = () => {
+    if (!selectedDate) {
+      alert("Please select a date and time.");
+      return;
+    }
+    updateOrderStatus(selectedStatus, selectedDate);
+    setShowPopup(false); // Close the popup
   };
 
   // Fetch PO Data for PO ID
@@ -116,6 +140,34 @@ const POOrderMaster = ({ user }) => {
       }
     } catch (error) {
       console.error("Error fetching PO data:", error.message);
+    }
+  };
+
+  const updatePOStatus = async (poId, newStatus) => {
+    try {
+      const payload = {
+        status: newStatus,
+      };
+
+      const response = await fetch(`http://127.0.0.1:8000/po_list/${poId}/`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        console.log(`PO status updated to "${newStatus}" successfully.`);
+        fetchPOData(); // Refresh PO data after updating status
+      } else {
+        const errorData = await response.json();
+        console.error("Failed to update PO status:", errorData);
+        alert(`Failed to update status: ${JSON.stringify(errorData)}`);
+      }
+    } catch (error) {
+      console.error("Error updating PO status:", error.message);
+      alert("An error occurred while updating the status.");
     }
   };
 
@@ -437,14 +489,14 @@ const POOrderMaster = ({ user }) => {
                   {(isAdmin || isProcurement) && (
                     <td>
                       <button
-                      onClick={() => handleInward(po.cart_details)}
-                      disabled={
-                        !po.inward_status || // Ensure inward_status is true
-                        orderStatus.received_status !== "Received" // Only enable if received status is "Received"
-                      }
-                    >
-                      Inward
-                    </button>
+                        onClick={() => handleInward(po.cart_details)}
+                        disabled={
+                          !po.inward_status || // Ensure inward_status is true
+                          orderStatus.received_status !== "Received" // Only enable if received status is "Received"
+                        }
+                      >
+                        Inward
+                      </button>
                     </td>
                   )}
                 </tr>
@@ -465,13 +517,19 @@ const POOrderMaster = ({ user }) => {
           {(isAdmin || isProcurement) && (
             <div style={{ marginTop: "20px" }}>
               <button
-                onClick={() => updateOrderStatus("Ordered")}
+                onClick={() => {
+                  handleStatusButtonClick("Ordered");
+                  updatePOStatus(poId, "Ordered");
+                }}
                 disabled={orderStatus.order_placed_status === "Ordered"}
               >
                 Order Placed
               </button>
               <button
-                onClick={() => updateOrderStatus("Shipped")}
+                onClick={() => {
+                  handleStatusButtonClick("Shipped");
+                  updatePOStatus(poId, "Shipped");
+                }}
                 disabled={
                   orderStatus.customer_status === "Shipped" ||
                   orderStatus.order_placed_status !== "Ordered"
@@ -480,7 +538,10 @@ const POOrderMaster = ({ user }) => {
                 Shipped
               </button>
               <button
-                onClick={() => updateOrderStatus("Received")}
+                onClick={() => {
+                  handleStatusButtonClick("Received");
+                  updatePOStatus(poId, "Received");
+                }}
                 disabled={
                   orderStatus.received_status === "Received" ||
                   orderStatus.customer_status !== "Shipped"
@@ -488,6 +549,27 @@ const POOrderMaster = ({ user }) => {
               >
                 Received
               </button>
+            </div>
+          )}
+
+          {/* Date Input Section */}
+          {showPopup && (
+            <div className="popup">
+              <div className="popup-content">
+                <h3>{`Update Status: ${selectedStatus}`}</h3>
+                <label>
+                  Select Date and Time:
+                  <input
+                    type="datetime-local"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                  />
+                </label>
+                <div style={{ marginTop: "20px" }}>
+                  <button onClick={handleUpdateStatus}>Confirm</button>
+                  <button onClick={() => setShowPopup(false)}>Cancel</button>
+                </div>
+              </div>
             </div>
           )}
 

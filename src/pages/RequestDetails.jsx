@@ -5,7 +5,7 @@ import Cart from "./Cart.jsx";
 
 const RequestDetails = ({ user }) => {
   const { requestId } = useParams();
-  const [details, setDetails] = useState([]);
+  const [details, setDetails] = useState([]); // to fetch the request details
   const [vendorNames, setVendorNames] = useState([]);
   const [inventoryData, setInventoryData] = useState({});
   const [cartItems, setCartItems] = useState([]);
@@ -20,6 +20,12 @@ const RequestDetails = ({ user }) => {
   const [showMessageBox, setShowMessageBox] = useState(false);
   const [messageBoxContent, setMessageBoxContent] = useState("");
   const [priceViewData, setPriceViewData] = useState([]);
+
+  const [showVendorPopup, setShowVendorPopup] = useState(false); // Popup visibility state
+  const [selectedComponentId, setSelectedComponentId] = useState(null); // Track the selected component
+  const [vendorPopupData, setVendorPopupData] = useState([]); // Store vendors for the popup
+  const [pricePopupData, setPricePopupData] = useState(null);
+  const [showPricePopup, setShowPricePopup] = useState(false);
 
   // The user object is now passed as a prop
   const isAdmin = user?.role === "Admin";
@@ -112,21 +118,21 @@ const RequestDetails = ({ user }) => {
       setShowMessageBox(true);
       return;
     }
-  
+
     const selectedVendor = vendorNames.find(
       (vendor) => vendor.vendor_name === detail.vendor_name
     );
     const vendor_id = selectedVendor ? selectedVendor.vendor_id : null;
-  
+
     if (!vendor_id) {
       alert("Invalid vendor selected.");
       return;
     }
-  
+
     let productId = null;
-    let price = 0;
-    let tax = 0;
-  
+    const price = detail.price;
+    const tax = detail.tax;
+
     try {
       // Fetch product_id from the component API
       const componentResponse = await fetch("http://127.0.0.1:8000/component/");
@@ -134,26 +140,11 @@ const RequestDetails = ({ user }) => {
       const component = componentData.find(
         (comp) => comp.component_id === detail.component_id
       );
-  
+
       if (component) {
         productId = component.product_id;
       } else {
         alert(`Component not found for component_id: ${detail.component_id}`);
-        return;
-      }
-  
-      // Fetch price and tax from the price table API
-      const priceTableResponse = await fetch("http://127.0.0.1:8000/price_tables/");
-      const priceTableData = await priceTableResponse.json();
-      const priceEntry = priceTableData.find(
-        (entry) => entry.product === productId
-      );
-  
-      if (priceEntry) {
-        price = priceEntry.price;
-        tax = priceEntry.tax;
-      } else {
-        alert(`Price table not found for product_id: ${productId}`);
         return;
       }
     } catch (error) {
@@ -161,11 +152,11 @@ const RequestDetails = ({ user }) => {
       alert("Error occurred while fetching data.");
       return;
     }
-  
+
     // Calculate total cost
     const gstAmount = (price * tax) / 100;
     const totalCost = Math.round((price + gstAmount) * detail.qty * 100) / 100;
-  
+
     // Prepare payload for cart API
     const orderData = {
       component_id: detail.component_id,
@@ -174,15 +165,15 @@ const RequestDetails = ({ user }) => {
       quantity: detail.qty,
       request_id: detail.request_id,
       vendor_name: detail.vendor_name,
-      vendor_id: vendor_id,
+      vendor_id: detail.vendor_id,
       category: detail.category,
       unit_of_measurement: detail.unit_of_measurement,
-      unit_price: price,
-      GST: tax,
+      unit_price: detail.price,
+      GST: detail.tax,
       total_cost: totalCost,
       assign: true,
     };
-  
+
     try {
       // Send POST request to add to cart
       const response = await fetch("http://127.0.0.1:8000/cart/", {
@@ -190,19 +181,19 @@ const RequestDetails = ({ user }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderData),
       });
-  
+
       if (response.ok) {
         setMessageBoxContent(`Component ${detail.component_id} added to cart.`);
         setShowMessageBox(true);
-  
+
         // Send PUT request to update 'assign', 'status', and 'qty'
         const updatePayload = {
           status: detail.status, // Retain existing status
-          qty: detail.qty,       // Retain existing quantity
-          cart_assign: true,          // Set cart assign to true
+          qty: detail.qty, // Retain existing quantity
+          cart_assign: true, // Set cart assign to true
           assign: false,
         };
-  
+
         const updateResponse = await fetch(
           `http://127.0.0.1:8000/request_master/${detail.request_id}/${detail.id}/`,
           {
@@ -211,14 +202,14 @@ const RequestDetails = ({ user }) => {
             body: JSON.stringify(updatePayload),
           }
         );
-  
+
         if (!updateResponse.ok) {
           const errorDetails = await updateResponse.json();
           console.error("Error updating request master:", errorDetails);
           alert(`Failed to update request: ${JSON.stringify(errorDetails)}`);
           return;
         }
-  
+
         // Update state to reflect assign = true
         setDetails((prevDetails) =>
           prevDetails.map((d) =>
@@ -237,7 +228,6 @@ const RequestDetails = ({ user }) => {
       alert("An error occurred while processing the order.");
     }
   };
-  
 
   const handleAssign = async (componentId, qty) => {
     const componentData = inventoryData[componentId];
@@ -625,76 +615,66 @@ const RequestDetails = ({ user }) => {
     }
   };
 
-  // const handleVendorChange = (component_id, selectedVendorName) => {
-  //   const updatedDetails = details.map((detail) => {
-  //     if (detail.component_id === component_id) {
-  //       return { ...detail, vendor_name: selectedVendorName };
-  //     }
-  //     return detail;
-  //   });
-  //   setDetails(updatedDetails);
-  // };
-
-  const handleVendorChange = (componentId, selectedVendorName) => {
-    const updatedDetails = details.map((detail) => {
-      if (detail.component_id === componentId) {
-        const selectedVendor = vendorNames.find(
-          (vendor) => vendor.vendor_name === selectedVendorName
-        );
-
-        const vendorId = selectedVendor?.vendor_id || "";
-        console.log("Price data", priceViewData);
-
-        // Find matching price in cached priceViewData
-        const matchingEntry = priceViewData.flatMap((entry) =>
-          entry.vendor_details
-            .filter(
-              (vendorDetail) =>
-                vendorDetail.component_type === detail.component_type &&
-                vendorDetail.component_specification ===
-                  detail.component_specification
-            )
-            .map((vendorDetail) => ({
-              vendor: entry.vendor, // Assuming `vendor` is a field in priceViewData
-              price: vendorDetail.latest_price?.price || "N/A",
-              product_id: vendorDetail.product_id,
-            }))
-        );
-
-        console.log("Matching entries", matchingEntry);
-
-        // Extract price if found
-        // const price =
-        //   matchingEntry?.vendor_details.find(
-        //     (vendorDetail) =>
-        //       vendorDetail.component_type === detail.component_type &&
-        //       vendorDetail.component_specification ===
-        //         detail.component_specification
-        //   )?.latest_price?.price || null;
-
-        // extract prices
-        // const prices = matchingEntry.map((vendorDetail) => ({
-        //   vendor: entry.vendor, // Assuming `vendor` is at the top level of `priceViewData`
-        //   price: vendorDetail.latest_price?.price || "N/A",
-        //   product_id: vendorDetail.product_id,
-        // }));
-
-        return {
-          ...detail,
-          vendor_name: selectedVendorName,
-          prices: matchingEntry,
-          vendor_id: selectedVendor?.vendor_id || "", // Add vendor_id
-        };
-      }
-      return detail;
+  const handleVendorChange = (componentId, vendorId, vendorName, price, tax) => {
+    // const updatedDetails = details.map((detail) =>
+    //   detail.component_id === componentId
+    //     ? {
+    //         ...detail,
+    //         vendor_id: vendorId,
+    //         vendor_name: vendorName,
+    //         price: price,
+    //       }
+    //     : detail
+    // );
+    // setDetails(updatedDetails);
+    console.log("Inputs to handleVendorChange:", {
+      componentId,
+      vendorId,
+      vendorName,
+      price,
+      tax
     });
 
-    setDetails(updatedDetails);
+    setDetails((prevDetails) =>
+      prevDetails.map((detail) =>
+        detail.component_id === componentId
+          ? {
+              ...detail,
+              vendor_id: vendorId,
+              vendor_name: vendorName,
+              price, // Update price here
+              tax
+            }
+          : detail
+      )
+    );
+    console.log("Details state after update:", details);
+  };
+
+  const handleVendorSelection = (componentType, componentSpec, componentId) => {
+    // Filter price data for matching component_type and component_specification
+    const matchingVendors = priceViewData
+      .filter(
+        (item) =>
+          item.component_type === componentType &&
+          item.component_specification === componentSpec
+      )
+      .map((item) => ({
+        ...item, // Retain all original fields
+        component_id: componentId, // Add component_id to each matching vendor
+      }));
+
+    // Show popup with filtered data
+    console.log("Matching Vendors for Popup:", matchingVendors); // Debug
+    setPricePopupData(matchingVendors);
+    console.log("Price Popup Data:", matchingVendors);
+
+    setShowPricePopup(true);
   };
 
   const fetchPriceViewData = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/price_view/");
+      const response = await fetch("http://127.0.0.1:8000/price_view_2/");
       if (!response.ok) {
         throw new Error(`Failed to fetch price data: ${response.statusText}`);
       }
@@ -857,43 +837,64 @@ const RequestDetails = ({ user }) => {
                         <td>{detail.component_specification}</td>
                         <td>{detail.unit_of_measurement}</td>
                         <td>{detail.category}</td>
+                        {/* <td>
+                          {detail.vendor_name ? (
+                            detail.vendor_name
+                          ) : (
+                            <button
+                              onClick={() =>
+                                handleVendorSelection(
+                                  detail.component_type,
+                                  detail.component_specification,
+                                  detail.component_id
+                                )
+                              }
+                            >
+                              Select Vendor
+                            </button>
+                          )}
+                        </td> */}
                         <td>
-                          <select
-                            value={detail.vendor_name || ""}
-                            onChange={(e) =>
-                              handleVendorChange(
-                                detail.component_id,
-                                e.target.value
-                              )
-                            }
-                          >
-                            <option value="">Select Vendor</option>
-                            {vendorNames.map((vendor) => (
-                              <option
-                                key={vendor.vendor_id}
-                                value={vendor.vendor_name}
-                              >
-                                {vendor.vendor_name}
-                              </option>
-                            ))}
-                          </select>
+                          {detail.vendor_name ? (
+                            <span
+                              style={{
+                                cursor: "pointer",
+                                textDecoration: "underline",
+                              }}
+                              onClick={() =>
+                                handleVendorSelection(
+                                  detail.component_type,
+                                  detail.component_specification,
+                                  detail.component_id
+                                )
+                              }
+                            >
+                              {detail.vendor_name}
+                            </span>
+                          ) : (
+                            <span
+                              style={{
+                                cursor: "pointer",
+                                textDecoration: "underline",
+                              }}
+                              onClick={() =>
+                                handleVendorSelection(
+                                  detail.component_type,
+                                  detail.component_specification,
+                                  detail.component_id
+                                )
+                              }
+                            >
+                              Select Vendor
+                            </span>
+                          )}
                         </td>
+
                         {(isAdmin || isProcurement) && (
                           <td>
-                            {detail.prices?.length > 0
-                              ? (() => {
-                                  // Find the first matching price for the selected vendor
-                                  const matchingPrice = detail.prices.find(
-                                    (priceDetail) =>
-                                      priceDetail.vendor === detail.vendor_id
-                                  );
-                                  return matchingPrice ? (
-                                    <span>₹{matchingPrice.price}</span>
-                                  ) : (
-                                    "No Prices Available"
-                                  );
-                                })()
-                              : "No Prices Available"}
+                            {detail.price !== undefined
+                              ? `₹${detail.price}`
+                              : "No Price Available"}
                           </td>
                         )}
                         <td>{detail.qty}</td>
@@ -957,22 +958,28 @@ const RequestDetails = ({ user }) => {
                                 Assign
                               </button>
                             )}
-                           <button
-                            style={{
-                              padding: "10px 15px",
-                              fontSize: "14px",
-                              borderRadius: "5px",
-                              border: "1px solid #ccc",
-                              cursor: detail.cart_assign ? "not-allowed" : "pointer",
-                              backgroundColor: detail.cart_assign ? "#f0f0f0" : "#fff",
-                              color: detail.cart_assign ? "#888" : "#000",
-                              transition: "background-color 0.3s ease",
-                            }}
-                            onClick={() => handleOrder(detail)}
-                            disabled={detail.cart_assign} // Disable if cart_assign is true
-                          >
-                            {detail.cart_assign ? "Added to Cart" : "Add to Cart"}
-                          </button>
+                            <button
+                              style={{
+                                padding: "10px 15px",
+                                fontSize: "14px",
+                                borderRadius: "5px",
+                                border: "1px solid #ccc",
+                                cursor: detail.cart_assign
+                                  ? "not-allowed"
+                                  : "pointer",
+                                backgroundColor: detail.cart_assign
+                                  ? "#f0f0f0"
+                                  : "#fff",
+                                color: detail.cart_assign ? "#888" : "#000",
+                                transition: "background-color 0.3s ease",
+                              }}
+                              onClick={() => handleOrder(detail)}
+                              disabled={detail.cart_assign} // Disable if cart_assign is true
+                            >
+                              {detail.cart_assign
+                                ? "Added to Cart"
+                                : "Add to Cart"}
+                            </button>
                           </td>
                         )}
                       </tr>
@@ -982,6 +989,131 @@ const RequestDetails = ({ user }) => {
             </table>
           )}
         </>
+      )}
+
+      {showPricePopup && pricePopupData && (
+        <div className="popup">
+          <div className="popup-content">
+            <h3>Vendor Details</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Vendor Name</th>
+                  <th>Price</th>
+                  <th>Tax</th>
+                  <th>Select</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pricePopupData.map((vendor) => (
+                  <tr key={vendor.vendor_id}>
+                    <td>{vendor.vendor_name}</td>
+                    <td>
+                      {vendor.latest_price !== null
+                        ? `₹${vendor.latest_price}`
+                        : "N/A"}
+                    </td>
+                    <td>{vendor.tax ? `${vendor.tax}%` : "N/A"}</td>
+                    <td>
+                      <input
+                        type="radio"
+                        name="vendorSelection"
+                        value={vendor.vendor_id}
+                        onChange={() => {
+                          handleVendorChange(
+                            vendor.component_id, // Component ID
+                            vendor.vendor_id,
+                            vendor.vendor_name,
+                            vendor.latest_price || "N/A", // Handle null price
+                            vendor.tax || "N/A"
+                          );
+                          setShowPricePopup(false); // Close the popup
+                        }}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <button onClick={() => setShowPricePopup(false)}>Close</button>
+          </div>
+        </div>
+      )}
+
+      {showVendorPopup && (
+        <div className="popup">
+          <div className="popup-content">
+            <h3>Select Vendor</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Select</th>
+                  <th>Vendor Name</th>
+                  <th>Price</th>
+                  <th>Tax</th>
+                  <th>Total Price</th>
+                </tr>
+              </thead>
+              <tbody>
+                {vendorPopupData.map((vendor, index) => (
+                  <tr key={index}>
+                    <td>
+                      <input
+                        type="radio"
+                        name="vendor"
+                        value={vendor.vendor_id}
+                        onChange={() => {
+                          // Update selected vendor in details
+                          setDetails((prevDetails) =>
+                            prevDetails.map((detail) =>
+                              detail.component_id === selectedComponentId
+                                ? {
+                                    ...detail,
+                                    vendor_name: vendor.vendor_name,
+                                    vendor_id: vendor.vendor_id,
+                                  }
+                                : detail
+                            )
+                          );
+                          setShowVendorPopup(false); // Close the popup
+                        }}
+                      />
+                    </td>
+                    <td>{vendor.vendor_name}</td>
+                    <td>
+                      {vendor.prices.length > 0
+                        ? vendor.prices.map((price, i) => (
+                            <div key={i}>₹{price.price}</div>
+                          ))
+                        : "N/A"}
+                    </td>
+                    <td>
+                      {vendor.prices.length > 0
+                        ? vendor.prices.map((price, i) => (
+                            <div key={i}>{price.tax}%</div>
+                          ))
+                        : "N/A"}
+                    </td>
+                    <td>
+                      {vendor.prices.length > 0
+                        ? vendor.prices.map((price, i) => (
+                            <div key={i}>
+                              ₹
+                              {(
+                                price.price +
+                                (price.price * price.tax) / 100
+                              ).toFixed(2)}
+                            </div>
+                          ))
+                        : "N/A"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <button onClick={() => setShowVendorPopup(false)}>Close</button>
+          </div>
+        </div>
       )}
 
       {showSerialPopup && (

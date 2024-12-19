@@ -43,8 +43,8 @@ const POOrderList = ({ user }) => {
       const contactDetails = contactResult.find(
         (contact) => contact.vendor === vendorId
       );
-      console.log("Fetched vendor", vendorId);
-      console.log("Contact details", contactResult);
+      // console.log("Fetched vendor", vendorId);
+      // console.log("Contact details", contactResult);
 
       // Fetch vendor name
       const vendorResponse = await fetch("http://127.0.0.1:8000/vendor_list/");
@@ -69,16 +69,16 @@ const POOrderList = ({ user }) => {
     try {
       const response = await fetch("http://127.0.0.1:8000/po_list/");
       const result = await response.json();
-      console.log("Fetched PO list", result);
-      console.log("Current PO ID", currentPO);
+      // console.log("Fetched PO list", result);
+      // console.log("Current PO ID", currentPO);
       const filteredPO = result.find((po) => po.id === currentPO.id);
       if (filteredPO) {
         setPOListData(filteredPO);
         fetchVendorDetails(filteredPO.cart_details.vendor_id); // Fetch vendor details
-        console.log(
-          "Filtered PO Vendor details",
-          filteredPO.cart_details.vendor_id
-        );
+        // console.log(
+        //   "Filtered PO Vendor details",
+        //   filteredPO.cart_details.vendor_id
+        // );
       }
     } catch (error) {
       console.error("Error fetching PO list data:", error);
@@ -139,8 +139,6 @@ const POOrderList = ({ user }) => {
       const final_cost = parseFloat(po.cart_details.total_cost || 0);
       return (acc += final_cost);
     }, 0);
-    console.log(relevantPOMaster, "Ithu than");
-    console.log("Final price varutha?", finalPrice);
     return finalPrice;
   };
 
@@ -182,12 +180,12 @@ const POOrderList = ({ user }) => {
     try {
       // Step 1: Generate the PDF as a Blob
       const pdfBlob = generatePDF(currentPO, poMaster);
-      console.log("The PO details here", currentPO);
+      // console.log("The PO details here", currentPO);
 
       // Step 2: Upload the PDF to the backend
       const formDataUpload = new FormData();
       const pdfFileName = `PO_${currentPO.id}.pdf`;
-      console.log("PDF Blob:", pdfBlob, "Blob size", pdfBlob.size);
+      // console.log("PDF Blob:", pdfBlob, "Blob size", pdfBlob.size);
       // formDataUpload.append("file", new File([pdfBlob], pdfFileName)); // Attach file as FormData
       formDataUpload.append(
         "file",
@@ -212,7 +210,7 @@ const POOrderList = ({ user }) => {
       const uploadData = await uploadResponse.json();
       const uploadedFilePath = uploadData.file_path; // Extract the file path from the response
 
-      console.log("Uploaded file path:", uploadedFilePath);
+      // console.log("Uploaded file path:", uploadedFilePath);
 
       // next step
 
@@ -235,7 +233,7 @@ const POOrderList = ({ user }) => {
         new File([pdfBlob], pdfFileName, { type: "application/pdf" })
       ); // Attach the generated PDF
 
-      console.log("The payload we are sending", formDataUpload);
+      // console.log("The payload we are sending", formDataUpload);
 
       // sending the email step
 
