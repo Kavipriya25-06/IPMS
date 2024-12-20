@@ -31,6 +31,10 @@ const VendorDetails = () => {
   const [showAddProductForm, setShowAddProductForm] = useState(false);
   const [selectedVendorData, setSelectedVendorData] = useState([]);
   const [componentMasterData, setComponentMasterData] = useState({});
+  const [choices, setChoices] = useState({
+    component_type_list: [],
+    category_choices: [],
+  });
   const [newProduct, setNewProduct] = useState({
     product_id: "",
     product_description: "",
@@ -99,8 +103,22 @@ const VendorDetails = () => {
       }
     };
 
+    const fetchChoices = async () => {
+      try {
+        const response = await fetch("http://127.0.0.1:8000/get_choices/");
+        if (!response.ok) {
+          throw new Error("Failed to fetch choices");
+        }
+        const data = await response.json();
+        setChoices(data);
+      } catch (error) {
+        console.error("Error fetching choices:", error);
+      }
+    };
+
     fetchVendorDetails();
     fetchComponentMasterData();
+    fetchChoices();
   }, [vendorId]);
 
   const getComponentId = (product_id) => {
@@ -585,11 +603,16 @@ const VendorDetails = () => {
             onChange={(e) => handleInputChange("category", e.target.value)}
           >
             <option value="">Select Category</option>
-            <option value="Airframe">Airframe</option>
+            {/* <option value="Airframe">Airframe</option>
             <option value="Communication">Communication</option>
             <option value="Electricals">Electricals</option>
             <option value="Electronics">Electronics</option>
-            <option value="Payload">Payload</option>
+            <option value="Payload">Payload</option> */}
+            {choices.category_choices.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
           </select>
 
           <select
@@ -599,7 +622,7 @@ const VendorDetails = () => {
             }
           >
             <option value="">Select Component Type</option>
-            <option value="Controller">Controller</option>
+            {/* <option value="Controller">Controller</option>
             <option value="Frame parts & Tank">Frame parts & Tank</option>
             <option value="Battery">Battery</option>
             <option value="Sensor">Sensor</option>
@@ -619,7 +642,12 @@ const VendorDetails = () => {
             <option value="Connectors">Connectors</option>
             <option value="Cables">Cables</option>
             <option value="Water Jet cutting">Water Jet cutting</option>
-            <option value="Consumables">Consumables</option>
+            <option value="Consumables">Consumables</option> */}
+            {choices.component_type_list.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
           </select>
           <input
             type="text"
@@ -685,11 +713,16 @@ const VendorDetails = () => {
             }
           >
             <option value="">Select Category</option>
-            <option value="Airframe">Airframe</option>
+            {/* <option value="Airframe">Airframe</option>
             <option value="Communication">Communication</option>
             <option value="Electricals">Electricals</option>
             <option value="Electronics">Electronics</option>
-            <option value="Payload">Payload</option>
+            <option value="Payload">Payload</option> */}
+            {choices.category_choices.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
           </select>
 
           <select
@@ -699,7 +732,7 @@ const VendorDetails = () => {
             }
           >
             <option value="">Select Component Type</option>
-            <option value="Controller">Controller</option>
+            {/* <option value="Controller">Controller</option>
             <option value="Frame parts & Tank">Frame parts & Tank</option>
             <option value="Battery">Battery</option>
             <option value="Sensor">Sensor</option>
@@ -719,7 +752,12 @@ const VendorDetails = () => {
             <option value="Connectors">Connectors</option>
             <option value="Cables">Cables</option>
             <option value="Water Jet cutting">Water Jet cutting</option>
-            <option value="Consumables">Consumables</option>
+            <option value="Consumables">Consumables</option> */}
+            {choices.component_type_list.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
           </select>
 
           <input
