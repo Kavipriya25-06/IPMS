@@ -25,6 +25,7 @@ import PurchaseOrder from "./pages/POTemplate";
 import Login from "./pages/Login";
 import ProtectedRoute from "./ProtectedRoute";
 import Projects from "./pages/Projects";
+import Cart from "./pages/Cart";
 
 // import { useAuth } from "./AuthContext";
 // import PODetails from "./pages/PODetails";
@@ -132,11 +133,27 @@ function App() {
             </li>
 
             <li
-              className={isTabEnabled(["Admin", "Inventory","User","Procurement","Finance"]) ? "" : "disabled"}
+              className={
+                isTabEnabled([
+                  "Admin",
+                  "Inventory",
+                  "User",
+                  "Procurement",
+                  "Finance",
+                ])
+                  ? ""
+                  : "disabled"
+              }
             >
               <NavLink to="/projects">Projects</NavLink>
             </li>
-
+            <li
+              className={
+                isTabEnabled(["Admin", "Procurement"]) ? "" : "disabled"
+              }
+            >
+              <NavLink to="/cart">Cart</NavLink>
+            </li>
           </ul>
         </nav>
 
@@ -392,13 +409,28 @@ function App() {
           <Route
             path="/Projects"
             element={
-              <ProtectedRoute allowedRoles={["Admin", "User", "Procurement", "Inventory", "Finance"]}>
+              <ProtectedRoute
+                allowedRoles={[
+                  "Admin",
+                  "User",
+                  "Procurement",
+                  "Inventory",
+                  "Finance",
+                ]}
+              >
                 <Projects />
               </ProtectedRoute>
             }
           />
 
-
+          <Route
+            path="/cart"
+            element={
+              <ProtectedRoute allowedRoles={["Admin", "Procurement"]}>
+                <Cart user={user} />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </div>
     </Router>
