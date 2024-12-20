@@ -26,6 +26,7 @@ import Login from "./pages/Login";
 import ProtectedRoute from "./ProtectedRoute";
 import Projects from "./pages/Projects";
 import Cart from "./pages/Cart";
+import Roles from "./pages/Roles";
 
 // import { useAuth } from "./AuthContext";
 // import PODetails from "./pages/PODetails";
@@ -154,137 +155,12 @@ function App() {
             >
               <NavLink to="/cart">Cart</NavLink>
             </li>
+            <li className={isTabEnabled(["Admin"]) ? "" : "disabled"}>
+              <NavLink to="/roles">Roles</NavLink>
+            </li>
           </ul>
         </nav>
 
-        {/* <nav>
-          <ul>
-            <li>
-              <NavLink
-                to="/components"
-                className={({ isActive }) => (isActive ? "active" : "")}
-                style={{
-                  color: isTabEnabled(["Admin", "Procurement", "Finance"])
-                    ? ""
-                    : "gray",
-                  pointerEvents: isTabEnabled([
-                    "Admin",
-                    "Procurement",
-                    "Finance",
-                  ])
-                    ? "auto"
-                    : "none",
-                }}
-              >
-                Components
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/inventory"
-                className={({ isActive }) => (isActive ? "active" : "")}
-                style={{
-                  color: isTabEnabled(["Admin", "Inventory"]) ? "" : "gray",
-                  pointerEvents: isTabEnabled(["Admin", "Inventory"])
-                    ? "auto"
-                    : "none",
-                }}
-              >
-                Inventory
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/vendor"
-                className={({ isActive }) => (isActive ? "active" : "")}
-                style={{
-                  color: isTabEnabled(["Admin", "Procurement", "Finance"])
-                    ? ""
-                    : "gray",
-                  pointerEvents: isTabEnabled([
-                    "Admin",
-                    "Procurement",
-                    "Finance",
-                  ])
-                    ? "auto"
-                    : "none",
-                }}
-              >
-                Vendor
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/bom"
-                className={({ isActive }) => (isActive ? "active" : "")}
-                style={{
-                  color: isTabEnabled(["Admin", "Procurement", "Finance"])
-                    ? ""
-                    : "gray",
-                  pointerEvents: isTabEnabled([
-                    "Admin",
-                    "Procurement",
-                    "Finance",
-                  ])
-                    ? "auto"
-                    : "none",
-                }}
-              >
-                BOM
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/requests"
-                className={({ isActive }) => (isActive ? "active" : "")}
-                style={{
-                  color: isTabEnabled(["Admin", "User", "Procurement"])
-                    ? ""
-                    : "gray",
-                  pointerEvents: isTabEnabled(["Admin", "User", "Procurement"])
-                    ? "auto"
-                    : "none",
-                }}
-              >
-                Requests
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/po-list"
-                className={({ isActive }) => (isActive ? "active" : "")}
-                style={{
-                  color: isTabEnabled(["Admin", "Procurement", "Finance"])
-                    ? ""
-                    : "gray",
-                  pointerEvents: isTabEnabled([
-                    "Admin",
-                    "Procurement",
-                    "Finance",
-                  ])
-                    ? "auto"
-                    : "none",
-                }}
-              >
-                PO List
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/inward"
-                className={({ isActive }) => (isActive ? "active" : "")}
-                style={{
-                  color: isTabEnabled(["Admin", "Inventory"]) ? "" : "gray",
-                  pointerEvents: isTabEnabled(["Admin", "Inventory"])
-                    ? "auto"
-                    : "none",
-                }}
-              >
-                Inward
-              </NavLink>
-            </li>
-          </ul>
-        </nav> */}
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<HomePage />} />
@@ -428,6 +304,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={["Admin", "Procurement"]}>
                 <Cart user={user} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/roles"
+            element={
+              <ProtectedRoute allowedRoles={["Admin"]}>
+                <Roles />
               </ProtectedRoute>
             }
           />
