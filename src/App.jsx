@@ -24,6 +24,8 @@ import Inward from "./pages/Inward";
 import PurchaseOrder from "./pages/POTemplate";
 import Login from "./pages/Login";
 import ProtectedRoute from "./ProtectedRoute";
+import Projects from "./pages/Projects";
+
 // import { useAuth } from "./AuthContext";
 // import PODetails from "./pages/PODetails";
 
@@ -128,6 +130,13 @@ function App() {
             >
               <NavLink to="/inward">Inward</NavLink>
             </li>
+
+            <li
+              className={isTabEnabled(["Admin", "Inventory","User","Procurement","Finance"]) ? "" : "disabled"}
+            >
+              <NavLink to="/projects">Projects</NavLink>
+            </li>
+
           </ul>
         </nav>
 
@@ -379,6 +388,17 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          <Route
+            path="/Projects"
+            element={
+              <ProtectedRoute allowedRoles={["Admin", "User", "Procurement", "Inventory", "Finance"]}>
+                <Projects />
+              </ProtectedRoute>
+            }
+          />
+
+
         </Routes>
       </div>
     </Router>
