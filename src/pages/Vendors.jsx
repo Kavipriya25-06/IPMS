@@ -502,6 +502,7 @@ const Vendors = () => {
         <thead>
           <tr>
             <th>Vendor Name</th>
+            <th>GSTN</th>
             <th>Primary POC</th>
             <th>Email</th>
             <th>Phone</th>
@@ -554,6 +555,7 @@ const Vendors = () => {
                     </span>
                   )}
                 </td>
+                <td>{vendor.gstn}</td>
                 <td
                   onClick={() => handlePocClick(vendor.vendor_id)}
                   style={{ cursor: "pointer", textDecoration: "underline" }}

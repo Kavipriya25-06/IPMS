@@ -9,6 +9,12 @@ const Roles = () => {
     password: "",
     role: "User",
   });
+  const [confirmation, setConfirmation] = useState({
+    show: false,
+    userId: null,
+    newRole: "",
+    email: "",
+  });
 
   const roles = ["Admin", "Procurement", "Finance", "Inventory", "User"];
 
@@ -24,6 +30,47 @@ const Roles = () => {
     } catch (error) {
       console.error("Error fetching users:", error);
     }
+  };
+
+  // Handle role change confirmation
+  const handleRoleChangeConfirmation = (userId, newRole, email) => {
+    setConfirmation({ show: true, userId, newRole, email });
+  };
+
+  // Handle confirmed role change
+  const handleConfirmedRoleChange = async () => {
+    const { userId, newRole } = confirmation;
+    try {
+      const updatedUsers = users.map((user) =>
+        user.id === userId ? { ...user, role: newRole } : user
+      );
+      setUsers(updatedUsers);
+
+      // Make an API call to update the role
+      const payload = { role: newRole };
+      const response = await fetch(
+        `http://127.0.0.1:8000/register/${userId}/`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Error updating role: ${response.statusText}`);
+      }
+      console.log("Role updated successfully");
+      setConfirmation({ show: false, userId: null, newRole: "", email: "" });
+    } catch (error) {
+      console.error("Error updating role:", error);
+    }
+  };
+
+  const handleCancelConfirmation = () => {
+    setConfirmation({ show: false, userId: null, newRole: "", email: "" });
   };
 
   // Handle role change
@@ -108,7 +155,7 @@ const Roles = () => {
                     name={`role-${user.id}`}
                     value={role}
                     checked={user.role === role}
-                    onChange={() => handleRoleChange(user.id, role)}
+                    onChange={() => handleRoleChangeConfirmation(user.id, role, user.email)}
                   />
                 </td>
               ))}
@@ -176,6 +223,18 @@ const Roles = () => {
               Cancel
             </button>
           </form>
+        </div>
+      )}
+      {confirmation.show && (
+        <div className="popup">
+          <h3>Confirmation</h3>
+          <p>
+            Are you sure you want to assign{" "}
+            <strong>{confirmation.email}</strong> to the role of{" "}
+            <strong>{confirmation.newRole}</strong>?
+          </p>
+          <button onClick={handleConfirmedRoleChange}>Yes</button>
+          <button onClick={handleCancelConfirmation}>No</button>
         </div>
       )}
     </div>
