@@ -195,7 +195,7 @@ const RequestDetails = ({ user }) => {
         const updateResponse = await fetch(
           `http://127.0.0.1:8000/request_master/${detail.request_id}/${detail.id}/`,
           {
-            method: "PUT",
+            method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(updatePayload),
           }
