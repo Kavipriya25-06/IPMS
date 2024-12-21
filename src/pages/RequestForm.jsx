@@ -4,7 +4,9 @@ import CustomMessagebox from "./CustomMessageBox.jsx";
 
 const RequestForm = () => {
   const [boms, setBoms] = useState([]);
+  const [projects, setProjects] = useState([]); // State to store projects
   const [selectedBom, setSelectedBom] = useState(null);
+  const [selectedProject, setSelectedProject] = useState(null); // State for selected project
   const [selectedComponents, setSelectedComponents] = useState([]);
   const [availableComponents, setAvailableComponents] = useState([]);
   const navigate = useNavigate();
@@ -40,6 +42,11 @@ const RequestForm = () => {
       .then((response) => response.json())
       .then((data) => setVendorMaster(data))
       .catch((error) => console.error("Error fetching vendor master:", error));
+
+    fetch("http://127.0.0.1:8000/project/")
+      .then((response) => response.json())
+      .then((data) => setProjects(data))
+      .catch((error) => console.error("Error fetching projects:", error));
 
     // Fetch vendor list to get vendor names by vendor_id
     fetch("http://127.0.0.1:8000/vendor_list/")
@@ -80,6 +87,12 @@ const RequestForm = () => {
         // setSelectedComponents(bomComponents);
       })
       .catch((error) => console.error("Error fetching BOM components:", error));
+  };
+
+  const handleProjectChange = (event) => {
+    const selectedProjectId = event.target.value;
+    const project = projects.find((p) => p.project_id === selectedProjectId);
+    setSelectedProject(project);
   };
 
   const handleAddComponent = () => {
@@ -259,6 +272,7 @@ const RequestForm = () => {
         qty: component.quantity,
         status: "pending",
         assign: false,
+        project_id: selectedProject ? selectedProject.project_id : null,
       }));
 
       await Promise.all(
@@ -308,6 +322,7 @@ const RequestForm = () => {
           },
           body: JSON.stringify({
             requester_name: requesterName,
+            project_id: selectedProject ? selectedProject.project_id : null,
             project_name: selectedBom
               ? selectedBom.bom_name
               : "Unnamed Project",
@@ -336,6 +351,7 @@ const RequestForm = () => {
         qty: component.quantity,
         status: "pending",
         assign: false,
+        project_id: selectedProject.project_id,
       }));
 
       await Promise.all(
@@ -512,6 +528,32 @@ const RequestForm = () => {
               ))}
             </select>
           </div>
+
+
+              
+          <div style={{ marginBottom: "15px", width: "100%" }}>
+            <label style={{ display: "block", marginBottom: "5px" }}>
+              Select Project:
+            </label>
+            <select
+              onChange={handleProjectChange}
+              style={{
+                width: "100%",
+                padding: "8px",
+                borderRadius: "4px",
+                border: "1px solid #ccc",
+              }}
+            >
+              <option value="">Select Project</option>
+              {projects.map((project) => (
+                <option key={project.project_id} value={project.project_id}>
+                  {`${project.project_id} - ${project.project_name}`}
+                </option>
+              ))}
+            </select>
+          </div>
+
+
         </div>
       </div>
 
