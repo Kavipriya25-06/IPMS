@@ -528,6 +528,7 @@ const VendorDetails = () => {
       component_specification: product.component_specification,
       unit_of_measurement: product.unit_of_measurement,
       category: product.category,
+      vendor_id: vendorId,
     };
 
     try {
