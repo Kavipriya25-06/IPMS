@@ -542,18 +542,29 @@ const Vendors = () => {
               <tr key={vendor.vendor_id}>
                 <td>
                   {isEditingVendor === vendor.vendor_id ? (
-                    <input
-                      type="text"
-                      value={editedVendorName.vendor_name}
-                      onChange={(e) =>
-                        setEditedVendorName({
-                          ...editedVendorName,
-                          vendor_name: e.target.value,
-                        })
-                      }
-                    />
+                    <div>
+                      <input
+                        type="text"
+                        value={editedVendorName.vendor_name}
+                        onChange={(e) =>
+                          setEditedVendorName({
+                            ...editedVendorName,
+                            vendor_name: e.target.value,
+                          })
+                        }
+                        autoFocus
+                      />
+                    </div>
                   ) : (
-                    vendor.vendor_name
+                    <span
+                      onClick={() => handleVendorNameClick(vendor.vendor_id)}
+                      style={{
+                        cursor: "pointer",
+                        textDecoration: "underline",
+                      }}
+                    >
+                      {vendor.vendor_name}
+                    </span>
                   )}
                 </td>
                 <td>
