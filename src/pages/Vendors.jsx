@@ -26,10 +26,14 @@ const Vendors = () => {
   const [showPocPopup, setShowPocPopup] = useState(false);
   const [isEditing, setIsEditing] = useState(null);
   const [isEditingVendor, setIsEditingVendor] = useState(null);
-  const [editedVendorName, setEditedVendorName] = useState("");
+  const [editedVendorName, setEditedVendorName] = useState({
+    vendor_name: "",
+    gstn: "",
+  });
   const navigate = useNavigate();
   const [newVendor, setNewVendor] = useState({
     vendor_name: "",
+    gstn: "",
   });
   const [newSubVendor, setNewSubVendor] = useState({
     point_of_contact: "",
@@ -294,7 +298,7 @@ const Vendors = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ vendor_name: newVendor.vendor_name }),
+        body: JSON.stringify(newVendor),
       });
       if (response.ok) {
         const addedVendor = await response.json();
@@ -366,9 +370,12 @@ const Vendors = () => {
   };
 
   // Start editing vendor name
-  const handleEditVendorName = (vendor_id, currentName) => {
-    setIsEditingVendor(vendor_id);
-    setEditedVendorName(currentName);
+  const handleEditVendorName = (vendor) => {
+    setIsEditingVendor(vendor.vendor_id);
+    setEditedVendorName({
+      vendor_name: vendor.vendor_name,
+      gstn: vendor.gstn,
+    });
   };
 
   // Save the updated vendor name
@@ -381,7 +388,7 @@ const Vendors = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ vendor_name: editedVendorName }),
+          body: JSON.stringify(editedVendorName),
         }
       );
       if (response.ok) {
@@ -389,7 +396,7 @@ const Vendors = () => {
         setVendorData((prevData) =>
           prevData.map((vendor) =>
             vendor.vendor_id === vendor_id
-              ? { ...vendor, vendor_name: editedVendorName }
+              ? { ...vendor, ...editedVendorName }
               : vendor
           )
         );
@@ -405,7 +412,7 @@ const Vendors = () => {
   // Cancel editing vendor name
   const handleCancelEdit = () => {
     setIsEditingVendor(null);
-    setEditedVendorName(""); // Reset the edited name
+    setEditedVendorName({ vendor_name: "", gstn: "" }); // Reset the edited name
   };
 
   return (
@@ -423,6 +430,12 @@ const Vendors = () => {
           onChange={(e) =>
             handleVendorInputChange("vendor_name", e.target.value)
           }
+        />
+        <input
+          type="text"
+          placeholder="GSTN"
+          value={newVendor.gstn}
+          onChange={(e) => handleVendorInputChange("gstn", e.target.value)}
         />
         <button onClick={handleAddVendor}>Save Vendor</button>
         <button onClick={() => setIsAddingVendor(false)}>Cancel</button>
@@ -529,33 +542,36 @@ const Vendors = () => {
               <tr key={vendor.vendor_id}>
                 <td>
                   {isEditingVendor === vendor.vendor_id ? (
-                    <div>
-                      <input
-                        type="text"
-                        value={editedVendorName}
-                        onChange={(e) => setEditedVendorName(e.target.value)}
-                        autoFocus
-                      />
-                      <button
-                        onClick={() => handleSaveVendorName(vendor.vendor_id)}
-                      >
-                        Save
-                      </button>
-                      <button onClick={handleCancelEdit}>Cancel</button>
-                    </div>
+                    <input
+                      type="text"
+                      value={editedVendorName.vendor_name}
+                      onChange={(e) =>
+                        setEditedVendorName({
+                          ...editedVendorName,
+                          vendor_name: e.target.value,
+                        })
+                      }
+                    />
                   ) : (
-                    <span
-                      onClick={() => handleVendorNameClick(vendor.vendor_id)}
-                      style={{
-                        cursor: "pointer",
-                        textDecoration: "underline",
-                      }}
-                    >
-                      {vendor.vendor_name}
-                    </span>
+                    vendor.vendor_name
                   )}
                 </td>
-                <td>{vendor.gstn}</td>
+                <td>
+                  {isEditingVendor === vendor.vendor_id ? (
+                    <input
+                      type="text"
+                      value={editedVendorName.gstn}
+                      onChange={(e) =>
+                        setEditedVendorName({
+                          ...editedVendorName,
+                          gstn: e.target.value,
+                        })
+                      }
+                    />
+                  ) : (
+                    vendor.gstn
+                  )}
+                </td>
                 <td
                   onClick={() => handlePocClick(vendor.vendor_id)}
                   style={{ cursor: "pointer", textDecoration: "underline" }}
@@ -567,15 +583,17 @@ const Vendors = () => {
                 <td>{defaultPoc.location || "N/A"}</td>
                 {/* <td>{primaryPoc.category || "N/A"}</td> */}
                 <td>
-                  {isEditingVendor !== vendor.vendor_id && (
-                    <button
-                      onClick={() =>
-                        handleEditVendorName(
-                          vendor.vendor_id,
-                          vendor.vendor_name
-                        )
-                      }
-                    >
+                  {isEditingVendor === vendor.vendor_id ? (
+                    <>
+                      <button
+                        onClick={() => handleSaveVendorName(vendor.vendor_id)}
+                      >
+                        Save
+                      </button>
+                      <button onClick={handleCancelEdit}>Cancel</button>
+                    </>
+                  ) : (
+                    <button onClick={() => handleEditVendorName(vendor)}>
                       Edit
                     </button>
                   )}

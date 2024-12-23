@@ -307,3 +307,15 @@ tbody tr:hover {
 .popup button {
   margin-top: 10px;
 }
+
+.tag {
+  display: inline-block;
+  background-color: #f58634; /* Default background color */
+  color: white;
+  padding: 5px 10px;
+  margin: 3px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: bold;
+  text-align: center;
+}
