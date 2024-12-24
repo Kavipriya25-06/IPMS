@@ -192,7 +192,7 @@ const RequestDetails = ({ user }) => {
           status: detail.status, // Retain existing status
           qty: detail.qty, // Retain existing quantity
           cart_assign: true, // Set cart assign to true
-          assign: false,
+          assign: true,
         };
 
         const updateResponse = await fetch(
@@ -737,19 +737,19 @@ const RequestDetails = ({ user }) => {
                          fontSize: "14px",
                          borderRadius: "5px",
                          border: "1px solid #ccc",
-                         cursor: detail.cart_assign || !detail.approve ? "not-allowed" : "pointer",
+                         cursor: detail.assign || !detail.approve ? "not-allowed" : "pointer",
                          backgroundColor: detail.cart_assign
                            ? "#f0f0f0"
                            : detail.approve
                            ? "#fff"
                            : "#ddd",
-                         color: detail.cart_assign ? "#888" : "#000",
+                         color: detail.assign ? "#888" : "#000",
                          transition: "background-color 0.3s ease",
                        }}
                        onClick={() => detail.approve && handleOrder(detail)}
-                       disabled={detail.cart_assign || !detail.approve} // Disabled if not approved or already in cart
+                       disabled={detail.assign || !detail.approve} // Disabled if not approved or already in cart
                      >
-                       {detail.cart_assign ? "Added to Cart" : "Add to Cart"}
+                       {detail.assign ? "Added to Cart" : "Add to Cart"}
                      </button>
                    </td>
                     )}
