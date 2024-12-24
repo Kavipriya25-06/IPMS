@@ -272,7 +272,8 @@ const POOrderList = ({ user }) => {
       30
     );
     doc.text(`Date: ${poDetails.date}`, 10, 40);
-    doc.text("Order Details:", 10, 50);
+    doc.text(`GSTIN: ${poDetails.gstn}`, 10, 50);
+    doc.text("Order Details:", 10, 60);
 
     // const tableColumns = ["Item", "Quantity", "Unit Price", "Total Cost"];
     // const tableRows = [
@@ -309,7 +310,7 @@ const POOrderList = ({ user }) => {
     doc.autoTable({
       head: [tableColumns],
       body: tableRows,
-      startY: 60,
+      startY: 70,
     });
 
     // // Calculate totals

@@ -447,6 +447,7 @@ const POOrderMaster = ({ user }) => {
   };
 
   const vendorName = poData?.cart_details?.vendor_name || "N/A";
+  const vendor_gstn = poData?.cart_details?.gstn || "";
   const { totalquantity, totalcost } = computeTotals();
 
   return (
@@ -460,6 +461,7 @@ const POOrderMaster = ({ user }) => {
         <>
           <h3>PO Number: {poId}</h3>
           <h3>Vendor Name: {vendorName}</h3>
+          <h3>GSTIN: {vendor_gstn}</h3>
           <table>
             <thead>
               <tr>
