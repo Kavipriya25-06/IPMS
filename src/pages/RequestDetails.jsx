@@ -85,6 +85,7 @@ const RequestDetails = ({ user }) => {
       const uniqueVendors = data.map((vendor) => ({
         vendor_id: vendor.vendor_id,
         vendor_name: vendor.vendor_name,
+        gstn: vendor.gstn,
       }));
       setVendorNames(uniqueVendors);
     } catch (error) {
@@ -121,6 +122,7 @@ const RequestDetails = ({ user }) => {
       (vendor) => vendor.vendor_name === detail.vendor_name
     );
     const vendor_id = selectedVendor ? selectedVendor.vendor_id : null;
+    const vendor_gstn = selectedVendor ? selectedVendor.gstn : null;
 
     if (!vendor_id) {
       alert("Invalid vendor selected.");
@@ -161,7 +163,7 @@ const RequestDetails = ({ user }) => {
       component_type: detail.component_type,
       component_specification: detail.component_specification,
       quantity: detail.qty,
-      request_id: detail.request_id,
+      request_id: detail.id,
       vendor_name: detail.vendor_name,
       vendor_id: detail.vendor_id,
       category: detail.category,
@@ -170,6 +172,7 @@ const RequestDetails = ({ user }) => {
       GST: detail.tax,
       total_cost: totalCost,
       assign: true,
+      gstn: vendor_gstn,
     };
 
     try {
@@ -543,6 +546,34 @@ const RequestDetails = ({ user }) => {
     }
   };
 
+  const handleApproval = async (request_id, id) => {
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/request_master/${request_id}/${id}/`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ approve: true }), // Set approve to true
+      });
+  
+      if (response.ok) {
+        // Update the local state
+        setDetails((prevDetails) =>
+          prevDetails.map((detail) =>
+            detail.request_id === request_id ? { ...detail, approve: true } : detail
+          )
+        );
+      } else {
+        const errorDetails = await response.json();
+        console.error("Failed to approve the request:", errorDetails);
+      }
+    } catch (error) {
+      console.error("Error approving the request:", error);
+    }
+  };
+  
+  
+
   return (
     <div>
       <h2>Request Details for {requestId}</h2>
@@ -570,6 +601,7 @@ const RequestDetails = ({ user }) => {
               {(isAdmin || isProcurement) && <th>Price</th>}
               <th>Quantity</th>
               <th>Available Quantity</th>
+              <th>Approval</th>
               {(isAdmin || isProcurement) && <th>Actions</th>}
             </tr>
           </thead>
@@ -634,81 +666,92 @@ const RequestDetails = ({ user }) => {
                     )}
                     <td>{detail.qty}</td>
                     <td>{availableQty}</td>
+                    <td>
+                      <button
+                        onClick={() => handleApproval(detail.request_id, detail.id)} // Ensure `detail.id` is used if `id` is a property of `detail`
+                        disabled={detail.approve} // Disable button if already approved
+                        style={{
+                          cursor: detail.approve ? "not-allowed" : "pointer",
+                          backgroundColor: detail.approve ? "#ddd" : "#4caf50",
+                          color: detail.approve ? "#888" : "#fff",
+                        }}
+                      >
+                        {detail.approve ? "Approved" : "Approve"}
+                      </button>
+                    </td>
                     {(isAdmin || isProcurement) && (
-                      <td>
-                        {detail.assign || detail.qty === 0 ? (
-                          <button
-                            style={{
-                              padding: "10px 20px",
-                              fontSize: "14px",
-                              borderRadius: "5px",
-                              border: "1px solid #ccc",
-                              cursor: detail.assign ? "pointer" : "not-allowed",
-                              marginRight: "10px",
-                              width: "100px",
-                              height: "40px",
-                              textAlign: "center",
-                              transition: "background-color 0.3s ease",
-                            }}
-                            onClick={() =>
-                              handleUnassign(detail.component_id, detail.qty)
-                            }
-                            disabled={!detail.assign}
-                          >
-                            Assigned
-                          </button>
-                        ) : (
-                          <button
-                            style={{
-                              padding: "10px 20px",
-                              fontSize: "14px",
-                              borderRadius: "5px",
-                              border: "1px solid #ccc",
-                              cursor:
-                                availableQty < detail.qty ||
-                                detail.qty === 0 ||
-                                detail.assign
-                                  ? "not-allowed"
-                                  : "pointer",
-                              marginRight: "10px",
-                              width: "100px",
-                              height: "40px",
-                              textAlign: "center",
-                              transition: "background-color 0.3s ease",
-                            }}
-                            onClick={() =>
-                              handleAssign(detail.component_id, detail.qty)
-                            }
-                            disabled={
-                              availableQty < detail.qty ||
-                              detail.qty === 0 ||
-                              detail.assign
-                            }
-                          >
-                            Assign
-                          </button>
-                        )}
-                        <button
-                          style={{
-                            padding: "10px 15px",
-                            fontSize: "14px",
-                            borderRadius: "5px",
-                            border: "1px solid #ccc",
-                            cursor: detail.cart_assign
-                              ? "not-allowed"
-                              : "pointer",
-                            backgroundColor: detail.cart_assign
-                              ? "#f0f0f0"
-                              : "#fff",
-                            color: detail.cart_assign ? "#888" : "#000",
-                            transition: "background-color 0.3s ease",
-                          }}
-                          onClick={() => handleOrder(detail)}
-                          disabled={detail.cart_assign} // Disable if cart_assign is true
-                        >
-                          {detail.cart_assign ? "Added to Cart" : "Add to Cart"}
-                        </button>
-                      </td>
+                     <td>
+                     {detail.assign || detail.qty === 0 ? (
+                       <button
+                         style={{
+                           padding: "10px 20px",
+                           fontSize: "14px",
+                           borderRadius: "5px",
+                           border: "1px solid #ccc",
+                           cursor: detail.assign && detail.approve ? "pointer" : "not-allowed",
+                           marginRight: "10px",
+                           width: "100px",
+                           height: "40px",
+                           textAlign: "center",
+                           transition: "background-color 0.3s ease",
+                         }}
+                         onClick={() => detail.approve && handleUnassign(detail.component_id, detail.qty)}
+                         disabled={!detail.assign || !detail.approve} // Disabled if not approved
+                       >
+                         Assigned
+                       </button>
+                     ) : (
+                       <button
+                         style={{
+                           padding: "10px 20px",
+                           fontSize: "14px",
+                           borderRadius: "5px",
+                           border: "1px solid #ccc",
+                           cursor:
+                             availableQty < detail.qty ||
+                             detail.qty === 0 ||
+                             detail.assign ||
+                             !detail.approve
+                               ? "not-allowed"
+                               : "pointer",
+                           marginRight: "10px",
+                           width: "100px",
+                           height: "40px",
+                           textAlign: "center",
+                           transition: "background-color 0.3s ease",
+                         }}
+                         onClick={() => detail.approve && handleAssign(detail.component_id, detail.qty)}
+                         disabled={
+                           availableQty < detail.qty ||
+                           detail.qty === 0 ||
+                           detail.assign ||
+                           !detail.approve // Disabled if not approved
+                         }
+                       >
+                         Assign
+                       </button>
+                     )}
+                     <button
+                       style={{
+                         padding: "10px 15px",
+                         fontSize: "14px",
+                         borderRadius: "5px",
+                         border: "1px solid #ccc",
+                         cursor: detail.cart_assign || !detail.approve ? "not-allowed" : "pointer",
+                         backgroundColor: detail.cart_assign
+                           ? "#f0f0f0"
+                           : detail.approve
+                           ? "#fff"
+                           : "#ddd",
+                         color: detail.cart_assign ? "#888" : "#000",
+                         transition: "background-color 0.3s ease",
+                       }}
+                       onClick={() => detail.approve && handleOrder(detail)}
+                       disabled={detail.cart_assign || !detail.approve} // Disabled if not approved or already in cart
+                     >
+                       {detail.cart_assign ? "Added to Cart" : "Add to Cart"}
+                     </button>
+                   </td>
                     )}
                   </tr>
                 );
