@@ -123,6 +123,7 @@ const POOrderMaster = ({ user }) => {
       return;
     }
     updateOrderStatus(selectedStatus, selectedDate);
+    updatePOStatus(poId, selectedStatus);
     setShowPopup(false); // Close the popup
   };
 
@@ -519,7 +520,7 @@ const POOrderMaster = ({ user }) => {
               <button
                 onClick={() => {
                   handleStatusButtonClick("Ordered");
-                  updatePOStatus(poId, "Ordered");
+                  // updatePOStatus(poId, "Ordered");
                 }}
                 disabled={orderStatus.order_placed_status === "Ordered"}
               >
@@ -528,7 +529,7 @@ const POOrderMaster = ({ user }) => {
               <button
                 onClick={() => {
                   handleStatusButtonClick("Shipped");
-                  updatePOStatus(poId, "Shipped");
+                  // updatePOStatus(poId, "Shipped");
                 }}
                 disabled={
                   orderStatus.customer_status === "Shipped" ||
@@ -540,7 +541,7 @@ const POOrderMaster = ({ user }) => {
               <button
                 onClick={() => {
                   handleStatusButtonClick("Received");
-                  updatePOStatus(poId, "Received");
+                  // updatePOStatus(poId, "Received");
                 }}
                 disabled={
                   orderStatus.received_status === "Received" ||
