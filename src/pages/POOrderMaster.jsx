@@ -124,6 +124,7 @@ const POOrderMaster = ({ user }) => {
     }
     updateOrderStatus(selectedStatus, selectedDate);
     updatePOStatus(poId, selectedStatus);
+    updatePOMasterStatuses(poId, selectedStatus);
     setShowPopup(false); // Close the popup
   };
 
@@ -169,6 +170,63 @@ const POOrderMaster = ({ user }) => {
     } catch (error) {
       console.error("Error updating PO status:", error.message);
       alert("An error occurred while updating the status.");
+    }
+  };
+
+  const updatePOMasterStatuses = async (poId, newStatus) => {
+    try {
+      // Fetch all PO Master data
+      const response = await fetch("http://127.0.0.1:8000/po_master/");
+      if (!response.ok) {
+        throw new Error("Failed to fetch PO Master data.");
+      }
+      const poMasterData = await response.json();
+
+      // Filter entries matching the poId
+      const matchingEntries = poMasterData.filter(
+        (entry) => entry.PO_id === poId
+      );
+
+      if (matchingEntries.length === 0) {
+        alert(`No entries found for PO ID: ${poId}`);
+        return;
+      }
+
+      // Loop through matching entries and update their status
+      for (const entry of matchingEntries) {
+        const payload = {
+          status: newStatus,
+        };
+
+        const updateResponse = await fetch(
+          `http://127.0.0.1:8000/po_master/${entry.id}/`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          }
+        );
+
+        if (updateResponse.ok) {
+          console.log(
+            `Updated PO Master entry ID: ${entry.id} to "${newStatus}"`
+          );
+        } else {
+          const errorData = await updateResponse.json();
+          console.error(
+            `Failed to update PO Master entry ID: ${entry.id}`,
+            errorData
+          );
+          alert(`Error updating entry ID: ${entry.id}`);
+        }
+      }
+
+      alert(`Successfully updated all entries for PO ID: ${poId}`);
+    } catch (error) {
+      console.error("Error updating PO Master statuses:", error.message);
+      alert("An error occurred while updating the PO Master statuses.");
     }
   };
 
