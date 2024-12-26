@@ -300,16 +300,16 @@ const RequestForm = () => {
   };
 
   const handleSubmit = async () => {
-    if (newComponentsAdded || newComponentsDeleted) {
-      // Show a confirmation dialog
-      const saveNewBom = window.confirm("Do you want to save a new BOM?");
+    // if (newComponentsAdded || newComponentsDeleted) {
+    //   // Show a confirmation dialog
+    //   const saveNewBom = window.confirm("Do you want to save a new BOM?");
 
-      if (saveNewBom) {
-        // Show popup for entering details (name, BOM name, BOM ID)
-        setShowPopup(true);
-        return; // Wait for user to fill the popup and handle submission in the popup logic
-      }
-    }
+    //   if (saveNewBom) {
+    //     // Show popup for entering details (name, BOM name, BOM ID)
+    //     setShowPopup(true);
+    //     return; // Wait for user to fill the popup and handle submission in the popup logic
+    //   }
+    // }
 
     // If user doesn't want to save a new BOM or no new components were added/removed
     try {
@@ -367,6 +367,34 @@ const RequestForm = () => {
       );
 
       console.log("All request master entries successfully added.");
+
+      // PATCH request  
+      const projectUpdateResponse = await fetch(
+        `http://127.0.0.1:8000/project/${selectedProject.project_id}/`,
+        {
+          method: "PATCH", 
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            RequestList_id: generatedRequestId, // Pass the generated request_id
+          }),
+        }
+      );
+
+      if (!projectUpdateResponse.ok) {
+        const projectErrorData = await projectUpdateResponse.json();
+        console.error("Error updating the project with request ID:", projectErrorData);
+        alert("Failed to update the project with the request. Please try again.");
+        return;
+      }
+
+      console.log("Project successfully updated with request ID.");
+
+
+
+
+
       setShowMessageBox(true);
       setMessageBoxContent("Request submitted successfully!");
       setTimeout(() => navigate("/"), 3000);
