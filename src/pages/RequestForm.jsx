@@ -366,35 +366,64 @@ const RequestForm = () => {
         )
       );
 
-      console.log("All request master entries successfully added.");
 
-      // PATCH request  
-      const projectUpdateResponse = await fetch(
+      // PATCH to the project endpoint using the generated request ID
+      if (!selectedProject || !selectedProject.project_id) {
+        throw new Error("Project ID is missing.");
+      }
+
+      const patchData = {
+        RequestList_id: generatedRequestId,
+        // project_status: "Updated", // Example field, replace with the actual field if needed
+      };
+
+      const projectPatchResponse = await fetch(
         `http://127.0.0.1:8000/project/${selectedProject.project_id}/`,
         {
-          method: "PATCH", 
+          method: "PATCH",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            RequestList_id: generatedRequestId, // Pass the generated request_id
-          }),
+          body: JSON.stringify(patchData),
         }
       );
 
-      if (!projectUpdateResponse.ok) {
-        const projectErrorData = await projectUpdateResponse.json();
-        console.error("Error updating the project with request ID:", projectErrorData);
-        alert("Failed to update the project with the request. Please try again.");
+      if (!projectPatchResponse.ok) {
+        const patchErrorData = await projectPatchResponse.json();
+        console.error("Error in project PATCH submission:", patchErrorData);
+        alert("Failed to update the project. Please try again.");
         return;
       }
 
-      console.log("Project successfully updated with request ID.");
+                                              ///////////////// Email notification
+      //  // POST to new_submit_notification endpoint
+      //  const notificationData = {
+      //   request_id: generatedRequestId,
+      //   requester_name: requesterName,
+      //   project_id: selectedProject ? selectedProject.project_id : null,
+      // };
+
+      // const notificationResponse = await fetch(
+      //   "http://127.0.0.1:8000/new_submit_notification/",
+      //   {
+      //     method: "POST",
+      //     headers: {
+      //       "Content-Type": "application/json",
+      //     },
+      //     body: JSON.stringify(notificationData),
+      //   }
+      // );
+
+      // if (!notificationResponse.ok) {
+      //   const notificationErrorData = await notificationResponse.json();
+      //   console.error("Error in notification submission:", notificationErrorData);
+      //   alert("Failed to send the notification. Please try again.");
+      //   return;
+      // }
 
 
-
-
-
+      console.log("All request master entries successfully added.");
+      console.log("Project successfully updated with new request ID.");
       setShowMessageBox(true);
       setMessageBoxContent("Request submitted successfully!");
       setTimeout(() => navigate("/"), 3000);

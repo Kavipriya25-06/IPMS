@@ -85,7 +85,6 @@ const RequestDetails = ({ user }) => {
       const uniqueVendors = data.map((vendor) => ({
         vendor_id: vendor.vendor_id,
         vendor_name: vendor.vendor_name,
-        gstn: vendor.gstn,
       }));
       setVendorNames(uniqueVendors);
     } catch (error) {
@@ -122,7 +121,6 @@ const RequestDetails = ({ user }) => {
       (vendor) => vendor.vendor_name === detail.vendor_name
     );
     const vendor_id = selectedVendor ? selectedVendor.vendor_id : null;
-    const vendor_gstn = selectedVendor ? selectedVendor.gstn : null;
 
     if (!vendor_id) {
       alert("Invalid vendor selected.");
@@ -172,7 +170,6 @@ const RequestDetails = ({ user }) => {
       GST: detail.tax,
       total_cost: totalCost,
       assign: true,
-      gstn: vendor_gstn,
     };
 
     try {
@@ -192,7 +189,7 @@ const RequestDetails = ({ user }) => {
           status: detail.status, // Retain existing status
           qty: detail.qty, // Retain existing quantity
           cart_assign: true, // Set cart assign to true
-          assign: true,
+          assign: false,
         };
 
         const updateResponse = await fetch(
@@ -546,31 +543,42 @@ const RequestDetails = ({ user }) => {
     }
   };
 
-  const handleApproval = async (request_id, id) => {
+  const handleApproval = async () => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/request_master/${request_id}/${id}/`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ approve: true }), // Set approve to true
+      const approvalPromises = details.map((detail) =>
+        !detail.approve
+          ? fetch(`http://127.0.0.1:8000/request_master/${detail.request_id}/`, {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ approve: true }),
+            })
+          : null
+      );
+  
+      const results = await Promise.all(approvalPromises);
+  
+      results.forEach((response, index) => {
+        if (response && !response.ok) {
+          console.error(`Failed to approve request: ${details[index].request_id}`);
+        }
       });
   
-      if (response.ok) {
-        // Update the local state
-        setDetails((prevDetails) =>
-          prevDetails.map((detail) =>
-            detail.request_id === request_id ? { ...detail, approve: true } : detail
-          )
-        );
-      } else {
-        const errorDetails = await response.json();
-        console.error("Failed to approve the request:", errorDetails);
-      }
+      setDetails((prevDetails) =>
+        prevDetails.map((detail) => ({
+          ...detail,
+          approve: true,
+        }))
+      );
+  
+      console.log("All requests approved successfully.");
     } catch (error) {
-      console.error("Error approving the request:", error);
+      console.error("Error approving all requests:", error);
+      alert("Failed to approve all requests.");
     }
   };
+  
   
   
 
@@ -589,6 +597,31 @@ const RequestDetails = ({ user }) => {
       {details.length === 0 ? (
         <p>No request details found for this ID.</p>
       ) : (
+
+        <div>
+        {/* Single Approve Button Above the Table */}
+        <div style={{ marginBottom: "10px", textAlign: "right" }}>
+          <button
+            onClick={() => handleApproval()}
+            disabled={details.every((detail) => detail.approve)}
+            style={{
+              padding: "10px 20px",
+              backgroundColor: details.every((detail) => detail.approve)
+                ? "#ddd"
+                : "#4caf50",
+              color: details.every((detail) => detail.approve) ? "#888" : "#fff",
+              cursor: details.every((detail) => detail.approve)
+                ? "not-allowed"
+                : "pointer",
+              border: "none",
+              borderRadius: "5px",
+              fontSize: "16px",
+            }}
+          >
+            {details.every((detail) => detail.approve) ? "Approved" : "Approve All"}
+          </button>
+        </div>
+        
         <table>
           <thead>
             <tr>
@@ -601,7 +634,7 @@ const RequestDetails = ({ user }) => {
               {(isAdmin || isProcurement) && <th>Price</th>}
               <th>Quantity</th>
               <th>Available Quantity</th>
-              <th>Approval</th>
+              {/* <th>Approval</th> */}
               {(isAdmin || isProcurement) && <th>Actions</th>}
             </tr>
           </thead>
@@ -666,7 +699,7 @@ const RequestDetails = ({ user }) => {
                     )}
                     <td>{detail.qty}</td>
                     <td>{availableQty}</td>
-                    <td>
+                    {/* <td>
                       <button
                         onClick={() => handleApproval(detail.request_id, detail.id)} // Ensure `detail.id` is used if `id` is a property of `detail`
                         disabled={detail.approve} // Disable button if already approved
@@ -678,7 +711,7 @@ const RequestDetails = ({ user }) => {
                       >
                         {detail.approve ? "Approved" : "Approve"}
                       </button>
-                    </td>
+                    </td> */}
                     {(isAdmin || isProcurement) && (
                      <td>
                      {detail.assign || detail.qty === 0 ? (
@@ -737,19 +770,19 @@ const RequestDetails = ({ user }) => {
                          fontSize: "14px",
                          borderRadius: "5px",
                          border: "1px solid #ccc",
-                         cursor: detail.assign || !detail.approve ? "not-allowed" : "pointer",
+                         cursor: detail.cart_assign || !detail.approve ? "not-allowed" : "pointer",
                          backgroundColor: detail.cart_assign
                            ? "#f0f0f0"
                            : detail.approve
                            ? "#fff"
                            : "#ddd",
-                         color: detail.assign ? "#888" : "#000",
+                         color: detail.cart_assign ? "#888" : "#000",
                          transition: "background-color 0.3s ease",
                        }}
                        onClick={() => detail.approve && handleOrder(detail)}
-                       disabled={detail.assign || !detail.approve} // Disabled if not approved or already in cart
+                       disabled={detail.cart_assign || !detail.approve} // Disabled if not approved or already in cart
                      >
-                       {detail.assign ? "Added to Cart" : "Add to Cart"}
+                       {detail.cart_assign ? "Added to Cart" : "Add to Cart"}
                      </button>
                    </td>
                     )}
@@ -758,7 +791,7 @@ const RequestDetails = ({ user }) => {
               })}
           </tbody>
         </table>
-      )}
+      
 
       {showPricePopup && pricePopupData && (
         <div className="popup">
@@ -946,6 +979,8 @@ const RequestDetails = ({ user }) => {
         }
       `}</style>
     </div>
+      )}
+  </div>
   );
 };
 
@@ -1054,3 +1089,4 @@ export default RequestDetails;
 //     console.error("Error unassigning serial numbers:", error);
 //   }
 // };
+
