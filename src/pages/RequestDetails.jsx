@@ -85,6 +85,7 @@ const RequestDetails = ({ user }) => {
       const uniqueVendors = data.map((vendor) => ({
         vendor_id: vendor.vendor_id,
         vendor_name: vendor.vendor_name,
+        gstn: vendor.gstn,
       }));
       setVendorNames(uniqueVendors);
     } catch (error) {
@@ -121,6 +122,7 @@ const RequestDetails = ({ user }) => {
       (vendor) => vendor.vendor_name === detail.vendor_name
     );
     const vendor_id = selectedVendor ? selectedVendor.vendor_id : null;
+    const vendor_gstn = selectedVendor ? selectedVendor.gstn : null;
 
     if (!vendor_id) {
       alert("Invalid vendor selected.");
@@ -170,6 +172,7 @@ const RequestDetails = ({ user }) => {
       GST: detail.tax,
       total_cost: totalCost,
       assign: true,
+      gstn: vendor_gstn,
     };
 
     try {
@@ -547,40 +550,42 @@ const RequestDetails = ({ user }) => {
     try {
       const approvalPromises = details.map((detail) =>
         !detail.approve
-          ? fetch(`http://127.0.0.1:8000/request_master/${detail.request_id}/`, {
-              method: "PATCH",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ approve: true }),
-            })
+          ? fetch(
+              `http://127.0.0.1:8000/request_master/${detail.request_id}/`,
+              {
+                method: "PATCH",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ approve: true }),
+              }
+            )
           : null
       );
-  
+
       const results = await Promise.all(approvalPromises);
-  
+
       results.forEach((response, index) => {
         if (response && !response.ok) {
-          console.error(`Failed to approve request: ${details[index].request_id}`);
+          console.error(
+            `Failed to approve request: ${details[index].request_id}`
+          );
         }
       });
-  
+
       setDetails((prevDetails) =>
         prevDetails.map((detail) => ({
           ...detail,
           approve: true,
         }))
       );
-  
+
       console.log("All requests approved successfully.");
     } catch (error) {
       console.error("Error approving all requests:", error);
       alert("Failed to approve all requests.");
     }
   };
-  
-  
-  
 
   return (
     <div>
@@ -597,109 +602,112 @@ const RequestDetails = ({ user }) => {
       {details.length === 0 ? (
         <p>No request details found for this ID.</p>
       ) : (
-
         <div>
-        {/* Single Approve Button Above the Table */}
-        <div style={{ marginBottom: "10px", textAlign: "right" }}>
-          <button
-            onClick={() => handleApproval()}
-            disabled={details.every((detail) => detail.approve)}
-            style={{
-              padding: "10px 20px",
-              backgroundColor: details.every((detail) => detail.approve)
-                ? "#ddd"
-                : "#4caf50",
-              color: details.every((detail) => detail.approve) ? "#888" : "#fff",
-              cursor: details.every((detail) => detail.approve)
-                ? "not-allowed"
-                : "pointer",
-              border: "none",
-              borderRadius: "5px",
-              fontSize: "16px",
-            }}
-          >
-            {details.every((detail) => detail.approve) ? "Approved" : "Approve All"}
-          </button>
-        </div>
-        
-        <table>
-          <thead>
-            <tr>
-              <th>Status</th>
-              <th>Component Type</th>
-              <th>Specification</th>
-              <th>Unit of Measurement</th>
-              <th>Category</th>
-              <th>Vendor Name</th>
-              {(isAdmin || isProcurement) && <th>Price</th>}
-              <th>Quantity</th>
-              <th>Available Quantity</th>
-              {/* <th>Approval</th> */}
-              {(isAdmin || isProcurement) && <th>Actions</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {details
-              .filter((detail) => !detail.order_placed) // Exclude rows where order_placed is true
-              .map((detail) => {
-                const availableQty =
-                  inventoryData[detail.component_id]?.qty || 0;
-                const isAssigned =
-                  assignedComponents[detail.component_id] || detail.qty === 0;
+          {/* Single Approve Button Above the Table */}
+          <div style={{ marginBottom: "10px", textAlign: "right" }}>
+            <button
+              onClick={() => handleApproval()}
+              disabled={details.every((detail) => detail.approve)}
+              style={{
+                padding: "10px 20px",
+                backgroundColor: details.every((detail) => detail.approve)
+                  ? "#ddd"
+                  : "#4caf50",
+                color: details.every((detail) => detail.approve)
+                  ? "#888"
+                  : "#fff",
+                cursor: details.every((detail) => detail.approve)
+                  ? "not-allowed"
+                  : "pointer",
+                border: "none",
+                borderRadius: "5px",
+                fontSize: "16px",
+              }}
+            >
+              {details.every((detail) => detail.approve)
+                ? "Approved"
+                : "Approve All"}
+            </button>
+          </div>
 
-                return (
-                  <tr key={detail.component_id}>
-                    <td>{detail.status}</td>
-                    <td>{detail.component_type}</td>
-                    <td>{detail.component_specification}</td>
-                    <td>{detail.unit_of_measurement}</td>
-                    <td>{detail.category}</td>
-                    <td>
-                      {detail.vendor_name ? (
-                        <span
-                          style={{
-                            cursor: "pointer",
-                            textDecoration: "underline",
-                          }}
-                          onClick={() =>
-                            handleVendorSelection(
-                              detail.component_type,
-                              detail.component_specification,
-                              detail.component_id
-                            )
-                          }
-                        >
-                          {detail.vendor_name}
-                        </span>
-                      ) : (
-                        <span
-                          style={{
-                            cursor: "pointer",
-                            textDecoration: "underline",
-                          }}
-                          onClick={() =>
-                            handleVendorSelection(
-                              detail.component_type,
-                              detail.component_specification,
-                              detail.component_id
-                            )
-                          }
-                        >
-                          Select Vendor
-                        </span>
-                      )}
-                    </td>
+          <table>
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Component Type</th>
+                <th>Specification</th>
+                <th>Unit of Measurement</th>
+                <th>Category</th>
+                <th>Vendor Name</th>
+                {(isAdmin || isProcurement) && <th>Price</th>}
+                <th>Quantity</th>
+                <th>Available Quantity</th>
+                {/* <th>Approval</th> */}
+                {(isAdmin || isProcurement) && <th>Actions</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {details
+                .filter((detail) => !detail.order_placed) // Exclude rows where order_placed is true
+                .map((detail) => {
+                  const availableQty =
+                    inventoryData[detail.component_id]?.qty || 0;
+                  const isAssigned =
+                    assignedComponents[detail.component_id] || detail.qty === 0;
 
-                    {(isAdmin || isProcurement) && (
+                  return (
+                    <tr key={detail.component_id}>
+                      <td>{detail.status}</td>
+                      <td>{detail.component_type}</td>
+                      <td>{detail.component_specification}</td>
+                      <td>{detail.unit_of_measurement}</td>
+                      <td>{detail.category}</td>
                       <td>
-                        {detail.price !== undefined
-                          ? `₹${detail.price}`
-                          : "No Price Available"}
+                        {detail.vendor_name ? (
+                          <span
+                            style={{
+                              cursor: "pointer",
+                              textDecoration: "underline",
+                            }}
+                            onClick={() =>
+                              handleVendorSelection(
+                                detail.component_type,
+                                detail.component_specification,
+                                detail.component_id
+                              )
+                            }
+                          >
+                            {detail.vendor_name}
+                          </span>
+                        ) : (
+                          <span
+                            style={{
+                              cursor: "pointer",
+                              textDecoration: "underline",
+                            }}
+                            onClick={() =>
+                              handleVendorSelection(
+                                detail.component_type,
+                                detail.component_specification,
+                                detail.component_id
+                              )
+                            }
+                          >
+                            Select Vendor
+                          </span>
+                        )}
                       </td>
-                    )}
-                    <td>{detail.qty}</td>
-                    <td>{availableQty}</td>
-                    {/* <td>
+
+                      {(isAdmin || isProcurement) && (
+                        <td>
+                          {detail.price !== undefined
+                            ? `₹${detail.price}`
+                            : "No Price Available"}
+                        </td>
+                      )}
+                      <td>{detail.qty}</td>
+                      <td>{availableQty}</td>
+                      {/* <td>
                       <button
                         onClick={() => handleApproval(detail.request_id, detail.id)} // Ensure `detail.id` is used if `id` is a property of `detail`
                         disabled={detail.approve} // Disable button if already approved
@@ -712,245 +720,260 @@ const RequestDetails = ({ user }) => {
                         {detail.approve ? "Approved" : "Approve"}
                       </button>
                     </td> */}
-                    {(isAdmin || isProcurement) && (
-                     <td>
-                     {detail.assign || detail.qty === 0 ? (
-                       <button
-                         style={{
-                           padding: "10px 20px",
-                           fontSize: "14px",
-                           borderRadius: "5px",
-                           border: "1px solid #ccc",
-                           cursor: detail.assign && detail.approve ? "pointer" : "not-allowed",
-                           marginRight: "10px",
-                           width: "100px",
-                           height: "40px",
-                           textAlign: "center",
-                           transition: "background-color 0.3s ease",
-                         }}
-                         onClick={() => detail.approve && handleUnassign(detail.component_id, detail.qty)}
-                         disabled={!detail.assign || !detail.approve} // Disabled if not approved
-                       >
-                         Assigned
-                       </button>
-                     ) : (
-                       <button
-                         style={{
-                           padding: "10px 20px",
-                           fontSize: "14px",
-                           borderRadius: "5px",
-                           border: "1px solid #ccc",
-                           cursor:
-                             availableQty < detail.qty ||
-                             detail.qty === 0 ||
-                             detail.assign ||
-                             !detail.approve
-                               ? "not-allowed"
-                               : "pointer",
-                           marginRight: "10px",
-                           width: "100px",
-                           height: "40px",
-                           textAlign: "center",
-                           transition: "background-color 0.3s ease",
-                         }}
-                         onClick={() => detail.approve && handleAssign(detail.component_id, detail.qty)}
-                         disabled={
-                           availableQty < detail.qty ||
-                           detail.qty === 0 ||
-                           detail.assign ||
-                           !detail.approve // Disabled if not approved
-                         }
-                       >
-                         Assign
-                       </button>
-                     )}
-                     <button
-                       style={{
-                         padding: "10px 15px",
-                         fontSize: "14px",
-                         borderRadius: "5px",
-                         border: "1px solid #ccc",
-                         cursor: detail.cart_assign || !detail.approve ? "not-allowed" : "pointer",
-                         backgroundColor: detail.cart_assign
-                           ? "#f0f0f0"
-                           : detail.approve
-                           ? "#fff"
-                           : "#ddd",
-                         color: detail.cart_assign ? "#888" : "#000",
-                         transition: "background-color 0.3s ease",
-                       }}
-                       onClick={() => detail.approve && handleOrder(detail)}
-                       disabled={detail.cart_assign || !detail.approve} // Disabled if not approved or already in cart
-                     >
-                       {detail.cart_assign ? "Added to Cart" : "Add to Cart"}
-                     </button>
-                   </td>
-                    )}
-                  </tr>
-                );
-              })}
-          </tbody>
-        </table>
-      
+                      {(isAdmin || isProcurement) && (
+                        <td>
+                          {detail.assign || detail.qty === 0 ? (
+                            <button
+                              style={{
+                                padding: "10px 20px",
+                                fontSize: "14px",
+                                borderRadius: "5px",
+                                border: "1px solid #ccc",
+                                cursor:
+                                  detail.assign && detail.approve
+                                    ? "pointer"
+                                    : "not-allowed",
+                                marginRight: "10px",
+                                width: "100px",
+                                height: "40px",
+                                textAlign: "center",
+                                transition: "background-color 0.3s ease",
+                              }}
+                              onClick={() =>
+                                detail.approve &&
+                                handleUnassign(detail.component_id, detail.qty)
+                              }
+                              disabled={!detail.assign || !detail.approve} // Disabled if not approved
+                            >
+                              Assigned
+                            </button>
+                          ) : (
+                            <button
+                              style={{
+                                padding: "10px 20px",
+                                fontSize: "14px",
+                                borderRadius: "5px",
+                                border: "1px solid #ccc",
+                                cursor:
+                                  availableQty < detail.qty ||
+                                  detail.qty === 0 ||
+                                  detail.assign ||
+                                  !detail.approve
+                                    ? "not-allowed"
+                                    : "pointer",
+                                marginRight: "10px",
+                                width: "100px",
+                                height: "40px",
+                                textAlign: "center",
+                                transition: "background-color 0.3s ease",
+                              }}
+                              onClick={() =>
+                                detail.approve &&
+                                handleAssign(detail.component_id, detail.qty)
+                              }
+                              disabled={
+                                availableQty < detail.qty ||
+                                detail.qty === 0 ||
+                                detail.assign ||
+                                !detail.approve // Disabled if not approved
+                              }
+                            >
+                              Assign
+                            </button>
+                          )}
+                          <button
+                            style={{
+                              padding: "10px 15px",
+                              fontSize: "14px",
+                              borderRadius: "5px",
+                              border: "1px solid #ccc",
+                              cursor:
+                                detail.cart_assign || !detail.approve
+                                  ? "not-allowed"
+                                  : "pointer",
+                              backgroundColor: detail.cart_assign
+                                ? "#f0f0f0"
+                                : detail.approve
+                                ? "#fff"
+                                : "#ddd",
+                              color: detail.cart_assign ? "#888" : "#000",
+                              transition: "background-color 0.3s ease",
+                            }}
+                            onClick={() =>
+                              detail.approve && handleOrder(detail)
+                            }
+                            disabled={detail.cart_assign || !detail.approve} // Disabled if not approved or already in cart
+                          >
+                            {detail.cart_assign
+                              ? "Added to Cart"
+                              : "Add to Cart"}
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+            </tbody>
+          </table>
 
-      {showPricePopup && pricePopupData && (
-        <div className="popup">
-          <div className="popup-content">
-            <h3>Vendor Details</h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>Vendor Name</th>
-                  <th>Price</th>
-                  <th>Tax</th>
-                  <th>Select</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pricePopupData.map((vendor) => (
-                  <tr key={vendor.vendor_id}>
-                    <td>{vendor.vendor_name}</td>
-                    <td>
-                      {vendor.latest_price !== null
-                        ? `₹${vendor.latest_price}`
-                        : "N/A"}
-                    </td>
-                    <td>{vendor.tax ? `${vendor.tax}%` : "N/A"}</td>
-                    <td>
-                      <input
-                        type="radio"
-                        name="vendorSelection"
-                        value={vendor.vendor_id}
-                        onChange={() => {
-                          handleVendorChange(
-                            vendor.component_id, // Component ID
-                            vendor.vendor_id,
-                            vendor.vendor_name,
-                            vendor.latest_price || "N/A", // Handle null price
-                            vendor.tax || "N/A"
-                          );
-                          setShowPricePopup(false); // Close the popup
+          {showPricePopup && pricePopupData && (
+            <div className="popup">
+              <div className="popup-content">
+                <h3>Vendor Details</h3>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Vendor Name</th>
+                      <th>Price</th>
+                      <th>Tax</th>
+                      <th>Select</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pricePopupData.map((vendor) => (
+                      <tr key={vendor.vendor_id}>
+                        <td>{vendor.vendor_name}</td>
+                        <td>
+                          {vendor.latest_price !== null
+                            ? `₹${vendor.latest_price}`
+                            : "N/A"}
+                        </td>
+                        <td>{vendor.tax ? `${vendor.tax}%` : "N/A"}</td>
+                        <td>
+                          <input
+                            type="radio"
+                            name="vendorSelection"
+                            value={vendor.vendor_id}
+                            onChange={() => {
+                              handleVendorChange(
+                                vendor.component_id, // Component ID
+                                vendor.vendor_id,
+                                vendor.vendor_name,
+                                vendor.latest_price || "N/A", // Handle null price
+                                vendor.tax || "N/A"
+                              );
+                              setShowPricePopup(false); // Close the popup
+                            }}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <button onClick={() => setShowPricePopup(false)}>Close</button>
+              </div>
+            </div>
+          )}
+
+          {showVendorPopup && (
+            <div className="popup">
+              <div className="popup-content">
+                <h3>Select Vendor</h3>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Select</th>
+                      <th>Vendor Name</th>
+                      <th>Price</th>
+                      <th>Tax</th>
+                      <th>Total Price</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {vendorPopupData.map((vendor, index) => (
+                      <tr key={index}>
+                        <td>
+                          <input
+                            type="radio"
+                            name="vendor"
+                            value={vendor.vendor_id}
+                            onChange={() => {
+                              // Update selected vendor in details
+                              setDetails((prevDetails) =>
+                                prevDetails.map((detail) =>
+                                  detail.component_id === selectedComponentId
+                                    ? {
+                                        ...detail,
+                                        vendor_name: vendor.vendor_name,
+                                        vendor_id: vendor.vendor_id,
+                                      }
+                                    : detail
+                                )
+                              );
+                              setShowVendorPopup(false); // Close the popup
+                            }}
+                          />
+                        </td>
+                        <td>{vendor.vendor_name}</td>
+                        <td>
+                          {vendor.prices.length > 0
+                            ? vendor.prices.map((price, i) => (
+                                <div key={i}>₹{price.price}</div>
+                              ))
+                            : "N/A"}
+                        </td>
+                        <td>
+                          {vendor.prices.length > 0
+                            ? vendor.prices.map((price, i) => (
+                                <div key={i}>{price.tax}%</div>
+                              ))
+                            : "N/A"}
+                        </td>
+                        <td>
+                          {vendor.prices.length > 0
+                            ? vendor.prices.map((price, i) => (
+                                <div key={i}>
+                                  ₹
+                                  {(
+                                    price.price +
+                                    (price.price * price.tax) / 100
+                                  ).toFixed(2)}
+                                </div>
+                              ))
+                            : "N/A"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <button onClick={() => setShowVendorPopup(false)}>Close</button>
+              </div>
+            </div>
+          )}
+
+          {showSerialPopup && (
+            <div className="popup">
+              <div className="modal-content">
+                <h3>Select Serial Numbers</h3>
+                <ul>
+                  {serialNumbers.map((serial, index) => (
+                    <li key={index}>
+                      <button
+                        onClick={() => handleSerialSelection(serial)}
+                        style={{
+                          color: selectedSerialNumbers.includes(serial)
+                            ? "blue"
+                            : "black",
+                          cursor: "pointer",
                         }}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <button onClick={() => setShowPricePopup(false)}>Close</button>
-          </div>
-        </div>
-      )}
+                      >
+                        {serial}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  onClick={handleConfirmAssignment}
+                  disabled={selectedSerialNumbers.length !== requiredQty}
+                >
+                  Confirm Assignment
+                </button>
+                <button onClick={() => setShowSerialPopup(false)}>Close</button>
+              </div>
+            </div>
+          )}
 
-      {showVendorPopup && (
-        <div className="popup">
-          <div className="popup-content">
-            <h3>Select Vendor</h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>Select</th>
-                  <th>Vendor Name</th>
-                  <th>Price</th>
-                  <th>Tax</th>
-                  <th>Total Price</th>
-                </tr>
-              </thead>
-              <tbody>
-                {vendorPopupData.map((vendor, index) => (
-                  <tr key={index}>
-                    <td>
-                      <input
-                        type="radio"
-                        name="vendor"
-                        value={vendor.vendor_id}
-                        onChange={() => {
-                          // Update selected vendor in details
-                          setDetails((prevDetails) =>
-                            prevDetails.map((detail) =>
-                              detail.component_id === selectedComponentId
-                                ? {
-                                    ...detail,
-                                    vendor_name: vendor.vendor_name,
-                                    vendor_id: vendor.vendor_id,
-                                  }
-                                : detail
-                            )
-                          );
-                          setShowVendorPopup(false); // Close the popup
-                        }}
-                      />
-                    </td>
-                    <td>{vendor.vendor_name}</td>
-                    <td>
-                      {vendor.prices.length > 0
-                        ? vendor.prices.map((price, i) => (
-                            <div key={i}>₹{price.price}</div>
-                          ))
-                        : "N/A"}
-                    </td>
-                    <td>
-                      {vendor.prices.length > 0
-                        ? vendor.prices.map((price, i) => (
-                            <div key={i}>{price.tax}%</div>
-                          ))
-                        : "N/A"}
-                    </td>
-                    <td>
-                      {vendor.prices.length > 0
-                        ? vendor.prices.map((price, i) => (
-                            <div key={i}>
-                              ₹
-                              {(
-                                price.price +
-                                (price.price * price.tax) / 100
-                              ).toFixed(2)}
-                            </div>
-                          ))
-                        : "N/A"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <button onClick={() => setShowVendorPopup(false)}>Close</button>
-          </div>
-        </div>
-      )}
-
-      {showSerialPopup && (
-        <div className="popup">
-          <div className="modal-content">
-            <h3>Select Serial Numbers</h3>
-            <ul>
-              {serialNumbers.map((serial, index) => (
-                <li key={index}>
-                  <button
-                    onClick={() => handleSerialSelection(serial)}
-                    style={{
-                      color: selectedSerialNumbers.includes(serial)
-                        ? "blue"
-                        : "black",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {serial}
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <button
-              onClick={handleConfirmAssignment}
-              disabled={selectedSerialNumbers.length !== requiredQty}
-            >
-              Confirm Assignment
-            </button>
-            <button onClick={() => setShowSerialPopup(false)}>Close</button>
-          </div>
-        </div>
-      )}
-
-      <style>{`
+          <style>{`
         .modal {
           position: fixed;
           top: 0;
@@ -978,9 +1001,9 @@ const RequestDetails = ({ user }) => {
           margin-top: 10px;
         }
       `}</style>
-    </div>
+        </div>
       )}
-  </div>
+    </div>
   );
 };
 
@@ -1089,4 +1112,3 @@ export default RequestDetails;
 //     console.error("Error unassigning serial numbers:", error);
 //   }
 // };
-
