@@ -546,44 +546,85 @@ const RequestDetails = ({ user }) => {
     }
   };
 
+  // const handleApproval = async () => {
+  //   try {
+  //     const approvalPromises = details.map((detail) =>
+  //       !detail.approve
+  //         ? fetch(
+  //             `http://127.0.0.1:8000/request_master/${detail.request_id}/`,
+  //             {
+  //               method: "PATCH",
+  //               headers: {
+  //                 "Content-Type": "application/json",
+  //               },
+  //               body: JSON.stringify({ approve: true }),
+  //             }
+  //           )
+  //         : null
+  //     );
+
+  //     const results = await Promise.all(approvalPromises);
+
+  //     results.forEach((response, index) => {
+  //       if (response && !response.ok) {
+  //         console.error(
+  //           `Failed to approve request: ${details[index].request_id}`
+  //         );
+  //       }
+  //     });
+
+  //     setDetails((prevDetails) =>
+  //       prevDetails.map((detail) => ({
+  //         ...detail,
+  //         approve: true,
+  //       }))
+  //     );
+
+  //     console.log("All requests approved successfully.");
+  //   } catch (error) {
+  //     console.error("Error approving all requests:", error);
+  //     alert("Failed to approve all requests.");
+  //   }
+  // };
+
   const handleApproval = async () => {
     try {
+      // Iterate over each detail and send a PATCH request
       const approvalPromises = details.map((detail) =>
-        !detail.approve
-          ? fetch(
-              `http://127.0.0.1:8000/request_master/${detail.request_id}/`,
-              {
-                method: "PATCH",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ approve: true }),
-              }
-            )
-          : null
+        fetch(
+          `http://127.0.0.1:8000/request_master/${detail.request_id}/${detail.id}/`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ approve: true }),
+          }
+        )
       );
 
+      // Wait for all PATCH requests to complete
       const results = await Promise.all(approvalPromises);
 
-      results.forEach((response, index) => {
-        if (response && !response.ok) {
-          console.error(
-            `Failed to approve request: ${details[index].request_id}`
-          );
-        }
-      });
+      // Check if any request failed
+      const failedRequests = results.filter((response) => !response.ok);
+      if (failedRequests.length > 0) {
+        console.error("Some requests failed:", failedRequests);
+        alert("Failed to approve some items.");
+      } else {
+        console.log("All components approved successfully.");
 
-      setDetails((prevDetails) =>
-        prevDetails.map((detail) => ({
-          ...detail,
-          approve: true,
-        }))
-      );
-
-      console.log("All requests approved successfully.");
+        // Update the local state
+        setDetails((prevDetails) =>
+          prevDetails.map((detail) => ({
+            ...detail,
+            approve: true, // Update approve status to true
+          }))
+        );
+      }
     } catch (error) {
-      console.error("Error approving all requests:", error);
-      alert("Failed to approve all requests.");
+      console.error("Error approving components:", error);
+      alert("An error occurred while approving the components.");
     }
   };
 
