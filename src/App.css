@@ -308,11 +308,70 @@ tbody tr:hover {
   margin-top: 10px;
 }
 
-.tag {
+/* .tag {
   background-color: #ff9800;
   color: white;
   padding: 2px 5px;
   margin: 0 2px;
   border-radius: 4px;
   display: inline-block;
+} */
+
+/* .tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  margin: 5px;
+  background-color: #8ddc55;
+  border-radius: 15px;
+  font-size: 14px;
+  position: relative;
+}
+
+.tag button {
+  margin-left: 5px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: red;
+  font-weight: bold;
+  position: absolute;
+  top: -5px;
+  right: -5px;
+} */
+
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  margin: 5px;
+  background-color: #f58720;
+  color: #f1f1f1;
+  border-radius: 15px;
+  font-size: 14px;
+  position: relative;
+}
+
+.tag button {
+  margin-left: 5px;
+  background: red; /* Bubble background color */
+  color: white; /* Text color for the "X" */
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+  width: 12px; /* Make it a circle */
+  height: 12px; /* Make it a circle */
+  border-radius: 50%; /* Ensure the bubble is round */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: -5px;
+  right: -5px;
+}
+
+.tag button:hover {
+  background: darkred; /* Change color on hover */
 }

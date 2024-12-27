@@ -60,7 +60,8 @@ const Component = () => {
     const componentTags = tags.filter(
       (tag) => tag.component_id === componentId
     );
-    return componentTags.map((tag) => tag.tags); //
+    // return componentTags.map((tag) => tag.tags); //
+    return componentTags; //
   };
 
   const handleAddTagClick = (componentId) => {
@@ -97,6 +98,25 @@ const Component = () => {
     }
   };
 
+  const deleteTag = async (tagId, componentId) => {
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/tags/${tagId}/`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        // Update the tags state after deletion
+        setTags(
+          (prevTags) => prevTags.filter((tag) => tag.id !== tagId) // Remove the deleted tag from the state
+        );
+      } else {
+        console.error("Failed to delete the tag:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error deleting the tag:", error);
+    }
+  };
+
   const filterComponentsBySearch = () => {
     if (!searchTerm.trim()) {
       // If no search term, show all components
@@ -109,7 +129,7 @@ const Component = () => {
     const filtered = components.filter((component) => {
       const componentTags = getTagsForComponent(component.component_id);
       return componentTags.some((tag) =>
-        tag.toLowerCase().includes(lowerCaseSearchTerm)
+        tag.tags.toLowerCase().includes(lowerCaseSearchTerm)
       );
     });
 
@@ -161,20 +181,28 @@ const Component = () => {
                 <td>
                   <div>
                     {getTagsForComponent(component.component_id).length > 0 ? (
-                      getTagsForComponent(component.component_id).map(
-                        (tag, index) => (
-                          <span key={index} className="tag">
-                            {tag}
-                          </span>
-                        )
-                      )
+                      getTagsForComponent(component.component_id).map((tag) => (
+                        <span key={tag.id} className="tag">
+                          {tag.tags}
+                          <button
+                            onClick={() =>
+                              deleteTag(tag.id, component.component_id)
+                            }
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))
                     ) : (
                       <span>No tags available</span>
                     )}
                     <button
                       style={{
                         marginLeft: "8px",
-                        background: "none",
+                        background: "e2dede",
+                        width: "24px",
+                        height: "24px",
+                        borderRadius: "50%",
                         border: "none",
                         cursor: "pointer",
                         color: "blue",
