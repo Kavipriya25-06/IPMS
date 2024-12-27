@@ -34,7 +34,7 @@ const RequestDetails = ({ user }) => {
     fetchRequestDetails();
     fetchInventoryData();
     fetchVendorList();
-    fetchCartItems();
+    // fetchCartItems();
   }, [requestId]);
 
   const fetchRequestDetails = async () => {

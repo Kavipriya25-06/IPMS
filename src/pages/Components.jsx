@@ -71,6 +71,15 @@ const Component = () => {
   const handleAddTag = async () => {
     if (!newTag) return;
 
+    // Check if the tag already exists for the selected component
+    const existingTags = getTagsForComponent(selectedComponent);
+    const isDuplicate = existingTags.some((tag) => tag.tags === newTag);
+
+    if (isDuplicate) {
+      alert("This tag already exists for the selected component.");
+      return;
+    }
+
     const payload = {
       component_id: selectedComponent,
       tags: newTag,
