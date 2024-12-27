@@ -722,33 +722,29 @@ const Inward = () => {
         return;
       }
 
+      // ////////////////////////////////// Email Notification
 
-// ////////////////////////////////// Email Notification
+      //        // POST to inward_send_email endpoint
+      //        const emailNotificationData = {
+      //         inward_id: item.inward_id,
+      //         message: "Item successfully moved to inventory.",
+      //       };
 
-//        // POST to inward_send_email endpoint
-//        const emailNotificationData = {
-//         inward_id: item.inward_id,
-//         message: "Item successfully moved to inventory.",
-//       };
+      //       const emailResponse = await fetch(
+      //         "http://127.0.0.1:8000/inward_send_email/",
+      //         {
+      //           method: "POST",
+      //           headers: { "Content-Type": "application/json" },
+      //           body: JSON.stringify(emailNotificationData),
+      //         }
+      //       );
 
-//       const emailResponse = await fetch(
-//         "http://127.0.0.1:8000/inward_send_email/",
-//         {
-//           method: "POST",
-//           headers: { "Content-Type": "application/json" },
-//           body: JSON.stringify(emailNotificationData),
-//         }
-//       );
-
-//       if (!emailResponse.ok) {
-//         const emailErrorDetails = await emailResponse.json();
-//         console.error("Error sending email notification:", emailErrorDetails);
-//         alert("Failed to send email notification.");
-//         return;
-//       }
-
-
-
+      //       if (!emailResponse.ok) {
+      //         const emailErrorDetails = await emailResponse.json();
+      //         console.error("Error sending email notification:", emailErrorDetails);
+      //         alert("Failed to send email notification.");
+      //         return;
+      //       }
 
       fetchInwardData(); // Refresh data after posting
     } catch (error) {

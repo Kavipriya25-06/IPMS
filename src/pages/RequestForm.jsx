@@ -366,7 +366,6 @@ const RequestForm = () => {
         )
       );
 
-
       // PATCH to the project endpoint using the generated request ID
       if (!selectedProject || !selectedProject.project_id) {
         throw new Error("Project ID is missing.");
@@ -395,7 +394,7 @@ const RequestForm = () => {
         return;
       }
 
-                                              ///////////////// Email notification
+      ///////////////// Email notification
       //  // POST to new_submit_notification endpoint
       //  const notificationData = {
       //   request_id: generatedRequestId,
@@ -420,7 +419,6 @@ const RequestForm = () => {
       //   alert("Failed to send the notification. Please try again.");
       //   return;
       // }
-
 
       console.log("All request master entries successfully added.");
       console.log("Project successfully updated with new request ID.");
@@ -586,8 +584,6 @@ const RequestForm = () => {
             </select>
           </div>
 
-
-              
           <div style={{ marginBottom: "15px", width: "100%" }}>
             <label style={{ display: "block", marginBottom: "5px" }}>
               Select Project:
@@ -609,8 +605,6 @@ const RequestForm = () => {
               ))}
             </select>
           </div>
-
-
         </div>
       </div>
 
