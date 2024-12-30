@@ -27,6 +27,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import Projects from "./pages/Projects";
 import Cart from "./pages/Cart";
 import Roles from "./pages/Roles";
+import AddTags from "./pages/AddTags";
 
 // import { useAuth } from "./AuthContext";
 // import PODetails from "./pages/PODetails";
@@ -157,6 +158,15 @@ function App() {
             </li>
             <li className={isTabEnabled(["Admin"]) ? "" : "disabled"}>
               <NavLink to="/roles">Roles</NavLink>
+            </li>
+            <li
+              className={
+                isTabEnabled(["Admin", "Inventory", "Procurement"])
+                  ? ""
+                  : "disabled"
+              }
+            >
+              <NavLink to="/addtags">Add Tags</NavLink>
             </li>
           </ul>
         </nav>
@@ -312,6 +322,16 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={["Admin"]}>
                 <Roles />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/addtags"
+            element={
+              <ProtectedRoute
+                allowedRoles={["Admin", "Inventory", "Procurement"]}
+              >
+                <AddTags />
               </ProtectedRoute>
             }
           />
