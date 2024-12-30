@@ -23,9 +23,7 @@ const Requests = () => {
   return (
     <div>
       <h2>Request List</h2>
-      <button onClick={handleNewRequest} style={{ marginBottom: "10px" }}>
-        New Request
-      </button>
+
       <table>
         <thead>
           <tr>
@@ -58,6 +56,9 @@ const Requests = () => {
           ))}
         </tbody>
       </table>
+      <button onClick={handleNewRequest} style={{ marginTop: "10px" }}>
+        New Request
+      </button>
     </div>
   );
 };

@@ -417,8 +417,7 @@ const Vendors = () => {
 
   return (
     <div>
-      <h4>Vendors</h4>
-      <button onClick={() => setIsAddingVendor(true)}>Add Vendor</button>
+      <h2>Vendors</h2>
 
       {/* Modal for Adding New Vendor */}
       <Modal isOpen={isAddingVendor} onClose={() => setIsAddingVendor(false)}>
@@ -614,6 +613,12 @@ const Vendors = () => {
           })}
         </tbody>
       </table>
+      <button
+        onClick={() => setIsAddingVendor(true)}
+        style={{ marginTop: "10px" }}
+      >
+        Add Vendor
+      </button>
 
       {showPocPopup && (
         <div className="popup">

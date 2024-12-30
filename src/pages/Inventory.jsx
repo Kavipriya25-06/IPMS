@@ -360,7 +360,7 @@ const Inventory = () => {
 
   return (
     <div className="inventory-container">
-      <h4>Inventory Data</h4>
+      <h2>Inventory Data</h2>
       {/* <button onClick={handleAddItemClick} className="add-item-button">
         Add Item
       </button> */}
