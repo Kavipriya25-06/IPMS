@@ -290,7 +290,7 @@ const RequestForm = () => {
       console.log("All request master entries successfully added.");
       setShowMessageBox(true);
       setMessageBoxContent("Request and BOM added successfully!");
-      setTimeout(() => navigate("/"), 3000);
+      setTimeout(() => navigate("/requests"), 3000);
     } catch (error) {
       console.error("Error in submission process:", error);
       alert("An error occurred during submission. Please try again.");
@@ -424,7 +424,7 @@ const RequestForm = () => {
       console.log("Project successfully updated with new request ID.");
       setShowMessageBox(true);
       setMessageBoxContent("Request submitted successfully!");
-      setTimeout(() => navigate("/"), 3000);
+      setTimeout(() => navigate("/requests"), 3000);
     } catch (error) {
       console.error("Error in submission process:", error);
       alert("An error occurred during submission. Please try again.");
@@ -704,7 +704,7 @@ const RequestForm = () => {
         Submit Request
       </button>
       <button
-        onClick={() => navigate("/")}
+        onClick={() => navigate("/requests")}
         style={{
           padding: "10px 20px",
           borderRadius: "5px",
