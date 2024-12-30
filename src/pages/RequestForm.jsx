@@ -641,7 +641,7 @@ const RequestForm = () => {
                             key={comp.component_id}
                             value={comp.component_id}
                           >
-                            {comp.component_type}
+                            {`${comp.component_type} - ${comp.component_specification}`}
                           </option>
                         ))}
                       </select>
