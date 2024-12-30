@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from "react";
 import config from "../config"; // Import config for API endpoints
+import "../App.css";
 
 const Component = () => {
   const [components, setComponents] = useState([]);
@@ -147,24 +148,19 @@ const Component = () => {
 
   return (
     <div>
-      <div style={{ alignItems: "center" }}>
-        <div>
-          <h2>Component List</h2>
-        </div>
-        {/* Search Bar */}
-        <div style={{ marginBottom: "20px" }}>
+      <div className="header">
+        <h2>Component List</h2>
+        <div className="search-bar-container">
           <input
             type="text"
+            className="search-bar"
             placeholder="Search by tag..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              padding: "8px",
-              width: "300px",
-              border: "1px solid #ccc",
-              borderRadius: "4px",
-            }}
           />
+          <span className="search-icon">
+            <i className="fa fa-search" aria-hidden="true"></i>
+          </span>
         </div>
       </div>
       <table>

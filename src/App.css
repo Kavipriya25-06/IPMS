@@ -208,6 +208,15 @@ tbody tr:hover {
   color: #333;
 }
 
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #ddd;
+}
+
 /* Modal Input Fields */
 .modal input[type="text"],
 .modal input[type="number"],
@@ -340,7 +349,6 @@ tbody tr:hover {
   right: -5px;
 } */
 
-
 .tag {
   display: inline-flex;
   align-items: center;
@@ -374,4 +382,39 @@ tbody tr:hover {
 
 .tag button:hover {
   background: darkred; /* Change color on hover */
+}
+
+.search-bar-container {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto 20px;
+}
+
+.search-bar {
+  width: 100%;
+  padding: 10px 40px 10px 15px;
+  border: 2px solid #ccc;
+  border-radius: 25px;
+  font-size: 16px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.3s;
+}
+
+.search-bar:focus {
+  border-color: #007bff;
+}
+
+.search-icon {
+  position: absolute;
+  top: 50%;
+  right: 15px;
+  transform: translateY(-50%);
+  color: #888;
+  font-size: 18px;
+}
+
+.search-icon i {
+  pointer-events: none; /* Prevent clicking on the icon */
 }
