@@ -155,7 +155,9 @@ const Roles = () => {
                     name={`role-${user.id}`}
                     value={role}
                     checked={user.role === role}
-                    onChange={() => handleRoleChangeConfirmation(user.id, role, user.email)}
+                    onChange={() =>
+                      handleRoleChangeConfirmation(user.id, role, user.email)
+                    }
                   />
                 </td>
               ))}

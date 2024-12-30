@@ -216,7 +216,6 @@
 
 // export default Inventory;
 
-
 import React, { useState, useEffect } from "react";
 
 const Inventory = () => {
@@ -288,7 +287,6 @@ const Inventory = () => {
     return acc;
   }, {});
 
-
   const handleAddItemClick = () => {
     setShowForm(true);
   };
@@ -359,7 +357,7 @@ const Inventory = () => {
     setCreatedDate("");
     setShowForm(false);
   };
- 
+
   return (
     <div className="inventory-container">
       <h4>Inventory Data</h4>
@@ -430,12 +428,14 @@ const Inventory = () => {
 
               return (
                 <React.Fragment key={componentId}>
-                <tr
+                  <tr
                     onClick={() => toggleExpand(componentId)}
                     className="clickable-row"
                     style={{
                       cursor: "pointer",
-                      backgroundColor: componentRows.some(row => !row.status) ? "white" : "", // Highlight disabled rows
+                      backgroundColor: componentRows.some((row) => !row.status)
+                        ? "white"
+                        : "", // Highlight disabled rows
                     }}
                   >
                     <td
@@ -452,7 +452,9 @@ const Inventory = () => {
                     <td>{component.component_specification || ""}</td>
                     <td>{firstRow.UOM || ""}</td>
                     <td>{firstRow.vendor_name || ""}</td>
-                    <td>{firstRow.create_date || new Date().toLocaleDateString()}</td>
+                    <td>
+                      {firstRow.create_date || new Date().toLocaleDateString()}
+                    </td>
                     <td>{firstRow.price}</td>
                   </tr>
 
@@ -473,7 +475,9 @@ const Inventory = () => {
                         <td>{row.specification || ""}</td>
                         <td>{row.UOM || ""}</td>
                         <td>{row.vendor_name || ""}</td>
-                        <td>{row.create_date || new Date().toLocaleDateString()}</td>
+                        <td>
+                          {row.create_date || new Date().toLocaleDateString()}
+                        </td>
                         <td>{row.price}</td>
                       </tr>
                     ))}
