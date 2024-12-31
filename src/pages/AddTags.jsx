@@ -31,6 +31,15 @@ const AddTags = () => {
     }
   };
 
+  // Helper function to get tags for a component
+  const getTagsForComponent = (componentId) => {
+    const componentTags = availableTags.filter(
+      (tag) => tag.component_id === componentId
+    );
+    // return componentTags.map((tag) => tag.tags); //
+    return componentTags; //
+  };
+
   const fetchComponents = async () => {
     try {
       const response = await fetch("http://127.0.0.1:8000/component/");
@@ -77,9 +86,49 @@ const AddTags = () => {
   };
 
   return (
-    <div style={{ display: "block" }}>
+    <div className="addingtags">
       <div>
         <h2>Available Meta tags</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Component Type</th>
+              <th>Specification</th>
+              <th>UOM</th>
+              <th>Category</th>
+              <th>Component ID</th>
+              <th>Tags</th>
+            </tr>
+          </thead>
+          <tbody>
+            {components.length > 0 ? (
+              components.map((component) => (
+                <tr key={component.component_id}>
+                  <td>{component.component_type}</td>
+                  <td>{component.component_specification}</td>
+                  <td>{component.unit_of_measurement}</td>
+                  <td>{component.category}</td>
+                  <td>{component.component_id}</td>
+                  <td>
+                    {getTagsForComponent(component.component_id).length > 0 ? (
+                      getTagsForComponent(component.component_id).map((tag) => (
+                        <span key={tag.id} className="metatag">
+                          {tag.tags}
+                        </span>
+                      ))
+                    ) : (
+                      <span>No tags available</span>
+                    )}
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td></td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
       <div className="assign-meta-tags-container">
         <h2>Assign Meta Tags</h2>

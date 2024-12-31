@@ -208,15 +208,6 @@ tbody tr:hover {
   color: #333;
 }
 
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0px 0px;
-  background-color: #ffffff;
-  border-bottom: 1px solid #ddd;
-}
-
 /* Modal Input Fields */
 .modal input[type="text"],
 .modal input[type="number"],
@@ -456,7 +447,7 @@ tbody tr:hover {
   display: block;
   width: 100%;
   padding: 10px;
-  background-color: #007bff;
+  background-color: #14bf36;
   color: #fff;
   font-size: 16px;
   border: none;
@@ -466,11 +457,37 @@ tbody tr:hover {
 }
 
 .add-tag-button:hover {
-  background-color: #0056b3;
+  background-color: #4bdc3d;
 }
 
 .feedback-message {
   margin-top: 15px;
   text-align: center;
   color: #007bff;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0px 0px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #ddd;
+}
+
+.addingtags {
+  display: flex;
+  
+}
+
+.metatag {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  margin: 5px;
+  background-color: #f58720;
+  color: #f1f1f1;
+  border-radius: 15px;
+  font-size: 14px;
+  position: relative;
 }
