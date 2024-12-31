@@ -379,7 +379,7 @@ tbody tr:hover {
   position: relative;
   width: 100%;
   max-width: 400px;
-  margin: 0 auto 0px;
+  margin: 0px;
 }
 
 .search-bar {
@@ -412,7 +412,7 @@ tbody tr:hover {
 
 .assign-meta-tags-container {
   max-width: 600px;
-  margin: 20px auto;
+  margin: 20px;
   padding: 20px;
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -477,7 +477,7 @@ tbody tr:hover {
 
 .addingtags {
   display: flex;
-  
+  justify-content: space-between;
 }
 
 .metatag {
