@@ -56,7 +56,7 @@ function App() {
           style={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "center",
+            alignItems: "flex-start",
           }}
         >
           <h1>
@@ -69,11 +69,13 @@ function App() {
           </h1>
           {user ? (
             <div style={{ textAlign: "right" }}>
-              <p>
+              <p style={{ border: 0, marginBlockStart: 0, marginBlockEnd: 0 }}>
                 Logged in as: <strong>{user.email}</strong> (
                 <em>{user.role}</em>)
               </p>
-              <button onClick={logout}>Logout</button>
+              <div style={{ paddingBottom: 10, paddingTop: 10 }}>
+                <button onClick={logout}>Logout</button>
+              </div>
             </div>
           ) : null}
         </header>
