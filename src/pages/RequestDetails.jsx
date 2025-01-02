@@ -667,7 +667,7 @@ const RequestDetails = ({ user }) => {
             >
               {details.every((detail) => detail.approve)
                 ? "Approved"
-                : "Approve All"}
+                : "Approve Request"}
             </button>
           </div>
 
