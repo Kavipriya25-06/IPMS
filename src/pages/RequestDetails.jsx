@@ -879,7 +879,9 @@ const RequestDetails = ({ user }) => {
                             ? `₹${vendor.latest_price}`
                             : "N/A"}
                         </td>
-                        <td>{vendor.tax ? `${vendor.tax}%` : "N/A"}</td>
+                        <td>
+                          {vendor.latest_tax ? `${vendor.latest_tax}%` : "N/A"}
+                        </td>
                         <td>
                           <input
                             type="radio"
@@ -891,7 +893,7 @@ const RequestDetails = ({ user }) => {
                                 vendor.vendor_id,
                                 vendor.vendor_name,
                                 vendor.latest_price || "N/A", // Handle null price
-                                vendor.tax || "N/A"
+                                vendor.latest_tax || "N/A"
                               );
                               setShowPricePopup(false); // Close the popup
                             }}
