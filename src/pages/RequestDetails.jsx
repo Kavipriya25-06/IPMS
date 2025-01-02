@@ -24,6 +24,8 @@ const RequestDetails = ({ user }) => {
   const [vendorPopupData, setVendorPopupData] = useState([]); // Store vendors for the popup
   const [pricePopupData, setPricePopupData] = useState(null);
   const [showPricePopup, setShowPricePopup] = useState(false);
+  const [project, setProject] = useState([]);
+  const [requestStatus, setRequestStatus] = useState([]);
 
   // The user object is now passed as a prop
   const isAdmin = user?.role === "Admin";
@@ -34,8 +36,15 @@ const RequestDetails = ({ user }) => {
     fetchRequestDetails();
     fetchInventoryData();
     fetchVendorList();
+    fetchRequestStatus();
     // fetchCartItems();
   }, [requestId]);
+
+  useEffect(() => {
+    if (details.length) {
+      fetchProjectDetails();
+    }
+  }, [details]);
 
   const fetchRequestDetails = async () => {
     try {
@@ -45,6 +54,35 @@ const RequestDetails = ({ user }) => {
         (detail) => String(detail.request_id) === String(requestId)
       );
       setDetails(filteredDetails);
+    } catch (error) {
+      console.error("Error fetching request details:", error);
+    }
+  };
+
+  const fetchProjectDetails = async () => {
+    // console.log("first details", details);
+    try {
+      const response = await fetch("http://127.0.0.1:8000/project/");
+      const data = await response.json();
+      if (!details.length) return;
+      const projects = data.find(
+        (project) =>
+          String(project.project_id) === String(details[0].project_id)
+      );
+      setProject(projects);
+      // console.log("Projects", projects);
+      // console.log("details", details);
+    } catch (error) {
+      console.error("Error fetching request details:", error);
+    }
+  };
+
+  const fetchRequestStatus = async () => {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/update_request/");
+      const data = await response.json();
+      setRequestStatus(data);
+      // console.log("Status", data);
     } catch (error) {
       console.error("Error fetching request details:", error);
     }
@@ -526,7 +564,7 @@ const RequestDetails = ({ user }) => {
       }));
 
     // Show popup with filtered data
-    console.log("Matching Vendors for Popup:", matchingVendors); // Debug
+    // console.log("Matching Vendors for Popup:", matchingVendors); // Debug
     setPricePopupData(matchingVendors);
     console.log("Price Popup Data:", matchingVendors);
 
@@ -645,7 +683,18 @@ const RequestDetails = ({ user }) => {
       ) : (
         <div>
           {/* Single Approve Button Above the Table */}
-          <div style={{ marginBottom: "10px", textAlign: "right" }}>
+          <div
+            style={{
+              marginBottom: "10px",
+              display: "flex",
+              justifyContent: "space-between",
+            }}
+          >
+            <div style={{ margin: 0, alignContent: "center" }}>
+              <h4 style={{ margin: 0 }}>
+                Project name: {project.project_name}
+              </h4>
+            </div>
             <button
               onClick={() => handleApproval()}
               disabled={details.every((detail) => detail.approve)}
@@ -698,7 +747,11 @@ const RequestDetails = ({ user }) => {
 
                   return (
                     <tr key={detail.component_id}>
-                      <td>{detail.status}</td>
+                      <td>
+                        {requestStatus.find(
+                          (status) => status.request_id === detail.id
+                        )?.po_status || ""}
+                      </td>
                       <td>{detail.component_type}</td>
                       <td>{detail.component_specification}</td>
                       <td>{detail.unit_of_measurement}</td>
@@ -734,7 +787,9 @@ const RequestDetails = ({ user }) => {
                               )
                             }
                           >
-                            Select Vendor
+                            {vendorNames.find(
+                              (vendor) => vendor.vendor_id === detail.vendor_id
+                            )?.vendor_name || ""}
                           </span>
                         )}
                       </td>
@@ -743,7 +798,12 @@ const RequestDetails = ({ user }) => {
                         <td>
                           {detail.price !== undefined
                             ? `₹${detail.price}`
-                            : "No Price Available"}
+                            : `₹${
+                                priceViewData.find(
+                                  (vendor) =>
+                                    vendor.vendor_id === detail.vendor_id
+                                )?.latest_price || ""
+                              }`}
                         </td>
                       )}
                       <td>{detail.qty}</td>
