@@ -760,11 +760,8 @@ const RequestDetails = ({ user }) => {
           >
             <div style={{ margin: 0, alignContent: "center" }}>
               <h4 style={{ margin: 0 }}>
-                Project name: {project.project_name}
+                Project name: {project.project_name} | BOM name: {bomName}
               </h4>
-            </div>
-            <div style={{ margin: 0, alignContent: "center" }}>
-              <h4 style={{ margin: 0 }}>BOM name: {bomName}</h4>
             </div>
             <button
               onClick={() => handleApproval()}
