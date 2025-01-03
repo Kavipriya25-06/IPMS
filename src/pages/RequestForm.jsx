@@ -239,6 +239,8 @@ const RequestForm = () => {
         requester_name: popupData.name,
         project_name: popupData.projectName,
         bom_id: popupData.bomId,
+        bom: selectedBom ? selectedBom.bom_id : "",
+        bom_name: selectedBom ? selectedBom.bom_name : "",
         date: date,
         status: "In Progress",
         last_modified_by: popupData.name,

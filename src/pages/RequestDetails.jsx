@@ -602,6 +602,56 @@ const RequestDetails = ({ user }) => {
     }
   };
 
+  // Compute Total Price, GST, and Final Total
+  const computeTotals = () => {
+    const totals = details.reduce(
+      (acc, po) => {
+        const totalquantity = parseFloat(po.qty || 0);
+        const totalcost = parseFloat(po.price || 0);
+        acc.totalquantity += totalquantity; // Exclude GST from total price
+        acc.totalcost += totalcost;
+        // acc.finalTotal += totalCost + gst; // Include GST in final total
+        return acc;
+      },
+      { totalquantity: 0, totalcost: 0 }
+    );
+
+    return {
+      totalquantity: totals.totalquantity.toFixed(),
+      totalcost: totals.totalcost.toFixed(2),
+      // finalTotal: totals.finalTotal.toFixed(2),
+    };
+  };
+
+  const { totalquantity, totalcost } = computeTotals();
+  console.log("Total cost and quantity", totalcost, totalquantity);
+
+  const calculateTotal = () => {
+    return details
+      .reduce((total, detail) => {
+        const price =
+          parseFloat(detail.price || 0) ||
+          parseFloat(
+            priceViewData.find(
+              (vendor) => vendor.vendor_id === detail.vendor_id
+            )?.latest_price || 0
+          );
+        const quantity = parseFloat(detail.qty || 0);
+        const tax =
+          parseFloat(detail.tax || 0) ||
+          parseFloat(
+            priceViewData.find(
+              (vendor) => vendor.vendor_id === detail.vendor_id
+            )?.latest_tax || 0
+          );
+
+        // Calculate the total cost for this item (including tax)
+        const itemTotal = price * quantity * (1 + tax / 100);
+        return total + itemTotal;
+      }, 0)
+      .toFixed(2); // Return the total with two decimal places
+  };
+
   // const handleApproval = async () => {
   //   try {
   //     const approvalPromises = details.map((detail) =>
@@ -751,6 +801,7 @@ const RequestDetails = ({ user }) => {
                 <th>Category</th>
                 <th>Vendor Name</th>
                 {(isAdmin || isProcurement) && <th>Price</th>}
+                {(isAdmin || isProcurement) && <th>Tax %</th>}
                 <th>Quantity</th>
                 <th>Available Quantity</th>
                 {/* <th>Approval</th> */}
@@ -824,6 +875,18 @@ const RequestDetails = ({ user }) => {
                                   (vendor) =>
                                     vendor.vendor_id === detail.vendor_id
                                 )?.latest_price || ""
+                              }`}
+                        </td>
+                      )}
+                      {(isAdmin || isProcurement) && (
+                        <td>
+                          {detail.tax !== undefined
+                            ? `${detail.tax}`
+                            : `${
+                                priceViewData.find(
+                                  (vendor) =>
+                                    vendor.vendor_id === detail.vendor_id
+                                )?.latest_tax || ""
                               }`}
                         </td>
                       )}
@@ -935,6 +998,11 @@ const RequestDetails = ({ user }) => {
                     </tr>
                   );
                 })}
+              <tr style={{ fontWeight: "bold" }}>
+                <td colSpan="6">Total Cost (Including Tax):</td>
+                <td>₹{calculateTotal()}</td>
+                <td colSpan="4"></td>
+              </tr>
             </tbody>
           </table>
 
