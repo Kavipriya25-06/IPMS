@@ -326,7 +326,8 @@ const RequestForm = () => {
             project_name: selectedBom
               ? selectedBom.bom_name
               : "Unnamed Project",
-            bom_id: selectedBom ? selectedBom.bom_id : "",
+            bom: selectedBom ? selectedBom.bom_id : "",
+            bom_name: selectedBom ? selectedBom.bom_name : "",
             date,
             status: "In Progress",
             last_modified_by: requesterName,

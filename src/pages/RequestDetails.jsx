@@ -26,6 +26,7 @@ const RequestDetails = ({ user }) => {
   const [showPricePopup, setShowPricePopup] = useState(false);
   const [project, setProject] = useState([]);
   const [requestStatus, setRequestStatus] = useState([]);
+  const [bomName, setBomName] = useState([]);
 
   // The user object is now passed as a prop
   const isAdmin = user?.role === "Admin";
@@ -37,6 +38,7 @@ const RequestDetails = ({ user }) => {
     fetchInventoryData();
     fetchVendorList();
     fetchRequestStatus();
+    fetchRequestList();
     // fetchCartItems();
   }, [requestId]);
 
@@ -59,6 +61,22 @@ const RequestDetails = ({ user }) => {
     }
   };
 
+  const fetchRequestList = async () => {
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/request_list/${requestId}/`
+      );
+      const data = await response.json();
+      if (!data.length) return;
+      const bom_name = data[0].bom_name;
+      console.log("The data", data);
+      console.log("The bom", bom_name);
+      setBomName(bom_name);
+    } catch (error) {
+      console.error("Error fetching BOM details:", error);
+    }
+  };
+
   const fetchProjectDetails = async () => {
     // console.log("first details", details);
     try {
@@ -73,7 +91,7 @@ const RequestDetails = ({ user }) => {
       // console.log("Projects", projects);
       // console.log("details", details);
     } catch (error) {
-      console.error("Error fetching request details:", error);
+      console.error("Error fetching Project details:", error);
     }
   };
 
@@ -694,6 +712,9 @@ const RequestDetails = ({ user }) => {
               <h4 style={{ margin: 0 }}>
                 Project name: {project.project_name}
               </h4>
+            </div>
+            <div style={{ margin: 0, alignContent: "center" }}>
+              <h4 style={{ margin: 0 }}>BOM name: {bomName}</h4>
             </div>
             <button
               onClick={() => handleApproval()}
