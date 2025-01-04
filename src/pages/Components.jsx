@@ -2,8 +2,10 @@
 // src\pages\Components.jsx
 
 import React, { useState, useEffect } from "react";
+import tagIcon from "../assets/Tag_icon.jpg"; 
 import config from "../config"; // Import config for API endpoints
 import "../App.css";
+
 
 const Component = () => {
   const [components, setComponents] = useState([]);
@@ -13,6 +15,8 @@ const Component = () => {
   const [availableTags, setAvailableTags] = useState([]); // List of attributes for tags
   const [selectedComponent, setSelectedComponent] = useState(null); // Component being edited
   const [newTag, setNewTag] = useState(""); // New tag to add
+  const [newTagName, setNewTagName] = useState(""); // Add this state for the pop-up input value
+  const [showPopup, setShowPopup] = useState(false);
 
   useEffect(() => {
     fetchComponents();
@@ -146,10 +150,25 @@ const Component = () => {
     setFilteredComponents(filtered);
   };
 
+  const handleTagIconClick = () => {
+    setShowPopup(true); // Show the pop-up when the tag image is clicked
+  };
+
+  const handlePopupClose = () => {
+    setShowPopup(false); // Close the pop-up when clicking outside
+  };
+
   return (
     <div>
       <div className="header">
         <h2>Component List</h2>
+        <img
+          src={tagIcon}
+          alt="Tag Icon"
+          title="Add tags"
+          style={{ width: "39px", height: "39px", cursor: "pointer", marginLeft: "auto" }}
+          onClick={handleTagIconClick}
+        />
         <div className="search-bar-container">
           <input
             type="text"
@@ -250,6 +269,95 @@ const Component = () => {
           )}
         </tbody>
       </table>
+
+           {/* Pop-up for entering a tag */}
+      {showPopup && (
+        <div
+          style={{
+            position: "fixed",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            background: "#fff",
+            padding: "20px",
+            borderRadius: "8px",
+            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
+            zIndex: 1000,
+          }}
+        >
+          <h3>Enter a Tag</h3>
+          <input
+            type="text"
+            value={newTagName}
+            onChange={(e) => setNewTagName(e.target.value)}
+            placeholder="Enter tag name"
+            style={{ width: "100%", padding: "8px", marginTop: "10px" }}
+          />
+          <button
+            onClick={async () => {
+              if (!newTagName.trim()) {
+                alert("Please enter a valid tag name.");
+                return;
+              }
+
+              const payload = {
+                tag_name: newTagName,
+              };
+
+              try {
+                const response = await fetch("http://127.0.0.1:8000/tags_list/", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify(payload),
+                });
+
+                if (response.ok) {
+                  alert("Tag created successfully!");
+                  setNewTagName(""); // Clear the input field
+                } else {
+                  console.error("Failed to create tag:", response.statusText);
+                  alert("Failed to create tag.");
+                }
+              } catch (error) {
+                console.error("Error creating tag:", error);
+                alert("An error occurred while creating the tag.");
+              }
+            }}
+            style={{
+              marginTop: "10px",
+              padding: "8px 12px",
+              background: "#4caf50",
+              color: "#fff",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+          >
+            Create
+          </button>
+
+        </div>
+      )}
+
+      {/* Overlay for closing the pop-up */}
+      {showPopup && (
+        <div
+          onClick={handlePopupClose}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            background: "rgba(0, 0, 0, 0.3)",
+            zIndex: 999,
+          }}
+        />
+      )}
+
+
     </div>
   );
 };

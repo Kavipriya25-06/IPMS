@@ -634,18 +634,53 @@ const POOrderMaster = ({ user }) => {
             </div>
           )}
 
-          {/* Current Status */}
-          <div style={{ marginTop: "10px" }}>
-            <p>
-              <strong>Current Status:</strong> {currentStatus.status}
-            </p>
-            {currentStatus.date && (
-              <p>
-                <strong>Last Updated:</strong>{" "}
-                {new Date(currentStatus.date).toLocaleString()}
+       {/* Current Status */}
+          <div
+            style={{
+              marginTop: "10px",
+              padding: "15px",
+              border: "1px solid #ddd",
+              borderRadius: "8px",
+              backgroundColor: "#f9f9f9",
+              boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <div style={{ textAlign: "center", flex: 1 }}>
+              <p style={{ fontSize: "16px", color: "#333" }}>
+                <strong>Order Placed</strong>
               </p>
-            )}
+              <p style={{ fontSize: "14px", color: "#555" }}>
+                {orderStatus.order_placed_date_time
+                  ? new Date(orderStatus.order_placed_date_time).toLocaleString()
+                  : "Not yet placed"}
+              </p>
+            </div>
+            <div style={{ textAlign: "center", flex: 1 }}>
+              <p style={{ fontSize: "16px", color: "#333" }}>
+                <strong>Shipped</strong>
+              </p>
+              <p style={{ fontSize: "14px", color: "#555" }}>
+                {orderStatus.customer_date_time
+                  ? new Date(orderStatus.customer_date_time).toLocaleString()
+                  : "Not yet shipped"}
+              </p>
+            </div>
+            <div style={{ textAlign: "center", flex: 1 }}>
+              <p style={{ fontSize: "16px", color: "#333" }}>
+                <strong>Received</strong>
+              </p>
+              <p style={{ fontSize: "14px", color: "#555" }}>
+                {orderStatus.received_date
+                  ? new Date(orderStatus.received_date).toLocaleString()
+                  : "Not yet received"}
+              </p>
+            </div>
           </div>
+
+
         </>
       )}
     </div>
