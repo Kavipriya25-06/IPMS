@@ -6,6 +6,13 @@ import tagIcon from "../assets/Tag_icon.jpg";
 import config from "../config"; // Import config for API endpoints
 import "../App.css";
 
+import {
+  showSuccessToast,
+  showErrorToast,
+  showInfoToast,
+  showWarningToast,
+  ToastContainerComponent,
+} from "./Toastify.jsx"; // Import Toastify utilities
 
 const Component = () => {
   const [components, setComponents] = useState([]);
@@ -18,6 +25,9 @@ const Component = () => {
   const [newTagName, setNewTagName] = useState(""); // Add this state for the pop-up input value
   const [showPopup, setShowPopup] = useState(false);
 
+  const [selectedComponentType, setSelectedComponentType] = useState(""); // For filtering by Component Type
+  const [selectedCategory, setSelectedCategory] = useState(""); // For filtering by Category
+
   useEffect(() => {
     fetchComponents();
     fetchTags();
@@ -26,7 +36,7 @@ const Component = () => {
 
   useEffect(() => {
     filterComponentsBySearch();
-  }, [searchTerm, components, tags]);
+  }, [searchTerm, components, tags,selectedComponentType, selectedCategory]);
 
   const fetchTags = async () => {
     try {
@@ -40,14 +50,9 @@ const Component = () => {
 
   const fetchAvailableTags = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/tags_list/");
+      const response = await fetch("http://127.0.0.1:8000/create_tag/");
       const data = await response.json();
-      const processTags = (data) => {
-        // Assuming `data` is the JSON object with `tags`
-        return data.tags.map((tagPair) => tagPair[0]); // Extract the first element of each sub-array
-      };
-      const simplifiedTags = processTags(data);
-      setAvailableTags(simplifiedTags); // Assume the API returns a list of tag attributes
+      setAvailableTags(data); // Directly set the list of tags from the API
     } catch (error) {
       console.error("Error fetching available tags:", error);
     }
@@ -62,34 +67,30 @@ const Component = () => {
 
   // Helper function to get tags for a component
   const getTagsForComponent = (componentId) => {
-    const componentTags = tags.filter(
-      (tag) => tag.component_id === componentId
-    );
-    // return componentTags.map((tag) => tag.tags); //
-    return componentTags; //
+    return tags.filter((tag) => tag.component_id === componentId);
   };
 
   const handleAddTagClick = (componentId) => {
     setSelectedComponent(componentId); // Set the component ID for which tags will be added
+    setNewTag(""); // Clear the new tag input when opening the dropdown
   };
-
+  
   const handleAddTag = async () => {
     if (!newTag) return;
-
-    // Check if the tag already exists for the selected component
-    const existingTags = getTagsForComponent(selectedComponent);
-    const isDuplicate = existingTags.some((tag) => tag.tags === newTag);
-
-    if (isDuplicate) {
-      alert("This tag already exists for the selected component.");
+  
+    // Find the selected tag object from availableTags
+    const selectedTag = availableTags.find((tag) => tag.tags === newTag);
+    if (!selectedTag) {
+      alert("Invalid tag selection.");
       return;
     }
-
+  
     const payload = {
       component_id: selectedComponent,
-      tags: newTag,
+      tags_choices: selectedTag.id, // Send the tag ID
+      tags: selectedTag.tags,        // Send the tag name
     };
-
+  
     try {
       const response = await fetch("http://127.0.0.1:8000/tags/", {
         method: "POST",
@@ -98,17 +99,19 @@ const Component = () => {
         },
         body: JSON.stringify(payload),
       });
-
+  
       if (response.ok) {
         const newTagEntry = await response.json();
-        setTags([...tags, newTagEntry]); // Add the new tag to the list
+        setTags([...tags, { id: newTagEntry.id, tags: selectedTag.tags, component_id: selectedComponent }]);
         setNewTag(""); // Clear the input field
         setSelectedComponent(null); // Close the dropdown/modal
       } else {
         console.error("Failed to add tag:", response.statusText);
+        alert("Failed to add tag.");
       }
     } catch (error) {
       console.error("Error adding tag:", error);
+      alert("An error occurred while adding the tag.");
     }
   };
 
@@ -132,20 +135,29 @@ const Component = () => {
   };
 
   const filterComponentsBySearch = () => {
-    if (!searchTerm.trim()) {
-      // If no search term, show all components
-      setFilteredComponents(components);
-      return;
+    let filtered = components;
+
+    if (searchTerm.trim()) {
+      const lowerCaseSearchTerm = searchTerm.toLowerCase();
+      filtered = filtered.filter((component) => {
+        const componentTags = getTagsForComponent(component.component_id);
+        return componentTags.some((tag) =>
+          tag.tags.toLowerCase().includes(lowerCaseSearchTerm)
+        );
+      });
     }
 
-    const lowerCaseSearchTerm = searchTerm.toLowerCase();
-
-    const filtered = components.filter((component) => {
-      const componentTags = getTagsForComponent(component.component_id);
-      return componentTags.some((tag) =>
-        tag.tags.toLowerCase().includes(lowerCaseSearchTerm)
+    if (selectedComponentType) {
+      filtered = filtered.filter(
+        (component) => component.component_type === selectedComponentType
       );
-    });
+    }
+
+    if (selectedCategory) {
+      filtered = filtered.filter(
+        (component) => component.category === selectedCategory
+      );
+    }
 
     setFilteredComponents(filtered);
   };
@@ -185,11 +197,41 @@ const Component = () => {
       <table>
         <thead>
           <tr>
-            <th>Component Type</th>
+          <th>
+              Component Type
+              <select
+                value={selectedComponentType}
+                onChange={(e) => setSelectedComponentType(e.target.value)}
+              >
+                <option value="">All</option>
+                {[...new Set(components.map((c) => c.component_type))].map(
+                  (type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  )
+                )}
+              </select>
+            </th>
             <th>Specification</th>
             <th>UOM</th>
-            <th>Category</th>
-            <th>Component ID</th>
+            <th>
+              Category
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+              >
+                <option value="">All</option>
+                {[...new Set(components.map((c) => c.category))].map(
+                  (category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  )
+                )}
+              </select>
+            </th>
+            <th>Component ID </th>
             <th>Tags</th>
           </tr>
         </thead>
@@ -245,9 +287,9 @@ const Component = () => {
                         onChange={(e) => setNewTag(e.target.value)}
                       >
                         <option value="">Select a tag</option>
-                        {availableTags.map((tag, index) => (
-                          <option key={index} value={tag}>
-                            {tag}
+                        {availableTags.map((tag) => (
+                          <option key={tag.id} value={tag.tags}>
+                            {tag.tags}
                           </option>
                         ))}
                       </select>
@@ -291,7 +333,7 @@ const Component = () => {
             value={newTagName}
             onChange={(e) => setNewTagName(e.target.value)}
             placeholder="Enter tag name"
-            style={{ width: "100%", padding: "8px", marginTop: "10px" }}
+            style={{ width: "100%", padding: "2px", marginTop: "10px" }}
           />
           <button
             onClick={async () => {
@@ -300,12 +342,23 @@ const Component = () => {
                 return;
               }
 
+              // Check if the tag already exists in availableTags
+              const existingTag = availableTags.find(
+                (tag) => tag.tags.toLowerCase() === newTagName.trim().toLowerCase()
+              );
+              
+              if (existingTag) {
+                alert(`The tag "${newTagName}" already exists.`);
+                setNewTagName(""); // Clear the input field
+                return;
+              }
+
               const payload = {
-                tag_name: newTagName,
+                tags: newTagName,
               };
 
               try {
-                const response = await fetch("http://127.0.0.1:8000/tags_list/", {
+                const response = await fetch("http://127.0.0.1:8000/create_tag/", {
                   method: "POST",
                   headers: {
                     "Content-Type": "application/json",
@@ -314,7 +367,9 @@ const Component = () => {
                 });
 
                 if (response.ok) {
-                  alert("Tag created successfully!");
+                  showSuccessToast("Tag created successfully!");
+                  const newTag = await response.json();
+                  setAvailableTags([...availableTags, newTag]); // Add the newly created tag to availableTags
                   setNewTagName(""); // Clear the input field
                 } else {
                   console.error("Failed to create tag:", response.statusText);
@@ -357,7 +412,7 @@ const Component = () => {
         />
       )}
 
-
+      <ToastContainerComponent />
     </div>
   );
 };

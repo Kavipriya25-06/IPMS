@@ -2,6 +2,15 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import CustomMessagebox from "./CustomMessageBox.jsx";
 
+import {
+  showSuccessToast,
+  showErrorToast,
+  showInfoToast,
+  showWarningToast,
+  ToastContainerComponent,
+} from "./Toastify.jsx"; // Import Toastify utilities
+
+
 const Cart = ({ user }) => {
   const { requestId } = useParams();
   const [cartItems, setCartItems] = useState([]);
@@ -218,7 +227,7 @@ const Cart = ({ user }) => {
         )
       );
 
-      alert("Order placed successfully!");
+      showSuccessToast("Order placed successfully!");
     } catch (error) {
       console.error("Error placing order:", error);
       alert("An error occurred while placing the order.");
@@ -322,6 +331,7 @@ const Cart = ({ user }) => {
             ))
         )}
       </div>
+      <ToastContainerComponent />
     </div>
   );
 };
