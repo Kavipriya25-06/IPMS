@@ -5,6 +5,14 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
+import {
+  showSuccessToast,
+  showErrorToast,
+  showInfoToast,
+  showWarningToast,
+  ToastContainerComponent,
+} from "./Toastify.jsx"; // Import Toastify utilities
+
 const POOrderMaster = ({ user }) => {
   const { poId } = useParams(); // Extract PO ID from the route
   const [poDetails, setPODetails] = useState([]);
@@ -223,7 +231,7 @@ const POOrderMaster = ({ user }) => {
         }
       }
 
-      alert(`Successfully updated all entries for PO ID: ${poId}`);
+      (`Successfully updated all entries for PO ID: ${poId}`);
     } catch (error) {
       console.error("Error updating PO Master statuses:", error.message);
       alert("An error occurred while updating the PO Master statuses.");
@@ -399,7 +407,7 @@ const POOrderMaster = ({ user }) => {
         }
       }
 
-      alert(
+      showSuccessToast(
         `Inward operation completed successfully for ${quantity} units of Component ID: ${component_id}.`
       );
 
@@ -683,6 +691,7 @@ const POOrderMaster = ({ user }) => {
 
         </>
       )}
+      <ToastContainerComponent />
     </div>
   );
 };

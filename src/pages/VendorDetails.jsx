@@ -6,6 +6,14 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import CustomMessagebox from "./CustomMessageBox.jsx";
 
+import {
+  showSuccessToast,
+  showErrorToast,
+  showInfoToast,
+  showWarningToast,
+  ToastContainerComponent,
+} from "./Toastify.jsx"; // Import Toastify utilities
+
 const VendorDetails = () => {
   const { vendorId } = useParams();
   const navigate = useNavigate();
@@ -543,7 +551,7 @@ const VendorDetails = () => {
       if (response.ok) {
         const data = await response.json();
         console.log("Component successfully added:", data);
-        alert("Component added successfully!");
+        showSuccessToast("Component added successfully!");
       } else {
         console.error("Error adding component:", response.statusText);
         alert("Failed to add component.");
@@ -1086,6 +1094,7 @@ const VendorDetails = () => {
         </tbody>
       </table>
       <button onClick={handleBackClick}>Back to Vendor List</button>
+       <ToastContainerComponent />
     </div>
   );
 };

@@ -332,6 +332,14 @@
 import React, { useEffect, useState } from "react";
 import CustomMessagebox from "./CustomMessageBox.jsx";
 
+import {
+  showSuccessToast,
+  showErrorToast,
+  showInfoToast,
+  showWarningToast,
+  ToastContainerComponent,
+} from "./Toastify.jsx"; // Import Toastify utilities
+
 const Inward = () => {
   const [inwardData, setInwardData] = useState([]); // State to store inward data
   const [showQCPopup, setShowQCPopup] = useState(false);
@@ -535,8 +543,8 @@ const Inward = () => {
       }
 
       // Success feedback
-      setMessageBoxContent("QC process completed successfully!");
-      setShowMessageBox(true);
+      showSuccessToast("QC process completed successfully!");
+      // setShowMessageBox(true);
       setShowQCPopup(false);
       fetchInwardData(); // Refresh the inward data
     } catch (error) {
@@ -694,8 +702,8 @@ const Inward = () => {
       }
 
       // If successful, show an alert and refresh inward data
-      setMessageBoxContent("Successfully moved to inventory.");
-      setShowMessageBox(true);
+      showSuccessToast("Successfully moved to inventory.");
+      setShowMessageBox(false);
 
       // Update mode_to_inventory to false via a PUT request
       const updatePayload = {
@@ -873,6 +881,7 @@ const Inward = () => {
           <button onClick={() => setShowQCPopup(false)}>Close</button>
         </div>
       )}
+        <ToastContainerComponent />
     </div>
   );
 };

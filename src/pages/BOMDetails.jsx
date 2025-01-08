@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
+import {
+  showSuccessToast,
+  showErrorToast,
+  showInfoToast,
+  showWarningToast,
+  ToastContainerComponent,
+} from "./Toastify.jsx"; // Import Toastify utilities
+
 const BOMDetails = () => {
   const { bomId } = useParams(); // Retrieve bomId from URL
   const navigate = useNavigate(); // Initialize useNavigate
@@ -113,7 +121,7 @@ const BOMDetails = () => {
       if (response.ok) {
         const data = await response.json();
         setSelectedComponents([...selectedComponents, data]);
-        alert("Component added successfully!");
+        showSuccessToast("Component added successfully!");
         setShowAddComponentForm(false);
         setNewComponent({
           component: "",
@@ -314,6 +322,7 @@ const BOMDetails = () => {
       >
         Back to BOM List
       </button>
+      <ToastContainerComponent />
     </div>
   );
 };

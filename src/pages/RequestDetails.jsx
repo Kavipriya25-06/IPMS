@@ -2,6 +2,15 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import CustomMessagebox from "./CustomMessageBox.jsx";
 
+
+import {
+  showSuccessToast,
+  showErrorToast,
+  showInfoToast,
+  showWarningToast,
+  ToastContainerComponent,
+} from "./Toastify.jsx"; // Import Toastify utilities
+
 const RequestDetails = ({ user }) => {
   const { requestId } = useParams();
   const [details, setDetails] = useState([]); // to fetch the request details
@@ -240,8 +249,8 @@ const RequestDetails = ({ user }) => {
       });
 
       if (response.ok) {
-        setMessageBoxContent(`Component ${detail.component_id} added to cart.`);
-        setShowMessageBox(true);
+        showSuccessToast(`Component ${detail.component_id} added to cart.`);
+        // setShowMessageBox(true);
 
         // Send PUT request to update 'assign', 'status', and 'qty'
         const updatePayload = {
@@ -432,7 +441,7 @@ const RequestDetails = ({ user }) => {
       const requestMasterResponse = await fetch(
         `http://127.0.0.1:8000/request_master/${requestId}/${id}/`,
         {
-          method: "PUT",
+          method: "PATCH",
           headers: {
             "Content-Type": "application/json",
           },
@@ -763,7 +772,7 @@ const RequestDetails = ({ user }) => {
                 Project name: {project.project_name} | BOM name: {bomName}
               </h4>
             </div>
-            <button
+            {(isAdmin || isProcurement) && (<button
               onClick={() => handleApproval()}
               disabled={details.every((detail) => detail.approve)}
               style={{
@@ -785,7 +794,7 @@ const RequestDetails = ({ user }) => {
               {details.every((detail) => detail.approve)
                 ? "Approved"
                 : "Approve Request"}
-            </button>
+            </button>)}
           </div>
 
           <table>
@@ -1192,6 +1201,7 @@ const RequestDetails = ({ user }) => {
       `}</style>
         </div>
       )}
+      <ToastContainerComponent />
     </div>
   );
 };

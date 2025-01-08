@@ -2,7 +2,7 @@
 // src\pages\Components.jsx
 
 import React, { useState, useEffect } from "react";
-import tagIcon from "../assets/Tag_icon.jpg"; 
+import tagIcon from "../assets/Tag_icon.png"; 
 import config from "../config"; // Import config for API endpoints
 import "../App.css";
 
