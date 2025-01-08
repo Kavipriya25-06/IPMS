@@ -880,7 +880,11 @@ const RequestDetails = ({ user }) => {
                             : `₹${
                                 priceViewData.find(
                                   (vendor) =>
-                                    vendor.vendor_id === detail.vendor_id
+                                    vendor.vendor_id === detail.vendor_id &&
+                                    vendor.component_type ===
+                                      detail.component_type &&
+                                    vendor.component_specification ===
+                                      detail.component_specification
                                 )?.latest_price || ""
                               }`}
                         </td>
@@ -892,7 +896,11 @@ const RequestDetails = ({ user }) => {
                             : `${
                                 priceViewData.find(
                                   (vendor) =>
-                                    vendor.vendor_id === detail.vendor_id
+                                    vendor.vendor_id === detail.vendor_id &&
+                                    vendor.component_type ===
+                                      detail.component_type &&
+                                    vendor.component_specification ===
+                                      detail.component_specification
                                 )?.latest_tax || ""
                               }`}
                         </td>
