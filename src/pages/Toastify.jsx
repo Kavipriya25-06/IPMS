@@ -4,18 +4,18 @@ import "react-toastify/dist/ReactToastify.css";
 
 // Success notification
 export const showSuccessToast = (message) => {
-    toast.success(message, {
-      position: "top-center",
-      autoClose: 3000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
-      theme: "colored",
-      style: { backgroundColor: "#82B97E", color: "white" }, // Inline styles for red background
-    });
-  };
+  toast.success(message, {
+    position: "top-center",
+    autoClose: 3000,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+    progress: undefined,
+    theme: "colored",
+    style: { backgroundColor: "#82B97E", color: "white" }, // Inline styles for red background
+  });
+};
 
 // Error notification
 export const showErrorToast = (message) => {

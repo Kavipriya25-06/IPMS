@@ -231,7 +231,7 @@ const POOrderMaster = ({ user }) => {
         }
       }
 
-      (`Successfully updated all entries for PO ID: ${poId}`);
+      `Successfully updated all entries for PO ID: ${poId}`;
     } catch (error) {
       console.error("Error updating PO Master statuses:", error.message);
       alert("An error occurred while updating the PO Master statuses.");
@@ -642,7 +642,7 @@ const POOrderMaster = ({ user }) => {
             </div>
           )}
 
-       {/* Current Status */}
+          {/* Current Status */}
           <div
             style={{
               marginTop: "10px",
@@ -662,7 +662,9 @@ const POOrderMaster = ({ user }) => {
               </p>
               <p style={{ fontSize: "14px", color: "#555" }}>
                 {orderStatus.order_placed_date_time
-                  ? new Date(orderStatus.order_placed_date_time).toLocaleString()
+                  ? new Date(
+                      orderStatus.order_placed_date_time
+                    ).toLocaleString()
                   : "Not yet placed"}
               </p>
             </div>
@@ -687,8 +689,6 @@ const POOrderMaster = ({ user }) => {
               </p>
             </div>
           </div>
-
-
         </>
       )}
       <ToastContainerComponent />

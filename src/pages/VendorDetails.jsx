@@ -1094,7 +1094,7 @@ const VendorDetails = () => {
         </tbody>
       </table>
       <button onClick={handleBackClick}>Back to Vendor List</button>
-       <ToastContainerComponent />
+      <ToastContainerComponent />
     </div>
   );
 };

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import CustomMessagebox from "./CustomMessageBox.jsx";
 
-
 import {
   showSuccessToast,
   showErrorToast,
@@ -772,29 +771,31 @@ const RequestDetails = ({ user }) => {
                 Project name: {project.project_name} | BOM name: {bomName}
               </h4>
             </div>
-            {(isAdmin || isProcurement) && (<button
-              onClick={() => handleApproval()}
-              disabled={details.every((detail) => detail.approve)}
-              style={{
-                padding: "10px 20px",
-                backgroundColor: details.every((detail) => detail.approve)
-                  ? "#ddd"
-                  : "#4caf50",
-                color: details.every((detail) => detail.approve)
-                  ? "#888"
-                  : "#fff",
-                cursor: details.every((detail) => detail.approve)
-                  ? "not-allowed"
-                  : "pointer",
-                border: "none",
-                borderRadius: "5px",
-                fontSize: "16px",
-              }}
-            >
-              {details.every((detail) => detail.approve)
-                ? "Approved"
-                : "Approve Request"}
-            </button>)}
+            {(isAdmin || isProcurement) && (
+              <button
+                onClick={() => handleApproval()}
+                disabled={details.every((detail) => detail.approve)}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: details.every((detail) => detail.approve)
+                    ? "#ddd"
+                    : "#4caf50",
+                  color: details.every((detail) => detail.approve)
+                    ? "#888"
+                    : "#fff",
+                  cursor: details.every((detail) => detail.approve)
+                    ? "not-allowed"
+                    : "pointer",
+                  border: "none",
+                  borderRadius: "5px",
+                  fontSize: "16px",
+                }}
+              >
+                {details.every((detail) => detail.approve)
+                  ? "Approved"
+                  : "Approve Request"}
+              </button>
+            )}
           </div>
 
           <table>

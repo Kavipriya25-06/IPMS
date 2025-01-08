@@ -10,7 +10,6 @@ import {
   ToastContainerComponent,
 } from "./Toastify.jsx"; // Import Toastify utilities
 
-
 const Cart = ({ user }) => {
   const { requestId } = useParams();
   const [cartItems, setCartItems] = useState([]);

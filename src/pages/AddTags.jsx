@@ -53,7 +53,9 @@ const AddTags = () => {
 
   const handleCheckboxChange = (componentId) => {
     if (selectedComponents.includes(componentId)) {
-      setSelectedComponents(selectedComponents.filter((id) => id !== componentId));
+      setSelectedComponents(
+        selectedComponents.filter((id) => id !== componentId)
+      );
     } else {
       setSelectedComponents([...selectedComponents, componentId]);
     }
@@ -168,9 +170,12 @@ const AddTags = () => {
 
   const handleDeleteTag = async (tagId) => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/meta_tags/${tagId}/`, {
-        method: "DELETE",
-      });
+      const response = await fetch(
+        `http://127.0.0.1:8000/meta_tags/${tagId}/`,
+        {
+          method: "DELETE",
+        }
+      );
 
       if (response.ok) {
         showSuccessToast("Tag deleted successfully!");
@@ -207,8 +212,12 @@ const AddTags = () => {
                   <td>
                     <input
                       type="checkbox"
-                      checked={selectedComponents.includes(component.component_id)}
-                      onChange={() => handleCheckboxChange(component.component_id)}
+                      checked={selectedComponents.includes(
+                        component.component_id
+                      )}
+                      onChange={() =>
+                        handleCheckboxChange(component.component_id)
+                      }
                     />
                   </td>
                   <td>{component.component_type}</td>
@@ -219,30 +228,35 @@ const AddTags = () => {
                   <td>
                     <div
                       style={{ cursor: "pointer", color: "blue" }}
-                      onClick={() => handleTagColumnClick(component.component_id)}
+                      onClick={() =>
+                        handleTagColumnClick(component.component_id)
+                      }
                     >
-                      {getTagsForComponent(component.component_id).length > 0 ? (
-                        getTagsForComponent(component.component_id).map((tag) => (
-                          <span key={tag.id} className="tag">
-                            {tag.tags}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation(); // Prevent triggering the parent click
-                                handleDeleteTag(tag.id);
-                              }}
-                              // style={{
-                              //   marginLeft: "8px",
-                              //   background: "none",
-                              //   border: "none",
-                              //   color: "red",
-                              //   fontWeight: "bold",
-                              //   cursor: "pointer",
-                              // }}
-                            >
-                              ×
-                            </button>
-                          </span>
-                        ))
+                      {getTagsForComponent(component.component_id).length >
+                      0 ? (
+                        getTagsForComponent(component.component_id).map(
+                          (tag) => (
+                            <span key={tag.id} className="tag">
+                              {tag.tags}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation(); // Prevent triggering the parent click
+                                  handleDeleteTag(tag.id);
+                                }}
+                                // style={{
+                                //   marginLeft: "8px",
+                                //   background: "none",
+                                //   border: "none",
+                                //   color: "red",
+                                //   fontWeight: "bold",
+                                //   cursor: "pointer",
+                                // }}
+                              >
+                                ×
+                              </button>
+                            </span>
+                          )
+                        )
                       ) : (
                         <span>No tags available (Click to add)</span>
                       )}
@@ -355,18 +369,12 @@ const AddTags = () => {
           }}
         />
       )}
-       <ToastContainerComponent />
+      <ToastContainerComponent />
     </div>
   );
 };
 
 export default AddTags;
-
-
-
-
-
-
 
 ////////////////////////////////// src/pages/AddTags.jsx
 

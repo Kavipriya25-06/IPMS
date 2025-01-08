@@ -2,7 +2,7 @@
 // src\pages\Components.jsx
 
 import React, { useState, useEffect } from "react";
-import tagIcon from "../assets/Tag_icon.png"; 
+import tagIcon from "../assets/Tag_icon.png";
 import config from "../config"; // Import config for API endpoints
 import "../App.css";
 
@@ -36,7 +36,7 @@ const Component = () => {
 
   useEffect(() => {
     filterComponentsBySearch();
-  }, [searchTerm, components, tags,selectedComponentType, selectedCategory]);
+  }, [searchTerm, components, tags, selectedComponentType, selectedCategory]);
 
   const fetchTags = async () => {
     try {
@@ -74,23 +74,23 @@ const Component = () => {
     setSelectedComponent(componentId); // Set the component ID for which tags will be added
     setNewTag(""); // Clear the new tag input when opening the dropdown
   };
-  
+
   const handleAddTag = async () => {
     if (!newTag) return;
-  
+
     // Find the selected tag object from availableTags
     const selectedTag = availableTags.find((tag) => tag.tags === newTag);
     if (!selectedTag) {
       alert("Invalid tag selection.");
       return;
     }
-  
+
     const payload = {
       component_id: selectedComponent,
       tags_choices: selectedTag.id, // Send the tag ID
-      tags: selectedTag.tags,        // Send the tag name
+      tags: selectedTag.tags, // Send the tag name
     };
-  
+
     try {
       const response = await fetch("http://127.0.0.1:8000/tags/", {
         method: "POST",
@@ -99,10 +99,17 @@ const Component = () => {
         },
         body: JSON.stringify(payload),
       });
-  
+
       if (response.ok) {
         const newTagEntry = await response.json();
-        setTags([...tags, { id: newTagEntry.id, tags: selectedTag.tags, component_id: selectedComponent }]);
+        setTags([
+          ...tags,
+          {
+            id: newTagEntry.id,
+            tags: selectedTag.tags,
+            component_id: selectedComponent,
+          },
+        ]);
         setNewTag(""); // Clear the input field
         setSelectedComponent(null); // Close the dropdown/modal
       } else {
@@ -178,7 +185,12 @@ const Component = () => {
           src={tagIcon}
           alt="Tag Icon"
           title="Add tags"
-          style={{ width: "39px", height: "39px", cursor: "pointer", marginLeft: "auto" }}
+          style={{
+            width: "39px",
+            height: "39px",
+            cursor: "pointer",
+            marginLeft: "auto",
+          }}
           onClick={handleTagIconClick}
         />
         <div className="search-bar-container">
@@ -197,7 +209,7 @@ const Component = () => {
       <table>
         <thead>
           <tr>
-          <th>
+            <th>
               Component Type
               <select
                 value={selectedComponentType}
@@ -312,7 +324,7 @@ const Component = () => {
         </tbody>
       </table>
 
-           {/* Pop-up for entering a tag */}
+      {/* Pop-up for entering a tag */}
       {showPopup && (
         <div
           style={{
@@ -344,9 +356,10 @@ const Component = () => {
 
               // Check if the tag already exists in availableTags
               const existingTag = availableTags.find(
-                (tag) => tag.tags.toLowerCase() === newTagName.trim().toLowerCase()
+                (tag) =>
+                  tag.tags.toLowerCase() === newTagName.trim().toLowerCase()
               );
-              
+
               if (existingTag) {
                 alert(`The tag "${newTagName}" already exists.`);
                 setNewTagName(""); // Clear the input field
@@ -358,13 +371,16 @@ const Component = () => {
               };
 
               try {
-                const response = await fetch("http://127.0.0.1:8000/create_tag/", {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify(payload),
-                });
+                const response = await fetch(
+                  "http://127.0.0.1:8000/create_tag/",
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(payload),
+                  }
+                );
 
                 if (response.ok) {
                   showSuccessToast("Tag created successfully!");
@@ -392,7 +408,6 @@ const Component = () => {
           >
             Create
           </button>
-
         </div>
       )}
 
