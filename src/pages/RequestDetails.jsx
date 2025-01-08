@@ -632,7 +632,7 @@ const RequestDetails = ({ user }) => {
   };
 
   const { totalquantity, totalcost } = computeTotals();
-  console.log("Total cost and quantity", totalcost, totalquantity);
+  // console.log("Total cost and quantity", totalcost, totalquantity);
 
   const calculateTotal = () => {
     return details
