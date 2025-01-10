@@ -27,6 +27,22 @@ const Component = () => {
 
   const [selectedComponentType, setSelectedComponentType] = useState(""); // For filtering by Component Type
   const [selectedCategory, setSelectedCategory] = useState(""); // For filtering by Category
+  
+  // Function to get unique component types based on the selected category
+  const getFilteredComponentTypes = () => {
+    const filtered = selectedCategory
+      ? components.filter((c) => c.category === selectedCategory)
+      : components;
+    return [...new Set(filtered.map((c) => c.component_type))];
+  };
+  
+  // Function to get unique categories based on the selected component type
+  const getFilteredCategories = () => {
+    const filtered = selectedComponentType
+      ? components.filter((c) => c.component_type === selectedComponentType)
+      : components;
+    return [...new Set(filtered.map((c) => c.category))];
+  };
 
   useEffect(() => {
     fetchComponents();
@@ -216,13 +232,11 @@ const Component = () => {
                 onChange={(e) => setSelectedComponentType(e.target.value)}
               >
                 <option value="">All</option>
-                {[...new Set(components.map((c) => c.component_type))].map(
-                  (type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  )
-                )}
+                {getFilteredComponentTypes().map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
               </select>
             </th>
             <th>Specification</th>
@@ -234,13 +248,11 @@ const Component = () => {
                 onChange={(e) => setSelectedCategory(e.target.value)}
               >
                 <option value="">All</option>
-                {[...new Set(components.map((c) => c.category))].map(
-                  (category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  )
-                )}
+                {getFilteredCategories().map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
               </select>
             </th>
             <th>Component ID </th>

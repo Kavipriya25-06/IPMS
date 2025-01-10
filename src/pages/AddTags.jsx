@@ -192,6 +192,22 @@ const AddTags = () => {
   return (
     <div className="addingtags-container">
       <h2>Available Meta Tags</h2>
+
+      <button
+        onClick={handleAddTagClick}
+        style={{
+          // marginTop: "20px",
+          padding: "8px 12px",
+          background: "#fc9d03",
+          color: "#fff",
+          border: "none",
+          borderRadius: "4px",
+          cursor: "pointer",
+        }}
+      >
+        Add Tag to Selected Components
+      </button>
+
       <div className="table-container">
         <table className="full-width-table">
           <thead>
@@ -276,20 +292,7 @@ const AddTags = () => {
         {message && <p className="feedback-message">{message}</p>}
       </div>
 
-      <button
-        onClick={handleAddTagClick}
-        style={{
-          marginTop: "20px",
-          padding: "8px 12px",
-          background: "#fc9d03",
-          color: "#fff",
-          border: "none",
-          borderRadius: "4px",
-          cursor: "pointer",
-        }}
-      >
-        Add Tag to Selected Components
-      </button>
+
 
       {/* Pop-up for adding a new tag */}
       {showPopup && (
