@@ -5,6 +5,8 @@ const Requests = () => {
   const [requests, setRequests] = useState([]);
   const [requestMaster, setRequestMaster] = useState([]);
   const [requestStatus, setRequestStatus] = useState([]);
+  const [showstatus, setShowstatus] = useState(false);
+  const [requestStatusView, setRequestStatusView] = useState([]); // Status details for popup
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -44,6 +46,30 @@ const Requests = () => {
     } catch (error) {
       console.error("Error fetching request details:", error);
     }
+  };
+
+  const statusPopup = (requestId) => {
+    const relevantStatuses = requestStatus.filter(
+      (po) => po.request_list_id === requestId
+    );
+
+    const popupView = relevantStatuses.map((detail) => ({
+      request_id: detail.request_list_id,
+      requestMaster_id: detail.request_id,
+      po_id: detail.po_id,
+      po_status: detail.po_status,
+      component_specification:
+        requestMaster.find((request) => request.id === detail.request_id)
+          ?.component_specification || "",
+    }));
+    console.log("request popup", popupView);
+    // return popupView;
+    setShowstatus(true); // Show the popup
+    setRequestStatusView(popupView); // Set the status data for the popup
+  };
+
+  const handleCloseStatus = () => {
+    setShowstatus(false);
   };
 
   // Combine PO and Statuses
@@ -110,13 +136,47 @@ const Requests = () => {
                 <td>{request.requester_name}</td>
                 <td>{request.date}</td>
                 {/* <td>{request.status}</td> */}
-                <td>{status}</td>
+                <td
+                  onClick={() => statusPopup(request.request_id)}
+                  style={{ cursor: "pointer", textDecoration: "underline" }}
+                >
+                  {status}
+                </td>
                 <td>{request.last_modified_by}</td>
               </tr>
             );
           })}
         </tbody>
       </table>
+      {showstatus && (
+        <div className="popup">
+          <span className="close-button" onClick={handleCloseStatus}>
+            &times;
+          </span>
+          <h3>Status Details</h3>
+
+          <table>
+            <thead>
+              <tr>
+                <th>PO ID</th>
+                <th>Request ID</th>
+                <th>Component Spec</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {requestStatusView.map((status, index) => (
+                <tr key={index}>
+                  <td>{status.po_id}</td>
+                  <td>{status.request_id}</td>
+                  <td>{status.component_specification}</td>
+                  <td>{status.po_status}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       <button onClick={handleNewRequest} style={{ marginTop: "10px" }}>
         New Request
       </button>
