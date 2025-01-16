@@ -187,7 +187,7 @@ const Inventory = () => {
                         key={index}
                         className="expanded-row"
                         style={{
-                          backgroundColor: !row.status ? "#e0e0e0" : "", // Highlight disabled items
+                          backgroundColor: !row.status ? "#e0e0e0" : "#ededed", // Highlight disabled items
                           color: !row.status ? "#a0a0a0" : "inherit",
                         }}
                       >
