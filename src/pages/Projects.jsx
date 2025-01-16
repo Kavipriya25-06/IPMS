@@ -52,10 +52,8 @@ const Project = () => {
   };
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-      <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
-        Project List
-      </h2>
+    <div style={{ fontFamily: "Arial, sans-serif" }}>
+      <h2 style={{ textAlign: "left", marginBottom: "20px" }}>Project List</h2>
       <table
         style={{
           width: "100%",
@@ -65,60 +63,20 @@ const Project = () => {
       >
         <thead>
           <tr>
-            <th
-              style={{
-                border: "1px solid #ddd",
-                padding: "8px",
-                textAlign: "left",
-              }}
-            >
-              Project ID
-            </th>
-            <th
-              style={{
-                border: "1px solid #ddd",
-                padding: "8px",
-                textAlign: "left",
-              }}
-            >
-              Project Name
-            </th>
-            <th
-              style={{
-                border: "1px solid #ddd",
-                padding: "8px",
-                textAlign: "left",
-              }}
-            >
-              Description
-            </th>
-            <th
-              style={{
-                border: "1px solid #ddd",
-                padding: "8px",
-                textAlign: "left",
-              }}
-            >
-              Start Date
-            </th>
+            <th>Project ID</th>
+            <th>Project Name</th>
+            <th>Description</th>
+            <th>Start Date</th>
           </tr>
         </thead>
         <tbody>
           {projects.length > 0 ? (
             projects.map((project) => (
               <tr key={project.project_id}>
-                <td style={{ border: "1px solid #ddd", padding: "8px" }}>
-                  {project.project_id}
-                </td>
-                <td style={{ border: "1px solid #ddd", padding: "8px" }}>
-                  {project.project_name}
-                </td>
-                <td style={{ border: "1px solid #ddd", padding: "8px" }}>
-                  {project.description}
-                </td>
-                <td style={{ border: "1px solid #ddd", padding: "8px" }}>
-                  {project.start_date}
-                </td>
+                <td>{project.project_id}</td>
+                <td>{project.project_name}</td>
+                <td>{project.description}</td>
+                <td>{project.start_date}</td>
               </tr>
             ))
           ) : (
