@@ -53,7 +53,7 @@ const Project = () => {
 
   return (
     <div style={{ fontFamily: "Arial, sans-serif" }}>
-      <h2 style={{ textAlign: "left", marginBottom: "20px" }}>Project List</h2>
+      <h2 style={{ textAlign: "left" }}>Project List</h2>
       <table
         style={{
           width: "100%",
