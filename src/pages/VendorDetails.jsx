@@ -38,6 +38,7 @@ const VendorDetails = () => {
   const [isEditingPriceEntry, setIsEditingPriceEntry] = useState(null);
   const [showAddProductForm, setShowAddProductForm] = useState(false);
   const [selectedVendorData, setSelectedVendorData] = useState([]);
+  const [vendorData, setVendorData] = useState([]);
   const [componentMasterData, setComponentMasterData] = useState({});
   const [choices, setChoices] = useState({
     component_type_list: [],
@@ -97,6 +98,16 @@ const VendorDetails = () => {
       }
     };
 
+    const fetchVendorData = async () => {
+      try {
+        const response = await fetch("http://127.0.0.1:8000/vendor_list/");
+        const data = await response.json();
+        setVendorData(data);
+      } catch (error) {
+        console.error("Error fetching vendor data:", error);
+      }
+    };
+
     const fetchComponentMasterData = async () => {
       try {
         const response = await fetch("http://127.0.0.1:8000/component/");
@@ -125,6 +136,7 @@ const VendorDetails = () => {
     };
 
     fetchVendorDetails();
+    fetchVendorData();
     fetchComponentMasterData();
     fetchChoices();
   }, [vendorId]);
@@ -566,9 +578,16 @@ const VendorDetails = () => {
     navigate("/vendor");
   };
 
+  const getVendorName = (vendor_id) => {
+    const VendorName =
+      vendorData.find((vendor) => vendor.vendor_id === vendor_id)
+        ?.vendor_name || "";
+    return VendorName;
+  };
+
   return (
     <div>
-      <h4>Vendor Data for {vendorId}</h4>
+      <h4>Vendor Data for {getVendorName(vendorId)} - {vendorId}</h4>
       <button onClick={() => setShowAddProductForm(!showAddProductForm)}>
         {showAddProductForm ? "Cancel New Product" : "Add New Product"}
       </button>
