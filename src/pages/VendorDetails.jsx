@@ -587,7 +587,9 @@ const VendorDetails = () => {
 
   return (
     <div>
-      <h4>Vendor Data for {getVendorName(vendorId)} - {vendorId}</h4>
+      <h4>
+        Vendor Data for {getVendorName(vendorId)} - {vendorId}
+      </h4>
       <button onClick={() => setShowAddProductForm(!showAddProductForm)}>
         {showAddProductForm ? "Cancel New Product" : "Add New Product"}
       </button>
