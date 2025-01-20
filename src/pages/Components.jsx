@@ -27,7 +27,7 @@ const Component = () => {
 
   const [selectedComponentType, setSelectedComponentType] = useState(""); // For filtering by Component Type
   const [selectedCategory, setSelectedCategory] = useState(""); // For filtering by Category
-  
+
   // Function to get unique component types based on the selected category
   const getFilteredComponentTypes = () => {
     const filtered = selectedCategory
@@ -35,7 +35,7 @@ const Component = () => {
       : components;
     return [...new Set(filtered.map((c) => c.component_type))];
   };
-  
+
   // Function to get unique categories based on the selected component type
   const getFilteredCategories = () => {
     const filtered = selectedComponentType
