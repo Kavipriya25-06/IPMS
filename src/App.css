@@ -309,6 +309,12 @@ tbody tr:hover {
   border-collapse: collapse;
 }
 
+.popup tbody {
+  display: block;
+  max-height: 300px; /* Adjust the height as needed */
+  overflow-y: auto;
+}
+
 .popup button {
   margin-top: 10px;
 }
