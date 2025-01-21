@@ -338,38 +338,40 @@ tbody tr:hover {
   overflow: hidden;
 }
 
-.popup table {
+.table-container {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed; /* Ensures proper column alignment */
 }
 
-.popup thead {
-  display: table;
+.table-header {
   width: 100%;
-  table-layout: fixed; /* Align headers with the rows */
+  border-collapse: collapse;
 }
 
-.popup tbody {
-  display: block;
+.table-header th {
+  padding: 8px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+  background-color: #f9f9f9; /* Optional: Highlight headers */
+}
+
+.table-body {
   max-height: 300px; /* Adjust the height as needed */
   overflow-y: auto; /* Enable vertical scrolling */
 }
 
-.popup th,
-.popup td {
+.table-body table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-body td {
   padding: 8px;
   text-align: left;
   border-bottom: 1px solid #ddd;
   word-wrap: break-word; /* Prevent text overflow */
 }
 
-.popup th {
-  background-color: #f9f9f9; /* Optional: Highlight headers */
-  position: sticky; /* Stick headers during scroll */
-  top: 0;
-  z-index: 1;
-}
 
 /* .tag {
   background-color: #ff9800;
