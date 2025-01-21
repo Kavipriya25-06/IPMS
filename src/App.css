@@ -327,7 +327,7 @@ tbody tr:hover {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 80%; /* Adjust width as needed */
+  /*width: 80%; /* Adjust width as needed */
   max-height: 90%; /* Limit the height to 90% of the viewport */
   overflow-y: auto; /* Enable vertical scrolling if content exceeds height */
   background: #fff; /* Background color */
@@ -371,14 +371,13 @@ tbody tr:hover {
   font-size: 14px; /* Slightly smaller font for better readability */
 }
 
-.popup table th, 
+.popup table th,
 .popup table td {
   text-align: left; /* Align text to the left */
   padding: 10px; /* Add padding to table cells */
   border: 1px solid #ddd; /* Light border for table cells */
   word-break: break-word; /* Prevent text from overflowing */
 }
-
 
 /* Overlay styles */
 .popup-overlay {
@@ -390,8 +389,6 @@ tbody tr:hover {
   background: rgba(0, 0, 0, 0.5); /* Semi-transparent overlay */
   z-index: 999; /* Below the popup */
 }
-
-
 
 /* .tag {
   background-color: #ff9800;
