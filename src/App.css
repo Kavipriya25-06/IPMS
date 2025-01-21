@@ -379,20 +379,6 @@ tbody tr:hover {
   word-break: break-word; /* Prevent text from overflowing */
 }
 
-/* Table header styles */
-.popup table th {
-  background: #f4f4f4; /* Light background for headers */
-  font-weight: bold;
-}
-
-/* Styling rows for better readability */
-.popup table tr:nth-child(even) {
-  background: #f9f9f9; /* Alternate row background color */
-}
-
-.popup table tr:hover {
-  background: #f1f1f1; /* Highlight row on hover */
-}
 
 /* Overlay styles */
 .popup-overlay {
