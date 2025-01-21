@@ -321,56 +321,90 @@ tbody tr:hover {
 } */
 
 /* Popup Styles */
-/* Popup Styles */
+/* Styles for the popup container */
 .popup {
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background-color: white;
-  padding: 20px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
   width: 80%; /* Adjust width as needed */
-  max-height: 80%; /* Adjust max-height as needed */
-  overflow: hidden;
+  max-height: 90%; /* Limit the height to 90% of the viewport */
+  overflow-y: auto; /* Enable vertical scrolling if content exceeds height */
+  background: #fff; /* Background color */
+  border-radius: 8px; /* Rounded corners */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+  z-index: 1000; /* Ensure the popup is above other elements */
+  padding: 20px; /* Spacing inside the popup */
+  box-sizing: border-box; /* Include padding in width and height calculations */
 }
 
-.table-container {
+/* Close button styles */
+.close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 24px; /* Larger font for better visibility */
+  font-weight: bold;
+  color: #333;
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+.close-button:hover {
+  color: red; /* Change color on hover */
+}
+
+/* Popup header */
+.popup h3 {
+  margin-top: 0; /* Remove default margin at the top */
+  margin-bottom: 15px; /* Add space below the heading */
+  font-size: 20px;
+  color: #444;
+}
+
+/* Table styles inside the popup */
+.popup table {
+  width: 100%; /* Full width inside the popup */
+  border-collapse: collapse; /* Remove gaps between table cells */
+  margin-top: 10px;
+  font-size: 14px; /* Slightly smaller font for better readability */
+}
+
+.popup table th, 
+.popup table td {
+  text-align: left; /* Align text to the left */
+  padding: 10px; /* Add padding to table cells */
+  border: 1px solid #ddd; /* Light border for table cells */
+  word-break: break-word; /* Prevent text from overflowing */
+}
+
+/* Table header styles */
+.popup table th {
+  background: #f4f4f4; /* Light background for headers */
+  font-weight: bold;
+}
+
+/* Styling rows for better readability */
+.popup table tr:nth-child(even) {
+  background: #f9f9f9; /* Alternate row background color */
+}
+
+.popup table tr:hover {
+  background: #f1f1f1; /* Highlight row on hover */
+}
+
+/* Overlay styles */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 100%;
-  border-collapse: collapse;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5); /* Semi-transparent overlay */
+  z-index: 999; /* Below the popup */
 }
 
-.table-header {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.table-header th {
-  padding: 8px;
-  text-align: left;
-  border-bottom: 1px solid #ddd;
-  background-color: #f9f9f9; /* Optional: Highlight headers */
-}
-
-.table-body {
-  max-height: 300px; /* Adjust the height as needed */
-  overflow-y: auto; /* Enable vertical scrolling */
-}
-
-.table-body table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.table-body td {
-  padding: 8px;
-  text-align: left;
-  border-bottom: 1px solid #ddd;
-  word-wrap: break-word; /* Prevent text overflow */
-}
 
 
 /* .tag {
