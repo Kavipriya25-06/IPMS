@@ -1,7 +1,9 @@
-// Second set of code
+
+// Third set of code
+// do the development here
 // src\pages\Components.jsx
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import tagIcon from "../assets/Tag_icon.png";
 import config from "../config"; // Import config for API endpoints
 import "../App.css";
@@ -14,51 +16,243 @@ import {
   ToastContainerComponent,
 } from "./Toastify.jsx"; // Import Toastify utilities
 
+const debounce = (func, delay) => {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      func(...args);
+    }, delay);
+  };
+};
+
 const Component = () => {
   const [components, setComponents] = useState([]);
   const [tags, setTags] = useState([]);
-  const [searchTerm, setSearchTerm] = useState(""); // Stores the search term
-  const [filteredComponents, setFilteredComponents] = useState([]); // Stores the filtered components based on search
   const [availableTags, setAvailableTags] = useState([]); // List of attributes for tags
   const [selectedComponent, setSelectedComponent] = useState(null); // Component being edited
   const [newTag, setNewTag] = useState(""); // New tag to add
   const [newTagName, setNewTagName] = useState(""); // Add this state for the pop-up input value
   const [showPopup, setShowPopup] = useState(false);
+  const [testTags, setTestTags] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [nextPageUrl, setNextPageUrl] = useState(null); // Initial API URL
+  const [loading, setLoading] = useState(false); // Track loading state
+  const [hasMore, setHasMore] = useState(true); // Track if more data is available
+  const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
 
   const [selectedComponentType, setSelectedComponentType] = useState(""); // For filtering by Component Type
   const [selectedCategory, setSelectedCategory] = useState(""); // For filtering by Category
+  const [selectedTag, setSelectedTag] = useState(""); // Component specification selected for filtering
 
-  // Function to get unique component types based on the selected category
+  const [tagsChoices, setTagsChoices] = useState(""); // Tags filter
+  const [selectedSpecification, setSelectedSpecification] = useState("");
+  const isInitialMount = useRef(true); // Track if it's the first render
+
+  // Function to get unique component types based on the selected component type
   const getFilteredComponentTypes = () => {
-    const filtered = selectedCategory
-      ? components.filter((c) => c.category === selectedCategory)
-      : components;
-    return [...new Set(filtered.map((c) => c.component_type))];
+    const filtered = testTags.filter((tag) => {
+      const matchesCategory =
+        !selectedCategory || tag.component_id.category === selectedCategory;
+      const matchesTags = !tagsChoices || tag.tags.includes(tagsChoices);
+      const matchesSpecification =
+        !selectedSpecification ||
+        tag.component_id.component_specification
+          .toLowerCase()
+          .includes(selectedSpecification.toLowerCase());
+
+      return matchesCategory && matchesTags && matchesSpecification;
+    });
+
+    return [...new Set(filtered.map((tag) => tag.component_id.component_type))];
   };
 
-  // Function to get unique categories based on the selected component type
+  // Function to get unique categories based on the selected Category
+
   const getFilteredCategories = () => {
-    const filtered = selectedComponentType
-      ? components.filter((c) => c.component_type === selectedComponentType)
-      : components;
-    return [...new Set(filtered.map((c) => c.category))];
+    const filtered = testTags.filter((tag) => {
+      const matchesComponentType =
+        !selectedComponentType ||
+        tag.component_id.component_type === selectedComponentType;
+      const matchesTags = !tagsChoices || tag.tags.includes(tagsChoices);
+      const matchesSpecification =
+        !selectedSpecification ||
+        tag.component_id.component_specification
+          .toLowerCase()
+          .includes(selectedSpecification.toLowerCase());
+      // console.log("Matches component type", matchesComponentType);
+      return matchesComponentType && matchesTags && matchesSpecification;
+    });
+    // console.log("Filtered", filtered);
+    return [...new Set(filtered.map((tag) => tag.component_id.category))];
+  };
+
+  // Function to get unique component types based on the selected tags
+
+  const getFilteredTags = () => {
+    const filtered = testTags.filter((tag) => {
+      const matchesComponentType =
+        !selectedComponentType ||
+        tag.component_id.component_type === selectedComponentType;
+      const matchesCategory =
+        !selectedCategory || tag.component_id.category === selectedCategory;
+      const matchesSpecification =
+        !selectedSpecification ||
+        tag.component_id.component_specification
+          .toLowerCase()
+          .includes(selectedSpecification.toLowerCase());
+
+      return matchesComponentType && matchesCategory && matchesSpecification;
+    });
+
+    return [...new Set(filtered.flatMap((tag) => tag.tags))];
   };
 
   useEffect(() => {
-    fetchComponents();
     fetchTags();
+    fetchTestTags();
     fetchAvailableTags();
   }, []);
 
+  // Function to fetch data from the API
+  const fetchComponents = async (isFiltering = false, resetPage = false) => {
+    if ((!nextPageUrl && !isFiltering) || loading) {
+      return;
+    } // Stop if there's no next page or already loading
+
+    try {
+      setLoading(true);
+      const pageParam = resetPage || isFiltering ? 1 : currentPage;
+
+      // Construct the API URL with filters
+      const url = new URL("http://127.0.0.1:8000/tag_search/");
+      url.searchParams.append("page", pageParam);
+      if (selectedSpecification)
+        url.searchParams.append("search", selectedSpecification);
+      if (selectedCategory)
+        url.searchParams.append("category", selectedCategory);
+      if (selectedComponentType)
+        url.searchParams.append("component_type", selectedComponentType);
+      if (tagsChoices)
+        url.searchParams.append("tags_choices__tags", tagsChoices);
+
+      console.log("Fetching data from URL:", url.toString());
+      const response = await fetch(url);
+      const data = await response.json();
+      console.log("API Response:", data);
+
+      if (!data || !Array.isArray(data.results)) {
+        console.error("Invalid API response structure:", data);
+        setLoading(false);
+        return;
+      }
+
+      setComponents((prevComponents) => {
+        if (resetPage || isFiltering) {
+          return data.results; // Replace results when filtering
+        }
+        const componentMap = new Map(
+          prevComponents.map((c) => [c.component_id, c])
+        );
+
+        data.results.forEach((c) => {
+          if (!componentMap.has(c.component_id)) {
+            componentMap.set(c.component_id, c);
+          }
+        });
+
+        return Array.from(componentMap.values());
+      });
+      // Update next page URL and hasMore
+      // console.log("Next page URL:", data.next);
+      setNextPageUrl(data.next); // Update next page URL
+      setHasMore(data.next !== null); // Check if more data is available
+
+      // Increment page only if not filtering
+      if (!resetPage) {
+        setCurrentPage((prevPage) => prevPage + 1);
+      }
+    } catch (error) {
+      console.error("Error fetching components:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    filterComponentsBySearch();
-  }, [searchTerm, components, tags, selectedComponentType, selectedCategory]);
+    if (isInitialMount.current) {
+      isInitialMount.current = false; // Mark the first render as complete
+      fetchComponents();
+      return;
+    }
+
+    // Fetch components whenever filters change
+    setComponents([]);
+    setCurrentPage(1);
+    setNextPageUrl("http://127.0.0.1:8000/tag_search/?page=1");
+    fetchComponents(true);
+  }, [
+    selectedSpecification,
+    selectedCategory,
+    selectedComponentType,
+    tagsChoices,
+  ]);
+
+  // Infinite scroll handler
+  const handleScroll = () => {
+    if (
+      window.innerHeight + window.scrollY >= document.body.offsetHeight - 100 &&
+      hasMore &&
+      !loading
+    ) {
+      fetchComponents(); // Fetch next page when scrolled near bottom
+    }
+
+    // Show or hide scroll-to-top button
+    if (window.scrollY > 300) {
+      setShowScrollTop(true);
+    } else {
+      setShowScrollTop(false);
+    }
+  };
+
+  // Wrap the scroll handler with debounce
+  const debouncedHandleScroll = useCallback(debounce(handleScroll, 200), [
+    hasMore,
+    loading,
+    nextPageUrl,
+  ]);
+
+  // Attach scroll event listener
+  useEffect(() => {
+    window.addEventListener("scroll", debouncedHandleScroll);
+    return () => window.removeEventListener("scroll", debouncedHandleScroll); // Cleanup
+  }, [debouncedHandleScroll]);
+
+  // Scroll to top handler
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth", // Smooth scroll effect
+    });
+  };
 
   const fetchTags = async () => {
     try {
       const response = await fetch("http://127.0.0.1:8000/tags/");
       const data = await response.json();
       setTags(data);
+    } catch (error) {
+      console.error("Error fetching tags:", error);
+    }
+  };
+
+  const fetchTestTags = async () => {
+    try {
+      // const response = await fetch("http://127.0.0.1:8000/tags/");
+      const response = await fetch("http://127.0.0.1:8000/test_tags/");
+      const data = await response.json();
+      setTestTags(data);
     } catch (error) {
       console.error("Error fetching tags:", error);
     }
@@ -74,16 +268,10 @@ const Component = () => {
     }
   };
 
-  const fetchComponents = () => {
-    fetch(`${config.apiBaseURL}${config.endpoints.component}`)
-      .then((response) => response.json())
-      .then((data) => setComponents(data))
-      .catch((error) => console.error("Error fetching components:", error));
-  };
-
   // Helper function to get tags for a component
   const getTagsForComponent = (componentId) => {
-    return tags.filter((tag) => tag.component_id === componentId);
+    // return tags.filter((tag) => tag.component_id.component_id === componentId);
+    return tags.filter((tag) => tag.component_id === componentId); // check here Suriya
   };
 
   const handleAddTagClick = (componentId) => {
@@ -157,34 +345,6 @@ const Component = () => {
     }
   };
 
-  const filterComponentsBySearch = () => {
-    let filtered = components;
-
-    if (searchTerm.trim()) {
-      const lowerCaseSearchTerm = searchTerm.toLowerCase();
-      filtered = filtered.filter((component) => {
-        const componentTags = getTagsForComponent(component.component_id);
-        return componentTags.some((tag) =>
-          tag.tags.toLowerCase().includes(lowerCaseSearchTerm)
-        );
-      });
-    }
-
-    if (selectedComponentType) {
-      filtered = filtered.filter(
-        (component) => component.component_type === selectedComponentType
-      );
-    }
-
-    if (selectedCategory) {
-      filtered = filtered.filter(
-        (component) => component.category === selectedCategory
-      );
-    }
-
-    setFilteredComponents(filtered);
-  };
-
   const handleTagIconClick = () => {
     setShowPopup(true); // Show the pop-up when the tag image is clicked
   };
@@ -213,9 +373,9 @@ const Component = () => {
           <input
             type="text"
             className="search-bar"
-            placeholder="Search by tag..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search by Spec..."
+            value={selectedSpecification}
+            onChange={(e) => setSelectedSpecification(e.target.value)}
           />
           <span className="search-icon">
             <i className="fa fa-search" aria-hidden="true"></i>
@@ -256,76 +416,97 @@ const Component = () => {
               </select>
             </th>
             <th>Component ID </th>
-            <th>Tags</th>
+            <th>
+              Tags
+              <select
+                value={tagsChoices}
+                onChange={(e) => setTagsChoices(e.target.value)}
+              >
+                <option value="">All</option>
+                {getFilteredTags().map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
+            </th>
           </tr>
         </thead>
         <tbody>
-          {filteredComponents.length > 0 ? (
-            filteredComponents.map((component) => (
-              <tr key={component.component_id}>
-                <td>{component.component_type}</td>
-                <td>{component.component_specification}</td>
-                <td>{component.unit_of_measurement}</td>
-                <td>{component.category}</td>
-                <td>{component.component_id}</td>
-                <td>
-                  <div>
-                    {getTagsForComponent(component.component_id).length > 0 ? (
-                      getTagsForComponent(component.component_id).map((tag) => (
-                        <span key={tag.id} className="tag">
-                          {tag.tags}
-                          <button
-                            onClick={() =>
-                              deleteTag(tag.id, component.component_id)
-                            }
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))
-                    ) : (
-                      <span>No tags available</span>
-                    )}
-                    <button
-                      style={{
-                        marginLeft: "8px",
-                        background: "e2dede",
-                        width: "24px",
-                        height: "24px",
-                        borderRadius: "50%",
-                        border: "none",
-                        cursor: "pointer",
-                        color: "blue",
-                        fontSize: "16px",
-                      }}
-                      onClick={() => handleAddTagClick(component.component_id)}
-                    >
-                      +
-                    </button>
-                  </div>
-                  {/* Add Tag Dropdown/Modal */}
-                  {selectedComponent === component.component_id && (
-                    <div style={{ marginTop: "8px" }}>
-                      <select
-                        value={newTag}
-                        onChange={(e) => setNewTag(e.target.value)}
+          {components.length > 0 ? (
+            components.map((item, index) => {
+              const component = item.component_id || {};
+              return (
+                <tr key={index}>
+                  <td>{component.component_type}</td>
+                  <td>{component.component_specification}</td>
+                  <td>{component.unit_of_measurement}</td>
+                  <td>{component.category}</td>
+                  <td>{component.component_id}</td>
+                  <td>
+                    <div>
+                      {getTagsForComponent(component.component_id).length >
+                      0 ? (
+                        getTagsForComponent(component.component_id).map(
+                          (tag) => (
+                            <span key={tag.id} className="tag">
+                              {tag.tags}
+                              <button
+                                onClick={() =>
+                                  deleteTag(tag.id, component.component_id)
+                                }
+                              >
+                                ×
+                              </button>
+                            </span>
+                          )
+                        )
+                      ) : (
+                        <span>No tags available</span>
+                      )}
+                      <button
+                        style={{
+                          marginLeft: "8px",
+                          background: "e2dede",
+                          width: "24px",
+                          height: "24px",
+                          borderRadius: "50%",
+                          border: "none",
+                          cursor: "pointer",
+                          color: "blue",
+                          fontSize: "16px",
+                        }}
+                        onClick={() =>
+                          handleAddTagClick(component.component_id)
+                        }
                       >
-                        <option value="">Select a tag</option>
-                        {availableTags.map((tag) => (
-                          <option key={tag.id} value={tag.tags}>
-                            {tag.tags}
-                          </option>
-                        ))}
-                      </select>
-                      <button onClick={handleAddTag}>Add Tag</button>
-                      <button onClick={() => setSelectedComponent(null)}>
-                        Cancel
+                        +
                       </button>
                     </div>
-                  )}
-                </td>
-              </tr>
-            ))
+                    {/* Add Tag Dropdown/Modal */}
+                    {selectedComponent === component.component_id && (
+                      <div style={{ marginTop: "8px" }}>
+                        <select
+                          value={newTag}
+                          onChange={(e) => setNewTag(e.target.value)}
+                        >
+                          <option value="">Select a tag</option>
+                          {availableTags.map((tag) => (
+                            <option key={tag.id} value={tag.tags}>
+                              {tag.tags}
+                            </option>
+                          ))}
+                        </select>
+                        <button onClick={handleAddTag}>Add Tag</button>
+                        <button onClick={() => setSelectedComponent(null)}>
+                          Cancel
+                        </button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              );
+            })
           ) : (
             <tr>
               <td colSpan="6" style={{ textAlign: "center" }}>
@@ -335,6 +516,29 @@ const Component = () => {
           )}
         </tbody>
       </table>
+      {loading && <p>Loading...</p>}
+      {!hasMore && <p>No more data available</p>}
+
+      {showScrollTop && (
+        <button
+          style={{
+            position: "fixed",
+            bottom: "20px",
+            right: "20px",
+            padding: "10px 15px",
+            fontSize: "18px",
+            backgroundColor: "#f57c00",
+            color: "white",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer",
+            zIndex: 1000,
+          }}
+          onClick={scrollToTop}
+        >
+          ↑
+        </button>
+      )}
 
       {/* Pop-up for entering a tag */}
       {showPopup && (
