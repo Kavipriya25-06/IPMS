@@ -346,6 +346,9 @@ const Inward = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [showMessageBox, setShowMessageBox] = useState(false);
   const [messageBoxContent, setMessageBoxContent] = useState("");
+  const [skuPopupVisible, setSkuPopupVisible] = useState(false);
+  const [skuSerialNumber, setSkuSerialNumber] = useState("");
+  const [skuSelectedItem, setSkuSelectedItem] = useState(null);
   const [newQuestion, setNewQuestion] = useState({
     qc_select: "",
     description: "",
@@ -605,6 +608,7 @@ const Inward = () => {
       );
       const vendorName = getNestedValue(item, "po_master.cart.vendor_name");
       const serialNumber = item.serial_number || "Not Available"; // Ensure serial number is available
+      const skuNumber = item.sku_number || "Not Available";
       const date = item.date || new Date().toISOString(); // Use current date if not available
       const qualityCheck = item.quality_check || "Not Available"; // Default to "Not Available" if no quality check
       const qty = 1; // Default quantity to 1 as specified
@@ -676,6 +680,7 @@ const Inward = () => {
         component_specification: componentSpecification,
         vendor_name: vendorName,
         serial_number: serialNumber,
+        sku_number_inventory:skuNumber, 
         date: date,
         quality_check: qualityCheck,
         qty: qty, // Using the default qty value
@@ -762,6 +767,59 @@ const Inward = () => {
     }
   };
 
+/////////////////
+
+  // Handle SKU Number click
+  const handleSkuNumberClick = (item) => {
+    setSkuSelectedItem(item);
+    setSkuSerialNumber(""); // Clear the input field
+    setSkuPopupVisible(true);
+  };
+
+  // Handle SKU popup submit
+  const handleSkuSubmit = async () => {
+    const inwardId = skuSelectedItem?.inward_id || getNestedValue(skuSelectedItem, "inward_id");
+
+    if (!inwardId || inwardId === "Not Available") {
+      alert("Inward ID not found. Cannot update SKU.");
+      return;
+    }
+
+    try {
+      const payload = {
+        inward_id: inwardId,
+        sku_number: skuSerialNumber.trim() || null, // Allow null for empty serial number
+      };
+
+      const response = await fetch(`http://127.0.0.1:8000/inward/${inwardId}/`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorDetails = await response.json();
+        console.error("Error updating SKU:", errorDetails);
+        alert("Failed to update SKU.");
+        return;
+      }
+
+      showSuccessToast("SKU updated successfully.");
+      setSkuPopupVisible(false);
+      setSkuSerialNumber("");
+      fetchInwardData(); // Refresh data after updating
+    } catch (error) {
+      console.error("Error updating SKU:", error);
+      alert("An error occurred while updating SKU.");
+    }
+  };
+
+
+
+
+////////////////////
+
+
   useEffect(() => {
     fetchInwardData();
   }, []);
@@ -787,6 +845,7 @@ const Inward = () => {
             <th>Serial Number</th>
             <th>Date</th>
             <th>QC</th>
+            <th>SKU Number</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -803,6 +862,16 @@ const Inward = () => {
                 {new Date(item.date).toLocaleDateString() || "Not Available"}
               </td>
               <td>{item.quality_check || "Not Available"}</td>
+              <td>
+                {/* Show SKU number or Add SKU button based on presence of SKU number */}
+                {item.sku_number ? (
+                  <span>{item.sku_number}</span>
+                ) : (
+                  <button onClick={() => handleSkuNumberClick(item)}>
+                    Add SKU
+                  </button>
+                )}
+              </td>
               <td>
                 <button
                   onClick={() => handleQCClick(item)}
@@ -826,61 +895,78 @@ const Inward = () => {
       </table>
 
       {showQCPopup && selectedItem && (
-        <div className="popup">
-          <h3>
-            Quality Check for{" "}
-            {getNestedValue(selectedItem, "po_master.cart.component_id")}
-          </h3>
-          <div>
-            {newQuestion.qcQuestions?.map((q) => (
-              <div key={q.id}>
-                <p>{q.question}</p>
-                <label>
-                  Yes
-                  <input
-                    type="radio"
-                    name={`question-${q.id}`}
-                    onChange={() => handleQuestionAnswer(q.id, "Yes")}
-                  />
-                </label>
-                <label>
-                  No
-                  <input
-                    type="radio"
-                    name={`question-${q.id}`}
-                    onChange={() => handleQuestionAnswer(q.id, "No")}
-                  />
-                </label>
-              </div>
-            ))}
-          </div>
-          <div>
-            <h4>Overall Status</h4>
-            <label>
-              Pass
-              <input
-                type="radio"
-                name="overall-status"
-                onChange={() =>
-                  setNewQuestion((prev) => ({ ...prev, overallStatus: "Pass" }))
-                }
-              />
-            </label>
-            <label>
-              Fail
-              <input
-                type="radio"
-                name="overall-status"
-                onChange={() =>
-                  setNewQuestion((prev) => ({ ...prev, overallStatus: "Fail" }))
-                }
-              />
-            </label>
-          </div>
-          <button onClick={handleSubmitQC}>Submit QC</button>
-          <button onClick={() => setShowQCPopup(false)}>Close</button>
+  <div className="popup">
+    <h3>
+      Quality Check for{" "}
+      {getNestedValue(selectedItem, "po_master.cart.component_id")}
+    </h3>
+    <div>
+      {/* Render QC Questions */}
+      {newQuestion.qcQuestions?.map((q) => (
+        <div key={q.id}>
+          <p>{q.question}</p>
+          <label>
+            Yes
+            <input
+              type="radio"
+              name={`question-${q.id}`}
+              onChange={() => handleQuestionAnswer(q.id, "Yes")}
+            />
+          </label>
+          <label>
+            No
+            <input
+              type="radio"
+              name={`question-${q.id}`}
+              onChange={() => handleQuestionAnswer(q.id, "No")}
+            />
+          </label>
         </div>
-      )}
+      ))}
+    </div>
+    <div>
+      <h4>Overall Status</h4>
+      <label>
+        Pass
+        <input
+          type="radio"
+          name="overall-status"
+          onChange={() =>
+            setNewQuestion((prev) => ({ ...prev, overallStatus: "Pass" }))
+          }
+        />
+      </label>
+      <label>
+        Fail
+        <input
+          type="radio"
+          name="overall-status"
+          onChange={() =>
+            setNewQuestion((prev) => ({ ...prev, overallStatus: "Fail" }))
+          }
+        />
+      </label>
+    </div>
+    <button onClick={handleSubmitQC}>Submit QC</button>
+    <button onClick={() => setShowQCPopup(false)}>Close</button>
+  </div>
+)}
+
+{/* SKU Popup */}
+{skuPopupVisible && (
+  <div className="popup">
+    <h3>Enter Serial Number</h3>
+    <input
+      type="text"
+      value={skuSerialNumber}
+      onChange={(e) => setSkuSerialNumber(e.target.value)}
+      placeholder="Enter serial number (optional)"
+    />
+    <button onClick={handleSkuSubmit}>Submit</button>
+    <button onClick={() => setSkuPopupVisible(false)}>Cancel</button>
+  </div>
+)}
+
       <ToastContainerComponent />
     </div>
   );

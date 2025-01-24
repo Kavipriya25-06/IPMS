@@ -132,6 +132,7 @@ const Inventory = () => {
           <tr>
             <th>Component ID</th>
             <th>Serial Number</th>
+            <th>SKU Number</th>
             <th>Category</th>
             <th>Component Type</th>
             <th>Specification</th>
@@ -170,6 +171,7 @@ const Inventory = () => {
                       {componentId}
                     </td>
                     <td>{component.serial_number}</td>
+                    <td>{component.sku_number}</td>
                     <td>{component.category || ""}</td>
                     <td>{component.component_type || ""}</td>
                     <td>{component.component_specification || ""}</td>
@@ -193,6 +195,7 @@ const Inventory = () => {
                       >
                         <td>{row.component_id}</td>
                         <td>{row.serial_number}</td>
+                        <td>{row.sku_number_inventory}</td>
                         <td>{component.category || ""}</td>
                         <td>{component.component_type || ""}</td>
                         <td>{row.specification || ""}</td>
