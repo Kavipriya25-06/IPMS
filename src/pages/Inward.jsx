@@ -955,12 +955,12 @@ const Inward = () => {
 {/* SKU Popup */}
 {skuPopupVisible && (
   <div className="popup">
-    <h3>Enter Serial Number</h3>
+    <h3>Enter SKU Number</h3>
     <input
       type="text"
       value={skuSerialNumber}
       onChange={(e) => setSkuSerialNumber(e.target.value)}
-      placeholder="Enter serial number (optional)"
+      placeholder="SKU Number (optional)"
     />
     <button onClick={handleSkuSubmit}>Submit</button>
     <button onClick={() => setSkuPopupVisible(false)}>Cancel</button>

@@ -11,6 +11,9 @@ const Inventory = () => {
   const [metaTags, setMetaTags] = useState([]);
   const [filteredInventory, setFilteredInventory] = useState([]); // Stores the filtered inventory
   const [selectedTag, setSelectedTag] = useState(""); // Tag selected for filtering
+  const [editingSKU, setEditingSKU] = useState(null); // Tracks which row is being edited for SKU
+  const [tempSKU, setTempSKU] = useState(""); // Temporary SKU value for editing
+
 
   useEffect(() => {
     fetchInventoryData();
@@ -110,6 +113,52 @@ const Inventory = () => {
     setFilteredInventory(filtered);
   };
 
+  const handleDoubleClick = (id, currentSKU) => {
+    setEditingSKU(id); // Set edit mode for the row
+    setTempSKU(currentSKU); // Set the temporary SKU value
+  };
+
+  const handleSKUChange = (value) => {
+    setTempSKU(value); // Update the temporary SKU value
+  };
+
+  const handleSaveSKU = async (id) => {
+    const item = filteredInventory.find((row) => row.id === id);
+    if (!item) return;
+
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/inventory/${item.serial_number}/`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ sku_number_inventory: tempSKU }),
+        }
+      );
+
+      if (!response.ok) {
+        console.error("Failed to update SKU number:", response.statusText);
+        alert("Failed to update SKU number.");
+      } else {
+        // Update the state after a successful PATCH request
+        setFilteredInventory((prev) =>
+          prev.map((row) =>
+            row.id === id ? { ...row, sku_number: tempSKU } : row
+          )
+        );
+        alert("SKU number updated successfully!");
+      }
+    } catch (error) {
+      console.error("Error updating SKU number:", error);
+      alert("Error updating SKU number.");
+    } finally {
+      setEditingSKU(null); // Exit edit mode
+    }
+  };
+
+
   return (
     <div className="inventory-container">
       <div className="header">
@@ -195,7 +244,24 @@ const Inventory = () => {
                       >
                         <td>{row.component_id}</td>
                         <td>{row.serial_number}</td>
-                        <td>{row.sku_number_inventory}</td>
+                        <td
+                onDoubleClick={() => handleDoubleClick(row.id, row.sku_number)}
+                style={{ cursor: "pointer" }}
+              >
+                {editingSKU === row.id ? (
+                  <>
+                    <input
+                      type="text"
+                      value={tempSKU}
+                      onChange={(e) => handleSKUChange(e.target.value)}
+                      autoFocus
+                    />
+                    <button onClick={() => handleSaveSKU(row.id)}>Save</button>
+                  </>
+                ) : (
+                  <span>{row.sku_number_inventory}</span>
+                )}
+              </td>
                         <td>{component.category || ""}</td>
                         <td>{component.component_type || ""}</td>
                         <td>{row.specification || ""}</td>
