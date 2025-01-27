@@ -157,6 +157,11 @@ const Inventory = () => {
     }
   };
 
+    const handleCancelEdit = () => {
+    setEditingSKU(null);
+    setTempSKU("");
+  };
+
   return (
     <div className="inventory-container">
       <div className="header">
@@ -261,6 +266,7 @@ const Inventory = () => {
                               <button onClick={() => handleSaveSKU(row.id)}>
                                 Save
                               </button>
+                              <button onClick={handleCancelEdit}>Cancel</button>
                             </>
                           ) : (
                             <span>{row.sku_number_inventory}</span>
