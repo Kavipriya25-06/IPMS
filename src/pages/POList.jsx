@@ -185,6 +185,14 @@ const POOrderList = ({ user }) => {
       // Step 2: Upload the PDF to the backend
       const formDataUpload = new FormData();
       const pdfFileName = `PO_${currentPO.id}.pdf`;
+
+      // Split comma-separated emails into lists
+      const recipientList = formData.recipient
+        .split(",")
+        .map((email) => email.trim());
+      const ccList = formData.cc.split(",").map((email) => email.trim());
+      const bccList = formData.bcc.split(",").map((email) => email.trim());
+
       // console.log("PDF Blob:", pdfBlob, "Blob size", pdfBlob.size);
       // formDataUpload.append("file", new File([pdfBlob], pdfFileName)); // Attach file as FormData
       formDataUpload.append(
@@ -214,8 +222,12 @@ const POOrderList = ({ user }) => {
 
       // next step
 
-      formDataUpload.append("sender", formData.sender);
-      formDataUpload.append("recipient", formData.recipient);
+      // formDataUpload.append("sender", formData.sender);
+      // formDataUpload.append("recipient", formData.recipient);
+      // Append email lists as JSON strings
+      formDataUpload.append("recipient", JSON.stringify(recipientList));
+      formDataUpload.append("cc", JSON.stringify(ccList));
+      formDataUpload.append("bcc", JSON.stringify(bccList));
       formDataUpload.append(
         "sender_title",
         `Order Details for PO ID: ${currentPO.id}`
@@ -418,7 +430,7 @@ const POOrderList = ({ user }) => {
         <div className="popup">
           <h3>Send Email for PO ID: {currentPO?.id}</h3>
           <form>
-            <div>
+            {/* <div>
               <label>Sender:</label>
               <input
                 type="email"
@@ -438,9 +450,67 @@ const POOrderList = ({ user }) => {
                 onChange={handleChange}
                 required
               />
+            </div> */}
+
+            <div
+              style={{
+                padding: 5,
+                display: "flex",
+                justifyContent: "space-between",
+              }}
+            >
+              <label>Recipient:</label>
+              <input
+                type="text"
+                name="recipient"
+                value={formData.recipient}
+                onChange={handleChange}
+                placeholder="Enter multiple emails separated by commas"
+                required
+              />
             </div>
 
-            <div>
+            <div
+              style={{
+                padding: 5,
+                display: "flex",
+                justifyContent: "space-between",
+              }}
+            >
+              <label>CC:</label>
+              <input
+                type="text"
+                name="cc"
+                value={formData.cc}
+                onChange={handleChange}
+                placeholder="Enter multiple emails separated by commas"
+              />
+            </div>
+
+            <div
+              style={{
+                padding: 5,
+                display: "flex",
+                justifyContent: "space-between",
+              }}
+            >
+              <label>BCC:</label>
+              <input
+                type="text"
+                name="bcc"
+                value={formData.bcc}
+                onChange={handleChange}
+                placeholder="Enter multiple emails separated by commas"
+              />
+            </div>
+
+            <div
+              style={{
+                padding: 5,
+                display: "flex",
+                justifyContent: "space-between",
+              }}
+            >
               <label>Body:</label>
               <textarea
                 name="body"
