@@ -272,7 +272,7 @@ const POOrderList = ({ user }) => {
       30
     );
     doc.text(`Date: ${poDetails.date}`, 10, 40);
-    doc.text(`GSTIN: ${poDetails.gstn}`, 10, 50);
+    doc.text(`GSTIN: ${poDetails.cart_details.gstn}`, 10, 50);
     doc.text("Order Details:", 10, 60);
 
     // const tableColumns = ["Item", "Quantity", "Unit Price", "Total Cost"];
