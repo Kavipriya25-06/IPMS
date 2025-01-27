@@ -680,7 +680,7 @@ const Inward = () => {
         component_specification: componentSpecification,
         vendor_name: vendorName,
         serial_number: serialNumber,
-        sku_number_inventory:skuNumber, 
+        sku_number_inventory: skuNumber,
         date: date,
         quality_check: qualityCheck,
         qty: qty, // Using the default qty value
@@ -767,7 +767,7 @@ const Inward = () => {
     }
   };
 
-/////////////////
+  /////////////////
 
   // Handle SKU Number click
   const handleSkuNumberClick = (item) => {
@@ -778,7 +778,9 @@ const Inward = () => {
 
   // Handle SKU popup submit
   const handleSkuSubmit = async () => {
-    const inwardId = skuSelectedItem?.inward_id || getNestedValue(skuSelectedItem, "inward_id");
+    const inwardId =
+      skuSelectedItem?.inward_id ||
+      getNestedValue(skuSelectedItem, "inward_id");
 
     if (!inwardId || inwardId === "Not Available") {
       alert("Inward ID not found. Cannot update SKU.");
@@ -791,11 +793,14 @@ const Inward = () => {
         sku_number: skuSerialNumber.trim() || null, // Allow null for empty serial number
       };
 
-      const response = await fetch(`http://127.0.0.1:8000/inward/${inwardId}/`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        `http://127.0.0.1:8000/inward/${inwardId}/`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
 
       if (!response.ok) {
         const errorDetails = await response.json();
@@ -814,11 +819,7 @@ const Inward = () => {
     }
   };
 
-
-
-
-////////////////////
-
+  ////////////////////
 
   useEffect(() => {
     fetchInwardData();
@@ -895,77 +896,77 @@ const Inward = () => {
       </table>
 
       {showQCPopup && selectedItem && (
-  <div className="popup">
-    <h3>
-      Quality Check for{" "}
-      {getNestedValue(selectedItem, "po_master.cart.component_id")}
-    </h3>
-    <div>
-      {/* Render QC Questions */}
-      {newQuestion.qcQuestions?.map((q) => (
-        <div key={q.id}>
-          <p>{q.question}</p>
-          <label>
-            Yes
-            <input
-              type="radio"
-              name={`question-${q.id}`}
-              onChange={() => handleQuestionAnswer(q.id, "Yes")}
-            />
-          </label>
-          <label>
-            No
-            <input
-              type="radio"
-              name={`question-${q.id}`}
-              onChange={() => handleQuestionAnswer(q.id, "No")}
-            />
-          </label>
+        <div className="popup">
+          <h3>
+            Quality Check for{" "}
+            {getNestedValue(selectedItem, "po_master.cart.component_id")}
+          </h3>
+          <div>
+            {/* Render QC Questions */}
+            {newQuestion.qcQuestions?.map((q) => (
+              <div key={q.id}>
+                <p>{q.question}</p>
+                <label>
+                  Yes
+                  <input
+                    type="radio"
+                    name={`question-${q.id}`}
+                    onChange={() => handleQuestionAnswer(q.id, "Yes")}
+                  />
+                </label>
+                <label>
+                  No
+                  <input
+                    type="radio"
+                    name={`question-${q.id}`}
+                    onChange={() => handleQuestionAnswer(q.id, "No")}
+                  />
+                </label>
+              </div>
+            ))}
+          </div>
+          <div>
+            <h4>Overall Status</h4>
+            <label>
+              Pass
+              <input
+                type="radio"
+                name="overall-status"
+                onChange={() =>
+                  setNewQuestion((prev) => ({ ...prev, overallStatus: "Pass" }))
+                }
+              />
+            </label>
+            <label>
+              Fail
+              <input
+                type="radio"
+                name="overall-status"
+                onChange={() =>
+                  setNewQuestion((prev) => ({ ...prev, overallStatus: "Fail" }))
+                }
+              />
+            </label>
+          </div>
+          <button onClick={handleSubmitQC}>Submit QC</button>
+          <button onClick={() => setShowQCPopup(false)}>Close</button>
         </div>
-      ))}
-    </div>
-    <div>
-      <h4>Overall Status</h4>
-      <label>
-        Pass
-        <input
-          type="radio"
-          name="overall-status"
-          onChange={() =>
-            setNewQuestion((prev) => ({ ...prev, overallStatus: "Pass" }))
-          }
-        />
-      </label>
-      <label>
-        Fail
-        <input
-          type="radio"
-          name="overall-status"
-          onChange={() =>
-            setNewQuestion((prev) => ({ ...prev, overallStatus: "Fail" }))
-          }
-        />
-      </label>
-    </div>
-    <button onClick={handleSubmitQC}>Submit QC</button>
-    <button onClick={() => setShowQCPopup(false)}>Close</button>
-  </div>
-)}
+      )}
 
-{/* SKU Popup */}
-{skuPopupVisible && (
-  <div className="popup">
-    <h3>Enter SKU Number</h3>
-    <input
-      type="text"
-      value={skuSerialNumber}
-      onChange={(e) => setSkuSerialNumber(e.target.value)}
-      placeholder="SKU Number (optional)"
-    />
-    <button onClick={handleSkuSubmit}>Submit</button>
-    <button onClick={() => setSkuPopupVisible(false)}>Cancel</button>
-  </div>
-)}
+      {/* SKU Popup */}
+      {skuPopupVisible && (
+        <div className="popup">
+          <h3>Enter SKU Number</h3>
+          <input
+            type="text"
+            value={skuSerialNumber}
+            onChange={(e) => setSkuSerialNumber(e.target.value)}
+            placeholder="SKU Number (optional)"
+          />
+          <button onClick={handleSkuSubmit}>Submit</button>
+          <button onClick={() => setSkuPopupVisible(false)}>Cancel</button>
+        </div>
+      )}
 
       <ToastContainerComponent />
     </div>

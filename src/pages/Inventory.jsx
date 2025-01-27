@@ -14,7 +14,6 @@ const Inventory = () => {
   const [editingSKU, setEditingSKU] = useState(null); // Tracks which row is being edited for SKU
   const [tempSKU, setTempSKU] = useState(""); // Temporary SKU value for editing
 
-
   useEffect(() => {
     fetchInventoryData();
     fetchComponentMasterData();
@@ -158,7 +157,6 @@ const Inventory = () => {
     }
   };
 
-
   return (
     <div className="inventory-container">
       <div className="header">
@@ -245,23 +243,29 @@ const Inventory = () => {
                         <td>{row.component_id}</td>
                         <td>{row.serial_number}</td>
                         <td
-                onDoubleClick={() => handleDoubleClick(row.id, row.sku_number)}
-                style={{ cursor: "pointer" }}
-              >
-                {editingSKU === row.id ? (
-                  <>
-                    <input
-                      type="text"
-                      value={tempSKU}
-                      onChange={(e) => handleSKUChange(e.target.value)}
-                      autoFocus
-                    />
-                    <button onClick={() => handleSaveSKU(row.id)}>Save</button>
-                  </>
-                ) : (
-                  <span>{row.sku_number_inventory}</span>
-                )}
-              </td>
+                          onDoubleClick={() =>
+                            handleDoubleClick(row.id, row.sku_number)
+                          }
+                          style={{ cursor: "pointer" }}
+                        >
+                          {editingSKU === row.id ? (
+                            <>
+                              <input
+                                type="text"
+                                value={tempSKU}
+                                onChange={(e) =>
+                                  handleSKUChange(e.target.value)
+                                }
+                                autoFocus
+                              />
+                              <button onClick={() => handleSaveSKU(row.id)}>
+                                Save
+                              </button>
+                            </>
+                          ) : (
+                            <span>{row.sku_number_inventory}</span>
+                          )}
+                        </td>
                         <td>{component.category || ""}</td>
                         <td>{component.component_type || ""}</td>
                         <td>{row.specification || ""}</td>
