@@ -514,7 +514,7 @@ const Vendors = () => {
         <thead>
           <tr>
             <th>Vendor Name</th>
-            <th>GSTN</th>
+            <th>GSTIN</th>
             <th>Primary POC</th>
             <th>Email</th>
             <th>Phone</th>

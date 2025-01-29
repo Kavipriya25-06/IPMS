@@ -157,7 +157,7 @@ const Inventory = () => {
     }
   };
 
-    const handleCancelEdit = () => {
+  const handleCancelEdit = () => {
     setEditingSKU(null);
     setTempSKU("");
   };
@@ -198,6 +198,9 @@ const Inventory = () => {
           {Object.keys(groupedData).length > 0 ? (
             Object.keys(groupedData).map((componentId) => {
               const componentRows = groupedData[componentId];
+              const componentRowsCount =
+                groupedData[componentId].filter((row) => row.status === true)
+                  .length || 0;
               const firstRow = componentRows[0];
               const component = componentData[componentId] || {};
               const isExpanded = expandedComponents[componentId];
@@ -222,7 +225,9 @@ const Inventory = () => {
                     >
                       {componentId}
                     </td>
-                    <td>{component.serial_number}</td>
+                    <td
+                      style={{ color: "Grey", fontStyle: "italic" }}
+                    >{`Quantity: ${componentRowsCount}`}</td>
                     <td>{component.sku_number}</td>
                     <td>{component.category || ""}</td>
                     <td>{component.component_type || ""}</td>
@@ -293,6 +298,14 @@ const Inventory = () => {
               </td>
             </tr>
           )}
+          <tr>
+            <td style={{ fontWeight: "bold" }}>Total Inventory count</td>
+            <td>
+              {filteredInventory.filter((row) => row.status === true).length ||
+                0}
+            </td>
+            <td colSpan="8" className="no-data"></td>
+          </tr>
         </tbody>
       </table>
 
