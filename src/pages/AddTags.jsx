@@ -24,6 +24,7 @@ const AddTags = () => {
     fetchAvailableTags();
   }, []);
 
+  // Fetches tags from the API
   const fetchAvailableTags = async () => {
     try {
       const response = await fetch("http://127.0.0.1:8000/meta_tags/");
@@ -35,6 +36,7 @@ const AddTags = () => {
     }
   };
 
+  // Fetches components from the API
   const fetchComponents = async () => {
     try {
       const response = await fetch("http://127.0.0.1:8000/component/");
@@ -51,6 +53,7 @@ const AddTags = () => {
     return availableTags.filter((tag) => tag.component_id === componentId);
   };
 
+   // Toggles the selection of a component
   const handleCheckboxChange = (componentId) => {
     if (selectedComponents.includes(componentId)) {
       setSelectedComponents(
@@ -61,6 +64,7 @@ const AddTags = () => {
     }
   };
 
+   // Opens the pop-up for adding a tag to multiple components
   const handleAddTagClick = () => {
     if (selectedComponents.length === 0) {
       alert("Please select at least one component.");
@@ -71,6 +75,7 @@ const AddTags = () => {
     setShowPopup(true);
   };
 
+  // Opens the pop-up for adding a tag to a single component
   const handleTagColumnClick = (componentId) => {
     setPopupMode("single");
     setSingleComponentId(componentId);
@@ -78,6 +83,7 @@ const AddTags = () => {
     setShowPopup(true);
   };
 
+  // Handles adding a new tag
   const handleAddTag = async () => {
     if (!newTag.trim()) {
       alert("Please enter a valid tag.");
@@ -168,6 +174,7 @@ const AddTags = () => {
     }
   };
 
+   // Deletes a tag by ID
   const handleDeleteTag = async (tagId) => {
     try {
       const response = await fetch(

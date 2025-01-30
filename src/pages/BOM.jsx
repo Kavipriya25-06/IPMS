@@ -18,6 +18,7 @@ const BOM = () => {
     fetchBomQuantities();
   }, []);
 
+  // Function to fetch the quantity of components for each BOM
   const fetchBomQuantities = () => {
     fetch("http://127.0.0.1:8000/bom_master/")
       .then((response) => response.json())
@@ -34,6 +35,7 @@ const BOM = () => {
       .catch((error) => console.error("Error fetching BOM quantities:", error));
   };
 
+  // Function to handle a click on a BOM ID
   const handleBomClick = (bomId) => {
     navigate(`/bom/${bomId}`); // Navigate to BOM details page for the selected BOM
   };

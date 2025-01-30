@@ -42,8 +42,8 @@ const BOMDetails = () => {
       try {
         const response = await fetch("http://127.0.0.1:8000/bom_master/");
         const data = await response.json();
-        const bomComponents = data.filter((b) => b.bom === bomId);
-        setSelectedComponents(bomComponents);
+        const bomComponents = data.filter((b) => b.bom === bomId);// Filter components by BOM ID
+        setSelectedComponents(bomComponents); // Store BOM components
       } catch (error) {
         console.error("Error fetching BOM components:", error);
       }
@@ -51,14 +51,14 @@ const BOMDetails = () => {
 
     const fetchVendors = async () => {
       try {
-        setLoadingVendors(true);
+        setLoadingVendors(true); // Set loading to true
         const response = await fetch("http://127.0.0.1:8000/vendor_list/");
         const data = await response.json();
-        setVendors(data);
+        setVendors(data); // Store the vendor list
       } catch (error) {
         console.error("Error fetching vendors:", error);
       } finally {
-        setLoadingVendors(false);
+        setLoadingVendors(false); // Set loading to false
       }
     };
 
@@ -75,12 +75,14 @@ const BOMDetails = () => {
       }
     };
 
+     // Fetch all data
     fetchBomDetails();
     fetchBomComponents();
     fetchVendors();
     fetchComponents();
   }, [bomId]);
 
+   // Handle adding a new component to the BOM
   const handleAddComponent = async () => {
     try {
       // Check if the component already exists in the selectedComponents list
@@ -94,6 +96,7 @@ const BOMDetails = () => {
         return;
       }
 
+      // Validate input fields
       if (
         !newComponent.component ||
         !newComponent.vendor ||

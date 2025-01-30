@@ -20,6 +20,7 @@ const Cart = ({ user }) => {
     fetchCartItems();
   }, [requestId]);
 
+  // Function to fetch cart items from the API
   const fetchCartItems = async () => {
     try {
       const response = await fetch("http://127.0.0.1:8000/cart/");
@@ -98,6 +99,7 @@ const Cart = ({ user }) => {
     return requests[0]?.id || null; // Use optional chaining to avoid errors
   };
 
+   // Function to handle placing an order for a group
   const handlePlaceOrder = async (group) => {
     try {
       // Get the cart_id from the first item's ID
