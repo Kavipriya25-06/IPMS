@@ -6,7 +6,7 @@ import React, {
   useCallback,
   useRef,
 } from "react";
-import config from "../Config"; // Import config for API endpoints
+import config from "./Config"; // Import config for API endpoints
 
 // Create AuthContext
 const AuthContext = createContext(null);
