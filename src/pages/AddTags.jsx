@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import config from "../config"; // Adjust the config for API URLs
+import config from "../Config"; // Adjust the config for API URLs
 import "../App.css";
 import {
   showSuccessToast,
@@ -27,7 +27,7 @@ const AddTags = () => {
   // Fetches tags from the API
   const fetchAvailableTags = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/meta_tags/");
+      const response = await fetch(`${config.apiBaseURL}/meta_tags/`);
       const data = await response.json();
       setAvailableTags(data);
       console.log("Fetched tags ", data);
@@ -39,7 +39,7 @@ const AddTags = () => {
   // Fetches components from the API
   const fetchComponents = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/component/");
+      const response = await fetch(`${config.apiBaseURL}/component/`);
       const data = await response.json();
       setComponents(data);
       console.log("Fetched components", data);
@@ -112,7 +112,7 @@ const AddTags = () => {
       try {
         const responses = await Promise.all(
           payloads.map((payload) =>
-            fetch("http://127.0.0.1:8000/meta_tags/", {
+            fetch(`${config.apiBaseURL}/meta_tags/`, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -152,7 +152,7 @@ const AddTags = () => {
       };
 
       try {
-        const response = await fetch("http://127.0.0.1:8000/meta_tags/", {
+        const response = await fetch(`${config.apiBaseURL}/meta_tags/`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -178,7 +178,7 @@ const AddTags = () => {
   const handleDeleteTag = async (tagId) => {
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/meta_tags/${tagId}/`,
+        `${config.apiBaseURL}/meta_tags/${tagId}/`,
         {
           method: "DELETE",
         }

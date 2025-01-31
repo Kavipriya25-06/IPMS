@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import CustomMessagebox from "./CustomMessageBox.jsx";
+import config from "../Config"; // Import config for API endpoints
 
 const RequestForm = () => {
   const [boms, setBoms] = useState([]);
@@ -26,30 +27,30 @@ const RequestForm = () => {
   }); // State to manage popup input fields
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/bom_list/")
+    fetch(`${config.apiBaseURL}/bom_list/`)
       .then((response) => response.json())
       .then((data) => setBoms(data))
       .catch((error) => console.error("Error fetching BOMs:", error));
 
     // Fetch available components for adding
-    fetch("http://127.0.0.1:8000/component/")
+    fetch(`${config.apiBaseURL}/component/`)
       .then((response) => response.json())
       .then((data) => setAvailableComponents(data))
       .catch((error) => console.error("Error fetching components:", error));
 
     // Fetch vendor master to get vendor_id by component_id
-    fetch("http://127.0.0.1:8000/vendor_master/")
+    fetch(`${config.apiBaseURL}/vendor_master/`)
       .then((response) => response.json())
       .then((data) => setVendorMaster(data))
       .catch((error) => console.error("Error fetching vendor master:", error));
 
-    fetch("http://127.0.0.1:8000/project/")
+    fetch(`${config.apiBaseURL}/project/`)
       .then((response) => response.json())
       .then((data) => setProjects(data))
       .catch((error) => console.error("Error fetching projects:", error));
 
     // Fetch vendor list to get vendor names by vendor_id
-    fetch("http://127.0.0.1:8000/vendor_list/")
+    fetch(`${config.apiBaseURL}/vendor_list/`)
       .then((response) => response.json())
       .then((data) => setVendorList(data))
       .catch((error) => console.error("Error fetching vendor list:", error));
@@ -60,7 +61,7 @@ const RequestForm = () => {
     const bom = boms.find((b) => b.bom_id === selectedBomId);
     setSelectedBom(bom);
 
-    fetch("http://127.0.0.1:8000/bom_master/")
+    fetch(`${config.apiBaseURL}/bom_master/`)
       .then((response) => response.json())
       .then((data) => {
         const bomComponents = data.filter((b) => b.bom === selectedBomId);
@@ -193,7 +194,7 @@ const RequestForm = () => {
         number_of_components: 1,
       };
 
-      const bomlistresponse = await fetch("http://127.0.0.1:8000/bom_list/", {
+      const bomlistresponse = await fetch(`${config.apiBaseURL}/bom_list/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -223,7 +224,7 @@ const RequestForm = () => {
       }));
 
       const bomMasterPromises = bomMasterEntries.map((entry) =>
-        fetch("http://127.0.0.1:8000/bom_master/", {
+        fetch(`${config.apiBaseURL}/bom_master/`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -247,7 +248,7 @@ const RequestForm = () => {
       };
 
       const requestListResponse = await fetch(
-        "http://127.0.0.1:8000/request_list/",
+        `${config.apiBaseURL}/request_list/`,
         {
           method: "POST",
           headers: {
@@ -279,7 +280,7 @@ const RequestForm = () => {
 
       await Promise.all(
         requestMasterEntries.map((entry) =>
-          fetch("http://127.0.0.1:8000/request_master/", {
+          fetch(`${config.apiBaseURL}/request_master/`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -316,7 +317,7 @@ const RequestForm = () => {
     // If user doesn't want to save a new BOM or no new components were added/removed
     try {
       const requestListResponse = await fetch(
-        "http://127.0.0.1:8000/request_list/",
+        `${config.apiBaseURL}/request_list/`,
         {
           method: "POST",
           headers: {
@@ -359,7 +360,7 @@ const RequestForm = () => {
 
       await Promise.all(
         requestMasterEntries.map((entry) =>
-          fetch("http://127.0.0.1:8000/request_master/", {
+          fetch(`${config.apiBaseURL}/request_master/`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -380,7 +381,7 @@ const RequestForm = () => {
       };
 
       const projectPatchResponse = await fetch(
-        `http://127.0.0.1:8000/project/${selectedProject.project_id}/`,
+        `${config.apiBaseURL}/project/${selectedProject.project_id}/`,
         {
           method: "PATCH",
           headers: {
@@ -406,7 +407,7 @@ const RequestForm = () => {
       // };
 
       // const notificationResponse = await fetch(
-      //   "http://127.0.0.1:8000/new_submit_notification/",
+      //   `${config.apiBaseURL}/new_submit_notification/`,
       //   {
       //     method: "POST",
       //     headers: {

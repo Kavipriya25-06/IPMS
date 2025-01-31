@@ -5,6 +5,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import CustomMessagebox from "./CustomMessageBox.jsx";
+import config from "../Config"; // Import config for API endpoints
 
 import {
   showSuccessToast,
@@ -62,7 +63,7 @@ const VendorDetails = () => {
   useEffect(() => {
     const fetchVendorDetails = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/vendor_master/");
+        const response = await fetch(`${config.apiBaseURL}/vendor_master/`);
         const data = await response.json();
         const matchedProducts = data.filter(
           (product) => product.vendor === vendorId
@@ -72,7 +73,7 @@ const VendorDetails = () => {
         const updatedProducts = await Promise.all(
           matchedProducts.map(async (product) => {
             const priceResponse = await fetch(
-              "http://127.0.0.1:8000/price_tables/"
+              `${config.apiBaseURL}/price_tables/`
             );
             const priceData = await priceResponse.json();
 
@@ -100,7 +101,7 @@ const VendorDetails = () => {
 
     const fetchVendorData = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/vendor_list/");
+        const response = await fetch(`${config.apiBaseURL}/vendor_list/`);
         const data = await response.json();
         setVendorData(data);
       } catch (error) {
@@ -110,7 +111,7 @@ const VendorDetails = () => {
 
     const fetchComponentMasterData = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/component/");
+        const response = await fetch(`${config.apiBaseURL}/component/`);
         const data = await response.json();
         const componentMap = data.reduce((acc, component) => {
           acc[component.product_id] = component.component_id || "null";
@@ -124,7 +125,7 @@ const VendorDetails = () => {
 
     const fetchChoices = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/get_choices/");
+        const response = await fetch(`${config.apiBaseURL}/get_choices/`);
         if (!response.ok) {
           throw new Error("Failed to fetch choices");
         }
@@ -148,7 +149,7 @@ const VendorDetails = () => {
   // Fetch price history for a product
   const fetchPriceHistory = async (productId) => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/price_tables/");
+      const response = await fetch(`${config.apiBaseURL}/price_tables/`);
       const data = await response.json();
 
       // Filter data to include only entries with the specified productId
@@ -189,7 +190,7 @@ const VendorDetails = () => {
     };
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/price_tables/", {
+      const response = await fetch(`${config.apiBaseURL}/price_tables/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -228,7 +229,7 @@ const VendorDetails = () => {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/price_tables/${entryId}/`,
+        `${config.apiBaseURL}/price_tables/${entryId}/`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -253,7 +254,7 @@ const VendorDetails = () => {
   const handleDeletePriceEntry = async (index) => {
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/price_tables/${priceHistory[index].id}/`,
+        `${config.apiBaseURL}/price_tables/${priceHistory[index].id}/`,
         {
           method: "DELETE",
         }
@@ -301,7 +302,7 @@ const VendorDetails = () => {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/vendor_master/${selectedVendorData[index].product_id}/`, // Use a specific endpoint for updating the image
+        `${config.apiBaseURL}/vendor_master/${selectedVendorData[index].product_id}/`, // Use a specific endpoint for updating the image
         {
           method: "PUT",
           body: formData,
@@ -330,7 +331,7 @@ const VendorDetails = () => {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/vendor_master/${selectedVendorData[index].product_id}/`, // Use a specific endpoint for updating the attachment
+        `${config.apiBaseURL}/vendor_master/${selectedVendorData[index].product_id}/`, // Use a specific endpoint for updating the attachment
         {
           method: "PUT",
           body: formData,
@@ -378,7 +379,7 @@ const VendorDetails = () => {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/vendor_master/${editProduct.product_id}/`,
+        `${config.apiBaseURL}/vendor_master/${editProduct.product_id}/`,
         {
           // method: "PUT",
           // body: formData,
@@ -482,7 +483,7 @@ const VendorDetails = () => {
     formData.append("vendor", vendorId);
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/vendor_master/", {
+      const response = await fetch(`${config.apiBaseURL}/vendor_master/`, {
         method: "POST",
         body: formData, // Send formData instead of JSON
       });
@@ -516,7 +517,7 @@ const VendorDetails = () => {
         };
 
         const priceResponse = await fetch(
-          "http://127.0.0.1:8000/price_tables/",
+          `${config.apiBaseURL}/price_tables/`,
           {
             method: "POST",
             headers: {
@@ -552,7 +553,7 @@ const VendorDetails = () => {
     };
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/component/", {
+      const response = await fetch(`${config.apiBaseURL}/component/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -822,7 +823,7 @@ const VendorDetails = () => {
             <p>Current Image:</p>
             {editProduct.img ? (
               <img
-                src={`http://127.0.0.1:8000${editProduct.img}`}
+                src={`${config.apiBaseURL}${editProduct.img}`}
                 alt="Product"
                 style={{ width: "100px", height: "100px" }}
               />
@@ -836,7 +837,7 @@ const VendorDetails = () => {
             <p>Current Attachment:</p>
             {editProduct.attachments ? (
               <a
-                href={`http://127.0.0.1:8000${editProduct.attachments}`}
+                href={`${config.apiBaseURL}${editProduct.attachments}`}
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -1024,7 +1025,7 @@ const VendorDetails = () => {
                 <td>
                   {product.img ? (
                     <img
-                      src={`http://127.0.0.1:8000${product.img}`}
+                      src={`${config.apiBaseURL}${product.img}`}
                       alt="Product"
                       style={{ width: "50px", height: "50px" }}
                     />
@@ -1059,7 +1060,7 @@ const VendorDetails = () => {
                 <td>
                   {product.attachments ? (
                     <a
-                      href={`http://127.0.0.1:8000${product.attachments}`}
+                      href={`${config.apiBaseURL}${product.attachments}`}
                       target="_blank"
                       rel="noopener noreferrer"
                     >

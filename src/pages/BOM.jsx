@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import config from "../Config"; // Import config for API endpoints
 
 const BOM = () => {
   const [boms, setBoms] = useState([]); // List of all BOMs
@@ -10,7 +11,7 @@ const BOM = () => {
 
   useEffect(() => {
     // Fetch BOM list from the API
-    fetch("http://127.0.0.1:8000/bom_list/")
+    fetch(`${config.apiBaseURL}/bom_list/`)
       .then((response) => response.json())
       .then((data) => setBoms(data))
       .catch((error) => console.error("Error fetching BOMs:", error));
@@ -20,7 +21,7 @@ const BOM = () => {
 
   // Function to fetch the quantity of components for each BOM
   const fetchBomQuantities = () => {
-    fetch("http://127.0.0.1:8000/bom_master/")
+    fetch(`${config.apiBaseURL}/bom_master/`)
       .then((response) => response.json())
       .then((data) => {
         const quantities = {};

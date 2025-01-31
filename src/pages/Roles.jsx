@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import config from "../Config"; // Import config for API endpoints
 
 const Roles = () => {
   const [users, setUsers] = useState([]);
@@ -21,7 +22,7 @@ const Roles = () => {
   // Fetch users from API
   const fetchUsers = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/register/");
+      const response = await fetch(`${config.apiBaseURL}/register/`);
       if (!response.ok) {
         throw new Error(`Error fetching users: ${response.statusText}`);
       }
@@ -49,7 +50,7 @@ const Roles = () => {
       // Make an API call to update the role
       const payload = { role: newRole };
       const response = await fetch(
-        `http://127.0.0.1:8000/register/${userId}/`,
+        `${config.apiBaseURL}/register/${userId}/`,
         {
           method: "PATCH",
           headers: {
@@ -84,7 +85,7 @@ const Roles = () => {
       // Optional: Make an API call to update the role
       const payload = { role: newRole };
       const response = await fetch(
-        `http://127.0.0.1:8000/register/${userId}/`,
+        `${config.apiBaseURL}/register/${userId}/`,
         {
           method: "PATCH",
           headers: {
@@ -106,7 +107,7 @@ const Roles = () => {
   // Handle add user
   const handleAddUser = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/register/", {
+      const response = await fetch(`${config.apiBaseURL}/register/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

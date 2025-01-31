@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import CustomMessagebox from "./CustomMessageBox.jsx";
+import config from "../Config"; // Import config for API endpoints
 
 import {
   showSuccessToast,
@@ -58,7 +59,7 @@ const RequestDetails = ({ user }) => {
 
   const fetchRequestDetails = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/request_master/");
+      const response = await fetch(`${config.apiBaseURL}/request_master/`);
       const data = await response.json();
       const filteredDetails = data.filter(
         (detail) => String(detail.request_id) === String(requestId)
@@ -72,7 +73,7 @@ const RequestDetails = ({ user }) => {
   const fetchRequestList = async () => {
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/request_list/${requestId}/`
+        `${config.apiBaseURL}/request_list/${requestId}/`
       );
       const data = await response.json();
       if (!data.length) return;
@@ -88,7 +89,7 @@ const RequestDetails = ({ user }) => {
   const fetchProjectDetails = async () => {
     // console.log("first details", details);
     try {
-      const response = await fetch("http://127.0.0.1:8000/project/");
+      const response = await fetch(`${config.apiBaseURL}/project/`);
       const data = await response.json();
       if (!details.length) return;
       const projects = data.find(
@@ -105,7 +106,7 @@ const RequestDetails = ({ user }) => {
 
   const fetchRequestStatus = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/update_request/");
+      const response = await fetch(`${config.apiBaseURL}/update_request/`);
       const data = await response.json();
       setRequestStatus(data);
       // console.log("Status", data);
@@ -116,7 +117,7 @@ const RequestDetails = ({ user }) => {
 
   const fetchInventoryData = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/inventory/");
+      const response = await fetch(`${config.apiBaseURL}/inventory/`);
       const data = await response.json();
 
       const inventoryMap = data.reduce((acc, item) => {
@@ -144,7 +145,7 @@ const RequestDetails = ({ user }) => {
 
   const fetchVendorList = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/vendor_list/");
+      const response = await fetch(`${config.apiBaseURL}/vendor_list/`);
       const data = await response.json();
       const uniqueVendors = data.map((vendor) => ({
         vendor_id: vendor.vendor_id,
@@ -159,7 +160,7 @@ const RequestDetails = ({ user }) => {
 
   const fetchCartItems = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/cart/");
+      const response = await fetch(`${config.apiBaseURL}/cart/`);
       if (!response.ok) {
         console.error("Error fetching cart items:", response.statusText);
         // alert("Failed to fetch cart items.");
@@ -199,7 +200,7 @@ const RequestDetails = ({ user }) => {
 
     try {
       // Fetch product_id from the component API
-      const componentResponse = await fetch("http://127.0.0.1:8000/component/");
+      const componentResponse = await fetch(`${config.apiBaseURL}/component/`);
       const componentData = await componentResponse.json();
       const component = componentData.find(
         (comp) => comp.component_id === detail.component_id
@@ -241,7 +242,7 @@ const RequestDetails = ({ user }) => {
 
     try {
       // Send POST request to add to cart
-      const response = await fetch("http://127.0.0.1:8000/cart/", {
+      const response = await fetch(`${config.apiBaseURL}/cart/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderData),
@@ -260,7 +261,7 @@ const RequestDetails = ({ user }) => {
         };
 
         const updateResponse = await fetch(
-          `http://127.0.0.1:8000/request_master/${detail.request_id}/${detail.id}/`,
+          `${config.apiBaseURL}/request_master/${detail.request_id}/${detail.id}/`,
           {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
@@ -365,7 +366,7 @@ const RequestDetails = ({ user }) => {
       for (const serialNumber of selectedSerialNumbers) {
         // First, fetch the existing inventory data for the serial number
         const inventoryResponse = await fetch(
-          `http://127.0.0.1:8000/inventory/${serialNumber}/`
+          `${config.apiBaseURL}/inventory/${serialNumber}/`
         );
 
         if (!inventoryResponse.ok) {
@@ -394,7 +395,7 @@ const RequestDetails = ({ user }) => {
 
         // Update the inventory status for the serial number
         const updateResponse = await fetch(
-          `http://127.0.0.1:8000/inventory/${serialNumber}/`,
+          `${config.apiBaseURL}/inventory/${serialNumber}/`,
           {
             method: "PUT",
             headers: {
@@ -413,7 +414,7 @@ const RequestDetails = ({ user }) => {
 
       // Fetch current qty from request master using the ID
       const requestMasterFetchResponse = await fetch(
-        `http://127.0.0.1:8000/request_master/${requestId}/${id}/`
+        `${config.apiBaseURL}/request_master/${requestId}/${id}/`
       );
 
       if (!requestMasterFetchResponse.ok) {
@@ -438,7 +439,7 @@ const RequestDetails = ({ user }) => {
 
       // Update request_master
       const requestMasterResponse = await fetch(
-        `http://127.0.0.1:8000/request_master/${requestId}/${id}/`,
+        `${config.apiBaseURL}/request_master/${requestId}/${id}/`,
         {
           method: "PATCH",
           headers: {
@@ -599,7 +600,7 @@ const RequestDetails = ({ user }) => {
 
   const fetchPriceViewData = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/price_view_2/");
+      const response = await fetch(`${config.apiBaseURL}/price_view_2/`);
       if (!response.ok) {
         throw new Error(`Failed to fetch price data: ${response.statusText}`);
       }
@@ -665,7 +666,7 @@ const RequestDetails = ({ user }) => {
   //     const approvalPromises = details.map((detail) =>
   //       !detail.approve
   //         ? fetch(
-  //             `http://127.0.0.1:8000/request_master/${detail.request_id}/`,
+  //             `${config.apiBaseURL}/request_master/${detail.request_id}/`,
   //             {
   //               method: "PATCH",
   //               headers: {
@@ -706,7 +707,7 @@ const RequestDetails = ({ user }) => {
       // Iterate over each detail and send a PATCH request
       const approvalPromises = details.map((detail) =>
         fetch(
-          `http://127.0.0.1:8000/request_master/${detail.request_id}/${detail.id}/`,
+          `${config.apiBaseURL}/request_master/${detail.request_id}/${detail.id}/`,
           {
             method: "PATCH",
             headers: {
@@ -1243,7 +1244,7 @@ export default RequestDetails;
 
 //       // Update each serial in inventory to set status back to true
 //       const inventoryResponse = await fetch(
-//         `http://127.0.0.1:8000/inventory/${serial.serialNumber}`,
+//         `${config.apiBaseURL}/inventory/${serial.serialNumber}`,
 //         {
 //           method: "PUT",
 //           headers: {
@@ -1281,7 +1282,7 @@ export default RequestDetails;
 
 //     // Update request_master with the new qty and assign status
 //     const requestMasterResponse = await fetch(
-//       `http://127.0.0.1:8000/request_master/${requestId}/`,
+//       `${config.apiBaseURL}/request_master/${requestId}/`,
 //       {
 //         method: "PUT",
 //         headers: {

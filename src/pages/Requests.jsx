@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import config from "../Config"; // Import config for API endpoints
 
 const Requests = () => {
   const [requests, setRequests] = useState([]);
@@ -10,7 +11,7 @@ const Requests = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/request_list/")
+    fetch(`${config.apiBaseURL}/request_list/`)
       .then((response) => response.json())
       .then((data) => setRequests(data))
       .catch((error) => console.error("Error fetching requests:", error));
@@ -28,7 +29,7 @@ const Requests = () => {
 
   const fetchRequestDetails = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/request_master/");
+      const response = await fetch(`${config.apiBaseURL}/request_master/`);
       const data = await response.json();
       setRequestMaster(data);
       console.log("Request master", data);
@@ -39,7 +40,7 @@ const Requests = () => {
 
   const fetchRequestStatus = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/update_request/");
+      const response = await fetch(`${config.apiBaseURL}/update_request/`);
       const data = await response.json();
       setRequestStatus(data);
       // console.log("Status", data);

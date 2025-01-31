@@ -1,11 +1,10 @@
-
 // Third set of code
 // do the development here
 // src\pages\Components.jsx
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import tagIcon from "../assets/Tag_icon.png";
-import config from "../config"; // Import config for API endpoints
+import config from "../Config"; // Import config for API endpoints
 import "../App.css";
 
 import {
@@ -125,7 +124,7 @@ const Component = () => {
       const pageParam = resetPage || isFiltering ? 1 : currentPage;
 
       // Construct the API URL with filters
-      const url = new URL("http://127.0.0.1:8000/tag_search/");
+      const url = new URL(`${config.apiBaseURL}/tag_search/`);
       url.searchParams.append("page", pageParam);
       if (selectedSpecification)
         url.searchParams.append("search", selectedSpecification);
@@ -189,7 +188,7 @@ const Component = () => {
     // Fetch components whenever filters change
     setComponents([]);
     setCurrentPage(1);
-    setNextPageUrl("http://127.0.0.1:8000/tag_search/?page=1");
+    setNextPageUrl(`${config.apiBaseURL}/tag_search/?page=1`);
     fetchComponents(true);
   }, [
     selectedSpecification,
@@ -239,7 +238,7 @@ const Component = () => {
 
   const fetchTags = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/tags/");
+      const response = await fetch(`${config.apiBaseURL}/tags/`);
       const data = await response.json();
       setTags(data);
     } catch (error) {
@@ -249,8 +248,8 @@ const Component = () => {
 
   const fetchTestTags = async () => {
     try {
-      // const response = await fetch("http://127.0.0.1:8000/tags/");
-      const response = await fetch("http://127.0.0.1:8000/test_tags/");
+      // const response = await fetch(`${config.apiBaseURL}/tags/`);
+      const response = await fetch(`${config.apiBaseURL}/test_tags/`);
       const data = await response.json();
       setTestTags(data);
     } catch (error) {
@@ -260,7 +259,7 @@ const Component = () => {
 
   const fetchAvailableTags = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/create_tag/");
+      const response = await fetch(`${config.apiBaseURL}/create_tag/`);
       const data = await response.json();
       setAvailableTags(data); // Directly set the list of tags from the API
     } catch (error) {
@@ -296,7 +295,7 @@ const Component = () => {
     };
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/tags/", {
+      const response = await fetch(`${config.apiBaseURL}/tags/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -328,7 +327,7 @@ const Component = () => {
 
   const deleteTag = async (tagId, componentId) => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/tags/${tagId}/`, {
+      const response = await fetch(`${config.apiBaseURL}/tags/${tagId}/`, {
         method: "DELETE",
       });
 
@@ -357,7 +356,17 @@ const Component = () => {
     <div>
       <div className="header">
         <h2>Component List</h2>
-        <img
+        <button
+          style={{
+            cursor: "pointer",
+            marginLeft: "auto",
+            marginRight: 20,
+          }}
+          onClick={handleTagIconClick}
+        >
+          Create Tag
+        </button>
+        {/* <img
           src={tagIcon}
           alt="Tag Icon"
           title="Add tags"
@@ -368,7 +377,7 @@ const Component = () => {
             marginLeft: "auto",
           }}
           onClick={handleTagIconClick}
-        />
+        /> */}
         <div className="search-bar-container">
           <input
             type="text"
@@ -588,7 +597,7 @@ const Component = () => {
 
               try {
                 const response = await fetch(
-                  "http://127.0.0.1:8000/create_tag/",
+                  `${config.apiBaseURL}/create_tag/`,
                   {
                     method: "POST",
                     headers: {

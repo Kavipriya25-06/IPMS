@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import CustomMessagebox from "./CustomMessageBox.jsx";
+import config from "../Config"; // Import config for API endpoints
 
 import {
   showSuccessToast,
@@ -23,7 +24,7 @@ const Cart = ({ user }) => {
   // Function to fetch cart items from the API
   const fetchCartItems = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/cart/");
+      const response = await fetch(`${config.apiBaseURL}/cart/`);
       if (!response.ok) {
         console.error("Error fetching cart items:", response.statusText);
         // alert("Failed to fetch cart items.");
@@ -120,7 +121,7 @@ const Cart = ({ user }) => {
 
       console.log("PO list sending payload:", poListPayload);
 
-      const poListResponse = await fetch("http://127.0.0.1:8000/po_list/", {
+      const poListResponse = await fetch(`${config.apiBaseURL}/po_list/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(poListPayload),
@@ -151,7 +152,7 @@ const Cart = ({ user }) => {
                   status: "In Progress", // Order status
                 };
 
-                return fetch("http://127.0.0.1:8000/po_master/", {
+                return fetch(`${config.apiBaseURL}/po_master/`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify(poMasterPayload),
@@ -179,7 +180,7 @@ const Cart = ({ user }) => {
               requests.map((item) => {
                 const patchPayload = { order_placed: true };
 
-                return fetch(`http://127.0.0.1:8000/cart/${item.id}/`, {
+                return fetch(`${config.apiBaseURL}/cart/${item.id}/`, {
                   method: "PATCH",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify(patchPayload),

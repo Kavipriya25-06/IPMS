@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import config from "../Config"; // Import config for API endpoints
 
 const POOrderList = ({ user }) => {
   const [poOrders, setPOOrders] = useState([]); // State to store PO orders
@@ -37,7 +38,7 @@ const POOrderList = ({ user }) => {
     try {
       // Fetch vendor contact details
       const contactResponse = await fetch(
-        "http://127.0.0.1:8000/vendor_sub_list/"
+        `${config.apiBaseURL}/vendor_sub_list/`
       );
       const contactResult = await contactResponse.json();
       const contactDetails = contactResult.find(
@@ -47,7 +48,7 @@ const POOrderList = ({ user }) => {
       // console.log("Contact details", contactResult);
 
       // Fetch vendor name
-      const vendorResponse = await fetch("http://127.0.0.1:8000/vendor_list/");
+      const vendorResponse = await fetch(`${config.apiBaseURL}/vendor_list/`);
       const vendorResult = await vendorResponse.json();
       const vendorDetails = vendorResult.find(
         (vendor) => vendor.vendor_id === vendorId
@@ -67,7 +68,7 @@ const POOrderList = ({ user }) => {
 
   const fetchPOListData = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/po_list/");
+      const response = await fetch(`${config.apiBaseURL}/po_list/`);
       const result = await response.json();
       // console.log("Fetched PO list", result);
       // console.log("Current PO ID", currentPO);
@@ -88,7 +89,7 @@ const POOrderList = ({ user }) => {
   // Fetch PO orders
   const fetchPOOrders = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/po_list/");
+      const response = await fetch(`${config.apiBaseURL}/po_list/`);
       const result = await response.json();
       if (Array.isArray(result)) {
         setPOOrders(result);
@@ -104,7 +105,7 @@ const POOrderList = ({ user }) => {
   // Fetch PO master
   const fetchPOMaster = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/po_master/");
+      const response = await fetch(`${config.apiBaseURL}/po_master/`);
       const result = await response.json();
       if (Array.isArray(result)) {
         setPOMaster(result);
@@ -120,7 +121,7 @@ const POOrderList = ({ user }) => {
   // Fetch order statuses
   const fetchOrderStatuses = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/order_view/");
+      const response = await fetch(`${config.apiBaseURL}/order_view/`);
       const result = await response.json();
       if (Array.isArray(result)) {
         setOrderStatuses(result);
@@ -201,7 +202,7 @@ const POOrderList = ({ user }) => {
       );
 
       const uploadResponse = await fetch(
-        "http://127.0.0.1:8000/file_upload_view/",
+        `${config.apiBaseURL}/file_upload_view/`,
         {
           method: "POST",
           body: formDataUpload,
@@ -249,7 +250,7 @@ const POOrderList = ({ user }) => {
 
       // sending the email step
 
-      const response = await fetch("http://127.0.0.1:8000/send-email/", {
+      const response = await fetch(`${config.apiBaseURL}/send-email/`, {
         method: "POST",
         body: formDataUpload,
       });

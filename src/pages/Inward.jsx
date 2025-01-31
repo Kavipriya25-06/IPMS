@@ -8,7 +8,7 @@
 //   // Fetch the inward data
 //   const fetchInwardData = async () => {
 //     try {
-//       const response = await fetch("http://127.0.0.1:8000/inward_data/"); // Adjust API endpoint as required
+//       const response = await fetch(`${config.apiBaseURL}/inward_data/`); // Adjust API endpoint as required
 //       const data = await response.json();
 //       setInwardData(data);
 //     } catch (error) {
@@ -222,7 +222,7 @@
 //   // Fetch Inward Data from API
 //   const fetchInwardData = async () => {
 //     try {
-//       const response = await fetch("http://127.0.0.1:8000/inward/");
+//       const response = await fetch(`${config.apiBaseURL}/inward/`);
 //       const result = await response.json();
 
 //       if (Array.isArray(result)) {
@@ -331,6 +331,7 @@
 
 import React, { useEffect, useState } from "react";
 import CustomMessagebox from "./CustomMessageBox.jsx";
+import config from "../Config"; // Import config for API endpoints
 
 import {
   showSuccessToast,
@@ -373,7 +374,7 @@ const Inward = () => {
   // Fetch Inward Data
   const fetchInwardData = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/inward/");
+      const response = await fetch(`${config.apiBaseURL}/inward/`);
       const result = await response.json();
 
       if (Array.isArray(result)) {
@@ -398,7 +399,7 @@ const Inward = () => {
     }
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/qc_question/");
+      const response = await fetch(`${config.apiBaseURL}/qc_question/`);
       if (!response.ok) {
         console.error("Error fetching QC questions:", await response.text());
         alert("Failed to fetch QC questions.");
@@ -487,7 +488,7 @@ const Inward = () => {
           no: question.answer === "No",
         };
 
-        const response = await fetch("http://127.0.0.1:8000/qc_answer/", {
+        const response = await fetch(`${config.apiBaseURL}/qc_answer/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -530,7 +531,7 @@ const Inward = () => {
 
       // PATCH request to update the overall status in the inward API
       const patchResponse = await fetch(
-        `http://127.0.0.1:8000/inward/${inwardId}/`,
+        `${config.apiBaseURL}/inward/${inwardId}/`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -569,7 +570,7 @@ const Inward = () => {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/inward/${inwardId}/`,
+        `${config.apiBaseURL}/inward/${inwardId}/`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -622,7 +623,7 @@ const Inward = () => {
       }
 
       // Fetch the PO Master details to get the price (unit_price)
-      const poMasterResponse = await fetch("http://127.0.0.1:8000/po_master/");
+      const poMasterResponse = await fetch(`${config.apiBaseURL}/po_master/`);
       if (!poMasterResponse.ok) {
         const poMasterError = await poMasterResponse.json();
         console.error("Error fetching PO Master details:", poMasterError);
@@ -647,7 +648,7 @@ const Inward = () => {
       }
 
       // Fetch the components from the component API
-      const componentResponse = await fetch("http://127.0.0.1:8000/component/");
+      const componentResponse = await fetch(`${config.apiBaseURL}/component/`);
       if (!componentResponse.ok) {
         const errorDetails = await componentResponse.json();
         console.error("Error fetching component details:", errorDetails);
@@ -692,7 +693,7 @@ const Inward = () => {
       };
 
       // Make the POST request to the inventory API
-      const response = await fetch("http://127.0.0.1:8000/inventory/", {
+      const response = await fetch(`${config.apiBaseURL}/inventory/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(postData),
@@ -720,7 +721,7 @@ const Inward = () => {
       };
 
       const updateResponse = await fetch(
-        `http://127.0.0.1:8000/inward/${item.inward_id}/`,
+        `${config.apiBaseURL}/inward/${item.inward_id}/`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -744,7 +745,7 @@ const Inward = () => {
       //       };
 
       //       const emailResponse = await fetch(
-      //         "http://127.0.0.1:8000/inward_send_email/",
+      //         `${config.apiBaseURL}/inward_send_email/`,
       //         {
       //           method: "POST",
       //           headers: { "Content-Type": "application/json" },
@@ -794,7 +795,7 @@ const Inward = () => {
       };
 
       const response = await fetch(
-        `http://127.0.0.1:8000/inward/${inwardId}/`,
+        `${config.apiBaseURL}/inward/${inwardId}/`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },

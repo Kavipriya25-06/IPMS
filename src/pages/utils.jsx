@@ -1,5 +1,5 @@
 // utils.js
-
+import config from "../Config"; // Import config for API endpoints
 /**
  * Fetch the latest price for a given product ID.
  * @param {string} productId - The product ID to fetch the price for.
@@ -7,7 +7,7 @@
  */
 export const fetchLatestPrice = async (productId) => {
   try {
-    const response = await fetch("http://127.0.0.1:8000/price_tables/");
+    const response = await fetch(`${config.apiBaseURL}/price_tables/`);
     const priceData = await response.json();
     const productPrices = priceData.filter(
       (price) => price.product === productId
@@ -34,7 +34,7 @@ export const fetchLatestPrice = async (productId) => {
  */
 export const fetchProductId = async (componentId) => {
   try {
-    const response = await fetch("http://127.0.0.1:8000/component/");
+    const response = await fetch(`${config.apiBaseURL}/component/`);
     const componentData = await response.json();
     const component = componentData.find(
       (comp) => comp.component_id === componentId

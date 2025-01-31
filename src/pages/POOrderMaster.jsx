@@ -4,6 +4,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import config from "../Config"; // Import config for API endpoints
 
 import {
   showSuccessToast,
@@ -33,7 +34,7 @@ const POOrderMaster = ({ user }) => {
   // Fetch PO Details
   const fetchPODetails = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/po_master/");
+      const response = await fetch(`${config.apiBaseURL}/po_master/`);
       const result = await response.json();
       const filteredPO = result.filter((order) => order.PO_id === poId);
       setPODetails(filteredPO);
@@ -47,7 +48,7 @@ const POOrderMaster = ({ user }) => {
   // Fetch Order Status
   const fetchOrderStatus = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/order_view/");
+      const response = await fetch(`${config.apiBaseURL}/order_view/`);
       const result = await response.json();
       const filteredStatus = result.find(
         (status) => status.po_master_id === poDetails[0]?.id
@@ -96,8 +97,8 @@ const POOrderMaster = ({ user }) => {
     try {
       const method = orderStatus?.id ? "PUT" : "POST";
       const apiUrl = orderStatus?.id
-        ? `http://127.0.0.1:8000/order_view/${orderStatus.id}/`
-        : "http://127.0.0.1:8000/order_view/";
+        ? `${config.apiBaseURL}/order_view/${orderStatus.id}/`
+        : `${config.apiBaseURL}/order_view/`;
 
       const response = await fetch(apiUrl, {
         method,
@@ -139,7 +140,7 @@ const POOrderMaster = ({ user }) => {
   // Fetch PO Data for PO ID
   const fetchPOData = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/po_list/");
+      const response = await fetch(`${config.apiBaseURL}/po_list/`);
       const result = await response.json();
 
       if (Array.isArray(result)) {
@@ -159,7 +160,7 @@ const POOrderMaster = ({ user }) => {
         status: newStatus,
       };
 
-      const response = await fetch(`http://127.0.0.1:8000/po_list/${poId}/`, {
+      const response = await fetch(`${config.apiBaseURL}/po_list/${poId}/`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -184,7 +185,7 @@ const POOrderMaster = ({ user }) => {
   const updatePOMasterStatuses = async (poId, newStatus) => {
     try {
       // Fetch all PO Master data
-      const response = await fetch("http://127.0.0.1:8000/po_master/");
+      const response = await fetch(`${config.apiBaseURL}/po_master/`);
       if (!response.ok) {
         throw new Error("Failed to fetch PO Master data.");
       }
@@ -207,7 +208,7 @@ const POOrderMaster = ({ user }) => {
         };
 
         const updateResponse = await fetch(
-          `http://127.0.0.1:8000/po_master/${entry.id}/`,
+          `${config.apiBaseURL}/po_master/${entry.id}/`,
           {
             method: "PATCH",
             headers: {
@@ -271,7 +272,7 @@ const POOrderMaster = ({ user }) => {
   //       };
 
   //       // POST request to the inward API
-  //       const response = await fetch("http://127.0.0.1:8000/inward/", {
+  //       const response = await fetch(`${config.apiBaseURL}/inward/`, {
   //         method: "POST",
   //         headers: { "Content-Type": "application/json" },
   //         body: JSON.stringify(inwardPayload),
@@ -310,7 +311,7 @@ const POOrderMaster = ({ user }) => {
       } = item;
 
       // Fetch PO Master Data
-      const poResponse = await fetch("http://127.0.0.1:8000/po_master/");
+      const poResponse = await fetch(`${config.apiBaseURL}/po_master/`);
       if (!poResponse.ok) {
         throw new Error("Failed to fetch PO Master data.");
       }
@@ -393,7 +394,7 @@ const POOrderMaster = ({ user }) => {
 
         console.log(`Inward Payload for Unit ${i + 1}:`, inwardPayload);
 
-        const response = await fetch("http://127.0.0.1:8000/inward/", {
+        const response = await fetch(`${config.apiBaseURL}/inward/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(inwardPayload),
@@ -422,7 +423,7 @@ const POOrderMaster = ({ user }) => {
       console.log("Update Payload for PO Master:", updatePayload);
 
       const updateResponse = await fetch(
-        `http://127.0.0.1:8000/po_master/${po_master_id}/`,
+        `${config.apiBaseURL}/po_master/${po_master_id}/`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },

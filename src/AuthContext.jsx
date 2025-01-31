@@ -6,6 +6,7 @@ import React, {
   useCallback,
   useRef,
 } from "react";
+import config from "../Config"; // Import config for API endpoints
 
 // Create AuthContext
 const AuthContext = createContext(null);
@@ -41,7 +42,7 @@ const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       // Call API to authenticate user
-      const response = await fetch("http://127.0.0.1:8000/register/");
+      const response = await fetch(`${config.apiBaseURL}/register/`);
       const users = await response.json();
       const foundUser = users.find(
         (u) => u.email === email && u.password === password

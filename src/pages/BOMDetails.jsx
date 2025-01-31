@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import config from "../Config"; // Import config for API endpoints
 
 import {
   showSuccessToast,
@@ -29,7 +30,7 @@ const BOMDetails = () => {
   useEffect(() => {
     const fetchBomDetails = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/bom_list/");
+        const response = await fetch(`${config.apiBaseURL}/bom_list/`);
         const data = await response.json();
         const bom = data.find((b) => b.bom_id === bomId);
         setSelectedBom(bom);
@@ -40,9 +41,9 @@ const BOMDetails = () => {
 
     const fetchBomComponents = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/bom_master/");
+        const response = await fetch(`${config.apiBaseURL}/bom_master/`);
         const data = await response.json();
-        const bomComponents = data.filter((b) => b.bom === bomId);// Filter components by BOM ID
+        const bomComponents = data.filter((b) => b.bom === bomId); // Filter components by BOM ID
         setSelectedComponents(bomComponents); // Store BOM components
       } catch (error) {
         console.error("Error fetching BOM components:", error);
@@ -52,7 +53,7 @@ const BOMDetails = () => {
     const fetchVendors = async () => {
       try {
         setLoadingVendors(true); // Set loading to true
-        const response = await fetch("http://127.0.0.1:8000/vendor_list/");
+        const response = await fetch(`${config.apiBaseURL}/vendor_list/`);
         const data = await response.json();
         setVendors(data); // Store the vendor list
       } catch (error) {
@@ -65,7 +66,7 @@ const BOMDetails = () => {
     const fetchComponents = async () => {
       try {
         setLoadingComponents(true);
-        const response = await fetch("http://127.0.0.1:8000/component/");
+        const response = await fetch(`${config.apiBaseURL}/component/`);
         const data = await response.json();
         setComponents(data);
       } catch (error) {
@@ -75,14 +76,14 @@ const BOMDetails = () => {
       }
     };
 
-     // Fetch all data
+    // Fetch all data
     fetchBomDetails();
     fetchBomComponents();
     fetchVendors();
     fetchComponents();
   }, [bomId]);
 
-   // Handle adding a new component to the BOM
+  // Handle adding a new component to the BOM
   const handleAddComponent = async () => {
     try {
       // Check if the component already exists in the selectedComponents list
@@ -115,7 +116,7 @@ const BOMDetails = () => {
 
       console.log("Payload to POST:", payload);
 
-      const response = await fetch("http://127.0.0.1:8000/bom_master/", {
+      const response = await fetch(`${config.apiBaseURL}/bom_master/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -221,7 +222,7 @@ const BOMDetails = () => {
                     if (selectedComp) {
                       // Fetch data from the bom_master_view API
                       const response = await fetch(
-                        "http://127.0.0.1:8000/bom_master_view"
+                        `${config.apiBaseURL}/bom_master_view`
                       );
                       const data = await response.json();
 

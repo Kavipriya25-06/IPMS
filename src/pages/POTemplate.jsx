@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import toWords from "num-to-words";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
+import config from "../Config"; // Import config for API endpoints
 
 const EditableField = ({ value, onChange, type = "text", style }) => (
   <input
@@ -346,7 +347,7 @@ const PurchaseOrder = () => {
   // Fetch PO data by ID
   const fetchPOData = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/po_master/");
+      const response = await fetch(`${config.apiBaseURL}/po_master/`);
       const result = await response.json();
       console.log("PO master data", response, "And the result", result);
 
@@ -378,7 +379,7 @@ const PurchaseOrder = () => {
   // Fetch PO data
   const fetchPOListData = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/po_list/");
+      const response = await fetch(`${config.apiBaseURL}/po_list/`);
       const result = await response.json();
       console.log("PO list data", response, "And the result", result);
       const filteredPO = result.find((po) => po.id === id);
@@ -401,7 +402,7 @@ const PurchaseOrder = () => {
     try {
       // Fetch vendor contact details
       const contactResponse = await fetch(
-        "http://127.0.0.1:8000/vendor_sub_list/"
+        `${config.apiBaseURL}/vendor_sub_list/`
       );
       const contactResult = await contactResponse.json();
       const contactDetails = contactResult.find(
@@ -411,7 +412,7 @@ const PurchaseOrder = () => {
       console.log("Contact details", contactResult);
 
       // Fetch vendor name
-      const vendorResponse = await fetch("http://127.0.0.1:8000/vendor_list/");
+      const vendorResponse = await fetch(`${config.apiBaseURL}/vendor_list/`);
       const vendorResult = await vendorResponse.json();
       const vendorDetails = vendorResult.find(
         (vendor) => vendor.vendor_id === vendorId

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import config from "../Config"; // Import config for API endpoints
 
 const Project = () => {
   const [projects, setProjects] = useState([]);
@@ -15,7 +16,7 @@ const Project = () => {
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/project/");
+      const response = await fetch(`${config.apiBaseURL}/project/`);
       const data = await response.json();
       setProjects(data);
     } catch (error) {
@@ -31,7 +32,7 @@ const Project = () => {
   const handleAddProject = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://127.0.0.1:8000/project/", {
+      const response = await fetch(`${config.apiBaseURL}/project/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

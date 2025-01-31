@@ -2,6 +2,7 @@
 // src\pages\Inventory.jsx
 
 import React, { useState, useEffect } from "react";
+import config from "../Config"; // Import config for API endpoints
 
 const Inventory = () => {
   const [inventoryData, setInventoryData] = useState([]);
@@ -27,7 +28,7 @@ const Inventory = () => {
 
   const fetchInventoryData = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/inventory/");
+      const response = await fetch(`${config.apiBaseURL}/inventory/`);
       const data = await response.json();
       setInventoryData(data);
     } catch (error) {
@@ -37,7 +38,7 @@ const Inventory = () => {
 
   const fetchComponentMasterData = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/component/");
+      const response = await fetch(`${config.apiBaseURL}/component/`);
       const data = await response.json();
       // Create an object where the key is component_id and the value is the component details
       const formattedData = data.reduce((acc, component) => {
@@ -52,7 +53,7 @@ const Inventory = () => {
 
   const fetchVendorMasterData = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/vendor_master/");
+      const response = await fetch(`${config.apiBaseURL}/vendor_master/`);
       const data = await response.json();
       const formattedData = data.reduce((acc, vendor) => {
         acc[vendor.product_id] = vendor.vendor;
@@ -79,7 +80,7 @@ const Inventory = () => {
 
   const fetchMetaTags = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/meta_tags/");
+      const response = await fetch(`${config.apiBaseURL}/meta_tags/`);
       const data = await response.json();
       setMetaTags(data);
     } catch (error) {
@@ -127,7 +128,7 @@ const Inventory = () => {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/inventory/${item.serial_number}/`,
+        `${config.apiBaseURL}/inventory/${item.serial_number}/`,
         {
           method: "PATCH",
           headers: {

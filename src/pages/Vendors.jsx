@@ -1,6 +1,7 @@
 // Vendors.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import config from "../Config"; // Import config for API endpoints
 
 // Popup Modal Component
 const Modal = ({ isOpen, onClose, children }) => {
@@ -52,7 +53,7 @@ const Vendors = () => {
 
   const fetchVendorData = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/vendor_list/");
+      const response = await fetch(`${config.apiBaseURL}/vendor_list/`);
       const data = await response.json();
       setVendorData(data);
     } catch (error) {
@@ -62,7 +63,7 @@ const Vendors = () => {
 
   const fetchPocData = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/vendor_sub_list/");
+      const response = await fetch(`${config.apiBaseURL}/vendor_sub_list/`);
       const data = await response.json();
       setPocData(data);
     } catch (error) {
@@ -113,7 +114,7 @@ const Vendors = () => {
     }
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/vendor_sub_list/${pocId}/`,
+        `${config.apiBaseURL}/vendor_sub_list/${pocId}/`,
         {
           method: "PUT",
           headers: {
@@ -174,7 +175,7 @@ const Vendors = () => {
   //       default_poc: isFirstPoc, // Set default_poc to true if it's the first POC
   //     };
 
-  //     const response = await fetch("http://127.0.0.1:8000/vendor_sub_list/", {
+  //     const response = await fetch("${config.apiBaseURL}/vendor_sub_list/", {
   //       method: "POST",
   //       headers: {
   //         "Content-Type": "application/json",
@@ -212,7 +213,7 @@ const Vendors = () => {
         default_poc: isFirstPoc, // Set default_poc to true if it's the first POC
       };
 
-      const response = await fetch("http://127.0.0.1:8000/vendor_sub_list/", {
+      const response = await fetch(`${config.apiBaseURL}/vendor_sub_list/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -253,7 +254,7 @@ const Vendors = () => {
       // Update backend
       await Promise.all(
         updatedPocData.map((poc) =>
-          fetch(`http://127.0.0.1:8000/vendor_sub_list/${poc.id}/`, {
+          fetch(`${config.apiBaseURL}/vendor_sub_list/${poc.id}/`, {
             method: "PUT",
             headers: {
               "Content-Type": "application/json",
@@ -293,7 +294,7 @@ const Vendors = () => {
   // Function to add a new vendor and generate a vendor_id
   const handleAddVendor = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/vendor_list/", {
+      const response = await fetch(`${config.apiBaseURL}/vendor_list/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -318,7 +319,7 @@ const Vendors = () => {
   // Function to add a new sub-vendor (POC) linked to the new vendor_id
   const handleAddSubVendor = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/vendor_sub_list/", {
+      const response = await fetch(`${config.apiBaseURL}/vendor_sub_list/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -351,7 +352,7 @@ const Vendors = () => {
   const handleDeletePoc = async (pocId) => {
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/vendor_sub_list/${pocId}/`,
+        `${config.apiBaseURL}/vendor_sub_list/${pocId}/`,
         {
           method: "DELETE",
         }
@@ -382,7 +383,7 @@ const Vendors = () => {
   const handleSaveVendorName = async (vendor_id) => {
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/vendor_list/${vendor_id}/`,
+        `${config.apiBaseURL}/vendor_list/${vendor_id}/`,
         {
           method: "PUT",
           headers: {
