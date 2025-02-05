@@ -564,6 +564,12 @@ const VendorDetails = () => {
       if (response.ok) {
         const data = await response.json();
         console.log("Component successfully added:", data);
+
+        // Update the componentMasterData state with the new component_id
+        setComponentMasterData((prevData) => ({
+          ...prevData,
+          [product.product_id]: data.component_id, // Assume `data` contains the new component_id
+        }));
         showSuccessToast("Component added successfully!");
       } else {
         console.error("Error adding component:", response.statusText);
