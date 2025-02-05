@@ -181,7 +181,9 @@ const Component = () => {
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false; // Mark the first render as complete
-      fetchComponents();
+      setNextPageUrl(`${config.apiBaseURL}/tag_search/?page=1`);
+      fetchComponents(false, true); // Reset and fetch initial data
+      // fetchComponents();
       return;
     }
 
