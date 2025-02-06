@@ -182,7 +182,8 @@ const Component = () => {
     if (isInitialMount.current) {
       isInitialMount.current = false; // Mark the first render as complete
       setNextPageUrl(`${config.apiBaseURL}/tag_search/?page=1`);
-      fetchComponents(false, true); // Reset and fetch initial data
+      // fetchComponents(false, true); // Reset and fetch initial data
+      fetchComponents(true);
       // fetchComponents();
       return;
     }
