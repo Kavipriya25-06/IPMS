@@ -14,6 +14,13 @@ const Inventory = () => {
   const [selectedTag, setSelectedTag] = useState(""); // Tag selected for filtering
   const [editingSKU, setEditingSKU] = useState(null); // Tracks which row is being edited for SKU
   const [tempSKU, setTempSKU] = useState(""); // Temporary SKU value for editing
+  const [returnModal, setReturnModal] = useState(false);
+  const [returnItem, setReturnItem] = useState(null);
+  const [remarks, setRemarks] = useState("");
+  const [reportedBy, setReportedBy] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("Damaged"); // Default status selection
+
+
 
   useEffect(() => {
     fetchInventoryData();
@@ -113,6 +120,8 @@ const Inventory = () => {
     setFilteredInventory(filtered);
   };
 
+
+
   const handleDoubleClick = (id, currentSKU) => {
     setEditingSKU(id); // Set edit mode for the row
     setTempSKU(currentSKU); // Set the temporary SKU value
@@ -163,10 +172,173 @@ const Inventory = () => {
     setTempSKU("");
   };
 
+
+
+
+
+  const handleGenerateReport = async () => {
+    const validSerialNumbers = filteredInventory
+      .filter((item) => item.status === true)
+      .map((item) => item.serial_number);
+
+    if (validSerialNumbers.length === 0) {
+      alert("No valid inventory items available to generate the report.");
+      return;
+    }
+
+    try {
+      const fetchDetailsPromises = validSerialNumbers.map(async (serial) => {
+        const response = await fetch(`http://127.0.0.1:8000/inventory_details/${serial}/`);
+        if (!response.ok) {
+          console.error(`Failed to fetch details for ${serial}`);
+          return {
+            Serial_Number: serial,
+            po_id: "N/A",
+            request_id: "N/A",
+            project_id: "N/A",
+            project_name: "N/A",
+            bom_id: "N/A",
+            bom_name: "N/A",
+            price: "N/A",
+            create_date: "N/A",
+          };
+        }
+
+        const data = await response.json();
+        console.log(`API Response for ${serial}:`, data); // Debugging purpose
+
+        return {
+          Serial_Number: serial,
+          po_id: data.po_master?.[0]?.PO_id || "N/A", // Fetch PO ID from first entry
+          request_id: data.request_master?.[0]?.request || "N/A", // Get request ID
+          project_id: data.project?.[0]?.project_id || "N/A", // Get Project ID
+          project_name: data.project?.[0]?.project_name || "N/A", // Get Project Name
+          bom_id: data.bom_list?.[0]?.bom_id || "N/A", // Get BOM ID
+          bom_name: data.bom_list?.[0]?.bom_name || "N/A", // Get BOM Name
+          price: data.inventory_item?.price || "N/A", // Fetch Price from inventory_item
+          create_date: data.inventory_item?.create_date || "N/A", // Fetch Created Date from inventory_item
+        };
+      });
+
+      const reportData = await Promise.all(fetchDetailsPromises);
+
+      if (reportData.length > 0) {
+        generateCSV(reportData);
+      } else {
+        alert("No report data available.");
+      }
+    } catch (error) {
+      console.error("Error generating report:", error);
+    }
+  };
+
+  const generateCSV = (data) => {
+    let csvContent = "Serial Number,PO ID,Request ID,Project ID,Project Name,BOM ID,BOM Name,Price,Created Date\n";
+
+    data.forEach((row) => {
+      csvContent += `${row.Serial_Number},${row.po_id},${row.request_id},${row.project_id},${row.project_name},${row.bom_id},${row.bom_name},${row.price},${row.create_date}\n`;
+    });
+
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "Inventory_Report.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+
+
+  const openReturnModal = (item) => {
+    console.log("Opening return modal for:", item);
+    setReturnItem(item);
+    setRemarks("");
+    setReportedBy("");
+    setSelectedStatus("Damaged"); // Default to "Damaged" when modal opens
+    setReturnModal(true);
+  };
+
+  const closeReturnModal = () => {
+    setReturnModal(false);
+    setReturnItem(null);
+  };
+
+
+
+
+  const handleReturn = async () => {
+    if (!remarks || !reportedBy) {
+      alert("Please enter Remarks and Reported By.");
+      return;
+    }
+  
+    try {
+      // POST request to report the item as damaged
+      const response = await fetch(`${config.apiBaseURL}/damaged/${returnItem.serial_number}/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          serial_number: returnItem.serial_number,
+          remarks,
+          reported_by: reportedBy,
+          status: selectedStatus, // Use selectedStatus from dropdown
+        }),
+      });
+  
+      if (!response.ok) {
+        console.error("Failed to report damaged item:", response.statusText);
+        alert("Failed to report damaged item.");
+        return;
+      }
+  
+      alert(`Item ${returnItem.serial_number} reported as damaged successfully!`);
+
+        // Step 2: Update inventory status to true
+      const patchResponse = await fetch(`${config.apiBaseURL}/inventory/${returnItem.serial_number}/`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status: true,
+        }),
+      });
+
+      if (!patchResponse.ok) {
+        console.error("Failed to update inventory status:", patchResponse.statusText);
+        alert("Failed to update inventory status.");
+        return;
+      }
+
+      alert(`Inventory status for ${returnItem.serial_number} updated successfully!`);
+  
+      // Update UI state to reflect the change
+      setFilteredInventory((prev) =>
+        prev.map((row) =>
+          row.serial_number === returnItem.serial_number ? { ...row, status: true } : row
+        )
+      );
+  
+      closeReturnModal();
+  
+    } catch (error) {
+      console.error("Error reporting damaged item:", error);
+      alert("Error reporting damaged item.");
+    }
+  };
+
+
   return (
     <div className="inventory-container">
       <div className="header">
         <h2>Inventory Data</h2>
+        <button className="generate-report-button" onClick={handleGenerateReport}>
+          Generate Report
+        </button>
         <div className="search-bar-container">
           <input
             type="text"
@@ -252,7 +424,16 @@ const Inventory = () => {
                         }}
                       >
                         <td>{row.component_id}</td>
-                        <td>{row.serial_number}</td>
+                        <td>{row.serial_number} {" "}
+                        {!row.status && (
+                            <button
+                              className="return-button"
+                              onClick={() => openReturnModal(row)}
+                            >
+                              Return
+                            </button>
+                          )}
+                        </td>
                         <td
                           onDoubleClick={() =>
                             handleDoubleClick(row.id, row.sku_number)
@@ -310,6 +491,55 @@ const Inventory = () => {
         </tbody>
       </table>
 
+
+      {returnModal && (
+        <div className="modal">
+          <div className="modal-content">
+            <h3>Return Item</h3>
+            <p><strong>Serial Number:</strong> {returnItem.serial_number}</p>
+            <p><strong>Component Type:</strong> {returnItem.component_type}</p>
+            <p><strong>Specification:</strong> {returnItem.specification}</p>
+              {/* Dropdown for Status Selection */}
+      <label>
+        <strong>Status:</strong>
+        <select
+          value={selectedStatus}
+          onChange={(e) => {
+            console.log("Status changed to:", e.target.value); // Debugging
+            setSelectedStatus(e.target.value);
+          }}
+        >
+          <option value="damaged">Damaged</option>
+          <option value="repairable">Repairable</option>
+          <option value="returned">Returned</option>
+        </select>
+      </label>
+            <label>
+              <strong>Remarks:</strong>
+              <input
+                type="text"
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
+                placeholder="Enter remarks"
+              />
+            </label>
+            <label>
+              <strong>Reported By:</strong>
+              <input
+                type="text"
+                value={reportedBy}
+                onChange={(e) => setReportedBy(e.target.value)}
+                placeholder="Enter your name"
+              />
+            </label>
+            <div className="modal-buttons">
+              <button className="confirm-button" onClick={handleReturn}>Confirm Return</button>
+              <button className="cancel-button" onClick={closeReturnModal}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         .disabled-row {
           background-color: #e0e0e0;
@@ -319,6 +549,72 @@ const Inventory = () => {
         .disabled-row button {
           cursor: not-allowed;
         }
+
+
+        .return-button {
+          background-color: red;
+          color: white;
+          border: none;
+          padding: 5px 10px;
+          cursor: pointer;
+          border-radius: 4px;
+          font-size: 12px;
+          margin-left: 10px;
+        }
+        .return-button:hover {
+          background-color: darkred;
+        }
+        .modal {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          transform: translate(-50%, -50%);
+        }
+        .modal-content {
+          background: white;
+          padding: 20px; 
+          width: 400px;
+          text-align: center;
+        }
+        .modal-content input {
+          width: 100%;
+          padding: 8px;
+          margin-top: 5px;
+          margin-bottom: 10px;
+          border: 1px solid #ccc;
+          border-radius: 5px;
+        }
+        .modal-buttons {
+          display: flex;
+          justify-content: space-between;
+        }
+        .confirm-button {
+          background-color: green;
+          color: white;
+          padding: 8px 12px;
+          border: none;
+          cursor: pointer;
+          border-radius: 5px;
+        }
+        .confirm-button:hover {
+          background-color: darkgreen;
+        }
+        .cancel-button {
+          background-color: gray;
+          color: white;
+          padding: 8px 12px;
+          border: none;
+          cursor: pointer;
+          border-radius: 5px;
+        }
+        .cancel-button:hover {
+          background-color: darkgray;
+        }
+
+
       `}</style>
     </div>
   );

@@ -19,6 +19,7 @@ const Modal = ({ isOpen, onClose, children }) => {
 
 const Vendors = () => {
   const [vendorData, setVendorData] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [pocData, setPocData] = useState([]);
   const [selectedVendorId, setSelectedVendorId] = useState(null);
   const [primaryPocSelection, setPrimaryPocSelection] = useState({}); // selecting Primary POC in a Dictionary
@@ -416,9 +417,74 @@ const Vendors = () => {
     setEditedVendorName({ vendor_name: "", gstn: "" }); // Reset the edited name
   };
 
+    // Toggle Vendor Active/Inactive Status
+    const toggleVendorStatus = async (vendorId, currentStatus) => {
+      try {
+        const updatedStatus = !currentStatus; // Toggle current status
+  
+        const response = await fetch(`${config.apiBaseURL}/vendor_list/${vendorId}/`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ active: updatedStatus }), // Send updated status
+        });
+  
+        if (response.ok) {
+          setVendorData((prevData) =>
+            prevData.map((vendor) =>
+              vendor.vendor_id === vendorId
+                ? { ...vendor, active: updatedStatus }
+                : vendor
+            )
+          );
+        } else {
+          console.error("Error updating vendor status:", response.statusText);
+        }
+      } catch (error) {
+        console.error("Error updating vendor status:", error);
+      }
+    };
+
+    const handleSearch = async (query) => {
+      setSearchQuery(query);
+      if (query.trim() === "") {
+        fetchVendorData(); // Fetch all vendors if search is cleared
+        return;
+      }
+      try {
+        const response = await fetch(
+          `http://127.0.0.1:8000/vendor_search/?search=${query}`
+        );
+        if (response.ok) {
+          const filteredVendors = await response.json();
+          setVendorData(filteredVendors);
+        } else {
+          console.error("Error fetching search results:", response.statusText);
+        }
+      } catch (error) {
+        console.error("Error fetching search results:", error);
+      }
+    };
+
+
+
   return (
     <div>
       <h2>Vendors</h2>
+
+      <div className="search-bar-container">
+          <input
+            type="text"
+            className="search-bar"
+            placeholder="Search by Vendor Name or Component Type"
+            value={searchQuery}
+            onChange={(e) => handleSearch(e.target.value)}
+          />
+          <span className="search-icon">
+            <i className="fa fa-search" aria-hidden="true"></i>
+          </span>
+        </div>
 
       {/* Modal for Adding New Vendor */}
       <Modal isOpen={isAddingVendor} onClose={() => setIsAddingVendor(false)}>
@@ -475,7 +541,7 @@ const Vendors = () => {
           value={newSubVendor.phone_number}
           onChange={(e) => {
             const value = e.target.value;
-            handleSubVendorInputChange("phone_number", value);
+            handleSubVendorInputChange("phone_number", value); 
             setErrors((prevErrors) => ({
               ...prevErrors,
               phone_number: validatePhoneNumber(value)
@@ -522,6 +588,7 @@ const Vendors = () => {
             <th>Location</th>
             {/* <th>Category</th> */}
             <th>Actions</th>
+            <th>status</th>
           </tr>
         </thead>
         <tbody>
@@ -609,6 +676,20 @@ const Vendors = () => {
                     </button>
                   )}
                 </td>
+                <td>
+                <button
+                  onClick={() => toggleVendorStatus(vendor.vendor_id, vendor.active)}
+                  style={{
+                    backgroundColor: vendor.active ? "green" : "red",
+                    color: "white",
+                    padding: "5px 10px",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  {vendor.active ? "Active" : "Inactive"}
+                </button>
+              </td>
               </tr>
             );
           })}
@@ -635,7 +716,7 @@ const Vendors = () => {
                 {/* <th>Category</th> */}
                 <th>Actions</th>
               </tr>
-            </thead>
+            </thead> 
             <tbody>
               {getVendorPocs(selectedVendorId).map((poc, index) => (
                 <tr key={poc.id}>

@@ -28,6 +28,7 @@ import Projects from "./pages/Projects";
 import Cart from "./pages/Cart";
 import Roles from "./pages/Roles";
 import AddTags from "./pages/AddTags";
+import ProjectMaster from "./pages/ProjectMaster"; 
 
 // import { useAuth } from "./AuthContext";
 // import PODetails from "./pages/PODetails";
@@ -293,6 +294,9 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* New Route for Project Master */}
+          <Route path="/projects/:projectId" element={<ProtectedRoute allowedRoles={["Admin", "Procurement", "Inventory", "Finance", "User"]}><ProjectMaster /></ProtectedRoute>} />
 
           <Route
             path="/Projects"

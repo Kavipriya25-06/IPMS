@@ -58,6 +58,7 @@ const VendorDetails = () => {
     component_type: "", // Initialize as an empty string
     component_specification: "", // Initialize as an empty string
     vendor: vendorId,
+    active: "",
   });
 
   useEffect(() => {
@@ -592,6 +593,35 @@ const VendorDetails = () => {
     return VendorName;
   };
 
+
+  const toggleVendorStatus = async (productId, currentStatus) => {
+    try {
+      const updatedStatus = !currentStatus;
+
+      const response = await fetch(`http://127.0.0.1:8000/vendor_master/${productId}/`, {
+        method: "PATCH", // Use PATCH if your API allows partial updates
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ active: updatedStatus }), // Update only the active field
+      });
+
+      if (response.ok) {
+        setVendorMasterData((prevData) =>
+          prevData.map((product) =>
+            product.product_id === productId
+              ? { ...product, active: updatedStatus }
+              : product
+          )
+        );
+      } else {
+        console.error("Error updating vendor status:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error updating vendor status:", error);
+    }
+  };
+
   return (
     <div>
       <h4>
@@ -1007,6 +1037,7 @@ const VendorDetails = () => {
             <th>Image</th>
             <th>Attachments</th>
             <th>Actions</th>
+            <th>Status</th>
           </tr>
         </thead>
         <tbody>
@@ -1116,6 +1147,20 @@ const VendorDetails = () => {
                     {isAddedToComp ? "Already Added" : "Add to Comp"}
                   </button>
                 </td>
+                <td>
+                <button
+                  onClick={() => toggleVendorStatus(product.product_id, product.active)}
+                  style={{
+                    backgroundColor: product.active ? "green" : "red",
+                    color: "white",
+                    padding: "5px 10px",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  {product.active ? "Active" : "Inactive"}
+                </button>
+              </td>
               </tr>
             );
           })}
