@@ -373,7 +373,7 @@ const Inventory = () => {
             Object.keys(groupedData).map((componentId) => {
               const componentRows = groupedData[componentId];
               const componentRowsCount =
-                groupedData[componentId].filter((row) => row.status === "Available")
+                groupedData[componentId].filter((row) => row.status === "Available" || "Reserved")
                   .length || 0;
               const firstRow = componentRows[0];
               const component = componentData[componentId] || {};
@@ -486,7 +486,7 @@ const Inventory = () => {
           <tr>
             <td style={{ fontWeight: "bold" }}>Total Inventory count</td>
             <td>
-              {filteredInventory.filter((row) => row.status === "Available").length ||
+              {filteredInventory.filter((row) => row.status === "Available" || "Reserved").length ||
                 0}
             </td>
             <td colSpan="10" className="no-data"></td>
