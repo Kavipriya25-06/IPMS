@@ -324,6 +324,125 @@ const RequestDetails = ({ user }) => {
     }
   };
 
+  const handleUnassign = async (componentId, serialNumbersToDereserve) => {
+    try {
+      const componentData = inventoryData[componentId];
+
+      if (!componentData) {
+        alert("Component data not found in inventory.");
+        return;
+      }
+
+      // Filter serial numbers that are actually reserved
+      const reservedSerials = componentData.serialNumbers.filter(
+        (sn) => sn.status === "Reserved"
+      );
+
+      if (reservedSerials.length === 0) {
+        alert("No reserved serial numbers found to unassign.");
+        return;
+      }
+
+      // Create a payload to update the inventory status for each serial number
+      for (const serial of reservedSerials) {
+        const inventoryPayload = {
+          component_id: componentId,
+          serial_number: serial.serialNumber,
+          vendor_name: componentData.vendor_name || "V_00001",
+          component_type: componentData.component_type,
+          category: componentData.category,
+          specification: componentData.specification,
+          UOM: componentData.UOM,
+          status: "Available", // Revert status to Available
+          price: componentData.price,
+          Request_id_assign: "", // Remove request assignment
+        };
+
+        // Send a PUT request to update the inventory
+        const inventoryResponse = await fetch(
+          `${config.apiBaseURL}/inventory/${serial.serialNumber}/`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(inventoryPayload),
+          }
+        );
+
+        if (!inventoryResponse.ok) {
+          console.error(
+            `Error unassigning serial number: ${serial.serialNumber}`
+          );
+          alert(
+            `Could not unassign the serial number ${serial.serialNumber}. Please try again.`
+          );
+          return;
+        }
+      }
+
+      // Get the request details for this component
+      const selectedDetail = details.find(
+        (detail) => detail.component_id === componentId
+      );
+
+      if (!selectedDetail || !selectedDetail.id) {
+        alert(
+          "Error: Unable to find the request ID for the selected component."
+        );
+        return;
+      }
+
+      const { id } = selectedDetail;
+      const requestId = selectedDetail.request_id;
+
+      // Fetch current request master data
+      const requestMasterFetchResponse = await fetch(
+        `${config.apiBaseURL}/request_master/${requestId}/${id}/`
+      );
+
+      if (!requestMasterFetchResponse.ok) {
+        console.error("Error fetching request master data.");
+        alert("Could not fetch the current quantity for the request.");
+        return;
+      }
+
+      const newQty = selectedDetail.qty + reservedSerials.length; // Update quantity by adding back unassigned serials
+      const updatedStatus =
+        newQty === selectedDetail.qty ? "Assigned" : "Partially Assigned";
+
+      // Update the request master
+      const requestMasterPayload = {
+        assign: false, // Set assign to false as items are being dereserved
+        qty: newQty, // Update qty to reflect available quantity
+        status: updatedStatus,
+      };
+
+      const requestMasterResponse = await fetch(
+        `${config.apiBaseURL}/request_master/${requestId}/${id}/`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestMasterPayload),
+        }
+      );
+
+      if (!requestMasterResponse.ok) {
+        const errorDetails = await requestMasterResponse.json();
+        console.error("Request Master Error:", errorDetails);
+        alert("Error updating request master: " + JSON.stringify(errorDetails));
+        return;
+      }
+
+      alert("Selected serial numbers have been dereserved successfully.");
+    } catch (error) {
+      console.error("Error unassigning serial numbers:", error);
+      alert("An error occurred while unassigning serial numbers.");
+    }
+  };
+
   const handleSerialSelection = (serialNumber) => {
     setSelectedSerialNumbers((prevSelectedSerials) => {
       if (prevSelectedSerials.includes(serialNumber)) {
