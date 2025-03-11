@@ -251,85 +251,85 @@ const Inventory = () => {
 
 
 
-  const openReturnModal = (item) => {
-    console.log("Opening return modal for:", item);
-    setReturnItem(item);
-    setRemarks("");
-    setReportedBy("");
-    setSelectedStatus("Damaged"); // Default to "Damaged" when modal opens
-    setReturnModal(true);
-  };
+  // const openReturnModal = (item) => {
+  //   console.log("Opening return modal for:", item);
+  //   setReturnItem(item);
+  //   setRemarks("");
+  //   setReportedBy("");
+  //   setSelectedStatus("Damaged"); // Default to "Damaged" when modal opens
+  //   setReturnModal(true);
+  // };
 
-  const closeReturnModal = () => {
-    setReturnModal(false);
-    setReturnItem(null);
-  };
-
-
+  // const closeReturnModal = () => {
+  //   setReturnModal(false);
+  //   setReturnItem(null);
+  // };
 
 
-  const handleReturn = async () => {
-    if (!remarks || !reportedBy) {
-      alert("Please enter Remarks and Reported By.");
-      return;
-    }
+
+
+  // const handleReturn = async () => {
+  //   if (!remarks || !reportedBy) {
+  //     alert("Please enter Remarks and Reported By.");
+  //     return;
+  //   }
   
-    try {
-      // POST request to report the item as damaged
-      const response = await fetch(`${config.apiBaseURL}/damaged/${returnItem.serial_number}/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          serial_number: returnItem.serial_number,
-          remarks,
-          reported_by: reportedBy,
-          status: selectedStatus, // Use selectedStatus from dropdown
-        }),
-      });
+  //   try {
+  //     // POST request to report the item as damaged
+  //     const response = await fetch(`${config.apiBaseURL}/damaged/${returnItem.serial_number}/`, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({
+  //         serial_number: returnItem.serial_number,
+  //         remarks,
+  //         reported_by: reportedBy,
+  //         status: selectedStatus, // Use selectedStatus from dropdown
+  //       }),
+  //     });
   
-      if (!response.ok) {
-        console.error("Failed to report damaged item:", response.statusText);
-        alert("Failed to report damaged item.");
-        return;
-      }
+  //     if (!response.ok) {
+  //       console.error("Failed to report damaged item:", response.statusText);
+  //       alert("Failed to report damaged item.");
+  //       return;
+  //     }
   
-      alert(`Item ${returnItem.serial_number} reported as damaged successfully!`);
+  //     alert(`Item ${returnItem.serial_number} reported as damaged successfully!`);
 
-        // Step 2: Update inventory status to true
-      const patchResponse = await fetch(`${config.apiBaseURL}/inventory/${returnItem.serial_number}/`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          status: true,
-        }),
-      });
+  //       // Step 2: Update inventory status to true
+  //     const patchResponse = await fetch(`${config.apiBaseURL}/inventory/${returnItem.serial_number}/`, {
+  //       method: "PATCH",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({
+  //         status: true,
+  //       }),
+  //     });
 
-      if (!patchResponse.ok) {
-        console.error("Failed to update inventory status:", patchResponse.statusText);
-        alert("Failed to update inventory status.");
-        return;
-      }
+  //     if (!patchResponse.ok) {
+  //       console.error("Failed to update inventory status:", patchResponse.statusText);
+  //       alert("Failed to update inventory status.");
+  //       return;
+  //     }
 
-      alert(`Inventory status for ${returnItem.serial_number} updated successfully!`);
+  //     alert(`Inventory status for ${returnItem.serial_number} updated successfully!`);
   
-      // Update UI state to reflect the change
-      setFilteredInventory((prev) =>
-        prev.map((row) =>
-          row.serial_number === returnItem.serial_number ? { ...row, status: true } : row
-        )
-      );
+  //     // Update UI state to reflect the change
+  //     setFilteredInventory((prev) =>
+  //       prev.map((row) =>
+  //         row.serial_number === returnItem.serial_number ? { ...row, status: true } : row
+  //       )
+  //     );
   
-      closeReturnModal();
+  //     closeReturnModal();
   
-    } catch (error) {
-      console.error("Error reporting damaged item:", error);
-      alert("Error reporting damaged item.");
-    }
-  };
+  //   } catch (error) {
+  //     console.error("Error reporting damaged item:", error);
+  //     alert("Error reporting damaged item.");
+  //   }
+  // };
 
 
   return (
@@ -365,6 +365,7 @@ const Inventory = () => {
             <th>Vendor</th>
             <th>Created Date</th>
             <th>Price</th>
+            <th>Status</th>
           </tr>
         </thead>
         <tbody>
@@ -372,7 +373,7 @@ const Inventory = () => {
             Object.keys(groupedData).map((componentId) => {
               const componentRows = groupedData[componentId];
               const componentRowsCount =
-                groupedData[componentId].filter((row) => row.status === true)
+                groupedData[componentId].filter((row) => row.status === "Available")
                   .length || 0;
               const firstRow = componentRows[0];
               const component = componentData[componentId] || {};
@@ -385,7 +386,7 @@ const Inventory = () => {
                     className="clickable-row"
                     style={{
                       cursor: "pointer",
-                      backgroundColor: componentRows.some((row) => !row.status)
+                      backgroundColor: componentRows.some((row) => row.status !== "Available")
                         ? "white"
                         : "", // Highlight disabled rows
                     }}
@@ -411,6 +412,7 @@ const Inventory = () => {
                       {firstRow.create_date || new Date().toLocaleDateString()}
                     </td>
                     <td>{firstRow.price}</td>
+                    <td></td>
                   </tr>
 
                   {isExpanded &&
@@ -420,19 +422,19 @@ const Inventory = () => {
                         className="expanded-row"
                         style={{
                           backgroundColor: !row.status ? "#e0e0e0" : "#ededed", // Highlight disabled items
-                          color: !row.status ? "#a0a0a0" : "inherit",
+                          color: row.status !== "Available" ? "#a0a0a0" : "inherit",
                         }}
                       >
                         <td>{row.component_id}</td>
                         <td>{row.serial_number} {" "}
-                        {!row.status && (
+                        {/* {!row.status && (
                             <button
                               className="return-button"
                               onClick={() => openReturnModal(row)}
                             >
                               Return
                             </button>
-                          )}
+                          )} */}
                         </td>
                         <td
                           onDoubleClick={() =>
@@ -468,6 +470,7 @@ const Inventory = () => {
                           {row.create_date || new Date().toLocaleDateString()}
                         </td>
                         <td>{row.price}</td>
+                        <td>{row.status}</td>
                       </tr>
                     ))}
                 </React.Fragment>
@@ -483,10 +486,10 @@ const Inventory = () => {
           <tr>
             <td style={{ fontWeight: "bold" }}>Total Inventory count</td>
             <td>
-              {filteredInventory.filter((row) => row.status === true).length ||
+              {filteredInventory.filter((row) => row.status === "Available").length ||
                 0}
             </td>
-            <td colSpan="8" className="no-data"></td>
+            <td colSpan="10" className="no-data"></td>
           </tr>
         </tbody>
       </table>

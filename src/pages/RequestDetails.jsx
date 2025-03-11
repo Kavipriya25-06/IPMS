@@ -125,7 +125,7 @@ const RequestDetails = ({ user }) => {
           acc[item.component_id] = { qty: 0, serialNumbers: [] };
         }
 
-        if (item.status === true) {
+        if (item.status === "Available") {
           acc[item.component_id].qty += 1; // Increment qty if status is true
         }
 
@@ -305,7 +305,7 @@ const RequestDetails = ({ user }) => {
 
     if (componentData.qty >= qty) {
       const availableSerialNumbers = componentData.serialNumbers
-        .filter((sn) => sn.status === true)
+        .filter((sn) => sn.status === "Available" )
         .map((sn) => sn.serialNumber);
 
       if (availableSerialNumbers.length >= qty) {
@@ -331,65 +331,58 @@ const RequestDetails = ({ user }) => {
       } else if (prevSelectedSerials.length < requiredQty) {
         return [...prevSelectedSerials, serialNumber];
       } else {
-        alert(`You must select exactly ${requiredQty} serial numbers.`);
+        alert(`You cannot select more than ${requiredQty} serial numbers.`);
         return prevSelectedSerials;
       }
     });
   };
 
   const handleConfirmAssignment = async () => {
-    if (selectedSerialNumbers.length !== requiredQty) {
-      alert(`Please select exactly ${requiredQty} serial numbers.`);
+    if (selectedSerialNumbers.length === 0) {
+      alert(`Please select at least 1 serial number.`);
       return;
     }
-
+  
     setShowSerialPopup(false);
-
+  
     try {
-      // Fetch the ID for the selected component's request master
       const selectedDetail = details.find(
         (detail) => detail.component_id === selectedComponent
       );
-
+  
       if (!selectedDetail || !selectedDetail.id) {
         console.error("Request ID not found for the selected component.");
-        alert(
-          "Error: Unable to find the request ID for the selected component."
-        );
+        alert("Error: Unable to find the request ID for the selected component.");
         return;
       }
 
-      const { id } = selectedDetail; // Extract the `id` from the selected detail
-      const requestId = selectedDetail.request_id; // Extract the `request_id` if needed
-
-      // Update inventory serial numbers
+      const { id } = selectedDetail;
+      const requestId = selectedDetail.request_id;
+  
       for (const serialNumber of selectedSerialNumbers) {
-        // First, fetch the existing inventory data for the serial number
         const inventoryResponse = await fetch(
           `${config.apiBaseURL}/inventory/${serialNumber}/`
         );
-
+  
         if (!inventoryResponse.ok) {
-          console.error(
-            `Error fetching inventory data for serial: ${serialNumber}`
-          );
+          console.error(`Error fetching inventory data for serial: ${serialNumber}`);
           alert(`Could not fetch data for serial number ${serialNumber}`);
           return;
         }
-
+  
         const inventoryData = await inventoryResponse.json();
 
         // Create payload with the current data and change only the status to false
         const inventoryPayload = {
           component: inventoryData.component,
           serial_number: serialNumber,
-          vendor_name: inventoryData.vendor_name || "V_00001", // Use existing vendor if present
-          component_id: inventoryData.component_id, // Use existing component_id
-          component_type: inventoryData.component_type, // Retain existing component_type
-          category: inventoryData.category, // Retain existing category
-          specification: inventoryData.specification, // Retain existing specification
-          UOM: inventoryData.UOM, // Retain existing UOM
-          status: false, // Mark as assigned
+          vendor_name: inventoryData.vendor_name || "V_00001",
+          component_id: inventoryData.component_id,
+          component_type: inventoryData.component_type,
+          category: inventoryData.category,
+          specification: inventoryData.specification,
+          UOM: inventoryData.UOM,
+          status: "Reserved",
           price: inventoryData.price,
         };
 
@@ -404,7 +397,7 @@ const RequestDetails = ({ user }) => {
             body: JSON.stringify(inventoryPayload),
           }
         );
-
+  
         if (!updateResponse.ok) {
           console.error(`Error updating inventory for serial: ${serialNumber}`);
           alert(`Could not update inventory for serial number ${serialNumber}`);
@@ -416,28 +409,22 @@ const RequestDetails = ({ user }) => {
       const requestMasterFetchResponse = await fetch(
         `${config.apiBaseURL}/request_master/${requestId}/${id}/`
       );
-
+  
       if (!requestMasterFetchResponse.ok) {
         console.error("Error fetching request master data.");
         alert("Could not fetch the current quantity for the request.");
         return;
       }
 
-      const requestMasterData = await requestMasterFetchResponse.json();
+      const newRequiredQty = requiredQty - selectedSerialNumbers.length;
 
-      // Prepare request master payload
       const requestMasterPayload = {
-        assign: true, // Mark as assigned
-        qty: 0, // Use the current qty value
-        status: "Assigned", // Update status
+        assign: newRequiredQty > 0 ? false : true, // Keep assign false if more are needed
+        qty: newRequiredQty, // Update qty to match remaining required quantity
+        status: newRequiredQty > 0 ? "Partially Assigned" : "Fully Assigned", // Dynamic status
         cart_assign: true,
       };
-
-      console.log("Request ID:", requestId); // Debug
-      console.log("Request Master ID:", id); // Debug
-      console.log("Request Master Payload:", requestMasterPayload); // Debug
-
-      // Update request_master
+  
       const requestMasterResponse = await fetch(
         `${config.apiBaseURL}/request_master/${requestId}/${id}/`,
         {
@@ -448,34 +435,35 @@ const RequestDetails = ({ user }) => {
           body: JSON.stringify(requestMasterPayload),
         }
       );
+  
 
       if (!requestMasterResponse.ok) {
-        const errorDetails = await requestMasterResponse.json(); // Capture backend error
+        const errorDetails = await requestMasterResponse.json();
         console.error("Request Master Error:", errorDetails);
         alert("Error updating request master: " + JSON.stringify(errorDetails));
         return;
       }
-
+      
       // Update the frontend state
       setDetails((prevDetails) =>
         prevDetails.map((detail) =>
           detail.component_id === selectedComponent
-            ? { ...detail, assign: true } // Update assign status in the UI
+            ? { ...detail, assign: newRequiredQty > 0 ? false : true, qty: newRequiredQty  }
             : detail
         )
       );
-
+  
       setInventoryData((prevData) => {
         const currentComponentData = prevData[selectedComponent] || {};
         const updatedSerialNumbers = currentComponentData.serialNumbers.filter(
           (sn) => !selectedSerialNumbers.includes(sn.serialNumber)
         );
-
+  
         return {
           ...prevData,
           [selectedComponent]: {
             ...currentComponentData,
-            serialNumbers: updatedSerialNumbers, // Remove used serial numbers
+            serialNumbers: updatedSerialNumbers,
           },
         };
       });
@@ -946,7 +934,7 @@ const RequestDetails = ({ user }) => {
                               }
                               disabled={!detail.assign || !detail.approve} // Disabled if not approved
                             >
-                              Assigned
+                              Reserved
                             </button>
                           ) : (
                             <button
@@ -979,7 +967,7 @@ const RequestDetails = ({ user }) => {
                                 !detail.approve // Disabled if not approved
                               }
                             >
-                              Assign
+                              Reserve
                             </button>
                           )}
                           <button
@@ -1321,3 +1309,6 @@ export default RequestDetails;
 //     console.error("Error unassigning serial numbers:", error);
 //   }
 // };
+
+
+/////////////////////////////////////////////////////////////

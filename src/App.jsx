@@ -29,6 +29,7 @@ import Cart from "./pages/Cart";
 import Roles from "./pages/Roles";
 import AddTags from "./pages/AddTags";
 import ProjectMaster from "./pages/ProjectMaster"; 
+import Mrf from "./pages/Mrf";
 
 // import { useAuth } from "./AuthContext";
 // import PODetails from "./pages/PODetails";
@@ -170,6 +171,13 @@ function App() {
               }
             >
               <NavLink to="/addtags">Add Tags</NavLink>
+            </li>
+            <li
+              className={
+                isTabEnabled(["Admin", "Procurement"]) ? "" : "disabled"
+              }
+            >
+              <NavLink to="/Mrf">MRF</NavLink>
             </li>
           </ul>
         </nav>
@@ -341,6 +349,16 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          <Route
+            path="/Mrf"
+            element={
+              <ProtectedRoute allowedRoles={["Admin"]}>
+                <Mrf />
+              </ProtectedRoute>
+            }
+          />
+
         </Routes>
       </div>
     </Router>
