@@ -138,6 +138,7 @@
 
 
 import React, { useEffect, useState } from "react";
+import config from "../Config"; // Import config for API endpoints
 
 const Mrf = () => {
   const [data, setData] = useState({});
