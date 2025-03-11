@@ -578,8 +578,9 @@ const RequestDetails = ({ user }) => {
     const matchingVendors = priceViewData
       .filter(
         (item) =>
-          item.component_type === componentType &&
-          item.component_specification === componentSpec
+          item.component_type.toLowerCase() === componentType.toLowerCase() &&
+          item.component_specification.toLowerCase() ===
+            componentSpec.toLowerCase()
       )
       .map((item) => ({
         ...item, // Retain all original fields

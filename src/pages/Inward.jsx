@@ -391,7 +391,8 @@ const Inward = () => {
   ////////////////////
 
   const handleQCClick = async (item) => {
-    const componentType = getNestedValue(item, "po_master.cart.component_type");
+    const component_Type = getNestedValue(item, "po_master.cart.component_type");
+    const componentType = component_Type.toLowerCase();
 
     if (!componentType) {
       alert("Component Type not available. Cannot fetch QC questions.");
