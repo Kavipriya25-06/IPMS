@@ -305,7 +305,7 @@ const RequestDetails = ({ user }) => {
 
     if (componentData.qty >= qty) {
       const availableSerialNumbers = componentData.serialNumbers
-        .filter((sn) => sn.status === "Available" )
+        .filter((sn) => sn.status === "Available")
         .map((sn) => sn.serialNumber);
 
       if (availableSerialNumbers.length >= qty) {
@@ -342,34 +342,38 @@ const RequestDetails = ({ user }) => {
       alert(`Please select at least 1 serial number.`);
       return;
     }
-  
+
     setShowSerialPopup(false);
-  
+
     try {
       const selectedDetail = details.find(
         (detail) => detail.component_id === selectedComponent
       );
-  
+
       if (!selectedDetail || !selectedDetail.id) {
         console.error("Request ID not found for the selected component.");
-        alert("Error: Unable to find the request ID for the selected component.");
+        alert(
+          "Error: Unable to find the request ID for the selected component."
+        );
         return;
       }
 
       const { id } = selectedDetail;
       const requestId = selectedDetail.request_id;
-  
+
       for (const serialNumber of selectedSerialNumbers) {
         const inventoryResponse = await fetch(
           `${config.apiBaseURL}/inventory/${serialNumber}/`
         );
-  
+
         if (!inventoryResponse.ok) {
-          console.error(`Error fetching inventory data for serial: ${serialNumber}`);
+          console.error(
+            `Error fetching inventory data for serial: ${serialNumber}`
+          );
           alert(`Could not fetch data for serial number ${serialNumber}`);
           return;
         }
-  
+
         const inventoryData = await inventoryResponse.json();
 
         // Create payload with the current data and change only the status to false
@@ -384,6 +388,7 @@ const RequestDetails = ({ user }) => {
           UOM: inventoryData.UOM,
           status: "Reserved",
           price: inventoryData.price,
+          Request_id_assign: requestId,
         };
 
         // Update the inventory status for the serial number
@@ -397,7 +402,7 @@ const RequestDetails = ({ user }) => {
             body: JSON.stringify(inventoryPayload),
           }
         );
-  
+
         if (!updateResponse.ok) {
           console.error(`Error updating inventory for serial: ${serialNumber}`);
           alert(`Could not update inventory for serial number ${serialNumber}`);
@@ -409,7 +414,7 @@ const RequestDetails = ({ user }) => {
       const requestMasterFetchResponse = await fetch(
         `${config.apiBaseURL}/request_master/${requestId}/${id}/`
       );
-  
+
       if (!requestMasterFetchResponse.ok) {
         console.error("Error fetching request master data.");
         alert("Could not fetch the current quantity for the request.");
@@ -424,7 +429,7 @@ const RequestDetails = ({ user }) => {
         status: newRequiredQty > 0 ? "Partially Assigned" : "Fully Assigned", // Dynamic status
         cart_assign: true,
       };
-  
+
       const requestMasterResponse = await fetch(
         `${config.apiBaseURL}/request_master/${requestId}/${id}/`,
         {
@@ -435,7 +440,6 @@ const RequestDetails = ({ user }) => {
           body: JSON.stringify(requestMasterPayload),
         }
       );
-  
 
       if (!requestMasterResponse.ok) {
         const errorDetails = await requestMasterResponse.json();
@@ -443,22 +447,26 @@ const RequestDetails = ({ user }) => {
         alert("Error updating request master: " + JSON.stringify(errorDetails));
         return;
       }
-      
+
       // Update the frontend state
       setDetails((prevDetails) =>
         prevDetails.map((detail) =>
           detail.component_id === selectedComponent
-            ? { ...detail, assign: newRequiredQty > 0 ? false : true, qty: newRequiredQty  }
+            ? {
+                ...detail,
+                assign: newRequiredQty > 0 ? false : true,
+                qty: newRequiredQty,
+              }
             : detail
         )
       );
-  
+
       setInventoryData((prevData) => {
         const currentComponentData = prevData[selectedComponent] || {};
         const updatedSerialNumbers = currentComponentData.serialNumbers.filter(
           (sn) => !selectedSerialNumbers.includes(sn.serialNumber)
         );
-  
+
         return {
           ...prevData,
           [selectedComponent]: {
@@ -1309,6 +1317,5 @@ export default RequestDetails;
 //     console.error("Error unassigning serial numbers:", error);
 //   }
 // };
-
 
 /////////////////////////////////////////////////////////////
