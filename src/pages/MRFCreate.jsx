@@ -1,6 +1,5 @@
 // // src/pages/MRFCreate.jsx
 
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import config from "../Config"; // Import config for API endpoints
@@ -10,6 +9,7 @@ const MRFCreate = () => {
   const [requestDetails, setRequestDetails] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState("");
   const [materialRequest, setMaterialRequest] = useState([]);
+  const [projectDetails, setProjectDetails] = useState([]);
   const [projectName, setProjectName] = useState("");
   const [name, setName] = useState("");
   const [date, setDate] = useState("");
@@ -18,6 +18,7 @@ const MRFCreate = () => {
 
   useEffect(() => {
     fetchRequestList();
+    fetchProjectDetails();
   }, []);
 
   const fetchRequestList = async () => {
@@ -25,11 +26,25 @@ const MRFCreate = () => {
       // const response = await fetch(`${config.apiBaseURL}/request_master/`);
       const response = await fetch(`${config.apiBaseURL}/inventory/`);
       const data = await response.json();
-      const filteredRequests = data.filter((item) => item.status === "Reserved");
-      const uniqueRequests = [...new Set(filteredRequests.map((item) => item.Request_id_assign))];
+      const filteredRequests = data.filter(
+        (item) => item.status === "Reserved"
+      );
+      const uniqueRequests = [
+        ...new Set(filteredRequests.map((item) => item.Request_id_assign)),
+      ];
       setRequestList(uniqueRequests);
     } catch (err) {
       console.error("Error fetching request list:", err);
+    }
+  };
+
+  const fetchProjectDetails = async () => {
+    try {
+      const response = await fetch(`${config.apiBaseURL}/request_inventory/`);
+      const data = await response.json();
+      setProjectDetails(data);
+    } catch (err) {
+      console.error("Error fetching project details: ", err);
     }
   };
 
@@ -41,11 +56,17 @@ const MRFCreate = () => {
       const response = await fetch(`${config.apiBaseURL}/inventory/`);
       const data = await response.json();
       const filteredData = data.filter(
-         (item) => item.Request_id_assign === requestId && item.status === "Reserved"
+        (item) =>
+          item.Request_id_assign === requestId && item.status === "Reserved"
       );
       setRequestDetails(filteredData);
-      if (filteredData.length > 0) {
-        setProjectName(filteredData[0].project_id);
+
+      const filteredProjectData = projectDetails.filter(
+        (item) => item.request_id === requestId
+      );
+
+      if (filteredProjectData.length > 0) {
+        setProjectName(filteredProjectData[0].project_details.project_name);
       }
     } catch (err) {
       console.error("Error fetching material request details:", err);
@@ -61,17 +82,18 @@ const MRFCreate = () => {
 
   const handleCreateMRF = async () => {
     // Filter only selected rows
-    const selectedRows = requestDetails.filter((row) => selectedItems[row.serial_number]);
-  
+    const selectedRows = requestDetails.filter(
+      (row) => selectedItems[row.serial_number]
+    );
+
     if (selectedRows.length === 0) {
       alert("Please select at least one item.");
       return;
     }
-  
+
     // Send only ONE object at a time (not an array)
     for (const row of selectedRows) {
       const payload = {
-        
         create_date: new Date().toISOString().split("T")[0], // YYYY-MM-DD format
         name: name,
         date: date,
@@ -83,7 +105,7 @@ const MRFCreate = () => {
         status: row.status || "", //Ensures status is not null
         serial_number: row.serial_number, // Now sent at the root level
       };
-  
+
       try {
         const response = await fetch(`${config.apiBaseURL}/create_MRF/`, {
           method: "POST",
@@ -92,7 +114,7 @@ const MRFCreate = () => {
           },
           body: JSON.stringify(payload), // Sending a single object
         });
-  
+
         if (!response.ok) {
           const errorResponse = await response.json();
           console.error("Error creating MRF:", errorResponse);
@@ -105,11 +127,10 @@ const MRFCreate = () => {
         return;
       }
     }
-  
+
     alert("MRF created successfully!");
-    navigate("/mrf_list");
+    navigate("/MrfRequest");
   };
-  
 
   return (
     <div style={{ padding: "0px", fontFamily: "Arial, sans-serif" }}>
@@ -137,7 +158,7 @@ const MRFCreate = () => {
               </option>
             ))}
           </select>
-          <h3>Project Name: {projectName}</h3>
+          <h3>Project Name: {projectName || ""}</h3>
         </div>
         <div>
           <div style={{ marginLeft: "10px", padding: "5px" }}>
@@ -177,7 +198,7 @@ const MRFCreate = () => {
           </thead>
           <tbody>
             {requestDetails.map((row) => (
-              <tr key={row.id}>
+              <tr key={row.serial_number}>
                 <td>{row.component_type}</td>
                 <td>{row.specification}</td>
                 <td>{row.UOM}</td>
@@ -186,9 +207,10 @@ const MRFCreate = () => {
                 <td>{row.serial_number}</td>
                 <td>{row.status}</td>
                 <td>
-                  <input type="checkbox" 
-                  checked={selectedItems[row.serial_number] || false}
-                  onChange={() => handleCheckboxChange(row.serial_number)}
+                  <input
+                    type="checkbox"
+                    checked={selectedItems[row.serial_number] || false}
+                    onChange={() => handleCheckboxChange(row.serial_number)}
                   />
                 </td>
               </tr>

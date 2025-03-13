@@ -1062,7 +1062,7 @@ const RequestDetails = ({ user }) => {
                               }
                               disabled={!detail.assign || !detail.approve} // Disabled if not approved
                             >
-                              Reserved
+                              Dereserve
                             </button>
                           ) : (
                             <button

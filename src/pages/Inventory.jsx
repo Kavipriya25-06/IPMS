@@ -18,26 +18,39 @@ const Inventory = () => {
   const [returnItem, setReturnItem] = useState(null);
   const [remarks, setRemarks] = useState("");
   const [reportedBy, setReportedBy] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState("Damaged"); // Default status selection
-
-
+  const [selectedStatus, setSelectedStatus] = useState(""); // Default status selection
 
   useEffect(() => {
     fetchInventoryData();
     fetchComponentMasterData();
     fetchVendorMasterData();
     fetchMetaTags();
-  }, []);
+  }, [selectedStatus]);
 
   useEffect(() => {
     filterInventory();
-  }, [selectedTag, inventoryData, componentData, metaTags]);
+  }, [selectedTag, inventoryData, componentData, metaTags, selectedStatus]);
 
+  // const fetchInventoryData = async () => {
+  //   try {
+  //     const response = await fetch(`${config.apiBaseURL}/inventory/?status=`);
+  //     const data = await response.json();
+  //     setInventoryData(data);
+  //   } catch (error) {
+  //     console.error("Error fetching inventory data:", error);
+  //   }
+  // };
+
+  // Fetch inventory data from API (filtered by status)
   const fetchInventoryData = async () => {
     try {
-      const response = await fetch(`${config.apiBaseURL}/inventory/`);
+      let apiUrl = `${config.apiBaseURL}/inventory/`;
+      if (selectedStatus) apiUrl += `?status=${selectedStatus}`;
+
+      const response = await fetch(apiUrl);
       const data = await response.json();
       setInventoryData(data);
+      console.log("available inv data", data);
     } catch (error) {
       console.error("Error fetching inventory data:", error);
     }
@@ -120,8 +133,6 @@ const Inventory = () => {
     setFilteredInventory(filtered);
   };
 
-
-
   const handleDoubleClick = (id, currentSKU) => {
     setEditingSKU(id); // Set edit mode for the row
     setTempSKU(currentSKU); // Set the temporary SKU value
@@ -172,13 +183,9 @@ const Inventory = () => {
     setTempSKU("");
   };
 
-
-
-
-
   const handleGenerateReport = async () => {
     const validSerialNumbers = filteredInventory
-      .filter((item) => item.status === true)
+      //.filter((item) => item.status === true)
       .map((item) => item.serial_number);
 
     if (validSerialNumbers.length === 0) {
@@ -188,7 +195,9 @@ const Inventory = () => {
 
     try {
       const fetchDetailsPromises = validSerialNumbers.map(async (serial) => {
-        const response = await fetch(`http://127.0.0.1:8000/inventory_details/${serial}/`);
+        const response = await fetch(
+          `http://127.0.0.1:8000/inventory_details/${serial}/`
+        );
         if (!response.ok) {
           console.error(`Failed to fetch details for ${serial}`);
           return {
@@ -233,7 +242,8 @@ const Inventory = () => {
   };
 
   const generateCSV = (data) => {
-    let csvContent = "Serial Number,PO ID,Request ID,Project ID,Project Name,BOM ID,BOM Name,Price,Created Date\n";
+    let csvContent =
+      "Serial Number,PO ID,Request ID,Project ID,Project Name,BOM ID,BOM Name,Price,Created Date\n";
 
     data.forEach((row) => {
       csvContent += `${row.Serial_Number},${row.po_id},${row.request_id},${row.project_id},${row.project_name},${row.bom_id},${row.bom_name},${row.price},${row.create_date}\n`;
@@ -249,8 +259,6 @@ const Inventory = () => {
     document.body.removeChild(a);
   };
 
-
-
   // const openReturnModal = (item) => {
   //   console.log("Opening return modal for:", item);
   //   setReturnItem(item);
@@ -265,15 +273,12 @@ const Inventory = () => {
   //   setReturnItem(null);
   // };
 
-
-
-
   // const handleReturn = async () => {
   //   if (!remarks || !reportedBy) {
   //     alert("Please enter Remarks and Reported By.");
   //     return;
   //   }
-  
+
   //   try {
   //     // POST request to report the item as damaged
   //     const response = await fetch(`${config.apiBaseURL}/damaged/${returnItem.serial_number}/`, {
@@ -288,13 +293,13 @@ const Inventory = () => {
   //         status: selectedStatus, // Use selectedStatus from dropdown
   //       }),
   //     });
-  
+
   //     if (!response.ok) {
   //       console.error("Failed to report damaged item:", response.statusText);
   //       alert("Failed to report damaged item.");
   //       return;
   //     }
-  
+
   //     alert(`Item ${returnItem.serial_number} reported as damaged successfully!`);
 
   //       // Step 2: Update inventory status to true
@@ -315,30 +320,47 @@ const Inventory = () => {
   //     }
 
   //     alert(`Inventory status for ${returnItem.serial_number} updated successfully!`);
-  
+
   //     // Update UI state to reflect the change
   //     setFilteredInventory((prev) =>
   //       prev.map((row) =>
   //         row.serial_number === returnItem.serial_number ? { ...row, status: true } : row
   //       )
   //     );
-  
+
   //     closeReturnModal();
-  
+
   //   } catch (error) {
   //     console.error("Error reporting damaged item:", error);
   //     alert("Error reporting damaged item.");
   //   }
   // };
 
-
   return (
     <div className="inventory-container">
       <div className="header">
         <h2>Inventory Data</h2>
-        <button className="generate-report-button" onClick={handleGenerateReport}>
+        <button
+          className="generate-report-button"
+          onClick={handleGenerateReport}
+        >
           Generate Report
         </button>
+        <div>
+          <label>Status:</label>
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+          >
+            <option value="">All</option>
+            <option value="Available">Available</option>
+            <option value="Reserved">Reserved</option>
+            <option value="In_drone">In Drone</option>
+            <option value="Damaged">Damaged</option>
+            <option value="Repair">Repair</option>
+          </select>
+        </div>
+
         <div className="search-bar-container">
           <input
             type="text"
@@ -373,8 +395,9 @@ const Inventory = () => {
             Object.keys(groupedData).map((componentId) => {
               const componentRows = groupedData[componentId];
               const componentRowsCount =
-                groupedData[componentId].filter((row) => row.status === "Available" || "Reserved")
-                  .length || 0;
+                groupedData[componentId].filter(
+                  (row) => row.status === "Available" || "Reserved"
+                ).length || 0;
               const firstRow = componentRows[0];
               const component = componentData[componentId] || {};
               const isExpanded = expandedComponents[componentId];
@@ -386,7 +409,9 @@ const Inventory = () => {
                     className="clickable-row"
                     style={{
                       cursor: "pointer",
-                      backgroundColor: componentRows.some((row) => row.status !== "Available")
+                      backgroundColor: componentRows.some(
+                        (row) => row.status !== "Available"
+                      )
                         ? "white"
                         : "", // Highlight disabled rows
                     }}
@@ -422,12 +447,14 @@ const Inventory = () => {
                         className="expanded-row"
                         style={{
                           backgroundColor: !row.status ? "#e0e0e0" : "#ededed", // Highlight disabled items
-                          color: row.status !== "Available" ? "#a0a0a0" : "inherit",
+                          color:
+                            row.status !== "Available" ? "#a0a0a0" : "inherit",
                         }}
                       >
                         <td>{row.component_id}</td>
-                        <td>{row.serial_number} {" "}
-                        {/* {!row.status && (
+                        <td>
+                          {row.serial_number}{" "}
+                          {/* {!row.status && (
                             <button
                               className="return-button"
                               onClick={() => openReturnModal(row)}
@@ -486,37 +513,43 @@ const Inventory = () => {
           <tr>
             <td style={{ fontWeight: "bold" }}>Total Inventory count</td>
             <td>
-              {filteredInventory.filter((row) => row.status === "Available" || "Reserved").length ||
-                0}
+              {filteredInventory.filter(
+                (row) => row.status === "Available" || "Reserved"
+              ).length || 0}
             </td>
             <td colSpan="10" className="no-data"></td>
           </tr>
         </tbody>
       </table>
 
-
       {returnModal && (
         <div className="modal">
           <div className="modal-content">
             <h3>Return Item</h3>
-            <p><strong>Serial Number:</strong> {returnItem.serial_number}</p>
-            <p><strong>Component Type:</strong> {returnItem.component_type}</p>
-            <p><strong>Specification:</strong> {returnItem.specification}</p>
-              {/* Dropdown for Status Selection */}
-      <label>
-        <strong>Status:</strong>
-        <select
-          value={selectedStatus}
-          onChange={(e) => {
-            console.log("Status changed to:", e.target.value); // Debugging
-            setSelectedStatus(e.target.value);
-          }}
-        >
-          <option value="damaged">Damaged</option>
-          <option value="repairable">Repairable</option>
-          <option value="returned">Returned</option>
-        </select>
-      </label>
+            <p>
+              <strong>Serial Number:</strong> {returnItem.serial_number}
+            </p>
+            <p>
+              <strong>Component Type:</strong> {returnItem.component_type}
+            </p>
+            <p>
+              <strong>Specification:</strong> {returnItem.specification}
+            </p>
+            {/* Dropdown for Status Selection */}
+            <label>
+              <strong>Status:</strong>
+              <select
+                value={selectedStatus}
+                onChange={(e) => {
+                  console.log("Status changed to:", e.target.value); // Debugging
+                  setSelectedStatus(e.target.value);
+                }}
+              >
+                <option value="damaged">Damaged</option>
+                <option value="repairable">Repairable</option>
+                <option value="returned">Returned</option>
+              </select>
+            </label>
             <label>
               <strong>Remarks:</strong>
               <input
@@ -536,8 +569,12 @@ const Inventory = () => {
               />
             </label>
             <div className="modal-buttons">
-              <button className="confirm-button" onClick={handleReturn}>Confirm Return</button>
-              <button className="cancel-button" onClick={closeReturnModal}>Cancel</button>
+              <button className="confirm-button" onClick={handleReturn}>
+                Confirm Return
+              </button>
+              <button className="cancel-button" onClick={closeReturnModal}>
+                Cancel
+              </button>
             </div>
           </div>
         </div>
