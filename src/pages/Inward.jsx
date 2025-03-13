@@ -391,7 +391,10 @@ const Inward = () => {
   ////////////////////
 
   const handleQCClick = async (item) => {
-    const component_Type = getNestedValue(item, "po_master.cart.component_type");
+    const component_Type = getNestedValue(
+      item,
+      "po_master.cart.component_type"
+    );
     const componentType = component_Type.toLowerCase();
 
     if (!componentType) {
@@ -411,7 +414,7 @@ const Inward = () => {
 
       // Filter questions based on the component_type
       const filteredQuestions = qcQuestions.filter(
-        (question) => question.component_type === componentType
+        (question) => question.component_type.toLowerCase() === componentType
       );
 
       if (filteredQuestions.length === 0) {
@@ -570,14 +573,11 @@ const Inward = () => {
     }
 
     try {
-      const response = await fetch(
-        `${config.apiBaseURL}/inward/${inwardId}/`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ quality_check: overallStatus }),
-        }
-      );
+      const response = await fetch(`${config.apiBaseURL}/inward/${inwardId}/`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quality_check: overallStatus }),
+      });
 
       if (!response.ok) {
         const errorDetails = await response.json();
@@ -795,14 +795,11 @@ const Inward = () => {
         sku_number: skuSerialNumber.trim() || null, // Allow null for empty serial number
       };
 
-      const response = await fetch(
-        `${config.apiBaseURL}/inward/${inwardId}/`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
+      const response = await fetch(`${config.apiBaseURL}/inward/${inwardId}/`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
       if (!response.ok) {
         const errorDetails = await response.json();
