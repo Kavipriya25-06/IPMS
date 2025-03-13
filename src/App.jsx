@@ -31,6 +31,7 @@ import AddTags from "./pages/AddTags";
 import ProjectMaster from "./pages/ProjectMaster"; 
 import Mrf from "./pages/Mrf";
 import MrfRequest from "./pages/MrfRequest";
+import MRFCreate from "./pages/MRFCreate";
 
 // import { useAuth } from "./AuthContext";
 // import PODetails from "./pages/PODetails";
@@ -178,7 +179,7 @@ function App() {
                 isTabEnabled(["Admin", "Procurement"]) ? "" : "disabled"
               }
             >
-              <NavLink to="/Mrf">MRF</NavLink>
+              <NavLink to="/Mrf">Reserved</NavLink>
             </li>
             <li
               className={
@@ -363,6 +364,15 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={["Admin"]}>
                 <Mrf />
+              </ProtectedRoute>
+            }
+          />
+
+<Route
+            path="/MRFCreate"
+            element={
+              <ProtectedRoute allowedRoles={["Admin"]}>
+                <MRFCreate />
               </ProtectedRoute>
             }
           />

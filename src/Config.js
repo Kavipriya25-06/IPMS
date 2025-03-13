@@ -1,3 +1,5 @@
+import Mrfrequest from "./pages/MrfRequest";
+
 // src/config.js
 const config = {
     apiBaseURL: "http://127.0.0.1:8000",
@@ -33,6 +35,8 @@ const config = {
   
       // Cart endpoint
       cart: "/cart/",
+
+      // Mrfrequest:"/create_MRF/",
     },
   };
   

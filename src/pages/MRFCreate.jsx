@@ -13,6 +13,7 @@ const MRFCreate = () => {
   const [projectName, setProjectName] = useState("");
   const [name, setName] = useState("");
   const [date, setDate] = useState("");
+  const [selectedItems, setSelectedItems] = useState({}); // Stores selected rows
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -24,9 +25,8 @@ const MRFCreate = () => {
       // const response = await fetch(`${config.apiBaseURL}/request_master/`);
       const response = await fetch(`${config.apiBaseURL}/inventory/`);
       const data = await response.json();
-      const uniqueRequests = [
-        ...new Set(data.map((item) => item.Request_id_assign)),
-      ];
+      const filteredRequests = data.filter((item) => item.status === "Reserved");
+      const uniqueRequests = [...new Set(filteredRequests.map((item) => item.Request_id_assign))];
       setRequestList(uniqueRequests);
     } catch (err) {
       console.error("Error fetching request list:", err);
@@ -41,7 +41,7 @@ const MRFCreate = () => {
       const response = await fetch(`${config.apiBaseURL}/inventory/`);
       const data = await response.json();
       const filteredData = data.filter(
-        (item) => item.Request_id_assign === requestId
+         (item) => item.Request_id_assign === requestId && item.status === "Reserved"
       );
       setRequestDetails(filteredData);
       if (filteredData.length > 0) {
@@ -52,26 +52,64 @@ const MRFCreate = () => {
     }
   };
 
-  const handleCreateMRF = async () => {
-    try {
-      const response = await fetch(`${config.apiBaseURL}/create_mrf/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ request_id: selectedRequest }),
-      });
-
-      if (response.ok) {
-        alert("MRF created successfully!");
-        navigate("/mrf_list");
-      } else {
-        console.error("Error creating MRF:", await response.json());
-      }
-    } catch (err) {
-      console.error("Error during MRF creation:", err);
-    }
+  const handleCheckboxChange = (serialNumber) => {
+    setSelectedItems((prev) => ({
+      ...prev,
+      [serialNumber]: !prev[serialNumber], // Toggle the selection
+    }));
   };
+
+  const handleCreateMRF = async () => {
+    // Filter only selected rows
+    const selectedRows = requestDetails.filter((row) => selectedItems[row.serial_number]);
+  
+    if (selectedRows.length === 0) {
+      alert("Please select at least one item.");
+      return;
+    }
+  
+    // Send only ONE object at a time (not an array)
+    for (const row of selectedRows) {
+      const payload = {
+        
+        create_date: new Date().toISOString().split("T")[0], // YYYY-MM-DD format
+        name: name,
+        date: date,
+        action: true, //Ensure this field is sent
+        component_type: row.component_type, //Now sent at the root level
+        component_specification: row.specification, //Correct field name
+        unit_of_measurement: row.UOM, //  Correct field name
+        category: row.category, //Now sent at the root level
+        status: row.status || "", //Ensures status is not null
+        serial_number: row.serial_number, // Now sent at the root level
+      };
+  
+      try {
+        const response = await fetch(`${config.apiBaseURL}/create_MRF/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload), // Sending a single object
+        });
+  
+        if (!response.ok) {
+          const errorResponse = await response.json();
+          console.error("Error creating MRF:", errorResponse);
+          alert(`Error creating MRF: ${JSON.stringify(errorResponse)}`);
+          return;
+        }
+      } catch (err) {
+        console.error("Error during MRF creation:", err);
+        alert("An error occurred while creating the MRF.");
+        return;
+      }
+    }
+  
+    alert("MRF created successfully!");
+    navigate("/mrf_list");
+  };
+  
 
   return (
     <div style={{ padding: "0px", fontFamily: "Arial, sans-serif" }}>
@@ -145,10 +183,13 @@ const MRFCreate = () => {
                 <td>{row.UOM}</td>
                 <td>{row.category}</td>
                 <td>{row.vendor_name}</td>
-                <td>{row.component_id}</td>
+                <td>{row.serial_number}</td>
                 <td>{row.status}</td>
                 <td>
-                  <input type="checkbox" />
+                  <input type="checkbox" 
+                  checked={selectedItems[row.serial_number] || false}
+                  onChange={() => handleCheckboxChange(row.serial_number)}
+                  />
                 </td>
               </tr>
             ))}
