@@ -566,27 +566,6 @@ const RequestForm = () => {
               }}
             />
           </div>
-          <div style={{ marginBottom: "15px", width: "100%" }}>
-            <label style={{ display: "block", marginBottom: "5px" }}>
-              Select BOM:
-            </label>
-            <select
-              onChange={handleBomChange}
-              style={{
-                width: "100%",
-                padding: "8px",
-                borderRadius: "4px",
-                border: "1px solid #ccc",
-              }}
-            >
-              <option value="">Select BOM</option>
-              {boms.map((bom) => (
-                <option key={bom.bom_id} value={bom.bom_id}>
-                  {bom.bom_name}
-                </option>
-              ))}
-            </select>
-          </div>
 
           <div style={{ marginBottom: "15px", width: "100%" }}>
             <label style={{ display: "block", marginBottom: "5px" }}>
@@ -605,6 +584,27 @@ const RequestForm = () => {
               {projects.map((project) => (
                 <option key={project.project_id} value={project.project_id}>
                   {`${project.project_id} - ${project.project_name}`}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={{ marginBottom: "15px", width: "100%" }}>
+            <label style={{ display: "block", marginBottom: "5px" }}>
+              Select BOM:
+            </label>
+            <select
+              onChange={handleBomChange}
+              style={{
+                width: "100%",
+                padding: "8px",
+                borderRadius: "4px",
+                border: "1px solid #ccc",
+              }}
+            >
+              <option value="">Select BOM</option>
+              {boms.map((bom) => (
+                <option key={bom.bom_id} value={bom.bom_id}>
+                  {bom.bom_name}
                 </option>
               ))}
             </select>

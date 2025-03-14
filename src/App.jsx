@@ -28,7 +28,7 @@ import Projects from "./pages/Projects";
 import Cart from "./pages/Cart";
 import Roles from "./pages/Roles";
 import AddTags from "./pages/AddTags";
-import ProjectMaster from "./pages/ProjectMaster"; 
+import ProjectMaster from "./pages/ProjectMaster";
 import Mrf from "./pages/Mrf";
 import MrfRequest from "./pages/MrfRequest";
 import MRFCreate from "./pages/MRFCreate";
@@ -120,10 +120,32 @@ function App() {
             </li>
             <li
               className={
+                isTabEnabled([
+                  "Admin",
+                  "Inventory",
+                  "User",
+                  "Procurement",
+                  "Finance",
+                ])
+                  ? ""
+                  : "disabled"
+              }
+            >
+              <NavLink to="/projects">Projects</NavLink>
+            </li>
+            <li
+              className={
                 isTabEnabled(["Admin", "Procurement", "User"]) ? "" : "disabled"
               }
             >
               <NavLink to="/requests">Requests</NavLink>
+            </li>
+            <li
+              className={
+                isTabEnabled(["Admin", "Procurement"]) ? "" : "disabled"
+              }
+            >
+              <NavLink to="/cart">Cart</NavLink>
             </li>
             <li
               className={
@@ -140,31 +162,6 @@ function App() {
               <NavLink to="/inward">Inward</NavLink>
             </li>
 
-            <li
-              className={
-                isTabEnabled([
-                  "Admin",
-                  "Inventory",
-                  "User",
-                  "Procurement",
-                  "Finance",
-                ])
-                  ? ""
-                  : "disabled"
-              }
-            >
-              <NavLink to="/projects">Projects</NavLink>
-            </li>
-            <li
-              className={
-                isTabEnabled(["Admin", "Procurement"]) ? "" : "disabled"
-              }
-            >
-              <NavLink to="/cart">Cart</NavLink>
-            </li>
-            <li className={isTabEnabled(["Admin"]) ? "" : "disabled"}>
-              <NavLink to="/roles">Roles</NavLink>
-            </li>
             <li
               className={
                 isTabEnabled(["Admin", "Inventory", "Procurement"])
@@ -187,6 +184,9 @@ function App() {
               }
             >
               <NavLink to="/MrfRequest">MRFRequest</NavLink>
+            </li>
+            <li className={isTabEnabled(["Admin"]) ? "" : "disabled"}>
+              <NavLink to="/roles">Roles</NavLink>
             </li>
           </ul>
         </nav>
@@ -313,7 +313,22 @@ function App() {
           />
 
           {/* New Route for Project Master */}
-          <Route path="/projects/:projectId" element={<ProtectedRoute allowedRoles={["Admin", "Procurement", "Inventory", "Finance", "User"]}><ProjectMaster /></ProtectedRoute>} />
+          <Route
+            path="/projects/:projectId"
+            element={
+              <ProtectedRoute
+                allowedRoles={[
+                  "Admin",
+                  "Procurement",
+                  "Inventory",
+                  "Finance",
+                  "User",
+                ]}
+              >
+                <ProjectMaster />
+              </ProtectedRoute>
+            }
+          />
 
           <Route
             path="/Projects"
@@ -368,7 +383,7 @@ function App() {
             }
           />
 
-<Route
+          <Route
             path="/MRFCreate"
             element={
               <ProtectedRoute allowedRoles={["Admin"]}>
@@ -385,7 +400,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
         </Routes>
       </div>
     </Router>
