@@ -417,34 +417,73 @@ const Vendors = () => {
     setEditedVendorName({ vendor_name: "", gstn: "" }); // Reset the edited name
   };
 
-    // Toggle Vendor Active/Inactive Status
-    const toggleVendorStatus = async (vendorId, currentStatus) => {
-      try {
-        const updatedStatus = !currentStatus; // Toggle current status
+
+  const toggleVendorStatus = async (vendorId, currentStatus) => {
+    try {
+      const updatedStatus = !currentStatus; // Toggle current status
   
-        const response = await fetch(`${config.apiBaseURL}/vendor_list/${vendorId}/`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ active: updatedStatus }), // Send updated status
-        });
+      // First, update vendor_list API
+      const response = await fetch(`${config.apiBaseURL}/vendor_list/${vendorId}/`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ active: updatedStatus }),
+      });
   
-        if (response.ok) {
-          setVendorData((prevData) =>
-            prevData.map((vendor) =>
-              vendor.vendor_id === vendorId
-                ? { ...vendor, active: updatedStatus }
-                : vendor
-            )
-          );
-        } else {
-          console.error("Error updating vendor status:", response.statusText);
-        }
-      } catch (error) {
-        console.error("Error updating vendor status:", error);
+      if (!response.ok) {
+        throw new Error("Failed to update vendor_list status");
       }
-    };
+  
+      // Update local state
+      setVendorData((prevData) =>
+        prevData.map((vendor) =>
+          vendor.vendor_id === vendorId ? { ...vendor, active: updatedStatus } : vendor
+        )
+      );
+  
+      // If status is now false, update vendor_master API
+      if (!updatedStatus) {
+        try {
+          const masterResponse = await fetch(`${config.apiBaseURL}/vendor_master/`);
+          if (!masterResponse.ok) {
+            throw new Error("Failed to fetch vendor_master data");
+          }
+  
+          const masterData = await masterResponse.json();
+          
+          // Find vendor entry matching the vendor_id
+           const vendorProducts = masterData.filter((product) => product.vendor === vendorId);
+  
+           if (vendorProducts.length > 0) {
+            // Loop through all products and update their status
+            await Promise.all(
+              vendorProducts.map(async (product) => {
+                if (product.product_id) {
+                  const updateMasterResponse = await fetch(`${config.apiBaseURL}/vendor_master/${product.product_id}/`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ active: false }),
+                  });
+  
+                  if (!updateMasterResponse.ok) {
+                    console.error(`Failed to update vendor_master for product_id: ${product.product_id}`);
+                  }
+                }
+              })
+            );
+          } else {
+            console.error("No products found for this vendor in vendor_master.");
+          }
+        } catch (error) {
+          console.error("Error updating vendor_master:", error);
+        }
+      }
+    } catch (error) {
+      console.error("Error updating vendor status:", error);
+    }
+  };
+  
 
     const handleSearch = async (query) => {
       setSearchQuery(query);

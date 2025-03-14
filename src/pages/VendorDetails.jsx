@@ -594,24 +594,49 @@ const VendorDetails = () => {
   };
 
 
-  const toggleVendorStatus = async (productId, currentStatus) => {
+  const toggleVendorStatus = async (productId, currentStatus, vendorId) => {
     try {
-      const updatedStatus = !currentStatus;
-
+      const updatedStatus = !currentStatus; // Toggle the status
+  
+      // Step 1: Fetch the vendor's status from `vendor_list/`
+      const vendorResponse = await fetch(`http://127.0.0.1:8000/vendor_list/`);
+      
+      if (!vendorResponse.ok) {
+        throw new Error("Failed to fetch vendor list");
+      }
+  
+      const vendorData = await vendorResponse.json();
+  
+      console.log("Vendor List API Response:", vendorData); // Debugging
+  
+      // Step 2: Find the matching vendor entry
+      const matchedVendor = vendorData.find((vendor) => vendor.vendor_id === vendorId);
+  
+      if (!matchedVendor) {
+        console.error("Vendor not found in vendor_list.");
+        alert("Vendor not found.");
+        return;
+      }
+  
+      // Step 3: Prevent activation if vendor is inactive
+      if (matchedVendor.active === false && updatedStatus === true) {
+        alert("Cannot activate product because the vendor is inactive.");
+        return;
+      }
+  
+      // Step 4: Update product status in `vendor_master/`
       const response = await fetch(`http://127.0.0.1:8000/vendor_master/${productId}/`, {
-        method: "PATCH", // Use PATCH if your API allows partial updates
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ active: updatedStatus }), // Update only the active field
+        body: JSON.stringify({ active: updatedStatus }),
       });
-
+  
       if (response.ok) {
         setVendorMasterData((prevData) =>
           prevData.map((product) =>
-            product.product_id === productId
-              ? { ...product, active: updatedStatus }
-              : product
+            product.product_id === productId ? { ...product, active: updatedStatus } : product
           )
         );
       } else {
@@ -1149,7 +1174,7 @@ const VendorDetails = () => {
                 </td>
                 <td>
                 <button
-                  onClick={() => toggleVendorStatus(product.product_id, product.active)}
+                  onClick={() => toggleVendorStatus(product.product_id, product.active, product.vendor)}
                   style={{
                     backgroundColor: product.active ? "green" : "red",
                     color: "white",

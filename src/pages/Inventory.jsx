@@ -396,7 +396,7 @@ const Inventory = () => {
               const componentRows = groupedData[componentId];
               const componentRowsCount =
                 groupedData[componentId].filter(
-                  (row) => row.status === "Available" || "Reserved"
+                  (row) => row.status === "Available" || row.status === "Reserved"
                 ).length || 0;
               const firstRow = componentRows[0];
               const component = componentData[componentId] || {};
@@ -514,7 +514,7 @@ const Inventory = () => {
             <td style={{ fontWeight: "bold" }}>Total Inventory count</td>
             <td>
               {filteredInventory.filter(
-                (row) => row.status === "Available" || "Reserved"
+                (row) => row.status === "Available" || row.status === "Reserved"
               ).length || 0}
             </td>
             <td colSpan="10" className="no-data"></td>
