@@ -3,6 +3,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import config from "../Config"; // Import config for API endpoints
+import {
+  showSuccessToast,
+  showErrorToast,
+  showInfoToast,
+  showWarningToast,
+  ToastContainerComponent,
+} from "./Toastify.jsx"; // Import Toastify utilities
 
 const MRFCreate = () => {
   const [requestList, setRequestList] = useState([]);
@@ -87,7 +94,15 @@ const MRFCreate = () => {
     );
 
     if (selectedRows.length === 0) {
-      alert("Please select at least one item.");
+      showWarningToast("Please select at least one item.");
+      return;
+    }
+    if (name.length === 0) {
+      showWarningToast("Please enter name.");
+      return;
+    }
+    if (date.length === 0) {
+      showWarningToast("Please enter Date.");
       return;
     }
 
@@ -118,17 +133,17 @@ const MRFCreate = () => {
         if (!response.ok) {
           const errorResponse = await response.json();
           console.error("Error creating MRF:", errorResponse);
-          alert(`Error creating MRF: ${JSON.stringify(errorResponse)}`);
+          showErrorToast(`Error creating MRF: ${JSON.stringify(errorResponse)}`);
           return;
         }
       } catch (err) {
         console.error("Error during MRF creation:", err);
-        alert("An error occurred while creating the MRF.");
+        showErrorToast("An error occurred while creating the MRF.");
         return;
       }
     }
 
-    alert("MRF created successfully!");
+    showSuccessToast("MRF created successfully!");
     navigate("/MrfRequest");
   };
 

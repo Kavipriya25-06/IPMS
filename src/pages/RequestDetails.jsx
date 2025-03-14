@@ -339,7 +339,7 @@ const RequestDetails = ({ user }) => {
       );
 
       if (reservedSerials.length === 0) {
-        alert("No reserved serial numbers found to unassign.");
+        showWarningToast("No reserved serial numbers found to unassign.");
         return;
       }
 
@@ -414,7 +414,7 @@ const RequestDetails = ({ user }) => {
       // Update the request master
       const requestMasterPayload = {
         assign: false, // Set assign to false as items are being dereserved
-        qty: newQty, // Update qty to reflect available quantity
+        // qty: newQty, // Update qty to reflect available quantity
         status: updatedStatus,
       };
 
@@ -436,10 +436,12 @@ const RequestDetails = ({ user }) => {
         return;
       }
 
-      alert("Selected serial numbers have been dereserved successfully.");
+      showSuccessToast(
+        "Selected serial numbers have been dereserved successfully."
+      );
     } catch (error) {
       console.error("Error unassigning serial numbers:", error);
-      alert("An error occurred while unassigning serial numbers.");
+      showErrorToast("An error occurred while unassigning serial numbers.");
     }
   };
 
@@ -450,7 +452,9 @@ const RequestDetails = ({ user }) => {
       } else if (prevSelectedSerials.length < requiredQty) {
         return [...prevSelectedSerials, serialNumber];
       } else {
-        alert(`You cannot select more than ${requiredQty} serial numbers.`);
+        showWarningToast(
+          `You cannot select more than ${requiredQty} serial numbers.`
+        );
         return prevSelectedSerials;
       }
     });
@@ -544,7 +548,7 @@ const RequestDetails = ({ user }) => {
 
       const requestMasterPayload = {
         assign: newRequiredQty > 0 ? false : true, // Keep assign false if more are needed
-        qty: newRequiredQty, // Update qty to match remaining required quantity
+        // qty: newRequiredQty, // Update qty to match remaining required quantity
         status: newRequiredQty > 0 ? "Partially Assigned" : "Fully Assigned", // Dynamic status
         cart_assign: true,
       };
@@ -1022,7 +1026,7 @@ const RequestDetails = ({ user }) => {
                               }`}
                         </td>
                       )}
-                      <td>{detail.qty}</td>
+                      <td>{detail.assign !== true ? `${detail.qty}` : `0`}</td>
                       <td>{availableQty}</td>
                       {/* <td>
                       <button
