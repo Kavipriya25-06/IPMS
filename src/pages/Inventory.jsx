@@ -436,7 +436,9 @@ const Inventory = () => {
                     <td>
                       {firstRow.create_date || new Date().toLocaleDateString()}
                     </td>
-                    <td>{firstRow.price}</td>
+                    <td style={{ textAlign: "right" }}>
+                      ₹{parseFloat(firstRow.price).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
                     <td></td>
                   </tr>
 
@@ -496,7 +498,9 @@ const Inventory = () => {
                         <td>
                           {row.create_date || new Date().toLocaleDateString()}
                         </td>
-                        <td>{row.price}</td>
+                        <td style={{ textAlign: "right" }}>
+    ₹{parseFloat(row.price).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+  </td>
                         <td>{row.status}</td>
                       </tr>
                     ))}

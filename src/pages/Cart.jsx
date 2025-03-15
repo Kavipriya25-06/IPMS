@@ -292,7 +292,7 @@ const Cart = ({ user }) => {
                                       <th>Category</th>
                                       <th>Unit of Measurement</th>
                                       <th>Unit Price</th>
-                                      <th>GST (%)</th>
+                                      <th>GST %</th>
                                       <th>Total Cost</th>
                                     </tr>
                                   </thead>
@@ -309,9 +309,17 @@ const Cart = ({ user }) => {
                                           <td>{item.quantity}</td>
                                           <td>{item.category}</td>
                                           <td>{item.unit_of_measurement}</td>
-                                          <td>{item.unit_price}</td>
-                                          <td>{item.GST}</td>
-                                          <td>{item.total_cost}</td>
+                                          <td style={{textAlign:"right"}}>₹{parseFloat(item.unit_price).toLocaleString("en-IN", { 
+                                              minimumFractionDigits: 2, 
+                                              maximumFractionDigits: 2 
+                                            })}
+                                          </td>
+                                          <td style={{textAlign:"right"}}>{item.GST}%</td>
+                                          <td style={{textAlign:"right"}}>₹{parseFloat(item.total_cost).toLocaleString("en-IN", { 
+                                              minimumFractionDigits: 2, 
+                                              maximumFractionDigits: 2 
+                                            })}
+                                          </td>
                                         </tr>
                                       ))}
                                   </tbody>

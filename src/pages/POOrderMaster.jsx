@@ -553,9 +553,21 @@ const POOrderMaster = ({ user }) => {
                   <td>{po.cart_details.component_specification}</td>
                   <td>{po.cart_details.unit_of_measurement}</td>
                   <td>{po.cart_details.quantity}</td>
-                  <td>{po.cart_details.unit_price}</td>
-                  <td>{po.cart_details.GST}</td>
-                  <td>{po.cart_details.total_cost}</td>
+                  <td style={{ textAlign: "right" }}>₹{parseFloat(po.cart_details.unit_price).toLocaleString("en-IN", { 
+                      minimumFractionDigits: 2, 
+                      maximumFractionDigits: 2 
+                    })}
+                  </td>
+                  <td style={{textAlign:"right"}}>{parseFloat(po.cart_details.GST).toLocaleString("en-IN", { 
+                      // minimumFractionDigits: 2, 
+                      // maximumFractionDigits: 2 
+                    })}%
+                  </td>
+                  <td style={{textAlign:"right"}}>₹{parseFloat(po.cart_details.total_cost).toLocaleString("en-IN", { 
+                      minimumFractionDigits: 2, 
+                      maximumFractionDigits: 2 
+                    })}
+                  </td>
                   {(isAdmin || isProcurement) && (
                     <td>
                       <button
@@ -578,7 +590,12 @@ const POOrderMaster = ({ user }) => {
                 <td>{totalquantity}</td>
                 <td></td>
                 <td></td>
-                <td>{totalcost}</td>
+                <td style={{ textAlign: "right" }}>
+                  ₹{parseFloat(totalcost).toLocaleString("en-IN", { 
+                    minimumFractionDigits: 2, 
+                    maximumFractionDigits: 2 
+                  })}
+                </td>
               </tr>
             </tbody>
           </table>

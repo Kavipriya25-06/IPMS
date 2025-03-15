@@ -409,7 +409,11 @@ const POOrderList = ({ user }) => {
                   </td>
                   <td>{order.cart_details.vendor_name}</td>
                   <td>{status}</td>
-                  <td>{finalPrice.toFixed(2)}</td>
+                  <td style={{textAlign:"right"}}> ₹{parseFloat(finalPrice).toLocaleString("en-IN", { 
+                      minimumFractionDigits: 2, 
+                      maximumFractionDigits: 2 
+                    })}
+                  </td>
                   <td>{order.date}</td>
                   {(isAdmin || isProcurement) && (
                     <td>

@@ -953,7 +953,7 @@ const VendorDetails = () => {
                       new Date(entry.current_time).toLocaleDateString()
                     )}
                   </td>
-                  <td>
+                  <td style={{ textAlign: "right" }}>
                     {isEditingPriceEntry === index ? (
                       <input
                         type="number"
@@ -966,10 +966,13 @@ const VendorDetails = () => {
                         }
                       />
                     ) : (
-                      entry.price
+                      `₹${parseFloat(entry.price).toLocaleString("en-IN", { 
+              minimumFractionDigits: 2, 
+              maximumFractionDigits: 2 
+            })}`
                     )}
                   </td>
-                  <td>
+                  <td style={{ textAlign: "right" }}>
                     {isEditingPriceEntry === index ? (
                       <input
                         type="number"
@@ -982,7 +985,10 @@ const VendorDetails = () => {
                         }
                       />
                     ) : (
-                      entry.tax
+                      `${parseFloat(entry.tax).toLocaleString("en-IN", { 
+                        // minimumFractionDigits: 2, 
+                        // maximumFractionDigits: 2 
+                      })}%`
                     )}
                   </td>
                   <td>
@@ -1078,11 +1084,11 @@ const VendorDetails = () => {
                 <td>{getComponentId(product.product_id)}</td>
                 <td
                   onClick={() => handlePriceClick(product.product_id)}
-                  style={{ cursor: "pointer", textDecoration: "underline" }}
+                  style={{ cursor: "pointer", textDecoration: "underline", textAlign: "right"  }}
                 >
-                  {product.last_price}
+                  ₹{parseFloat(product.last_price).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </td>
-                <td>{product.tax}</td>
+                <td style={{ textAlign: "right" }}>{product.tax}%</td>
                 {/* Image editing section */}
                 <td>
                   {product.img ? (
