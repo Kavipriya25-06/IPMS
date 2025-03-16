@@ -1,27 +1,19 @@
-// import React, { useEffect, useState } from "react";
-// import { useNavigate } from "react-router-dom";
-// import config from "../Config"; // Ensure this file exists
-// import MRFCreate from "./MRFCreate";
-
-// function Mrfrequest() {
-//     const navigate = useNavigate();
-// return(
-//     <div><button onClick={() => navigate("/MRFCreate")}>
-//         Create Material Request Form
-//         </button></div>
-// )
-// };
-
-// export default Mrfrequest;
-
 import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import config from "../Config"; // Ensure this file exists
-import { showSuccessToast } from "./Toastify.jsx"; // Import Toastify utilities
+import {
+  showSuccessToast,
+  showErrorToast,
+  showWarningToast,
+} from "./Toastify.jsx"; // Import Toastify utilities
 
 function Mrfrequest() {
+  const { MRF_id } = useParams();
   const navigate = useNavigate();
-  const [requestData, setRequestData] = useState([]);
+
+  const [mrfData, setMrfData] = useState([]); // Stores create_MRF data
+  const [mrfListData, setMrfListData] = useState([]); // Stores mrf_list data
   const [showPopup, setShowPopup] = useState(false);
   const [selectedSerial, setSelectedSerial] = useState(null);
   const [selectedMRF, setSelectedMRF] = useState(null);
@@ -40,21 +32,36 @@ function Mrfrequest() {
   }); // State for new question
 
   useEffect(() => {
-    fetchRequestData();
-  }, []);
+    fetchMrfData();
+    fetchMrfListData();
+  }, [MRF_id]);
 
-  const fetchRequestData = async () => {
+  // Fetch `create_MRF` data
+  const fetchMrfData = async () => {
     try {
-      const response = await fetch(`${config.apiBaseURL}/create_MRF/`);
+      const response = await fetch(`${config.apiBaseURL}/create_mrf/`);
       const data = await response.json();
-      setRequestData(data);
+      setMrfData(data);
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error("Error fetching MRF data:", error);
+    }
+  };
+
+  // Fetch `mrf_list` data
+  const fetchMrfListData = async () => {
+    try {
+      const response = await fetch(`${config.apiBaseURL}/MRFList/`);
+      const data = await response.json();
+      const filtered = data.filter((item) => item.MRF_id === MRF_id);
+      setMrfListData(filtered);
+    } catch (error) {
+      console.error("Error fetching MRF List data:", error);
     }
   };
 
   const handleAssign = async (serialNumber, MRF_id) => {
     try {
+      // step 1: Update inventory status
       const response = await fetch(
         `${config.apiBaseURL}/inventory/${serialNumber}/`,
         {
@@ -71,7 +78,7 @@ function Mrfrequest() {
       }
 
       const updateMRFResponse = await fetch(
-        `${config.apiBaseURL}/create_MRF/${MRF_id}/`,
+        `${config.apiBaseURL}/MRFList/${MRF_id}/`,
         {
           method: "PATCH",
           headers: {
@@ -85,7 +92,7 @@ function Mrfrequest() {
         throw new Error("Failed to update MRF action status");
       }
 
-      setRequestData((prevData) =>
+      setMrfListData((prevData) =>
         prevData.map((item) =>
           item.serial_number === serialNumber
             ? { ...item, status: "In_drone", action: false }
@@ -246,7 +253,7 @@ function Mrfrequest() {
       });
 
       // Update MRF entry with return details
-      await fetch(`${config.apiBaseURL}/create_MRF/${selectedMRF}/`, {
+      await fetch(`${config.apiBaseURL}/MRFList/${selectedMRF}/`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -256,7 +263,7 @@ function Mrfrequest() {
         }),
       });
 
-      setRequestData((prevData) =>
+      setMrfListData((prevData) =>
         prevData.map((item) =>
           item.serial_number === selectedSerial
             ? { ...item, status: formattedStatus, returns: true, action: false }
@@ -273,29 +280,15 @@ function Mrfrequest() {
   };
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-      <h2>Material Request Data</h2>
+    <div>
+      <h2>Material Request Data for {MRF_id}</h2>
 
-      <button
-        onClick={() => navigate("/MRFCreate")}
-        style={{
-          padding: "10px 15px",
-          backgroundColor: "orange",
-          color: "white",
-          border: "none",
-          cursor: "pointer",
-          marginBottom: "20px",
-        }}
-      >
-        Create Material Request Form
-      </button>
-
-      <table border="1" cellPadding="5" cellSpacing="0" width="100%">
+      <table>
         <thead>
-          <tr style={{ backgroundColor: "#f2f2f2" }}>
-            <th>MRF ID</th>
-            <th>Create Date</th>
-            <th>Name</th>
+          <tr>
+            {/* <th>MRF ID</th> */}
+            {/* <th>Create Date</th>
+            <th>Name</th> */}
             <th>Component Type</th>
             <th>Component Specification</th>
             <th>Unit of Measurement</th>
@@ -305,18 +298,18 @@ function Mrfrequest() {
           </tr>
         </thead>
         <tbody>
-          {requestData.length === 0 ? (
+          {mrfListData.length === 0 ? (
             <tr>
               <td colSpan="8" style={{ textAlign: "center" }}>
                 No material requests available.
               </td>
             </tr>
           ) : (
-            requestData.map((item) => (
+            mrfListData.map((item) => (
               <tr key={item.serial_number}>
-                <td>{item.MRF_id}</td>
-                <td>{item.create_date}</td>
-                <td>{item.name}</td>
+                {/* <td>{item.MRF_id}</td> */}
+                {/* <td>{item.create_date}</td>
+                <td>{item.name}</td> */}
                 <td>{item.component_type}</td>
                 <td>{item.component_specification}</td>
                 <td>{item.unit_of_measurement}</td>
@@ -337,9 +330,7 @@ function Mrfrequest() {
                     </button>
                   ) : item.action ? (
                     <button
-                      onClick={() =>
-                        handleAssign(item.serial_number, item.MRF_id)
-                      }
+                      onClick={() => handleAssign(item.serial_number, item.id)}
                       style={{
                         padding: "5px 10px",
                         backgroundColor: "green",
@@ -365,11 +356,7 @@ function Mrfrequest() {
                       </button>
                       <button
                         onClick={() =>
-                          handleReturnClick(
-                            item.serial_number,
-                            item.MRF_id,
-                            item
-                          )
+                          handleReturnClick(item.serial_number, item.id, item)
                         }
                         style={{
                           padding: "5px 10px",

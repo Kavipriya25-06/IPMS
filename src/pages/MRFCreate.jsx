@@ -13,6 +13,7 @@ import {
 
 const MRFCreate = () => {
   const [requestList, setRequestList] = useState([]);
+  const [availableRequests, setAvailableRequests] = useState([]);
   const [requestDetails, setRequestDetails] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState("");
   const [materialRequest, setMaterialRequest] = useState([]);
@@ -21,6 +22,7 @@ const MRFCreate = () => {
   const [name, setName] = useState("");
   const [date, setDate] = useState("");
   const [selectedItems, setSelectedItems] = useState({}); // Stores selected rows
+  const [newRows, setNewRows] = useState([]); // Store added rows
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -36,6 +38,10 @@ const MRFCreate = () => {
       const filteredRequests = data.filter(
         (item) => item.status === "Reserved"
       );
+      const availableRequests = data.filter(
+        (item) => item.status === "Available"
+      );
+      setAvailableRequests(availableRequests);
       const uniqueRequests = [
         ...new Set(filteredRequests.map((item) => item.Request_id_assign)),
       ];
@@ -87,64 +93,179 @@ const MRFCreate = () => {
     }));
   };
 
+  // const handleCreateMRF = async () => {
+  //   // Filter only selected rows
+  //   const selectedRows = requestDetails.filter(
+  //     (row) => selectedItems[row.serial_number]
+  //   );
+
+  //   if (selectedRows.length === 0) {
+  //     showWarningToast("Please select at least one item.");
+  //     return;
+  //   }
+  //   if (name.length === 0) {
+  //     showWarningToast("Please enter name.");
+  //     return;
+  //   }
+  //   if (date.length === 0) {
+  //     showWarningToast("Please enter Date.");
+  //     return;
+  //   }
+
+  //   // Send only ONE object at a time (not an array)
+  //   for (const row of selectedRows) {
+  //     const payload = {
+  //       create_date: new Date().toISOString().split("T")[0], // YYYY-MM-DD format
+  //       name: name,
+  //       date: date,
+  //       action: true, //Ensure this field is sent
+  //       component_type: row.component_type, //Now sent at the root level
+  //       component_specification: row.specification, //Correct field name
+  //       unit_of_measurement: row.UOM, //  Correct field name
+  //       category: row.category, //Now sent at the root level
+  //       status: row.status || "", //Ensures status is not null
+  //       serial_number: row.serial_number, // Now sent at the root level
+  //     };
+
+  //     try {
+  //       const response = await fetch(`${config.apiBaseURL}/create_MRF/`, {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //         },
+  //         body: JSON.stringify(payload), // Sending a single object
+  //       });
+
+  //       if (!response.ok) {
+  //         const errorResponse = await response.json();
+  //         console.error("Error creating MRF:", errorResponse);
+  //         showErrorToast(`Error creating MRF: ${JSON.stringify(errorResponse)}`);
+  //         return;
+  //       }
+  //     } catch (err) {
+  //       console.error("Error during MRF creation:", err);
+  //       showErrorToast("An error occurred while creating the MRF.");
+  //       return;
+  //     }
+  //   }
+
+  //   showSuccessToast("MRF created successfully!");
+  //   navigate("/MrfRequest");
+  // };
+
+  const handleAddRow = () => {
+    setNewRows([...newRows, { serial_number: "", checked: false }]);
+  };
+
+  const handleNewRowChange = (index, value) => {
+    const updatedRows = [...newRows];
+    updatedRows[index].serial_number = value;
+    setNewRows(updatedRows);
+  };
+
+  const handleNewRowCheckbox = (index) => {
+    const updatedRows = [...newRows];
+    updatedRows[index].checked = !updatedRows[index].checked;
+    setNewRows(updatedRows);
+  };
+
   const handleCreateMRF = async () => {
-    // Filter only selected rows
     const selectedRows = requestDetails.filter(
       (row) => selectedItems[row.serial_number]
     );
 
-    if (selectedRows.length === 0) {
+    // Include newly added rows
+    const additionalSelectedRows = newRows
+      .filter((row) => row.checked && row.serial_number)
+      .map((row) =>
+        availableRequests.find(
+          (item) => item.serial_number === row.serial_number
+        )
+      );
+
+    const finalRows = [...selectedRows, ...additionalSelectedRows];
+
+    // if (selectedRows.length === 0) {
+    //   showWarningToast("Please select at least one item.");
+    //   return;
+    // }
+
+    if (finalRows.length === 0) {
       showWarningToast("Please select at least one item.");
       return;
     }
-    if (name.length === 0) {
-      showWarningToast("Please enter name.");
+
+    if (!name) {
+      showWarningToast("Please enter a name.");
       return;
     }
-    if (date.length === 0) {
-      showWarningToast("Please enter Date.");
+    if (!date) {
+      showWarningToast("Please enter a date.");
       return;
     }
 
-    // Send only ONE object at a time (not an array)
-    for (const row of selectedRows) {
-      const payload = {
-        create_date: new Date().toISOString().split("T")[0], // YYYY-MM-DD format
-        name: name,
-        date: date,
-        action: true, //Ensure this field is sent
-        component_type: row.component_type, //Now sent at the root level
-        component_specification: row.specification, //Correct field name
-        unit_of_measurement: row.UOM, //  Correct field name
-        category: row.category, //Now sent at the root level
-        status: row.status || "", //Ensures status is not null
-        serial_number: row.serial_number, // Now sent at the root level
-      };
+    // Step 1: Create MRF Entry
+    const mrfPayload = {
+      name: name,
+      date: date,
+      Request_id_assign: selectedRequest,
+    };
 
-      try {
-        const response = await fetch(`${config.apiBaseURL}/create_MRF/`, {
+    try {
+      const mrfResponse = await fetch(`${config.apiBaseURL}/create_mrf/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(mrfPayload),
+      });
+
+      if (!mrfResponse.ok) {
+        const errorResponse = await mrfResponse.json();
+        console.error("Error creating MRF:", errorResponse);
+        showErrorToast(`Error creating MRF: ${JSON.stringify(errorResponse)}`);
+        return;
+      }
+
+      const mrfData = await mrfResponse.json();
+      const mrfId = mrfData.MRF_id;
+
+      // Step 2: Add Items to MRF List
+      for (const row of selectedRows) {
+        const mrfListPayload = {
+          MRF_id: mrfId, // Link to created MRF
+          serial_number: row.serial_number,
+          component_type: row.component_type,
+          component_specification: row.specification,
+          unit_of_measurement: row.UOM,
+          category: row.category,
+          status: row.status || "",
+          action: true,
+        };
+
+        const mrfListResponse = await fetch(`${config.apiBaseURL}/MRFList/`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(payload), // Sending a single object
+          body: JSON.stringify(mrfListPayload),
         });
 
-        if (!response.ok) {
-          const errorResponse = await response.json();
-          console.error("Error creating MRF:", errorResponse);
-          showErrorToast(`Error creating MRF: ${JSON.stringify(errorResponse)}`);
+        if (!mrfListResponse.ok) {
+          const errorResponse = await mrfListResponse.json();
+          console.error("Error adding item to MRF List:", errorResponse);
+          showErrorToast(`Error adding item: ${JSON.stringify(errorResponse)}`);
           return;
         }
-      } catch (err) {
-        console.error("Error during MRF creation:", err);
-        showErrorToast("An error occurred while creating the MRF.");
-        return;
       }
-    }
 
-    showSuccessToast("MRF created successfully!");
-    navigate("/MrfRequest");
+      showSuccessToast("MRF and items created successfully!");
+      // navigate("/MrfRequest");
+      setTimeout(() => navigate("/MrfRequest"), 1500);
+    } catch (err) {
+      console.error("Error during MRF creation:", err);
+      showErrorToast("An error occurred while creating the MRF.");
+    }
   };
 
   return (
@@ -230,6 +351,22 @@ const MRFCreate = () => {
                 </td>
               </tr>
             ))}
+            <tr>
+              <td>
+                <button
+                  onClick={handleAddRow}
+                  style={{
+                    padding: "8px",
+                    backgroundColor: "green",
+                    color: "white",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  Add
+                </button>
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>

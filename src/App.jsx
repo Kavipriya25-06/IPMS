@@ -32,6 +32,10 @@ import ProjectMaster from "./pages/ProjectMaster";
 import Mrf from "./pages/Mrf";
 import MrfRequest from "./pages/MrfRequest";
 import MRFCreate from "./pages/MRFCreate";
+import ProfileDropdown from "./pages/ProfileDropdown";
+import CartIcon from "./pages/CartIcon";
+import TagIcon from "./pages/AddTagsIcon";
+import MRFIcon from "./pages/MRFIcon";
 
 // import { useAuth } from "./AuthContext";
 // import PODetails from "./pages/PODetails";
@@ -71,7 +75,7 @@ function App() {
               Procurement & Inventory Management
             </NavLink>
           </h1>
-          {user ? (
+          {/* {user ? (
             <div style={{ textAlign: "right" }}>
               <p style={{ border: 0, marginBlockStart: 0, marginBlockEnd: 0 }}>
                 Logged in as: <strong>{user.email}</strong> (
@@ -81,7 +85,45 @@ function App() {
                 <button onClick={logout}>Logout</button>
               </div>
             </div>
-          ) : null}
+          ) : null} */}
+          <div
+            style={{
+              display: "flex",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                paddingLeft: "10px",
+              }}
+            >
+              <CartIcon />
+            </div>
+            <div
+              style={{
+                display: "flex",
+                paddingLeft: "10px",
+              }}
+            >
+              <MRFIcon />
+            </div>
+            <div
+              style={{
+                display: "flex",
+                paddingLeft: "10px",
+              }}
+            >
+              <TagIcon />
+            </div>
+            <div
+              style={{
+                display: "flex",
+                paddingLeft: "10px",
+              }}
+            >
+              <ProfileDropdown />
+            </div>
+          </div>
         </header>
 
         <nav>
@@ -140,13 +182,13 @@ function App() {
             >
               <NavLink to="/requests">Requests</NavLink>
             </li>
-            <li
+            {/* <li
               className={
                 isTabEnabled(["Admin", "Procurement"]) ? "" : "disabled"
               }
             >
               <NavLink to="/cart">Cart</NavLink>
-            </li>
+            </li> */}
             <li
               className={
                 isTabEnabled(["Admin", "Procurement", "Finance"])
@@ -162,7 +204,7 @@ function App() {
               <NavLink to="/inward">Inward</NavLink>
             </li>
 
-            <li
+            {/* <li
               className={
                 isTabEnabled(["Admin", "Inventory", "Procurement"])
                   ? ""
@@ -170,24 +212,28 @@ function App() {
               }
             >
               <NavLink to="/addtags">Add Tags</NavLink>
-            </li>
-            <li
+            </li> */}
+            {/* <li
               className={
-                isTabEnabled(["Admin", "Procurement"]) ? "" : "disabled"
+                isTabEnabled(["Admin", "Procurement", "Inventory", "User"])
+                  ? ""
+                  : "disabled"
               }
             >
-              <NavLink to="/Mrf">Reserved</NavLink>
-            </li>
-            <li
+              <NavLink to="/Mrf">MRF List</NavLink>
+            </li> */}
+            {/* <li
               className={
-                isTabEnabled(["Admin", "Procurement"]) ? "" : "disabled"
+                isTabEnabled(["Admin", "Procurement", "Inventory", "User"])
+                  ? ""
+                  : "disabled"
               }
             >
               <NavLink to="/MrfRequest">MRFRequest</NavLink>
-            </li>
-            <li className={isTabEnabled(["Admin"]) ? "" : "disabled"}>
+            </li> */}
+            {/* <li className={isTabEnabled(["Admin"]) ? "" : "disabled"}>
               <NavLink to="/roles">Roles</NavLink>
-            </li>
+            </li> */}
           </ul>
         </nav>
 
@@ -377,7 +423,9 @@ function App() {
           <Route
             path="/Mrf"
             element={
-              <ProtectedRoute allowedRoles={["Admin"]}>
+              <ProtectedRoute
+                allowedRoles={["Procurement", "Admin", "Inventory", "User"]}
+              >
                 <Mrf />
               </ProtectedRoute>
             }
@@ -386,16 +434,20 @@ function App() {
           <Route
             path="/MRFCreate"
             element={
-              <ProtectedRoute allowedRoles={["Admin"]}>
+              <ProtectedRoute
+                allowedRoles={["Procurement", "Admin", "Inventory", "User"]}
+              >
                 <MRFCreate />
               </ProtectedRoute>
             }
           />
 
           <Route
-            path="/MrfRequest"
+            path="/MrfRequest/:MRF_id"
             element={
-              <ProtectedRoute allowedRoles={["Admin"]}>
+              <ProtectedRoute
+                allowedRoles={["Procurement", "Admin", "Inventory", "User"]}
+              >
                 <MrfRequest />
               </ProtectedRoute>
             }
