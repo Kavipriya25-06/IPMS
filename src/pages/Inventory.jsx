@@ -396,7 +396,8 @@ const Inventory = () => {
               const componentRows = groupedData[componentId];
               const componentRowsCount =
                 groupedData[componentId].filter(
-                  (row) => row.status === "Available" || row.status === "Reserved"
+                  (row) =>
+                    row.status === "Available" || row.status === "Reserved"
                 ).length || 0;
               const firstRow = componentRows[0];
               const component = componentData[componentId] || {};
@@ -437,7 +438,11 @@ const Inventory = () => {
                       {firstRow.create_date || new Date().toLocaleDateString()}
                     </td>
                     <td style={{ textAlign: "right" }}>
-                      ₹{parseFloat(firstRow.price).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      ₹
+                      {parseFloat(firstRow.price).toLocaleString("en-IN", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
                     </td>
                     <td></td>
                   </tr>
@@ -499,8 +504,12 @@ const Inventory = () => {
                           {row.create_date || new Date().toLocaleDateString()}
                         </td>
                         <td style={{ textAlign: "right" }}>
-    ₹{parseFloat(row.price).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-  </td>
+                          ₹
+                          {parseFloat(row.price).toLocaleString("en-IN", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </td>
                         <td>{row.status}</td>
                       </tr>
                     ))}
@@ -517,9 +526,10 @@ const Inventory = () => {
           <tr>
             <td style={{ fontWeight: "bold" }}>Total Inventory count</td>
             <td>
-              {filteredInventory.filter(
+              {/* {filteredInventory.filter(
                 (row) => row.status === "Available" || row.status === "Reserved"
-              ).length || 0}
+              ).length || 0} */}
+              {filteredInventory.length || 0}
             </td>
             <td colSpan="10" className="no-data"></td>
           </tr>

@@ -14,6 +14,7 @@ function Mrfrequest() {
 
   const [mrfData, setMrfData] = useState([]); // Stores create_MRF data
   const [mrfListData, setMrfListData] = useState([]); // Stores mrf_list data
+  const [approvalStatus, setApprovalStatus] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [selectedSerial, setSelectedSerial] = useState(null);
   const [selectedMRF, setSelectedMRF] = useState(null);
@@ -39,9 +40,11 @@ function Mrfrequest() {
   // Fetch `create_MRF` data
   const fetchMrfData = async () => {
     try {
-      const response = await fetch(`${config.apiBaseURL}/create_mrf/`);
+      const response = await fetch(`${config.apiBaseURL}/create_MRF/`);
       const data = await response.json();
+      const filteredData = data.filter((item) => item.MRF_id === MRF_id);
       setMrfData(data);
+      setApprovalStatus(filteredData.approval);
     } catch (error) {
       console.error("Error fetching MRF data:", error);
     }
@@ -56,6 +59,29 @@ function Mrfrequest() {
       setMrfListData(filtered);
     } catch (error) {
       console.error("Error fetching MRF List data:", error);
+    }
+  };
+
+  const handleApproval = async () => {
+    try {
+      const response = await fetch(
+        `${config.apiBaseURL}/create_MRF/${MRF_id}/`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ approval: true }),
+        }
+      );
+      if (response.ok) {
+        showSuccessToast("MRF Approved Successfully");
+        setApprovalStatus(true);
+      } else {
+        showErrorToast("Failed to approve MRF");
+      }
+    } catch (error) {
+      console.error("Error updating approval status:", error);
     }
   };
 
@@ -282,6 +308,23 @@ function Mrfrequest() {
   return (
     <div>
       <h2>Material Request Data for {MRF_id}</h2>
+      <div style={{ marginBottom: "15px" }}>
+        <strong>Approval Status:</strong>{" "}
+        {approvalStatus ? "Approved" : "Pending"}
+        {!approvalStatus && (
+          <button
+            onClick={handleApproval}
+            style={{
+              marginLeft: "10px",
+              padding: "5px 10px",
+              backgroundColor: "green",
+              color: "white",
+            }}
+          >
+            Approve MRF
+          </button>
+        )}
+      </div>
 
       <table>
         <thead>
@@ -331,6 +374,7 @@ function Mrfrequest() {
                   ) : item.action ? (
                     <button
                       onClick={() => handleAssign(item.serial_number, item.id)}
+                      disabled={!approvalStatus}
                       style={{
                         padding: "5px 10px",
                         backgroundColor: "green",

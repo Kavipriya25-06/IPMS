@@ -996,18 +996,23 @@ const RequestDetails = ({ user }) => {
 
                       {(isAdmin || isProcurement) && (
                         <td style={{ textAlign: "right" }}>
-                        ₹
-                        {parseFloat(
-                          detail.price !== undefined
-                            ? detail.price
-                            : priceViewData.find(
-                                (vendor) =>
-                                  vendor.vendor_id === detail.vendor_id &&
-                                  vendor.component_type === detail.component_type &&
-                                  vendor.component_specification === detail.component_specification
-                              )?.latest_price || 0
-                        ).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </td>
+                          ₹
+                          {parseFloat(
+                            detail.price !== undefined
+                              ? detail.price
+                              : priceViewData.find(
+                                  (vendor) =>
+                                    vendor.vendor_id === detail.vendor_id &&
+                                    vendor.component_type ===
+                                      detail.component_type &&
+                                    vendor.component_specification ===
+                                      detail.component_specification
+                                )?.latest_price || 0
+                          ).toLocaleString("en-IN", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </td>
                       )}
                       {(isAdmin || isProcurement) && (
                         <td style={{ textAlign: "right" }}>
@@ -1022,7 +1027,8 @@ const RequestDetails = ({ user }) => {
                                     vendor.component_specification ===
                                       detail.component_specification
                                 )?.latest_tax || ""
-                              }`}%
+                              }`}
+                          %
                         </td>
                       )}
                       <td>{detail.assign !== true ? `${detail.qty}` : `0`}</td>
@@ -1136,9 +1142,12 @@ const RequestDetails = ({ user }) => {
               <tr style={{ fontWeight: "bold" }}>
                 <td colSpan="6">Total Cost (Including Tax):</td>
                 <td style={{ textAlign: "right" }}>
-                    ₹{parseFloat(calculateTotal())
-                      .toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </td>
+                  ₹
+                  {parseFloat(calculateTotal()).toLocaleString("en-IN", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </td>
                 <td colSpan="4"></td>
               </tr>
             </tbody>
@@ -1161,15 +1170,17 @@ const RequestDetails = ({ user }) => {
                     {pricePopupData.map((vendor) => (
                       <tr key={vendor.vendor_id}>
                         <td>{vendor.vendor_name}</td>
-                        <td  style={{ textAlign: "right" }}>
+                        <td style={{ textAlign: "right" }}>
                           {vendor.latest_price !== null
-                            ? `₹${parseFloat(vendor.latest_price).toLocaleString("en-IN", { 
-                              minimumFractionDigits: 2, 
-                              maximumFractionDigits: 2 
-                            })}`
-                          : "N/A"}
+                            ? `₹${parseFloat(
+                                vendor.latest_price
+                              ).toLocaleString("en-IN", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}`
+                            : "N/A"}
                         </td>
-                        <td  style={{ textAlign: "right" }}>
+                        <td style={{ textAlign: "right" }}>
                           {vendor.latest_tax ? `${vendor.latest_tax}%` : "N/A"}
                         </td>
                         <td>

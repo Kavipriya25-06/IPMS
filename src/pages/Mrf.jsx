@@ -92,7 +92,7 @@ const Mrf = () => {
 
   const fetchMRFs = async () => {
     try {
-      const response = await fetch(`${config.apiBaseURL}/create_mrf/`);
+      const response = await fetch(`${config.apiBaseURL}/create_MRF/`);
       const data = await response.json();
       setMrfData(data);
     } catch (err) {
@@ -151,7 +151,7 @@ const Mrf = () => {
               <td
                 onClick={() => navigate(`/MrfRequest/${item.MRF_id}`)}
                 style={{
-                  color: "blue",
+                  
                   cursor: "pointer",
                   textDecoration: "underline",
                 }}

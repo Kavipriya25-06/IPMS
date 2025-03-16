@@ -221,7 +221,7 @@ const MRFCreate = () => {
     };
 
     try {
-      const mrfResponse = await fetch(`${config.apiBaseURL}/create_mrf/`, {
+      const mrfResponse = await fetch(`${config.apiBaseURL}/create_MRF/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -270,7 +270,7 @@ const MRFCreate = () => {
 
       showSuccessToast("MRF and items created successfully!");
       // navigate("/MrfRequest");
-      setTimeout(() => navigate("/MrfRequest"), 1500);
+      setTimeout(() => navigate("/Mrf"), 1500);
     } catch (err) {
       console.error("Error during MRF creation:", err);
       showErrorToast("An error occurred while creating the MRF.");
