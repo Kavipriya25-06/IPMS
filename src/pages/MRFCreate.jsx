@@ -158,6 +158,15 @@ const MRFCreate = () => {
   };
 
   const handleNewRowChange = (index, value) => {
+    // Prevent duplicate selection
+    const isDuplicate =
+      requestDetails.some((item) => item.serial_number === value) ||
+      newRows.some((row, i) => i !== index && row.serial_number === value);
+
+    if (isDuplicate) {
+      showWarningToast("This serial number is already selected.");
+      return;
+    }
     const updatedRows = [...newRows];
     updatedRows[index].serial_number = value;
     setNewRows(updatedRows);
@@ -351,6 +360,46 @@ const MRFCreate = () => {
                 </td>
               </tr>
             ))}
+            {newRows.map((row, index) => {
+              const selectedItem = availableRequests.find(
+                (item) => item.serial_number === row.serial_number
+              );
+              return (
+                <tr key={`new-${index}`}>
+                  <td>{selectedItem?.component_type || "-"}</td>
+                  <td>{selectedItem?.specification || "-"}</td>
+                  <td>{selectedItem?.UOM || "-"}</td>
+                  <td>{selectedItem?.category || "-"}</td>
+                  <td>{selectedItem?.vendor_name || "-"}</td>
+                  <td>
+                    <select
+                      value={row.serial_number}
+                      onChange={(e) =>
+                        handleNewRowChange(index, e.target.value)
+                      }
+                    >
+                      <option value="">Select Serial</option>
+                      {availableRequests.map((item) => (
+                        <option
+                          key={item.serial_number}
+                          value={item.serial_number}
+                        >
+                          {item.serial_number}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>{selectedItem ? selectedItem.status : "Available"}</td>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={row.checked || false}
+                      onChange={() => handleNewRowCheckbox(index)}
+                    />
+                  </td>
+                </tr>
+              );
+            })}
             <tr>
               <td>
                 <button
