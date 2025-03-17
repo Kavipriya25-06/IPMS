@@ -324,6 +324,7 @@ const POOrderMaster = ({ user }) => {
       // Filter to find the matching PO entry
       const matchedPO = poData.filter((po) => {
         const matches =
+          po.PO_id === poId &&
           po.cart_details?.po_master_id === id &&
           po.cart_details?.component_id === component_id &&
           po.cart_details?.vendor_id === vendor_id &&
@@ -337,6 +338,7 @@ const POOrderMaster = ({ user }) => {
 
         // Log each condition for debugging
         console.log(`PO ID ${po.id}:`, {
+          po_id_match: po.PO_id === poId,
           po_master_id_match: po.cart_details?.po_master_id === id,
           component_id_match: po.cart_details?.component_id === component_id,
           vendor_id_match: po.cart_details?.vendor_id === vendor_id,
