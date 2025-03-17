@@ -170,6 +170,7 @@ const MRFCreate = () => {
     const updatedRows = [...newRows];
     updatedRows[index].serial_number = value;
     setNewRows(updatedRows);
+    console.log("New added rows", updatedRows);
   };
 
   const handleNewRowCheckbox = (index) => {
@@ -193,6 +194,7 @@ const MRFCreate = () => {
       );
 
     const finalRows = [...selectedRows, ...additionalSelectedRows];
+    console.log("FInal rows", finalRows);
 
     // if (selectedRows.length === 0) {
     //   showWarningToast("Please select at least one item.");
@@ -217,7 +219,7 @@ const MRFCreate = () => {
     const mrfPayload = {
       name: name,
       date: date,
-      Request_id_assign: selectedRequest,
+      Request_id_assign: selectedRequest ? selectedRequest : "",
     };
 
     try {
@@ -240,7 +242,7 @@ const MRFCreate = () => {
       const mrfId = mrfData.MRF_id;
 
       // Step 2: Add Items to MRF List
-      for (const row of selectedRows) {
+      for (const row of finalRows) {
         const mrfListPayload = {
           MRF_id: mrfId, // Link to created MRF
           serial_number: row.serial_number,
@@ -366,12 +368,32 @@ const MRFCreate = () => {
               );
               return (
                 <tr key={`new-${index}`}>
-                  <td>{selectedItem?.component_type || "-"}</td>
+                  {/* <td>{selectedItem?.component_type || "-"}</td> */}
+                  <td>
+                    <select
+                      value={row.serial_number}
+                      onChange={(e) =>
+                        handleNewRowChange(index, e.target.value)
+                      }
+                    >
+                      <option value="">Select</option>
+                      {availableRequests.map((item) => (
+                        <option
+                          key={item.serial_number}
+                          value={item.serial_number}
+                        >
+                          {item.component_type} - {item.specification} -{" "}
+                          {item.serial_number}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
                   <td>{selectedItem?.specification || "-"}</td>
                   <td>{selectedItem?.UOM || "-"}</td>
                   <td>{selectedItem?.category || "-"}</td>
                   <td>{selectedItem?.vendor_name || "-"}</td>
-                  <td>
+                  <td>{selectedItem?.serial_number || "-"}</td>
+                  {/* <td>
                     <select
                       value={row.serial_number}
                       onChange={(e) =>
@@ -388,7 +410,7 @@ const MRFCreate = () => {
                         </option>
                       ))}
                     </select>
-                  </td>
+                  </td> */}
                   <td>{selectedItem ? selectedItem.status : "Available"}</td>
                   <td>
                     <input
@@ -422,7 +444,7 @@ const MRFCreate = () => {
       <div style={{ alignSelf: "end", justifyContent: "end" }}>
         <button
           onClick={handleCreateMRF}
-          disabled={!selectedRequest}
+          disabled={!selectedRequest && newRows.length === 0}
           style={{
             marginTop: "20px",
             padding: "10px 15px",
