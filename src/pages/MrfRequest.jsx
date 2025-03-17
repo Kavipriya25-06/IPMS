@@ -8,7 +8,7 @@ import {
   showWarningToast,
 } from "./Toastify.jsx"; // Import Toastify utilities
 
-function Mrfrequest() {
+const Mrfrequest = () => {
   const { MRF_id } = useParams();
   const navigate = useNavigate();
 
@@ -42,9 +42,11 @@ function Mrfrequest() {
     try {
       const response = await fetch(`${config.apiBaseURL}/create_MRF/`);
       const data = await response.json();
-      const filteredData = data.filter((item) => item.MRF_id === MRF_id);
+      const filteredData = data.find((item) => item.MRF_id === MRF_id);
       setMrfData(data);
       setApprovalStatus(filteredData.approval);
+      console.log("Approval", filteredData);
+      console.log("Approval");
     } catch (error) {
       console.error("Error fetching MRF data:", error);
     }
@@ -377,8 +379,8 @@ function Mrfrequest() {
                       disabled={!approvalStatus}
                       style={{
                         padding: "5px 10px",
-                        backgroundColor: "green",
-                        color: "white",
+                        backgroundColor: approvalStatus ? "green" : "grey",
+                        color: approvalStatus ? "white" : "black",
                         border: "none",
                         cursor: "pointer",
                       }}
@@ -531,6 +533,6 @@ function Mrfrequest() {
       )}
     </div>
   );
-}
+};
 
 export default Mrfrequest;
