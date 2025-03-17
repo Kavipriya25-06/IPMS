@@ -1,4 +1,3 @@
-import Mrfrequest from "./pages/MrfRequest";
 
 // src/config.js
 const config = {
