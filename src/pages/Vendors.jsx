@@ -507,7 +507,7 @@ const Vendors = () => {
     }
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/vendor_search/?search=${query}`
+        `${config.apiBaseURL}/vendor_search/?search=${query}`
       );
       if (response.ok) {
         const filteredVendors = await response.json();

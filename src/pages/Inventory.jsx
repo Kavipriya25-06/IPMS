@@ -213,7 +213,7 @@ const Inventory = () => {
     try {
       const fetchDetailsPromises = validSerialNumbers.map(async (serial) => {
         const response = await fetch(
-          `http://127.0.0.1:8000/inventory_details/${serial}/`
+          `${config.apiBaseURL}/inventory_details/${serial}/`
         );
 
         if (!response.ok) {

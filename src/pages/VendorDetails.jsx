@@ -598,7 +598,7 @@ const VendorDetails = () => {
       const updatedStatus = !currentStatus; // Toggle the status
 
       // Step 1: Fetch the vendor's status from `vendor_list/`
-      const vendorResponse = await fetch(`http://127.0.0.1:8000/vendor_list/`);
+      const vendorResponse = await fetch(`${config.apiBaseURL}/vendor_list/`);
 
       if (!vendorResponse.ok) {
         throw new Error("Failed to fetch vendor list");
@@ -627,7 +627,7 @@ const VendorDetails = () => {
 
       // Step 4: Update product status in `vendor_master/`
       const response = await fetch(
-        `http://127.0.0.1:8000/vendor_master/${productId}/`,
+        `${config.apiBaseURL}/vendor_master/${productId}/`,
         {
           method: "PATCH",
           headers: {
