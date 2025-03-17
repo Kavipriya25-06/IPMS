@@ -19,6 +19,9 @@ const Inventory = () => {
   const [remarks, setRemarks] = useState("");
   const [reportedBy, setReportedBy] = useState("");
   const [selectedStatus, setSelectedStatus] = useState(""); // Default status selection
+  const [fromDate, setFromDate] = useState(""); // From date state
+  const [toDate, setToDate] = useState(""); // To date state
+
 
   useEffect(() => {
     fetchInventoryData();
@@ -54,6 +57,19 @@ const Inventory = () => {
     } catch (error) {
       console.error("Error fetching inventory data:", error);
     }
+  };
+
+  const filterByDate = () => {
+    let filtered = inventoryData;
+
+    if (fromDate && toDate) {
+      filtered = filtered.filter((item) => {
+        const createdDate = new Date(item.create_date);
+        return createdDate >= new Date(fromDate) && createdDate <= new Date(toDate);
+      });
+    }
+
+    setFilteredInventory(filtered);
   };
 
   const fetchComponentMasterData = async () => {
@@ -184,53 +200,83 @@ const Inventory = () => {
   };
 
   const handleGenerateReport = async () => {
-    const validSerialNumbers = filteredInventory
-      //.filter((item) => item.status === true)
-      .map((item) => item.serial_number);
-
+    const validSerialNumbers = filteredInventory.map((item) => item.serial_number);
+  
     if (validSerialNumbers.length === 0) {
       alert("No valid inventory items available to generate the report.");
       return;
     }
-
+  
     try {
       const fetchDetailsPromises = validSerialNumbers.map(async (serial) => {
-        const response = await fetch(
-          `http://127.0.0.1:8000/inventory_details/${serial}/`
-        );
+        const response = await fetch(`http://127.0.0.1:8000/inventory_details/${serial}/`);
+  
         if (!response.ok) {
           console.error(`Failed to fetch details for ${serial}`);
           return {
             Serial_Number: serial,
-            po_id: "N/A",
-            request_id: "N/A",
-            project_id: "N/A",
-            project_name: "N/A",
-            bom_id: "N/A",
-            bom_name: "N/A",
-            price: "N/A",
-            create_date: "N/A",
+            Component_ID: "N/A",
+            Component_Type: "N/A",
+            Vendor_Name: "N/A",
+            Category: "N/A",
+            Specification: "N/A",
+            UOM: "N/A",
+            Create_Date: "N/A",
+            Status: "N/A",
+            Price: "N/A",
+            SKU_Number_Inventory: "N/A",
+            Request_ID_Assign: "N/A",
+            PO_ID: "N/A",
+            Cart_ID: "N/A",
+            GST: "N/A",
+            GSTN: "N/A",
+            Request_ID: "N/A",
+            Requester_Name: "N/A",
+            BOM_ID: "N/A",
+            BOM_Name: "N/A",
+            Project_ID: "N/A",
+            Project_Name: "N/A"
           };
         }
-
+  
         const data = await response.json();
-        console.log(`API Response for ${serial}:`, data); // Debugging purpose
-
+  
         return {
           Serial_Number: serial,
-          po_id: data.po_master?.[0]?.PO_id || "N/A", // Fetch PO ID from first entry
-          request_id: data.request_master?.[0]?.request || "N/A", // Get request ID
-          project_id: data.project?.[0]?.project_id || "N/A", // Get Project ID
-          project_name: data.project?.[0]?.project_name || "N/A", // Get Project Name
-          bom_id: data.bom_list?.[0]?.bom_id || "N/A", // Get BOM ID
-          bom_name: data.bom_list?.[0]?.bom_name || "N/A", // Get BOM Name
-          price: data.inventory_item?.price || "N/A", // Fetch Price from inventory_item
-          create_date: data.inventory_item?.create_date || "N/A", // Fetch Created Date from inventory_item
+          Component_ID: data.inventory_item?.component_id || "N/A",
+          Component_Type: data.inventory_item?.component_type || "N/A",
+          Vendor_Name: data.inventory_item?.vendor_name || "N/A",
+          Category: data.inventory_item?.category || "N/A",
+          Specification: data.inventory_item?.specification || "N/A",
+          UOM: data.inventory_item?.UOM || "N/A",
+          Create_Date: data.inventory_item?.create_date || "N/A",
+          Status: data.inventory_item?.status || "N/A",
+          Price: formatPrice(data.inventory_item?.price), // Format price correctly
+          SKU_Number_Inventory: data.inventory_item?.sku_number_inventory || "N/A",
+          Request_ID_Assign: data.inventory_item?.Request_id_assign || "N/A",
+  
+          // PO Master Details
+          PO_ID: data.po_master?.[0]?.PO_id || "N/A",
+          Cart_ID: data.po_master?.[0]?.cart_id || "N/A",
+  
+          // Cart Details
+          GST: formatPercentage(data.cart?.[0]?.GST), // Format GST correctly
+          GSTN: data.cart?.[0]?.gstn || "N/A",
+  
+          // Request List Details
+          Request_ID: data.request_list?.[0]?.request_id || "N/A",
+          Requester_Name: data.request_list?.[0]?.requester_name || "N/A",
+          BOM_ID: data.request_list?.[0]?.bom || "N/A",
+          BOM_Name: data.request_list?.[0]?.bom_name || "N/A",
+  
+          // Project Details
+          Project_ID: data.project?.[0]?.project_id || "N/A",
+          Project_Name: data.project?.[0]?.project_name || "N/A"
         };
       });
-
+  
       const reportData = await Promise.all(fetchDetailsPromises);
-
+  
       if (reportData.length > 0) {
         generateCSV(reportData);
       } else {
@@ -240,24 +286,72 @@ const Inventory = () => {
       console.error("Error generating report:", error);
     }
   };
+  
+  // Function to format price values (₹, commas, two decimal places)
+  const formatPrice = (value) => {
+    if (!value || isNaN(value)) return "N/A";
+    return `₹${parseFloat(value).toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  };
+  
+  // Function to format GST percentage (two decimal places)
+  const formatPercentage = (value) => {
+    if (!value || isNaN(value)) return "N/A";
+    return `${parseFloat(value).toFixed(2)}%`;
+  };
 
-  const generateCSV = (data) => {
+  
+  const generateCSV = (data, selectedStatus = "") => {
     let csvContent =
-      "Serial Number,PO ID,Request ID,Project ID,Project Name,BOM ID,BOM Name,Price,Created Date\n";
-
+      "Serial Number,Component ID,Component Type,Vendor Name,Category,Specification,UOM,Created Date,Status,Price,SKU Number Inventory,Request ID Assign,PO ID,Cart ID,GST,GSTN,Request ID,Requester Name,BOM ID,BOM Name,Project ID,Project Name\n";
+  
     data.forEach((row) => {
-      csvContent += `${row.Serial_Number},${row.po_id},${row.request_id},${row.project_id},${row.project_name},${row.bom_id},${row.bom_name},${row.price},${row.create_date}\n`;
+      csvContent += `${Object.values(row).map((value) => `"${value}"`).join(",")}\n`;
     });
-
+  
+    // Auto-detect status from data if not explicitly passed
+    let statusForFileName = "All";
+  
+    if (selectedStatus && selectedStatus.trim() !== "") {
+      statusForFileName = selectedStatus;
+    } else {
+      // Get unique statuses from the data
+      const uniqueStatuses = [...new Set(data.map((row) => row.Status))];
+  
+      if (uniqueStatuses.length === 1) {
+        statusForFileName = uniqueStatuses[0];
+      } else {
+        statusForFileName = "All";
+      }
+    }
+  
+    // Format the current date in Indian time (DD-MM-YYYY hh:mm am/pm)
+    const indianTime = new Date().toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  
+    // Replace colon and comma to make filename safe
+    const formattedTime = indianTime.replace(/:/g, "-").replace(/, /g, "_").toLowerCase();
+  
     const blob = new Blob([csvContent], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "Inventory_Report.csv";
+    a.download = `Inventory_Report_${statusForFileName}_${formattedTime}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
   };
+  
+  
 
   // const openReturnModal = (item) => {
   //   console.log("Opening return modal for:", item);
@@ -346,6 +440,26 @@ const Inventory = () => {
         >
           Generate Report
         </button>
+
+         {/* Date Filter Button & Inputs */}
+         <div className="date-filter">
+          <label>From Date:</label>
+          <input
+            type="date"
+            value={fromDate}
+            onChange={(e) => setFromDate(e.target.value)}
+          />
+          <label> To Date:</label>
+          <input
+            type="date"
+            value={toDate}
+            onChange={(e) => setToDate(e.target.value)}
+          />
+          <button className="filter-button" onClick={filterByDate}>
+            Filter by Date
+          </button>
+        </div>
+
         <div>
           <label>Status:</label>
           <select
@@ -396,8 +510,7 @@ const Inventory = () => {
               const componentRows = groupedData[componentId];
               const componentRowsCount =
                 groupedData[componentId].filter(
-                  (row) =>
-                    row.status === "Available" || row.status === "Reserved"
+                  (row) => row.status === "Available" || row.status === "Reserved"
                 ).length || 0;
               const firstRow = componentRows[0];
               const component = componentData[componentId] || {};
@@ -438,11 +551,7 @@ const Inventory = () => {
                       {firstRow.create_date || new Date().toLocaleDateString()}
                     </td>
                     <td style={{ textAlign: "right" }}>
-                      ₹
-                      {parseFloat(firstRow.price).toLocaleString("en-IN", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
+                      ₹{parseFloat(firstRow.price).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td></td>
                   </tr>
@@ -504,12 +613,8 @@ const Inventory = () => {
                           {row.create_date || new Date().toLocaleDateString()}
                         </td>
                         <td style={{ textAlign: "right" }}>
-                          ₹
-                          {parseFloat(row.price).toLocaleString("en-IN", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
-                        </td>
+    ₹{parseFloat(row.price).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+  </td>
                         <td>{row.status}</td>
                       </tr>
                     ))}
