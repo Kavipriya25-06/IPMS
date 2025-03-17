@@ -65,6 +65,7 @@ const RequestDetails = ({ user }) => {
         (detail) => String(detail.request_id) === String(requestId)
       );
       setDetails(filteredDetails);
+      console.log("Request details", filteredDetails);
     } catch (error) {
       console.error("Error fetching request details:", error);
     }
@@ -221,6 +222,7 @@ const RequestDetails = ({ user }) => {
     // Calculate total cost
     const gstAmount = (price * tax) / 100;
     const totalCost = Math.round((price + gstAmount) * detail.qty * 100) / 100;
+    console.log("Total amount and tax", totalCost, "Tax", detail.tax);
 
     // Prepare payload for cart API
     const orderData = {
@@ -1193,8 +1195,8 @@ const RequestDetails = ({ user }) => {
                                 vendor.component_id, // Component ID
                                 vendor.vendor_id,
                                 vendor.vendor_name,
-                                vendor.latest_price || "N/A", // Handle null price
-                                vendor.latest_tax || "N/A"
+                                vendor.latest_price || 0, // Handle null price
+                                vendor.latest_tax || 0
                               );
                               setShowPricePopup(false); // Close the popup
                             }}

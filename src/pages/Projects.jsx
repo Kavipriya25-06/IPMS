@@ -30,7 +30,7 @@
 //       const response = await fetch(`${config.apiBaseURL}/projects_details/${projectId}/`);
 //       if (response.ok) {
 //         const data = await response.json();
-        
+
 //         // Extract only the required details
 //         const formattedDetails = {
 //           project_id: data.project.project_id,
@@ -51,7 +51,6 @@
 //       console.error("Error fetching project details:", error);
 //     }
 //   };
-
 
 //   const handleProjectClick = (projectId) => {
 //     fetchProjectDetails(projectId);
@@ -189,7 +188,6 @@
 //         </div>
 //       )}
 
-
 //       <div style={{ textAlign: "left" }}>
 //         <button
 //           onClick={() => setShowAddForm(!showAddForm)}
@@ -302,8 +300,6 @@
 
 // export default Project;
 
-
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import config from "../Config"; // API Configuration
@@ -363,19 +359,36 @@ const ProjectList = () => {
   return (
     <div style={{ fontFamily: "Arial, sans-serif", padding: "20px" }}>
       <h2>Project List</h2>
-      <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #ddd" }}>
+      <table
+        style={{
+          width: "100%",
+          borderCollapse: "collapse",
+          border: "1px solid #ddd",
+        }}
+      >
         <thead>
           <tr style={{ backgroundColor: "#f4f4f4" }}>
-            <th style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>Project ID</th>
-            <th style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>Project Name</th>
-            <th style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>Description</th>
-            <th style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>Start Date</th>
+            <th style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>
+              Project ID
+            </th>
+            <th style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>
+              Project Name
+            </th>
+            <th style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>
+              Description
+            </th>
+            <th style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>
+              Start Date
+            </th>
           </tr>
         </thead>
         <tbody>
           {projects.length > 0 ? (
             projects.map((project) => (
-              <tr key={project.project_id} style={{ borderBottom: "1px solid #ddd" }}>
+              <tr
+                key={project.project_id}
+                style={{ borderBottom: "1px solid #ddd" }}
+              >
                 <td
                   onClick={() => navigate(`/projects/${project.project_id}`)}
                   style={{
@@ -394,7 +407,9 @@ const ProjectList = () => {
             ))
           ) : (
             <tr>
-              <td colSpan="4" style={{ padding: "10px", textAlign: "center" }}>No projects available</td>
+              <td colSpan="4" style={{ padding: "10px", textAlign: "center" }}>
+                No projects available
+              </td>
             </tr>
           )}
         </tbody>
@@ -406,9 +421,29 @@ const ProjectList = () => {
 
       {showAddForm && (
         <form onSubmit={handleAddProject}>
-          <input type="text" name="project_name" value={newProject.project_name} onChange={handleInputChange} required placeholder="Project Name" />
-          <input type="text" name="description" value={newProject.description} onChange={handleInputChange} required placeholder="Description" />
-          <input type="date" name="start_date" value={newProject.start_date} onChange={handleInputChange} required />
+          <input
+            type="text"
+            name="project_name"
+            value={newProject.project_name}
+            onChange={handleInputChange}
+            required
+            placeholder="Project Name"
+          />
+          <input
+            type="text"
+            name="description"
+            value={newProject.description}
+            onChange={handleInputChange}
+            required
+            placeholder="Description"
+          />
+          <input
+            type="date"
+            name="start_date"
+            value={newProject.start_date}
+            onChange={handleInputChange}
+            required
+          />
           <button type="submit">Add Project</button>
         </form>
       )}

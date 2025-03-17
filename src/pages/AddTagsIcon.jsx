@@ -9,7 +9,14 @@ const TagIcon = () => {
   const location = useLocation();
 
   if (!user) return null; // Don't render if user is not logged in
-  if (!(user.role === "Admin" || user.role === "Procurement" || user.role === "Inventory")) return null; // Don't render if user is not logged in
+  if (
+    !(
+      user.role === "Admin" ||
+      user.role === "Procurement" ||
+      user.role === "Inventory"
+    )
+  )
+    return null; // Don't render if user is not logged in
   const isActive = location.pathname === "/addtags";
 
   return (

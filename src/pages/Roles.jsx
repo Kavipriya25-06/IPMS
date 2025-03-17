@@ -49,16 +49,13 @@ const Roles = () => {
 
       // Make an API call to update the role
       const payload = { role: newRole };
-      const response = await fetch(
-        `${config.apiBaseURL}/register/${userId}/`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        }
-      );
+      const response = await fetch(`${config.apiBaseURL}/register/${userId}/`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
       if (!response.ok) {
         throw new Error(`Error updating role: ${response.statusText}`);
@@ -84,16 +81,13 @@ const Roles = () => {
 
       // Optional: Make an API call to update the role
       const payload = { role: newRole };
-      const response = await fetch(
-        `${config.apiBaseURL}/register/${userId}/`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        }
-      );
+      const response = await fetch(`${config.apiBaseURL}/register/${userId}/`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
       if (!response.ok) {
         throw new Error(`Error updating role: ${response.statusText}`);

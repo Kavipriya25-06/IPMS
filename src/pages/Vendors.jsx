@@ -417,63 +417,78 @@ const Vendors = () => {
     setEditedVendorName({ vendor_name: "", gstn: "" }); // Reset the edited name
   };
 
-
   const toggleVendorStatus = async (vendorId, currentStatus) => {
     try {
       const updatedStatus = !currentStatus; // Toggle current status
-  
+
       // First, update vendor_list API
-      const response = await fetch(`${config.apiBaseURL}/vendor_list/${vendorId}/`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ active: updatedStatus }),
-      });
-  
+      const response = await fetch(
+        `${config.apiBaseURL}/vendor_list/${vendorId}/`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ active: updatedStatus }),
+        }
+      );
+
       if (!response.ok) {
         throw new Error("Failed to update vendor_list status");
       }
-  
+
       // Update local state
       setVendorData((prevData) =>
         prevData.map((vendor) =>
-          vendor.vendor_id === vendorId ? { ...vendor, active: updatedStatus } : vendor
+          vendor.vendor_id === vendorId
+            ? { ...vendor, active: updatedStatus }
+            : vendor
         )
       );
-  
+
       // If status is now false, update vendor_master API
       if (!updatedStatus) {
         try {
-          const masterResponse = await fetch(`${config.apiBaseURL}/vendor_master/`);
+          const masterResponse = await fetch(
+            `${config.apiBaseURL}/vendor_master/`
+          );
           if (!masterResponse.ok) {
             throw new Error("Failed to fetch vendor_master data");
           }
-  
+
           const masterData = await masterResponse.json();
-          
+
           // Find vendor entry matching the vendor_id
-           const vendorProducts = masterData.filter((product) => product.vendor === vendorId);
-  
-           if (vendorProducts.length > 0) {
+          const vendorProducts = masterData.filter(
+            (product) => product.vendor === vendorId
+          );
+
+          if (vendorProducts.length > 0) {
             // Loop through all products and update their status
             await Promise.all(
               vendorProducts.map(async (product) => {
                 if (product.product_id) {
-                  const updateMasterResponse = await fetch(`${config.apiBaseURL}/vendor_master/${product.product_id}/`, {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ active: false }),
-                  });
-  
+                  const updateMasterResponse = await fetch(
+                    `${config.apiBaseURL}/vendor_master/${product.product_id}/`,
+                    {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ active: false }),
+                    }
+                  );
+
                   if (!updateMasterResponse.ok) {
-                    console.error(`Failed to update vendor_master for product_id: ${product.product_id}`);
+                    console.error(
+                      `Failed to update vendor_master for product_id: ${product.product_id}`
+                    );
                   }
                 }
               })
             );
           } else {
-            console.error("No products found for this vendor in vendor_master.");
+            console.error(
+              "No products found for this vendor in vendor_master."
+            );
           }
         } catch (error) {
           console.error("Error updating vendor_master:", error);
@@ -483,47 +498,44 @@ const Vendors = () => {
       console.error("Error updating vendor status:", error);
     }
   };
-  
 
-    const handleSearch = async (query) => {
-      setSearchQuery(query);
-      if (query.trim() === "") {
-        fetchVendorData(); // Fetch all vendors if search is cleared
-        return;
+  const handleSearch = async (query) => {
+    setSearchQuery(query);
+    if (query.trim() === "") {
+      fetchVendorData(); // Fetch all vendors if search is cleared
+      return;
+    }
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/vendor_search/?search=${query}`
+      );
+      if (response.ok) {
+        const filteredVendors = await response.json();
+        setVendorData(filteredVendors);
+      } else {
+        console.error("Error fetching search results:", response.statusText);
       }
-      try {
-        const response = await fetch(
-          `http://127.0.0.1:8000/vendor_search/?search=${query}`
-        );
-        if (response.ok) {
-          const filteredVendors = await response.json();
-          setVendorData(filteredVendors);
-        } else {
-          console.error("Error fetching search results:", response.statusText);
-        }
-      } catch (error) {
-        console.error("Error fetching search results:", error);
-      }
-    };
-
-
+    } catch (error) {
+      console.error("Error fetching search results:", error);
+    }
+  };
 
   return (
     <div>
       <h2>Vendors</h2>
 
       <div className="search-bar-container">
-          <input
-            type="text"
-            className="search-bar"
-            placeholder="Search by Vendor Name or Component Type"
-            value={searchQuery}
-            onChange={(e) => handleSearch(e.target.value)}
-          />
-          <span className="search-icon">
-            <i className="fa fa-search" aria-hidden="true"></i>
-          </span>
-        </div>
+        <input
+          type="text"
+          className="search-bar"
+          placeholder="Search by Vendor Name or Component Type"
+          value={searchQuery}
+          onChange={(e) => handleSearch(e.target.value)}
+        />
+        <span className="search-icon">
+          <i className="fa fa-search" aria-hidden="true"></i>
+        </span>
+      </div>
 
       {/* Modal for Adding New Vendor */}
       <Modal isOpen={isAddingVendor} onClose={() => setIsAddingVendor(false)}>
@@ -580,7 +592,7 @@ const Vendors = () => {
           value={newSubVendor.phone_number}
           onChange={(e) => {
             const value = e.target.value;
-            handleSubVendorInputChange("phone_number", value); 
+            handleSubVendorInputChange("phone_number", value);
             setErrors((prevErrors) => ({
               ...prevErrors,
               phone_number: validatePhoneNumber(value)
@@ -716,19 +728,21 @@ const Vendors = () => {
                   )}
                 </td>
                 <td>
-                <button
-                  onClick={() => toggleVendorStatus(vendor.vendor_id, vendor.active)}
-                  style={{
-                    backgroundColor: vendor.active ? "green" : "red",
-                    color: "white",
-                    padding: "5px 10px",
-                    border: "none",
-                    cursor: "pointer",
-                  }}
-                >
-                  {vendor.active ? "Active" : "Inactive"}
-                </button>
-              </td>
+                  <button
+                    onClick={() =>
+                      toggleVendorStatus(vendor.vendor_id, vendor.active)
+                    }
+                    style={{
+                      backgroundColor: vendor.active ? "green" : "red",
+                      color: "white",
+                      padding: "5px 10px",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {vendor.active ? "Active" : "Inactive"}
+                  </button>
+                </td>
               </tr>
             );
           })}
@@ -755,7 +769,7 @@ const Vendors = () => {
                 {/* <th>Category</th> */}
                 <th>Actions</th>
               </tr>
-            </thead> 
+            </thead>
             <tbody>
               {getVendorPocs(selectedVendorId).map((poc, index) => (
                 <tr key={poc.id}>

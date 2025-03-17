@@ -53,7 +53,7 @@ const AddTags = () => {
     return availableTags.filter((tag) => tag.component_id === componentId);
   };
 
-   // Toggles the selection of a component
+  // Toggles the selection of a component
   const handleCheckboxChange = (componentId) => {
     if (selectedComponents.includes(componentId)) {
       setSelectedComponents(
@@ -64,7 +64,7 @@ const AddTags = () => {
     }
   };
 
-   // Opens the pop-up for adding a tag to multiple components
+  // Opens the pop-up for adding a tag to multiple components
   const handleAddTagClick = () => {
     if (selectedComponents.length === 0) {
       alert("Please select at least one component.");
@@ -174,15 +174,12 @@ const AddTags = () => {
     }
   };
 
-   // Deletes a tag by ID
+  // Deletes a tag by ID
   const handleDeleteTag = async (tagId) => {
     try {
-      const response = await fetch(
-        `${config.apiBaseURL}/meta_tags/${tagId}/`,
-        {
-          method: "DELETE",
-        }
-      );
+      const response = await fetch(`${config.apiBaseURL}/meta_tags/${tagId}/`, {
+        method: "DELETE",
+      });
 
       if (response.ok) {
         showSuccessToast("Tag deleted successfully!");

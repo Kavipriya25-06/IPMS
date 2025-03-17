@@ -100,7 +100,7 @@ const Cart = ({ user }) => {
     return requests[0]?.id || null; // Use optional chaining to avoid errors
   };
 
-   // Function to handle placing an order for a group
+  // Function to handle placing an order for a group
   const handlePlaceOrder = async (group) => {
     try {
       // Get the cart_id from the first item's ID
@@ -309,15 +309,25 @@ const Cart = ({ user }) => {
                                           <td>{item.quantity}</td>
                                           <td>{item.category}</td>
                                           <td>{item.unit_of_measurement}</td>
-                                          <td style={{textAlign:"right"}}>₹{parseFloat(item.unit_price).toLocaleString("en-IN", { 
-                                              minimumFractionDigits: 2, 
-                                              maximumFractionDigits: 2 
+                                          <td style={{ textAlign: "right" }}>
+                                            ₹
+                                            {parseFloat(
+                                              item.unit_price
+                                            ).toLocaleString("en-IN", {
+                                              minimumFractionDigits: 2,
+                                              maximumFractionDigits: 2,
                                             })}
                                           </td>
-                                          <td style={{textAlign:"right"}}>{item.GST}%</td>
-                                          <td style={{textAlign:"right"}}>₹{parseFloat(item.total_cost).toLocaleString("en-IN", { 
-                                              minimumFractionDigits: 2, 
-                                              maximumFractionDigits: 2 
+                                          <td style={{ textAlign: "right" }}>
+                                            {item.GST}%
+                                          </td>
+                                          <td style={{ textAlign: "right" }}>
+                                            ₹
+                                            {parseFloat(
+                                              item.total_cost
+                                            ).toLocaleString("en-IN", {
+                                              minimumFractionDigits: 2,
+                                              maximumFractionDigits: 2,
                                             })}
                                           </td>
                                         </tr>

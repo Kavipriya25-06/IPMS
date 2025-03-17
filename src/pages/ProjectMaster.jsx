@@ -13,19 +13,28 @@ const ProjectMaster = () => {
 
   const fetchProjectDetails = async () => {
     try {
-      const response = await fetch(`${config.apiBaseURL}/projects_details/${projectId}/`);
+      const response = await fetch(
+        `${config.apiBaseURL}/projects_details/${projectId}/`
+      );
       if (response.ok) {
         const data = await response.json();
 
         const formattedDetails = {
           project_id: data.project?.project_id || "N/A",
           project_name: data.project?.project_name || "N/A",
-          request_id: data.request_lists?.length > 0 ? data.request_lists[0].request_id : "N/A",
-          requester_name: data.request_lists?.length > 0 ? data.request_lists[0].requester_name : "N/A",
+          request_id:
+            data.request_lists?.length > 0
+              ? data.request_lists[0].request_id
+              : "N/A",
+          requester_name:
+            data.request_lists?.length > 0
+              ? data.request_lists[0].requester_name
+              : "N/A",
           bom_id: data.bom_lists?.length > 0 ? data.bom_lists[0].bom_id : "N/A",
-          bom_name: data.bom_lists?.length > 0 ? data.bom_lists[0].bom_name : "N/A",
+          bom_name:
+            data.bom_lists?.length > 0 ? data.bom_lists[0].bom_name : "N/A",
           PO_id: data.po_master?.length > 0 ? data.po_master[0].PO_id : "N/A",
-        //   cart_id: data.po_master?.length > 0 ? data.po_master[0].cart_id : "N/A",
+          //   cart_id: data.po_master?.length > 0 ? data.po_master[0].cart_id : "N/A",
         };
 
         setProjectDetails(formattedDetails);

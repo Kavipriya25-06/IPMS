@@ -151,7 +151,6 @@ const Mrf = () => {
               <td
                 onClick={() => navigate(`/MrfRequest/${item.MRF_id}`)}
                 style={{
-                  
                   cursor: "pointer",
                   textDecoration: "underline",
                 }}
