@@ -248,8 +248,15 @@ const Cart = ({ user }) => {
 
       <div>
         <h2>Cart</h2>
-        {cartItems.length === 0 ? (
-          <p>Your cart is empty.</p>
+        {cartItems.length === 0 ||
+        !cartItems.some((group) =>
+          Object.values(group.requests_by_date || {}).some((requestsGroupedByStatus) =>
+            Object.values(requestsGroupedByStatus || {}).some((requests) =>
+              requests.some((item) => !item.order_placed)
+            )
+          )
+        ) ? (
+          <p style={{ fontWeight: "bold", fontSize: "18px" }}>Your cart is empty.</p>
         ) : (
           cartItems
             .filter((group) =>

@@ -36,6 +36,8 @@ import ProfileDropdown from "./pages/ProfileDropdown";
 import CartIcon from "./pages/CartIcon";
 import TagIcon from "./pages/AddTagsIcon";
 import MRFIcon from "./pages/MRFIcon";
+import PIMSLogo from "./assets/PIMS.png";
+
 
 // import { useAuth } from "./AuthContext";
 // import PODetails from "./pages/PODetails";
@@ -68,13 +70,17 @@ function App() {
           }}
         >
           <h1>
-            <NavLink
-              to="/"
-              style={{ textDecoration: "none", color: "inherit" }}
-            >
-              Procurement & Inventory Management
-            </NavLink>
-          </h1>
+              <NavLink
+                to="/"
+                style={{ textDecoration: "none", color: "inherit" }}
+              >
+                <img
+                  src={PIMSLogo}
+                  alt="PIMS Logo"
+                  style={{ height: "70px", width: "200px", objectFit: "contain" }} // Adjust height as needed
+                />
+              </NavLink>
+            </h1>
           {/* {user ? (
             <div style={{ textAlign: "right" }}>
               <p style={{ border: 0, marginBlockStart: 0, marginBlockEnd: 0 }}>

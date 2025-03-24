@@ -438,6 +438,14 @@ const Inventory = () => {
   //   }
   // };
 
+  const clearDateFilter = () => {
+    setFromDate("");
+    setToDate("");
+    filterInventory(); 
+    
+    // Optional: Also clear any filtered data here if needed
+  };
+
   return (
     <div className="inventory-container">
       <div className="header">
@@ -466,6 +474,8 @@ const Inventory = () => {
           <button className="filter-button" onClick={filterByDate}>
             Filter by Date
           </button>
+          <button onClick={clearDateFilter}>Clear Date</button>
+
         </div>
 
         <div>

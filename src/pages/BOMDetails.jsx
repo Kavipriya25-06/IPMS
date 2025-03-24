@@ -150,34 +150,7 @@ const BOMDetails = () => {
           <p>
             <strong>BOM ID:</strong> {selectedBom.bom_id}
           </p>
-          {/* <h4>Components:</h4> */}
-          <table
-            border="1"
-            style={{ width: "100%", borderCollapse: "collapse" }}
-          >
-            <thead>
-              <tr>
-                <th>Component Type</th>
-                <th>Specification</th>
-                <th>UOM</th>
-                <th>Category</th>
-                <th>Quantity</th>
-                <th>Vendor</th>
-              </tr>
-            </thead>
-            <tbody>
-              {selectedComponents.map((component, index) => (
-                <tr key={index}>
-                  <td>{component.component.component_type}</td>
-                  <td>{component.component.component_specification}</td>
-                  <td>{component.component.unit_of_measurement}</td>
-                  <td>{component.component.category}</td>
-                  <td>{component.quantity}</td>
-                  <td>{component.vendor.vendor_name}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+
           <button
             onClick={() => setShowAddComponentForm(true)}
             // style={{
@@ -192,10 +165,8 @@ const BOMDetails = () => {
           >
             Add Component
           </button>
-        </>
-      )}
 
-      {showAddComponentForm && (
+          {showAddComponentForm && (
         <div style={{ marginTop: "20px" }}>
           <h4>Add New Component</h4>
           <div>
@@ -311,6 +282,40 @@ const BOMDetails = () => {
           </div>
         </div>
       )}
+
+          {/* <h4>Components:</h4> */}
+          <table
+            border="1"
+            style={{ width: "100%", borderCollapse: "collapse" }}
+          >
+            <thead>
+              <tr>
+                <th>Component Type</th>
+                <th>Specification</th>
+                <th>UOM</th>
+                <th>Category</th>
+                <th>Quantity</th>
+                <th>Vendor</th>
+              </tr>
+            </thead>
+            <tbody>
+              {selectedComponents.map((component, index) => (
+                <tr key={index}>
+                  <td>{component.component.component_type}</td>
+                  <td>{component.component.component_specification}</td>
+                  <td>{component.component.unit_of_measurement}</td>
+                  <td>{component.component.category}</td>
+                  <td>{component.quantity}</td>
+                  <td>{component.vendor.vendor_name}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+         
+        </>
+      )}
+
+      
 
       <button
         onClick={() => navigate("/bom")}

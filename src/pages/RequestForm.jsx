@@ -707,7 +707,7 @@ const RequestForm = () => {
       >
         Submit Request
       </button>
-      <button
+      {/* <button
         onClick={() => navigate("/requests")}
         style={{
           padding: "10px 20px",
@@ -717,7 +717,7 @@ const RequestForm = () => {
         }}
       >
         Save and Exit
-      </button>
+      </button> */}
     </div>
   );
 };

@@ -537,6 +537,13 @@ const Vendors = () => {
         </span>
       </div>
 
+      <button
+        onClick={() => setIsAddingVendor(true)}
+        style={{ marginTop: "10px" }}
+      >
+        Add Vendor
+      </button>
+
       {/* Modal for Adding New Vendor */}
       <Modal isOpen={isAddingVendor} onClose={() => setIsAddingVendor(false)}>
         <h4>Add New Vendor</h4>
@@ -748,12 +755,12 @@ const Vendors = () => {
           })}
         </tbody>
       </table>
-      <button
+      {/* <button
         onClick={() => setIsAddingVendor(true)}
         style={{ marginTop: "10px" }}
       >
         Add Vendor
-      </button>
+      </button> */}
 
       {showPocPopup && (
         <div className="popup">

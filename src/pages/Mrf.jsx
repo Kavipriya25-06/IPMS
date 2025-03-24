@@ -75,6 +75,105 @@
 
 // export default Mrf;
 
+// import React, { useEffect, useState } from "react";
+// import { useNavigate } from "react-router-dom";
+// import config from "../Config";
+
+// const Mrf = () => {
+//   const navigate = useNavigate();
+//   const [mrfData, setMrfData] = useState([]);
+//   const [projectDetails, setProjectDetails] = useState([]);
+//   const [projectName, setProjectName] = useState("");
+
+//   useEffect(() => {
+//     fetchMRFs();
+//     fetchProjectDetails();
+//   }, []);
+
+//   const fetchMRFs = async () => {
+//     try {
+//       const response = await fetch(`${config.apiBaseURL}/create_MRF/`);
+//       const data = await response.json();
+//       setMrfData(data);
+//     } catch (err) {
+//       console.error("Error fetching MRFs:", err);
+//     }
+//   };
+
+//   const fetchProjectDetails = async () => {
+//     try {
+//       const response = await fetch(`${config.apiBaseURL}/request_inventory/`);
+//       const data = await response.json();
+//       setProjectDetails(data);
+//     } catch (err) {
+//       console.error("Error fetching project details: ", err);
+//     }
+//   };
+
+//   // Helper function to get Project Name by Request ID
+//   const getProjectName = (requestId) => {
+//     const project = projectDetails.find(
+//       (proj) => proj.request_id === requestId
+//     );
+//     return project ? project.project_details.project_name : "N/A";
+//   };
+
+//   return (
+//     <div>
+//       <h2>Material Requests (MRF)</h2>
+//       <button
+//         onClick={() => navigate("/MRFCreate")}
+//         style={{
+//           padding: "10px 15px",
+//           backgroundColor: "orange",
+//           color: "white",
+//           border: "none",
+//           cursor: "pointer",
+//           marginBottom: "20px",
+//         }}
+//       >
+//         Create Material Request Form
+//       </button>
+//       <table>
+//         <thead>
+//           <tr>
+//             <th>MRF ID</th>
+//             <th>Name</th>
+//             <th>Create Date</th>
+//             <th>Request ID</th>
+//             <th>Project name</th>
+//             <th>Approval</th>
+//           </tr>
+//         </thead>
+//         <tbody>
+//           {mrfData.map((item) => (
+//             <tr key={item.MRF_id}>
+//               <td
+//                 onClick={() => navigate(`/MrfRequest/${item.MRF_id}`)}
+//                 style={{
+//                   cursor: "pointer",
+//                   textDecoration: "underline",
+//                 }}
+//               >
+//                 {item.MRF_id}
+//               </td>
+//               <td>{item.name}</td>
+//               <td>{item.create_date}</td>
+//               <td>{item.Request_id_assign}</td>
+//               <td>{getProjectName(item.Request_id_assign)}</td>
+//               <td>{item.approval ? "Approved" : "Pending"}</td>
+//             </tr>
+//           ))}
+//         </tbody>
+//       </table>
+//     </div>
+//   );
+// };
+
+// export default Mrf;
+
+
+////////////////////////////////////////////////////////////  Filter by date and status | Approval status
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import config from "../Config";
@@ -84,6 +183,11 @@ const Mrf = () => {
   const [mrfData, setMrfData] = useState([]);
   const [projectDetails, setProjectDetails] = useState([]);
   const [projectName, setProjectName] = useState("");
+
+   // Filter states
+   const [dateFilter, setDateFilter] = useState("");
+   const [statusFilter, setStatusFilter] = useState("");
+ 
 
   useEffect(() => {
     fetchMRFs();
@@ -118,6 +222,18 @@ const Mrf = () => {
     return project ? project.project_details.project_name : "N/A";
   };
 
+  const filteredData = mrfData.filter((item) => {
+    const dateMatch = dateFilter
+      ? item.create_date === dateFilter
+      : true;
+    const statusMatch = statusFilter
+      ? (statusFilter === "Approved"
+          ? item.approval === true
+          : item.approval === false)
+      : true;
+    return dateMatch && statusMatch;
+  });
+
   return (
     <div>
       <h2>Material Requests (MRF)</h2>
@@ -139,14 +255,31 @@ const Mrf = () => {
           <tr>
             <th>MRF ID</th>
             <th>Name</th>
-            <th>Create Date</th>
+            <th>
+              Create Date  
+              <input
+                type="date"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+              />
+            </th>
             <th>Request ID</th>
             <th>Project name</th>
-            <th>Approval</th>
+            <th>
+              Approval Status
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="">All</option>
+                <option value="Approved">Approved</option>
+                <option value="Pending">Pending</option>
+              </select>
+            </th>
           </tr>
         </thead>
         <tbody>
-          {mrfData.map((item) => (
+          {filteredData.map((item) => (
             <tr key={item.MRF_id}>
               <td
                 onClick={() => navigate(`/MrfRequest/${item.MRF_id}`)}

@@ -16,6 +16,11 @@ const Mrfrequest = () => {
   const [mrfListData, setMrfListData] = useState([]); // Stores mrf_list data
   const [approvalStatus, setApprovalStatus] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
+
+  const [showSerialPopup, setShowSerialPopup] = useState(false); // new popup
+  const [alternativeSerials, setAlternativeSerials] = useState([]); // new state
+  const [selectedItemForAssign, setSelectedItemForAssign] = useState(null); // new state
+
   const [selectedSerial, setSelectedSerial] = useState(null);
   const [selectedMRF, setSelectedMRF] = useState(null);
   const [reportedBy, setReportedBy] = useState("");
@@ -44,6 +49,7 @@ const Mrfrequest = () => {
       const data = await response.json();
       const filteredData = data.find((item) => item.MRF_id === MRF_id);
       setMrfData(data);
+      setMrfData(filteredData)
       setApprovalStatus(filteredData.approval);
       console.log("Approval", filteredData);
       console.log("Approval");
@@ -87,48 +93,44 @@ const Mrfrequest = () => {
     }
   };
 
-  const handleAssign = async (serialNumber, MRF_id) => {
+  const handleAssign = async (serialNumber, MRFListId, item) => {
     try {
-      // step 1: Update inventory status
-      const response = await fetch(
-        `${config.apiBaseURL}/inventory/${serialNumber}/`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ status: "In_drone" }),
-        }
-      );
-
+      // Fetch all inventory data
+      const response = await fetch(`${config.apiBaseURL}/inventory/`);
       if (!response.ok) {
-        throw new Error("Failed to update inventory status");
+        throw new Error("Failed to fetch inventory data");
       }
-
-      const updateMRFResponse = await fetch(
-        `${config.apiBaseURL}/MRFList/${MRF_id}/`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ action: false }),
-        }
-      );
-
-      if (!updateMRFResponse.ok) {
-        throw new Error("Failed to update MRF action status");
+      const inventoryData = await response.json();
+  
+      // Get the current serial number record
+      const inventoryItem = inventoryData.find(inv => inv.serial_number === serialNumber);
+  
+      if (!inventoryItem) {
+        showErrorToast("Serial number not found in inventory.");
+        return;
       }
-
-      setMrfListData((prevData) =>
-        prevData.map((item) =>
-          item.serial_number === serialNumber
-            ? { ...item, status: "In_drone", action: false }
-            : item
-        )
+  
+      // If reserved (not available), follow normal assign flow
+      if (inventoryItem.status !== "Available") {
+        await assignSerial(serialNumber, MRFListId);
+        return;
+      }
+  
+      // If status is Available, fetch alternative serials
+      const alternatives = inventoryData.filter(
+        (inv) =>
+          inv.component_type?.toLowerCase().trim() === item.component_type?.toLowerCase().trim() &&
+          inv.specification?.toLowerCase().trim() === 
+            (item.component_specification?.toLowerCase().trim() || item.specification?.toLowerCase().trim()) &&
+          inv.status === "Available"
       );
+  
+      setAlternativeSerials(alternatives);
+      setSelectedItemForAssign({ MRFListId });
+      setShowSerialPopup(true);
     } catch (error) {
-      console.error("Error updating inventory status:", error);
+      console.error("Error during assign process:", error);
+      showErrorToast("Error during assignment process");
     }
   };
 
@@ -194,6 +196,46 @@ const Mrfrequest = () => {
       ),
     }));
   };
+
+
+  // Function to assign the selected serial number from popup
+const assignSerial = async (serialNumber, MRFListId) => {
+  try {
+    const response = await fetch(`${config.apiBaseURL}/inventory/${serialNumber}/`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "In_drone" }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to update inventory status");
+    }
+
+    const updateMRFResponse = await fetch(`${config.apiBaseURL}/MRFList/${MRFListId}/`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: false }),
+    });
+
+    if (!updateMRFResponse.ok) {
+      throw new Error("Failed to update MRF action status");
+    }
+
+    setMrfListData((prevData) =>
+      prevData.map((item) =>
+        item.id === MRFListId
+          ? { ...item, status: "In_drone", action: false, serial_number: serialNumber }
+          : item
+      )
+    );
+
+    setShowSerialPopup(false);
+    showSuccessToast(`Serial ${serialNumber} assigned successfully`);
+  } catch (error) {
+    console.error("Error during assignment:", error);
+    showErrorToast("Error while assigning serial number");
+  }
+};
 
   const handleSubmitQC = async () => {
     if (!newQuestion.qcQuestions || newQuestion.qcQuestions.length === 0) {
@@ -310,6 +352,17 @@ const Mrfrequest = () => {
   return (
     <div>
       <h2>Material Request Data for {MRF_id}</h2>
+      <div style={{ display: "flex", gap: "20px", marginBottom: "10px", alignItems: "center" }}>
+        <div>
+          <strong>Requester Name:</strong> {mrfData.name}
+        </div>
+        <div>
+          <strong>Date:</strong> {mrfData.date}
+        </div>
+        <div>
+          <strong>Request ID:</strong> {mrfData.Request_id_assign}
+        </div>
+      </div>
       <div style={{ marginBottom: "15px" }}>
         <strong>Approval Status:</strong>{" "}
         {approvalStatus ? "Approved" : "Pending"}
@@ -359,7 +412,9 @@ const Mrfrequest = () => {
                 <td>{item.component_specification}</td>
                 <td>{item.unit_of_measurement}</td>
                 <td>{item.category}</td>
-                <td>{item.serial_number}</td>
+                <td>
+      {item.status === "Available" ? "-" : item.serial_number}
+    </td>
                 <td>
                   {item.returns ? (
                     <button
@@ -375,7 +430,7 @@ const Mrfrequest = () => {
                     </button>
                   ) : item.action ? (
                     <button
-                      onClick={() => handleAssign(item.serial_number, item.id)}
+                      onClick={() => handleAssign(item.serial_number, item.id,item)}
                       disabled={!approvalStatus}
                       style={{
                         padding: "5px 10px",
@@ -531,8 +586,83 @@ const Mrfrequest = () => {
           <button onClick={() => setShowQCPopup(false)}>Close</button>
         </div>
       )}
+
+{showSerialPopup && selectedItemForAssign && (
+  <div className="popup">
+    <h3>Choose Available Serial Number</h3>
+    {alternativeSerials.length > 0 ? (
+      alternativeSerials.map((serial) => (
+        <div key={serial.serial_number} style={{ marginBottom: "8px" }}>
+          <span>{serial.serial_number}</span>
+          <button
+            style={{
+              marginLeft: "10px",
+              padding: "3px 8px",
+              backgroundColor: "green",
+              color: "white",
+              border: "none",
+              cursor: "pointer",
+            }}
+            onClick={() => assignSerial(serial.serial_number, selectedItemForAssign.MRFListId)}
+          >
+           Assign
+          </button>
+        </div>
+      ))
+    ) : (
+      <p>No available serial numbers found matching the criteria.</p>
+    )}
+    <button onClick={() => setShowSerialPopup(false)} style={{ marginTop: "10px" }}>
+      Close
+    </button>
+  </div>
+)}
+
     </div>
   );
 };
 
 export default Mrfrequest;
+
+
+
+// const handleAssign = async (serialNumber, MRFListId, item) => {
+//   try {
+//     // Fetch all inventory data
+//     const response = await fetch(`${config.apiBaseURL}/inventory/`);
+//     if (!response.ok) {
+//       throw new Error("Failed to fetch inventory data");
+//     }
+//     const inventoryData = await response.json();
+
+//     // Get the current serial number record
+//     const inventoryItem = inventoryData.find(inv => inv.serial_number === serialNumber);
+
+//     if (!inventoryItem) {
+//       showErrorToast("Serial number not found in inventory.");
+//       return;
+//     }
+
+//     // If reserved (not available), follow normal assign flow
+//     if (inventoryItem.status !== "Available") {
+//       await assignSerial(serialNumber, MRFListId);
+//       return;
+//     }
+
+//     // If status is Available, fetch alternative serials
+//     const alternatives = inventoryData.filter(
+//       (inv) =>
+//         inv.component_type?.toLowerCase().trim() === item.component_type?.toLowerCase().trim() &&
+//         inv.specification?.toLowerCase().trim() === 
+//           (item.component_specification?.toLowerCase().trim() || item.specification?.toLowerCase().trim()) &&
+//         inv.status === "Available"
+//     );
+
+//     setAlternativeSerials(alternatives);
+//     setSelectedItemForAssign({ MRFListId });
+//     setShowSerialPopup(true);
+//   } catch (error) {
+//     console.error("Error during assign process:", error);
+//     showErrorToast("Error during assignment process");
+//   }
+// };

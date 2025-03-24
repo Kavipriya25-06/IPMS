@@ -359,6 +359,40 @@ const ProjectList = () => {
   return (
     <div style={{ fontFamily: "Arial, sans-serif", padding: "20px" }}>
       <h2>Project List</h2>
+
+      <button onClick={() => setShowAddForm(!showAddForm)}>
+        {showAddForm ? "Cancel" : "Add Project"}
+      </button>
+
+      {showAddForm && (
+        <form onSubmit={handleAddProject}>
+          <input
+            type="text"
+            name="project_name"
+            value={newProject.project_name}
+            onChange={handleInputChange}
+            required
+            placeholder="Project Name"
+          />
+          <input
+            type="text"
+            name="description"
+            value={newProject.description}
+            onChange={handleInputChange}
+            required
+            placeholder="Description"
+          />
+          <input
+            type="date"
+            name="start_date"
+            value={newProject.start_date}
+            onChange={handleInputChange}
+            required
+          />
+          <button type="submit">Add Project</button>
+        </form>
+      )}
+      
       <table
         style={{
           width: "100%",
@@ -415,38 +449,6 @@ const ProjectList = () => {
         </tbody>
       </table>
 
-      <button onClick={() => setShowAddForm(!showAddForm)}>
-        {showAddForm ? "Cancel" : "Add Project"}
-      </button>
-
-      {showAddForm && (
-        <form onSubmit={handleAddProject}>
-          <input
-            type="text"
-            name="project_name"
-            value={newProject.project_name}
-            onChange={handleInputChange}
-            required
-            placeholder="Project Name"
-          />
-          <input
-            type="text"
-            name="description"
-            value={newProject.description}
-            onChange={handleInputChange}
-            required
-            placeholder="Description"
-          />
-          <input
-            type="date"
-            name="start_date"
-            value={newProject.start_date}
-            onChange={handleInputChange}
-            required
-          />
-          <button type="submit">Add Project</button>
-        </form>
-      )}
     </div>
   );
 };
