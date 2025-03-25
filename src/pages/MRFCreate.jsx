@@ -156,19 +156,20 @@ const MRFCreate = () => {
   };
 
   const handleNewRowChange = (index, value) => {
-    // Prevent duplicate selection
-    const isDuplicate =
-      requestDetails.some((item) => item.serial_number === value) ||
-      newRows.some((row, i) => i !== index && row.serial_number === value);
-
-    if (isDuplicate) {
-      showWarningToast("component added already");
+    // Count how many times this serial number is already selected
+    const alreadySelectedCount = newRows.filter(
+      (row, i) => row.serial_number === value && i !== index
+    ).length;
+  
+    // Prevent duplicate use of the same serial number
+    if (alreadySelectedCount > 0) {
+      showWarningToast("This serial number is already selected.");
       return;
     }
+  
     const updatedRows = [...newRows];
     updatedRows[index].serial_number = value;
     setNewRows(updatedRows);
-    console.log("New added rows", updatedRows);
   };
 
   const handleNewRowCheckbox = (index) => {

@@ -37,7 +37,7 @@ import CartIcon from "./pages/CartIcon";
 import TagIcon from "./pages/AddTagsIcon";
 import MRFIcon from "./pages/MRFIcon";
 import PIMSLogo from "./assets/PIMS.png";
-
+import ResetPassword from "./pages/ResetPassword";
 
 // import { useAuth } from "./AuthContext";
 // import PODetails from "./pages/PODetails";
@@ -459,6 +459,13 @@ function App() {
             }
           />
         </Routes>
+
+        <Routes>
+          {/* other routes */}
+          
+          <Route path="/reset-password/:id/:token" element={<ResetPassword />} />
+        </Routes>
+
       </div>
     </Router>
   );

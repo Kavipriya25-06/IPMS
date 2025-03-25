@@ -3,6 +3,13 @@
 
 import React, { useState, useEffect } from "react";
 import config from "../Config"; // Import config for API endpoints
+import {
+  showSuccessToast,
+  showErrorToast,
+  showInfoToast,
+  showWarningToast,
+  ToastContainerComponent,
+} from "./Toastify.jsx"; // Import Toastify utilities
 
 const Inventory = () => {
   const [inventoryData, setInventoryData] = useState([]);
@@ -21,6 +28,9 @@ const Inventory = () => {
   const [selectedStatus, setSelectedStatus] = useState(""); // Default status selection
   const [fromDate, setFromDate] = useState(""); // From date state
   const [toDate, setToDate] = useState(""); // To date state
+  const [editingComponentSpec, setEditingComponentSpec] = useState(null); // component_id being edited
+  const [tempSpecification, setTempSpecification] = useState(""); // temp specification input
+
 
   useEffect(() => {
     fetchInventoryData();
@@ -446,6 +456,49 @@ const Inventory = () => {
     // Optional: Also clear any filtered data here if needed
   };
 
+
+  const handleSaveSpecification = async (componentId) => {
+    const rowsToUpdate = inventoryData.filter(
+      (item) => item.component_id === componentId
+    );
+  
+    try {
+      const updatePromises = rowsToUpdate.map((item) =>
+        fetch(`${config.apiBaseURL}/inventory/${item.serial_number}/`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ specification: tempSpecification }),
+        })
+      );
+  
+      await Promise.all(updatePromises);
+  
+      showSuccessToast("Specification updated for all matching items.");
+  
+      // Update state to reflect changes
+      setFilteredInventory((prev) =>
+        prev.map((row) =>
+          row.component_id === componentId
+            ? { ...row, specification: tempSpecification }
+            : row
+        )
+      );
+  
+      setEditingComponentSpec(null);
+      setTempSpecification("");
+    } catch (error) {
+      console.error("Error updating specification:", error);
+      alert("Failed to update specification.");
+    }
+  };
+
+  const cancelSpecificationEdit = () => {
+    setEditingComponentSpec(null);
+    setTempSpecification("");
+  };
+
   return (
     <div className="inventory-container">
       <div className="header">
@@ -563,7 +616,28 @@ const Inventory = () => {
                     <td>{component.sku_number}</td>
                     <td>{component.category || ""}</td>
                     <td>{component.component_type || ""}</td>
-                    <td>{component.component_specification || ""}</td>
+                    <td
+                      onDoubleClick={() => {
+                        setEditingComponentSpec(componentId);
+                        setTempSpecification(firstRow.specification || "");
+                      }}
+                      style={{ cursor: "pointer" }}
+                    >
+                      {editingComponentSpec === componentId ? (
+                        <>
+                          <input
+                            type="text"
+                            value={tempSpecification}
+                            onChange={(e) => setTempSpecification(e.target.value)}
+                            autoFocus
+                          />
+                          <button onClick={() => handleSaveSpecification(componentId)}>Save</button>
+                          <button onClick={() => cancelSpecificationEdit()}>Cancel</button>
+                        </>
+                      ) : (
+                        <span>{firstRow.specification || "Not Available"}</span>
+                      )}
+                    </td>
                     <td>{firstRow.UOM || ""}</td>
                     <td>{firstRow.vendor_name || ""}</td>
                     <td>
@@ -725,7 +799,7 @@ const Inventory = () => {
           </div>
         </div>
       )}
-
+      <ToastContainerComponent />
       <style>{`
         .disabled-row {
           background-color: #e0e0e0;

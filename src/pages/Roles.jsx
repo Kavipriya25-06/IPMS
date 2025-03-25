@@ -123,6 +123,21 @@ const Roles = () => {
     }
   };
 
+  const toggleUserStatus = async (userId, currentStatus) => {
+    try {
+      await fetch(`http://127.0.0.1:8000/register/${userId}/`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: !currentStatus }),
+      });
+      fetchUsers();
+    } catch (err) {
+      console.error("Error toggling user status:", err);
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -137,6 +152,7 @@ const Roles = () => {
             {roles.map((role) => (
               <th key={role}>{role}</th>
             ))}
+            <th>Active status</th>
           </tr>
         </thead>
         <tbody>
@@ -156,6 +172,20 @@ const Roles = () => {
                   />
                 </td>
               ))}
+              <td>
+                <button
+                  onClick={() => toggleUserStatus(user.id, user.status)}
+                  style={{
+                    padding: "5px 10px",
+                    backgroundColor: user.status ? "green" : "gray",
+                    color: "white",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  {user.status ? "Active" : "Inactive"}
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
