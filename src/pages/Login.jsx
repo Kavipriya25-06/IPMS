@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import CustomMessagebox from "./CustomMessageBox.jsx";
+import config from "../Config.js";
 
 import {
   showSuccessToast,
@@ -24,7 +25,7 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://127.0.0.1:8000/register/");
+      const response = await fetch(`${config.apiBaseURL}/register/`);
       const users = await response.json();
       const user = users.find((u) => u.email === email);
   
@@ -56,7 +57,7 @@ const Login = () => {
     }
   
     try {
-      const response = await fetch("http://127.0.0.1:8000/forgot-password/", {
+      const response = await fetch(`${config.apiBaseURL}/forgot-password/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -85,7 +86,7 @@ const Login = () => {
     }
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/register/${userId}/`, {
+      const response = await fetch(`${config.apiBaseURL}/register/${userId}/`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

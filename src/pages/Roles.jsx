@@ -125,7 +125,7 @@ const Roles = () => {
 
   const toggleUserStatus = async (userId, currentStatus) => {
     try {
-      await fetch(`http://127.0.0.1:8000/register/${userId}/`, {
+      await fetch(`${config.apiBaseURL}/register/${userId}/`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
