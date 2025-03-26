@@ -152,23 +152,56 @@ const MRFCreate = () => {
   // };
 
   const handleAddRow = () => {
-    setNewRows([...newRows, { serial_number: "", checked: false }]);
+    setNewRows([...newRows, { component_type: "", specification: "", serial_number: "", checked: false }]);
   };
+  
 
   const handleNewRowChange = (index, value) => {
-    // Count how many times this serial number is already selected
+    const [componentType, specification] = value.split("||");
+  
+    // Count how many times this component is already selected
     const alreadySelectedCount = newRows.filter(
-      (row, i) => row.serial_number === value && i !== index
+      (row) =>
+        row.component_type === componentType &&
+        row.specification === specification
     ).length;
   
-    // Prevent duplicate use of the same serial number
-    if (alreadySelectedCount > 0) {
-      showWarningToast("This serial number is already selected.");
+    const availableComponentSerials = availableRequests.filter(
+      (item) =>
+        item.component_type === componentType &&
+        item.specification === specification &&
+        item.status === "Available"
+    );
+  
+    if (alreadySelectedCount >= availableComponentSerials.length) {
+      showWarningToast("This component has been selected more than available quantity.");
+      return;
+    }
+  
+    const assignedSerials = newRows
+      .filter(
+        (row) =>
+          row.component_type === componentType &&
+          row.specification === specification
+      )
+      .map((row) => row.serial_number);
+  
+    const nextAvailable = availableComponentSerials.find(
+      (item) => !assignedSerials.includes(item.serial_number)
+    );
+  
+    if (!nextAvailable) {
+      showWarningToast("No more available serial numbers for this component.");
       return;
     }
   
     const updatedRows = [...newRows];
-    updatedRows[index].serial_number = value;
+    updatedRows[index] = {
+      component_type: componentType,
+      specification: specification,
+      serial_number: nextAvailable.serial_number,
+      checked: true,
+    };
     setNewRows(updatedRows);
   };
 
@@ -384,20 +417,29 @@ const MRFCreate = () => {
                   {/* <td>{selectedItem?.component_type || "-"}</td> */}
                   <td>
                     <select
-                      value={row.serial_number}
-                      onChange={(e) =>
-                        handleNewRowChange(index, e.target.value)
+                      value={
+                        row.component_type && row.specification
+                          ? `${row.component_type}||${row.specification}`
+                          : ""
                       }
+                      onChange={(e) => handleNewRowChange(index, e.target.value)}
                     >
                       <option value="">Select</option>
-                      {uniqueOptions.map((item) => (
+                      {[
+                        ...new Map(
+                          availableRequests
+                            .filter((item) => item.status === "Available")
+                            .map((item) => [
+                              `${item.component_type}||${item.specification}`,
+                              item,
+                            ])
+                        ).values(),
+                      ].map((item) => (
                         <option
-                          key={item.serial_number}
-                          value={item.serial_number}
+                          key={`${item.component_type}-${item.specification}`}
+                          value={`${item.component_type}||${item.specification}`}
                         >
                           {item.component_type} - {item.specification}
-                          {/* {item.component_type} - {item.specification} -{" "}
-                          {item.serial_number} */}
                         </option>
                       ))}
                     </select>
