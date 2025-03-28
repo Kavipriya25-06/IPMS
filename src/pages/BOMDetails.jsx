@@ -9,7 +9,7 @@ import {
   showWarningToast,
   ToastContainerComponent,
 } from "./Toastify.jsx"; // Import Toastify utilities
-
+//
 const BOMDetails = () => {
   const { bomId } = useParams(); // Retrieve bomId from URL
   const navigate = useNavigate(); // Initialize useNavigate
@@ -25,6 +25,9 @@ const BOMDetails = () => {
   const [components, setComponents] = useState([]);
   const [loadingVendors, setLoadingVendors] = useState(true);
   const [loadingComponents, setLoadingComponents] = useState(true);
+  const [priceTables, setPriceTables] = useState([]);
+
+  
 
   // Fetch BOM details and related components
   useEffect(() => {
@@ -76,12 +79,53 @@ const BOMDetails = () => {
       }
     };
 
+    const fetchAllData = async () => {
+      try {
+        const [bomRes, bomMasterRes, vendorRes, componentRes, priceRes] = await Promise.all([
+          fetch(`${config.apiBaseURL}/bom_list/`),
+          fetch(`${config.apiBaseURL}/bom_master/`),
+          fetch(`${config.apiBaseURL}/vendor_list/`),
+          fetch(`${config.apiBaseURL}/component/`),
+          fetch(`${config.apiBaseURL}/price_tables/`),
+        ]);
+
+        const [bomData, bomMasterData, vendorData, componentData, priceData] = await Promise.all([
+          bomRes.json(),
+          bomMasterRes.json(),
+          vendorRes.json(),
+          componentRes.json(),
+          priceRes.json(),
+        ]);
+
+        setSelectedBom(bomData.find((b) => b.bom_id === bomId));
+        setSelectedComponents(bomMasterData.filter((b) => b.bom === bomId));
+        setVendors(vendorData);
+        setComponents(componentData);
+        setPriceTables(priceData);
+      } catch (err) {
+        console.error("Error loading data:", err);
+      } finally {
+        setLoadingComponents(false);
+        setLoadingVendors(false);
+      }
+    };
+
     // Fetch all data
     fetchBomDetails();
     fetchBomComponents();
     fetchVendors();
     fetchComponents();
+    fetchAllData();
   }, [bomId]);
+
+  const getLatestPriceInfo = (productId) => {
+    const entries = priceTables.filter((e) => e.product === productId);
+    if (entries.length === 0) return { price: "-", tax: "-" };
+    const latest = entries.sort(
+      (a, b) => new Date(b.current_time) - new Date(a.current_time)
+    )[0];
+    return { price: latest.price, tax: `${latest.tax}%` };
+  };
 
   // Handle adding a new component to the BOM
   const handleAddComponent = async () => {
@@ -141,6 +185,28 @@ const BOMDetails = () => {
       console.error("Error adding component:", error);
     }
   };
+
+  const handleDeleteComponent = async (bomComponentId) => {
+  if (!window.confirm("Are you sure you want to delete this component from the BOM?")) return;
+
+  try {
+    const response = await fetch(`${config.apiBaseURL}/bom_master/${bomComponentId}/`, {
+      method: "DELETE",
+    });
+
+    if (response.ok) {
+      showSuccessToast("Component deleted successfully.");
+      setSelectedComponents((prev) =>
+        prev.filter((component) => component.id !== bomComponentId)
+      );
+    } else {
+      showErrorToast("Failed to delete component.");
+    }
+  } catch (error) {
+    console.error("Error deleting component:", error);
+    showErrorToast("An error occurred while deleting.");
+  }
+};
 
   return (
     <div style={{ padding: "20px" }}>
@@ -240,7 +306,7 @@ const BOMDetails = () => {
               ) : (
                 components.map((comp) => (
                   <option key={comp.component_id} value={comp.component_id}>
-                    {`${comp.component_type} - ${comp.component_specification}`}
+                    {`${comp.component_type} - ${comp.component_specification} - ${comp.vendor_id}`}
                   </option>
                 ))
               )}
@@ -269,7 +335,7 @@ const BOMDetails = () => {
               ) : (
                 vendors.map((vendor) => (
                   <option key={vendor.vendor_id} value={vendor.vendor_id}>
-                    {vendor.vendor_name}
+                   {`${vendor.vendor_id} -  ${vendor.vendor_name}`}
                   </option>
                 ))
               )}
@@ -296,19 +362,43 @@ const BOMDetails = () => {
                 <th>Category</th>
                 <th>Quantity</th>
                 <th>Vendor</th>
+                <th>Price</th>
+                <th>Tax</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {selectedComponents.map((component, index) => (
-                <tr key={index}>
-                  <td>{component.component.component_type}</td>
-                  <td>{component.component.component_specification}</td>
-                  <td>{component.component.unit_of_measurement}</td>
-                  <td>{component.component.category}</td>
-                  <td>{component.quantity}</td>
-                  <td>{component.vendor.vendor_name}</td>
-                </tr>
-              ))}
+              {selectedComponents.map((component, index) => {
+                const { price, tax } = getLatestPriceInfo(component.component.product_id);
+                return (
+                  <tr key={index}>
+                    <td>{component.component.component_type}</td>
+                    <td>{component.component.component_specification}</td>
+                    <td>{component.component.unit_of_measurement}</td>
+                    <td>{component.component.category}</td>
+                    <td>{component.quantity}</td>
+                    <td>{component.vendor.vendor_name}</td>
+                    <td style={{ textAlign: "right" }}>
+                      ₹
+                      {parseFloat(
+                        price !== "-" ? price : 0
+                      ).toLocaleString("en-IN", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </td>
+                    <td>{tax}</td>
+                    <td>
+                      <button
+                        style={{ backgroundColor: "red", color: "white", border: "none", padding: "5px 10px", cursor: "pointer" }}
+                        onClick={() => handleDeleteComponent(component.id)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
          

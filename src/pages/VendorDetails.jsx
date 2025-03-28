@@ -503,6 +503,7 @@ const VendorDetails = () => {
           component_specification: "",
           unit_of_measurement: "",
           vendor: vendorId,
+          active:true,
         });
         setShowAddProductForm(false);
 
