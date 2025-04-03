@@ -303,6 +303,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import config from "../Config"; // API Configuration
+import AddIcon from "../assets/Add.png";
+import CancelIcon from "../assets/cancel.png";
+
 
 const ProjectList = () => {
   const [projects, setProjects] = useState([]);
@@ -310,9 +313,12 @@ const ProjectList = () => {
     project_name: "",
     description: "",
     start_date: "",
+    project_type: "",
   });
   const [showAddForm, setShowAddForm] = useState(false);
   const navigate = useNavigate();
+  const [sortField, setSortField] = useState("");
+  const [sortOrder, setSortOrder] = useState("asc");
 
   useEffect(() => {
     fetchProjects();
@@ -346,7 +352,7 @@ const ProjectList = () => {
       if (response.ok) {
         const addedProject = await response.json();
         setProjects([...projects, addedProject]); // Update list
-        setNewProject({ project_name: "", description: "", start_date: "" }); // Reset form
+        setNewProject({ project_name: "", description: "", start_date: "", project_type: "" }); // Reset form
         setShowAddForm(false); // Hide form
       } else {
         console.error("Failed to add project.");
@@ -356,16 +362,63 @@ const ProjectList = () => {
     }
   };
 
+  const handleSort = (field) => {
+    const order = sortField === field && sortOrder === "asc" ? "desc" : "asc";
+    setSortField(field);
+    setSortOrder(order);
+  
+    const sorted = [...projects].sort((a, b) => {
+      const aVal = a[field];
+      const bVal = b[field];
+  
+      if (aVal < bVal) return order === "asc" ? -1 : 1;
+      if (aVal > bVal) return order === "asc" ? 1 : -1;
+      return 0;
+    });
+  
+    setProjects(sorted);
+  };
+
   return (
     <div style={{ fontFamily: "Arial, sans-serif", padding: "20px" }}>
       <h2>Project List</h2>
 
-      <button onClick={() => setShowAddForm(!showAddForm)}>
-        {showAddForm ? "Cancel" : "Add Project"}
+      <button
+        onClick={() => setShowAddForm(!showAddForm)}
+        style={{
+          background: "transparent",
+          border: "none",
+          cursor: "pointer",
+          padding: "4px",
+          marginTop: "10px",
+        }}
+        title={showAddForm ? "Cancel" : "Add Project"}
+      >
+        <img
+          src={showAddForm ? CancelIcon : AddIcon}
+          alt={showAddForm ? "Cancel" : "Add Project"}
+          style={{ width: "20px", height: "20px" }}
+        />
       </button>
+
 
       {showAddForm && (
         <form onSubmit={handleAddProject}>
+          <select
+            name="project_type"
+            value={newProject.project_type}
+            onChange={handleInputChange}
+            required
+          >
+            <option value="">Select Project Type</option>
+            <option value="R&D">R&D</option>
+            <option value="OPS">OPS</option>
+            <option value="SER">SER</option>
+            <option value="MISC">MISC</option>
+            <option value="U/D">U/D</option>
+            {/* Add more options if necessary */}
+          </select>
+
           <input
             type="text"
             name="project_name"
@@ -402,8 +455,8 @@ const ProjectList = () => {
       >
         <thead>
           <tr style={{ backgroundColor: "#f4f4f4" }}>
-            <th style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>
-              Project ID
+          <th onClick={() => handleSort("project_id")} style={{ textDecoration: "underline", cursor: "pointer", padding: "10px" }}>
+              Project ID {sortField === "project_id" ? (sortOrder === "asc" ? " 🔼" : " 🔽") : ""}
             </th>
             <th style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>
               Project Name
@@ -411,8 +464,11 @@ const ProjectList = () => {
             <th style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>
               Description
             </th>
+            <th onClick={() => handleSort("start_date")} style={{ textDecoration: "underline", cursor: "pointer", padding: "10px" }}>
+              Start Date {sortField === "start_date" ? (sortOrder === "asc" ? " 🔼" : " 🔽") : ""}
+            </th>
             <th style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>
-              Start Date
+              Project Type
             </th>
           </tr>
         </thead>
@@ -437,6 +493,7 @@ const ProjectList = () => {
                 <td style={{ padding: "10px" }}>{project.project_name}</td>
                 <td style={{ padding: "10px" }}>{project.description}</td>
                 <td style={{ padding: "10px" }}>{project.start_date}</td>
+                <td style={{ padding: "10px" }}>{project.project_type}</td>
               </tr>
             ))
           ) : (

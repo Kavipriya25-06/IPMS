@@ -14,7 +14,8 @@ const MRFIcon = () => {
       user.role === "Admin" ||
       user.role === "Procurement" ||
       user.role === "Inventory" ||
-      user.role === "User"
+      user.role === "User"||
+      user.role === "Sub-Admin"
     )
   )
     return null; // Don't render if user is not logged in

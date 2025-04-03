@@ -30,6 +30,10 @@ const POOrderList = ({ user }) => {
   const [statusFilter, setStatusFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
 
+  const [sortField, setSortField] = useState("");
+  const [sortOrder, setSortOrder] = useState("asc");
+
+
    useEffect(() => {
     fetchPOOrders();
     fetchPOMaster();
@@ -356,6 +360,16 @@ const POOrderList = ({ user }) => {
     return doc.output("blob"); // Return PDF as a Blob object
   };
 
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+  };
+  
+
   const filteredPOOrders = poOrders.filter((order) => {
     const { status } = getAggregatedStatus(order.id);
     const matchesName = order.cart_details.vendor_name
@@ -364,6 +378,26 @@ const POOrderList = ({ user }) => {
     const matchesStatus = statusFilter ? status === statusFilter : true;
     const matchesDate = dateFilter ? order.date === dateFilter : true;
     return matchesName && matchesStatus && matchesDate;
+  })
+  .sort((a, b) => {
+    if (!sortField) return 0;
+
+    let aValue, bValue;
+
+    if (sortField === "id") {
+      aValue = a.id;
+      bValue = b.id;
+    } else if (sortField === "total_cost") {
+      aValue = finalCost(a.id);
+      bValue = finalCost(b.id);
+    } else if (sortField === "date") {
+      aValue = new Date(a.date);
+      bValue = new Date(b.date);
+    }
+
+    if (aValue < bValue) return sortOrder === "asc" ? -1 : 1;
+    if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
+    return 0;
   });
 
   const handleOpenModal = (po) => {
@@ -394,6 +428,12 @@ const POOrderList = ({ user }) => {
     }
   }, [currentPO]); // Dependency array includes currentPO
 
+
+
+
+  
+  
+
   return (
     <div>
       <h2>PO Order List</h2>
@@ -403,7 +443,7 @@ const POOrderList = ({ user }) => {
         <table>
           <thead>
             <tr>
-              <th>PO ID</th>
+            <th onClick={() => handleSort("id")} style={{ cursor: "pointer",textDecoration: "underline" }}>PO ID {sortField === "id" ? (sortOrder === "asc" ? " 🔼" : " 🔽") : ""}</th>
               <th>
                 Vendor Name<input
                   type="text"
@@ -427,7 +467,7 @@ const POOrderList = ({ user }) => {
                   <option value="In Progress">In Progress</option>
                 </select>
               </th>
-              <th>Total Cost</th>
+              <th onClick={() => handleSort("total_cost")} style={{ cursor: "pointer" ,textDecoration: "underline"}}>Total Cost{" "}{sortField === "total_cost" ? (sortOrder === "asc" ? " 🔼" : " 🔽") : ""}</th>
               <th>
                 Date
                 <input

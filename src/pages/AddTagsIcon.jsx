@@ -13,7 +13,8 @@ const TagIcon = () => {
     !(
       user.role === "Admin" ||
       user.role === "Procurement" ||
-      user.role === "Inventory"
+      user.role === "Inventory" ||
+      user.role === "Sub-Admin"
     )
   )
     return null; // Don't render if user is not logged in

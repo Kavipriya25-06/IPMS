@@ -17,7 +17,7 @@ const Roles = () => {
     email: "",
   });
 
-  const roles = ["Admin", "Procurement", "Finance", "Inventory", "User"];
+  const roles = ["Admin","Sub-Admin", "Procurement", "Finance", "Inventory", "User"];
 
   // Fetch users from API
   const fetchUsers = async () => {

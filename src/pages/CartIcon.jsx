@@ -9,7 +9,7 @@ const CartIcon = () => {
   const location = useLocation();
 
   if (!user) return null; // Don't render if user is not logged in
-  if (!(user.role === "Admin" || user.role === "Procurement")) return null; // Don't render if user is not logged in
+  if (!(user.role === "Admin" || user.role === "Procurement" || user.role === "Sub-Admin")) return null; // Don't render if user is not logged in
   const isActive = location.pathname === "/cart";
 
   return (

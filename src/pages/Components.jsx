@@ -7,6 +7,7 @@ import tagIcon from "../assets/Tag_icon.png";
 import config from "../Config"; // Import config for API endpoints
 import "../App.css";
 
+
 import {
   showSuccessToast,
   showErrorToast,
@@ -47,6 +48,13 @@ const Component = () => {
   const [tagsChoices, setTagsChoices] = useState(""); // Tags filter
   const [selectedSpecification, setSelectedSpecification] = useState("");
   const isInitialMount = useRef(true); // Track if it's the first render
+  const [editTallyRefId, setEditTallyRefId] = useState(null); // which row is editing
+  const [editedTallyRef, setEditedTallyRef] = useState(""); // input value
+
+  const [sortField, setSortField] = useState();
+  const [sortOrder, setSortOrder] = useState("asc");
+  
+
 
   // Function to get unique component types based on the selected component type
   const getFilteredComponentTypes = () => {
@@ -355,6 +363,84 @@ const Component = () => {
     setShowPopup(false); // Close the pop-up when clicking outside
   };
 
+
+  const handleSaveTallyReference = async (componentId) => {
+    const target = components.find(
+      (c) => (c.component_id?.component_id || c.component_id) === componentId
+    );
+  
+    const payload = {
+      ...target.component_id,
+      tally_reference: editedTallyRef,
+    };
+  
+    try {
+      const response = await fetch(`${config.apiBaseURL}/component/${componentId}/`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+  
+      if (response.ok) {
+        showSuccessToast("Tally Reference updated!");
+        setEditTallyRefId(null);
+  
+        // Update the components state locally
+        setComponents((prev) =>
+          prev.map((item) =>
+            (item.component_id?.component_id || item.component_id) === componentId
+              ? {
+                  ...item,
+                  component_id: {
+                    ...item.component_id,
+                    tally_reference: editedTallyRef,
+                  },
+                }
+              : item
+          )
+        );
+      } else {
+        showErrorToast("Failed to update tally reference.");
+      }
+    } catch (error) {
+      console.error("Error updating tally reference:", error);
+      showErrorToast("Error while updating tally reference.");
+    }
+  };
+
+  const handleSort = (field) => {
+    if (field === sortField) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+  };
+  
+  // Corrected sorting logic
+  const sortedComponents = [...components].sort((a, b) => {
+    const getValue = (item, field) => {
+      const component = item.component_id || {};
+  
+      if (field === "component_id") {
+        const match = component.component_id.match(/(\d+)$/);
+        return match ? parseInt(match[1], 10) : 0;
+      } else {
+        return (component[field] || "").toLowerCase();
+      }
+    };
+  
+    const aValue = getValue(a, sortField);
+    const bValue = getValue(b, sortField);
+  
+    if (aValue < bValue) return sortOrder === "asc" ? -1 : 1;
+    if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
+    return 0;
+  });
+  
+
   return (
     <div>
       <div className="header">
@@ -397,6 +483,27 @@ const Component = () => {
       <table>
         <thead>
           <tr>
+          <th
+            style={{ textDecoration: "underline", cursor: "pointer" }}
+            onClick={() => handleSort("component_id")}
+          >
+            Component ID {sortField === "component_id" ? (sortOrder === "asc" ? "🔼" : "🔽") : ""}
+          </th>
+
+          <th>
+              Category
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+              >
+                <option value="">All</option>
+                {getFilteredCategories().map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </th>
             <th>
               Component Type
               <select
@@ -411,23 +518,16 @@ const Component = () => {
                 ))}
               </select>
             </th>
-            <th>Specification</th>
-            <th>UOM</th>
-            <th>
-              Category
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-              >
-                <option value="">All</option>
-                {getFilteredCategories().map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
+            <th
+              style={{ textDecoration: "underline", cursor: "pointer" }}
+              onClick={() => handleSort("component_specification")}
+            >
+              Specification {sortField === "component_specification" ? (sortOrder === "asc" ? "🔼" : "🔽") : ""}
             </th>
-            <th>Component ID </th>
+            <th>Tally Reference</th>
+            <th>UOM</th>
+            
+           
             <th>
               Tags
               <select
@@ -445,16 +545,47 @@ const Component = () => {
           </tr>
         </thead>
         <tbody>
-          {components.length > 0 ? (
-            components.map((item, index) => {
+          {sortedComponents.length > 0 ? (
+            sortedComponents.map((item, index) => {
               const component = item.component_id || {};
               return (
                 <tr key={index}>
+                  <td>{component.component_id}</td>
+                  <td>{component.category}</td>
                   <td>{component.component_type}</td>
                   <td>{component.component_specification}</td>
+                  <td>
+                    {editTallyRefId === component.component_id ? (
+                      <>
+                        <input
+                          type="text"
+                          value={editedTallyRef}
+                          onChange={(e) => setEditedTallyRef(e.target.value)}
+                          style={{ width: "80px" }}
+                        />
+                        <button
+                          style={{ marginLeft: "4px" }}
+                          onClick={() => handleSaveTallyReference(component.component_id)}
+                        >
+                          Save
+                        </button>
+                        <button onClick={() => setEditTallyRefId(null)}>Cancel</button>
+                      </>
+                    ) : (
+                      <span
+                        style={{ cursor: "pointer", color: "#007bff" }}
+                        title="Click to edit"
+                        onClick={() => {
+                          setEditTallyRefId(component.component_id);
+                          setEditedTallyRef(component.tally_reference || "");
+                        }}
+                      >
+                        {component.tally_reference || "Click to add"}
+                      </span>
+                    )}
+                  </td>
                   <td>{component.unit_of_measurement}</td>
-                  <td>{component.category}</td>
-                  <td>{component.component_id}</td>
+                  
                   <td>
                     <div>
                       {getTagsForComponent(component.component_id).length >

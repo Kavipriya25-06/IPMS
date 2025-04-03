@@ -925,10 +925,10 @@ const RequestDetails = ({ user }) => {
             <thead>
               <tr>
                 <th>Status</th>
+                <th>Category</th>
                 <th>Component Type</th>
                 <th>Specification</th>
                 <th>Unit of Measurement</th>
-                <th>Category</th>
                 <th>Vendor Name</th>
                 {(isAdmin || isProcurement) && <th>Price</th>}
                 {(isAdmin || isProcurement) && <th>Tax %</th>}
@@ -954,10 +954,10 @@ const RequestDetails = ({ user }) => {
                           (status) => status.request_id === detail.id
                         )?.po_status || ""}
                       </td>
+                      <td>{detail.category}</td>
                       <td>{detail.component_type}</td>
                       <td>{detail.component_specification}</td>
                       <td>{detail.unit_of_measurement}</td>
-                      <td>{detail.category}</td>
                       <td>
                         {detail.vendor_name ? (
                           <span

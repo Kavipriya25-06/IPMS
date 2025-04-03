@@ -30,7 +30,8 @@ const Inventory = () => {
   const [toDate, setToDate] = useState(""); // To date state
   const [editingComponentSpec, setEditingComponentSpec] = useState(null); // component_id being edited
   const [tempSpecification, setTempSpecification] = useState(""); // temp specification input
-
+  const [sortField, setSortField] = useState("");
+  const [sortOrder, setSortOrder] = useState("asc"); // "asc" or "desc"
 
   useEffect(() => {
     fetchInventoryData();
@@ -499,6 +500,27 @@ const Inventory = () => {
     setTempSpecification("");
   };
 
+  const handleSort = (field) => {
+    const order = sortField === field && sortOrder === "asc" ? "desc" : "asc";
+    setSortField(field);
+    setSortOrder(order);
+  
+    const sorted = [...filteredInventory].sort((a, b) => {
+      const aValue = a[field] || "";
+      const bValue = b[field] || "";
+  
+      if (typeof aValue === "number" && typeof bValue === "number") {
+        return order === "asc" ? aValue - bValue : bValue - aValue;
+      }
+  
+      return order === "asc"
+        ? String(aValue).localeCompare(String(bValue))
+        : String(bValue).localeCompare(String(aValue));
+    });
+  
+    setFilteredInventory(sorted);
+  };
+
   return (
     <div className="inventory-container">
       <div className="header">
@@ -562,17 +584,17 @@ const Inventory = () => {
       <table className="inventory-table">
         <thead>
           <tr>
-            <th>Component ID</th>
-            <th>Serial Number</th>
-            <th>SKU Number</th>
-            <th>Category</th>
-            <th>Component Type</th>
-            <th>Specification</th>
-            <th>UOM</th>
-            <th>Vendor</th>
-            <th>Created Date</th>
-            <th>Price</th>
-            <th>Status</th>
+          <th onClick={() => handleSort("component_id")} style={{ textDecoration: "underline", cursor: "pointer" }}>Component ID {sortField === "component_id" ? (sortOrder === "asc" ? " 🔼" : " 🔽") : ""}</th>
+          <th onClick={() => handleSort("serial_number")} style={{ textDecoration: "underline", cursor: "pointer" }}>Serial Number {sortField === "serial_number" ? (sortOrder === "asc" ? " 🔼" : " 🔽") : ""}</th>
+          <th>SKU Number</th>
+          <th onClick={() => handleSort("category")} style={{ textDecoration: "underline", cursor: "pointer" }}>Category {sortField === "category" ? (sortOrder === "asc" ? " 🔼" : " 🔽") : ""}</th>
+          <th onClick={() => handleSort("component_type")} style={{ textDecoration: "underline", cursor: "pointer" }}>Component Type {sortField === "component_type" ? (sortOrder === "asc" ? " 🔼" : " 🔽") : ""}</th>
+          <th onClick={() => handleSort("specification")} style={{ textDecoration: "underline", cursor: "pointer" }}>Specification {sortField === "specification" ? (sortOrder === "asc" ? " 🔼" : " 🔽") : ""}</th>
+          <th>UOM</th>
+          <th onClick={() => handleSort("vendor_name")} style={{ textDecoration: "underline", cursor: "pointer" }}>Vendor {sortField === "vendor_name" ? (sortOrder === "asc" ? " 🔼" : " 🔽") : ""}</th>
+          <th onClick={() => handleSort("create_date")} style={{ textDecoration: "underline", cursor: "pointer" }}>Created Date {sortField === "create_date" ? (sortOrder === "asc" ? " 🔼" : " 🔽") : ""}</th>
+          <th onClick={() => handleSort("price")} style={{ textDecoration: "underline", cursor: "pointer" }}>Price {sortField === "price" ? (sortOrder === "asc" ? " 🔼" : " 🔽") : ""}</th>
+          <th>Status</th>
           </tr>
         </thead>
         <tbody>

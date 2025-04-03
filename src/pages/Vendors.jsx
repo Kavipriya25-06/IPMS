@@ -539,9 +539,10 @@ const Vendors = () => {
 
       <button
         onClick={() => setIsAddingVendor(true)}
-        style={{ marginTop: "10px" }}
+        style={{ marginTop: "10px",background:"transparent",border:"none",cursor:"pointer" }}
+        title="Add Vendor"
       >
-        Add Vendor
+        <img src="src\assets\Add.png" alt="" style={{width:"20px",height:"20px"}}/>
       </button>
 
       {/* Modal for Adding New Vendor */}

@@ -10,6 +10,9 @@ const Requests = () => {
   const [requestStatusView, setRequestStatusView] = useState([]); // Status details for popup
   const navigate = useNavigate();
 
+  const [sortField, setSortField] = useState(""); 
+  const [sortOrder, setSortOrder] = useState("asc");
+
   useEffect(() => {
     fetch(`${config.apiBaseURL}/request_list/`)
       .then((response) => response.json())
@@ -104,26 +107,63 @@ const Requests = () => {
     return { status: "In Progress", mixed: true };
   };
 
+  
+  // Function to handle sorting
+  const handleSort = (field) => {
+    if (sortField === field) {
+      // If clicking the same field, toggle the sort order.
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      // Set new sort field and default to ascending.
+      setSortField(field);
+      setSortOrder("asc");
+    }
+  };
+
+  // Sorting the requests array based on the sortField and sortOrder.
+  const sortedRequests = [...requests].sort((a, b) => {
+    if (!sortField) return 0;
+    let aVal = a[sortField];
+    let bVal = b[sortField];
+
+    // For the date field, convert the values to Date objects.
+    if (sortField === "date") {
+      aVal = new Date(aVal);
+      bVal = new Date(bVal);
+    }
+
+    if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
+    if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
+    return 0;
+  });
+
   return (
     <div>
       <h2>Request List</h2>
 
-      <button onClick={handleNewRequest} style={{ marginTop: "10px" }}>
-        New Request
+      <button onClick={handleNewRequest}style={{marginTop: "10px",background: "transparent",border: "none",cursor: "pointer",padding: "4px",}}
+      title="New Request">
+      <img src="src\assets\Add.png" alt="New Request"style={{ width: "20px", height: "20px" }}/>
       </button>
+
+      
       <table>
         <thead>
           <tr>
-            <th>Request ID</th>
+            <th onClick={() => handleSort("request_id")}style={{ cursor: "pointer",textDecoration: "underline" }}>
+            Request ID{sortField === "request_id" ? (sortOrder === "asc" ? " 🔼" : " 🔽") : ""}
+            </th>
             {/* <th>BOM ID</th> */}
             <th>Requester Name</th>
-            <th>Date</th>
+            <th onClick={() => handleSort("date")} style={{ cursor: "pointer" ,textDecoration: "underline"}}>
+            Date {sortField === "date" ? (sortOrder === "asc" ? " 🔼" : " 🔽") : ""}
+            </th>
             <th>Status</th>
             <th>Last Modified By</th>
           </tr>
         </thead>
         <tbody>
-          {requests.map((request) => {
+          {sortedRequests.map((request) => {
             const { status, mixed } = getAggregatedStatus(request.request_id);
             return (
               <tr key={request.request_id}>

@@ -305,7 +305,7 @@ const VendorDetails = () => {
       const response = await fetch(
         `${config.apiBaseURL}/vendor_master/${selectedVendorData[index].product_id}/`, // Use a specific endpoint for updating the image
         {
-          method: "PUT",
+          method: "PATCH",
           body: formData,
         }
       );
@@ -334,7 +334,7 @@ const VendorDetails = () => {
       const response = await fetch(
         `${config.apiBaseURL}/vendor_master/${selectedVendorData[index].product_id}/`, // Use a specific endpoint for updating the attachment
         {
-          method: "PUT",
+          method: "PATCH",
           body: formData,
         }
       );
@@ -654,14 +654,86 @@ const VendorDetails = () => {
     }
   };
 
+  // const enableEditField = (index, field) => {
+  //   setSelectedVendorData((prevState) => {
+  //     const updatedProducts = [...prevState];
+  //     updatedProducts[index] = {
+  //       ...updatedProducts[index],
+  //       [field]: true,
+  //       editableRemarks: updatedProducts[index].remarks || "",
+  //     };
+  //     return updatedProducts;
+  //   });
+  // };
+
+  // const cancelEditField = (index, field) => {
+  //   setSelectedVendorData((prevState) => {
+  //     const updatedProducts = [...prevState];
+  //     updatedProducts[index] = {
+  //       ...updatedProducts[index],
+  //       [field]: false,
+  //       editableRemarks: "", // Clear temp remarks
+  //     };
+  //     return updatedProducts;
+  //   });
+  // };
+
+
+  const saveRemarks = async (index) => {
+    const product = selectedVendorData[index];
+    const payload = {
+      remarks: product.editableRemarks || "",
+    };
+  
+    try {
+      const response = await fetch(
+        `${config.apiBaseURL}/vendor_master/${product.product_id}/`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+  
+      if (response.ok) {
+        const updatedProduct = await response.json();
+        const updatedList = [...selectedVendorData];
+        updatedList[index] = {
+          ...updatedProduct,
+          isEditingRemarks: false,
+          editableRemarks: "",
+        };
+        setSelectedVendorData(updatedList);
+        showSuccessToast("Remarks updated successfully!");
+      } else {
+        console.error("Failed to update remarks:", response.statusText);
+        showErrorToast("Failed to update remarks.");
+      }
+    } catch (error) {
+      console.error("Error updating remarks:", error);
+      showErrorToast("Error occurred while updating remarks.");
+    }
+  };
+  
+
+
+
   return (
     <div>
       <h4>
         Vendor Data for {getVendorName(vendorId)} - {vendorId}
       </h4>
-      <button onClick={() => setShowAddProductForm(!showAddProductForm)}>
-        {showAddProductForm ? "Cancel New Product" : "Add New Product"}
-      </button>
+      <img
+        src={showAddProductForm ? "/src/assets/cancel.png" : "/src/assets/Add.png"}
+        alt={showAddProductForm ? "Cancel New Product" : "Add New Product"}
+        title={showAddProductForm ? "Cancel New Product" : "Add New Product"}
+        style={{ width: "24px", height: "24px", cursor: "pointer" }}
+        onClick={() => setShowAddProductForm(!showAddProductForm)}
+      />
+
+
 
       {/* Render CustomMessagebox when showMessageBox is true */}
       {showMessageBox && (
@@ -685,7 +757,7 @@ const VendorDetails = () => {
           />
           <input
             type="number"
-            placeholder="Last Price"
+            placeholder="Price"
             value={newProduct.last_price}
             onChange={(e) => handleInputChange("last_price", e.target.value)}
           />
@@ -1076,6 +1148,7 @@ const VendorDetails = () => {
             <th>Attachments</th>
             <th>Actions</th>
             <th>Status</th>
+            <th>Remarks</th>
           </tr>
         </thead>
         <tbody>
@@ -1212,6 +1285,32 @@ const VendorDetails = () => {
                   >
                     {product.active ? "Active" : "Inactive"}
                   </button>
+                </td>
+                <td>
+                  {product.isEditingRemarks ? (
+                    <>
+                      <input
+                        type="text"
+                        value={product.editableRemarks || ""}
+                        onChange={(e) => {
+                          const updated = [...selectedVendorData];
+                          updated[index].editableRemarks = e.target.value;
+                          setSelectedVendorData(updated);
+                        }}
+                        placeholder="Enter remarks"
+                      />
+                      <button onClick={() => saveRemarks(index)}>Save</button>
+                      <button onClick={() => cancelEditField(index, "isEditingRemarks")}>
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span onClick={() => enableEditField(index, "isEditingRemarks")} style={{ cursor: "pointer", color: "#007bff" }}>
+                        {product.remarks || "Click to add remarks"}
+                      </span>
+                    </>
+                  )}
                 </td>
               </tr>
             );
