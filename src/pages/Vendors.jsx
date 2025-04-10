@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import config from "../Config"; // Import config for API endpoints
+import Add from "../assets/Add.png";
+
 
 // Popup Modal Component
 const Modal = ({ isOpen, onClose, children }) => {
@@ -542,7 +544,7 @@ const Vendors = () => {
         style={{ marginTop: "10px",background:"transparent",border:"none",cursor:"pointer" }}
         title="Add Vendor"
       >
-        <img src="src\assets\Add.png" alt="" style={{width:"20px",height:"20px"}}/>
+        <img src={Add} alt="" style={{width:"20px",height:"20px"}}/>
       </button>
 
       {/* Modal for Adding New Vendor */}

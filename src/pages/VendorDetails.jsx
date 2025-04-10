@@ -6,6 +6,9 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import CustomMessagebox from "./CustomMessageBox.jsx";
 import config from "../Config"; // Import config for API endpoints
+import Add from "../assets/Add.png";
+import Cancel from "../assets/cancel.png";
+
 
 import {
   showSuccessToast,
@@ -726,7 +729,7 @@ const VendorDetails = () => {
         Vendor Data for {getVendorName(vendorId)} - {vendorId}
       </h4>
       <img
-        src={showAddProductForm ? "/src/assets/cancel.png" : "/src/assets/Add.png"}
+        src={showAddProductForm ? Cancel : Add}
         alt={showAddProductForm ? "Cancel New Product" : "Add New Product"}
         title={showAddProductForm ? "Cancel New Product" : "Add New Product"}
         style={{ width: "24px", height: "24px", cursor: "pointer" }}

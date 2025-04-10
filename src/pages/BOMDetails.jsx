@@ -678,9 +678,14 @@ const BOMDetails = () => {
       });
   
       if (response.ok) {
-        const data = await response.json();
-        setSelectedComponents([...selectedComponents, data]);
         showSuccessToast("Component added successfully!");
+
+        //  Refresh component list from backend
+        const refreshed = await fetch(`${config.apiBaseURL}/bom_master/`);
+        const updated = await refreshed.json();
+        const bomComponents = updated.filter((b) => b.bom === bomId);
+        setSelectedComponents(bomComponents);
+
         setShowAddComponentForm(false);
         setNewComponent({
           component: "",

@@ -652,7 +652,7 @@ const Component = () => {
             })
           ) : (
             <tr>
-              <td colSpan="6" style={{ textAlign: "center" }}>
+              <td colSpan="8" style={{ textAlign: "center" }}>
                 No components found for the given search.
               </td>
             </tr>

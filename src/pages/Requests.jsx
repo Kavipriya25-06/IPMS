@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import config from "../Config"; // Import config for API endpoints
+import Add from "../assets/Add.png";
+
 
 const Requests = () => {
   const [requests, setRequests] = useState([]);
@@ -143,7 +145,7 @@ const Requests = () => {
 
       <button onClick={handleNewRequest}style={{marginTop: "10px",background: "transparent",border: "none",cursor: "pointer",padding: "4px",}}
       title="New Request">
-      <img src="src\assets\Add.png" alt="New Request"style={{ width: "20px", height: "20px" }}/>
+      <img src= {Add} alt="New Request"style={{ width: "20px", height: "20px" }}/>
       </button>
 
       

@@ -236,6 +236,55 @@ const Cart = ({ user }) => {
     }
   };
 
+
+  const handleRemoveFromCart = async (item) => {
+    const confirmed = window.confirm(
+      `Remove ${item.component_type} - ${item.component_specification} from cart?`
+    );
+    if (!confirmed) return;
+  
+    try {
+      //  Step 1: DELETE from cart
+      const deleteRes = await fetch(`${config.apiBaseURL}/cart/${item.id}/`, {
+        method: "DELETE",
+      });
+  
+      if (!deleteRes.ok) {
+        showErrorToast("Failed to delete item from cart.");
+        return;
+      }
+  
+      // Step 2: PATCH request_master to set cart_assign = false
+      const requestFormatted = item.request_list_id; // e.g., "R_00001"
+      const requestMasterId = item.request_id;        // e.g., 3
+  
+      if (requestFormatted && requestMasterId) {
+        const patchRes = await fetch(
+          `${config.apiBaseURL}/request_master/${requestFormatted}/${requestMasterId}/`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ cart_assign: false }),
+          }
+        );
+  
+        if (!patchRes.ok) {
+          const error = await patchRes.json();
+          console.warn("Failed to patch request_master:", error);
+        }
+      }
+  
+      showSuccessToast("Removed from cart successfully.");
+      fetchCartItems(); //  Refresh cart UI
+    } catch (error) {
+      console.error("Error removing from cart:", error);
+      showErrorToast("Error removing item from cart.");
+    }
+  };
+  
+
+
+
   return (
     <div>
       {/* Render CustomMessagebox when showMessageBox is true */}
@@ -301,6 +350,7 @@ const Cart = ({ user }) => {
                                       <th>Unit Price</th>
                                       <th>GST %</th>
                                       <th>Total Cost</th>
+                                      <th>Actions</th>
                                     </tr>
                                   </thead>
                                   <tbody>
@@ -337,6 +387,23 @@ const Cart = ({ user }) => {
                                               maximumFractionDigits: 2,
                                             })}
                                           </td>
+
+                                          <td>
+  <button
+    onClick={() => handleRemoveFromCart(item)}
+    style={{
+      backgroundColor: "#ff4d4f",
+      color: "white",
+      border: "none",
+      padding: "5px 10px",
+      cursor: "pointer",
+      borderRadius: "5px",
+    }}
+  >
+    Remove
+  </button>
+</td>
+
                                         </tr>
                                       ))}
                                   </tbody>
