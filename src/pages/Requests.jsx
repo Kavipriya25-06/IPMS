@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import config from "../Config"; // Import config for API endpoints
 import Add from "../assets/Add.png";
 
-
 const Requests = () => {
   const [requests, setRequests] = useState([]);
   const [requestMaster, setRequestMaster] = useState([]);
@@ -12,7 +11,7 @@ const Requests = () => {
   const [requestStatusView, setRequestStatusView] = useState([]); // Status details for popup
   const navigate = useNavigate();
 
-  const [sortField, setSortField] = useState(""); 
+  const [sortField, setSortField] = useState("");
   const [sortOrder, setSortOrder] = useState("asc");
 
   useEffect(() => {
@@ -109,7 +108,6 @@ const Requests = () => {
     return { status: "In Progress", mixed: true };
   };
 
-  
   // Function to handle sorting
   const handleSort = (field) => {
     if (sortField === field) {
@@ -143,22 +141,50 @@ const Requests = () => {
     <div>
       <h2>Request List</h2>
 
-      <button onClick={handleNewRequest}style={{marginTop: "10px",background: "transparent",border: "none",cursor: "pointer",padding: "4px",}}
-      title="New Request">
-      <img src= {Add} alt="New Request"style={{ width: "20px", height: "20px" }}/>
+      <button
+        onClick={handleNewRequest}
+        style={{
+          marginTop: "10px",
+          background: "transparent",
+          border: "none",
+          cursor: "pointer",
+          padding: "4px",
+        }}
+        title="New Request"
+      >
+        <img
+          src={Add}
+          alt="New Request"
+          style={{ width: "20px", height: "20px" }}
+        />
       </button>
 
-      
       <table>
         <thead>
           <tr>
-            <th onClick={() => handleSort("request_id")}style={{ cursor: "pointer",textDecoration: "underline" }}>
-            Request ID{sortField === "request_id" ? (sortOrder === "asc" ? " 🔼" : " 🔽") : ""}
+            <th
+              onClick={() => handleSort("request_id")}
+              style={{ cursor: "pointer", textDecoration: "underline" }}
+            >
+              Request ID
+              {sortField === "request_id"
+                ? sortOrder === "asc"
+                  ? " 🔼"
+                  : " 🔽"
+                : ""}
             </th>
             {/* <th>BOM ID</th> */}
             <th>Requester Name</th>
-            <th onClick={() => handleSort("date")} style={{ cursor: "pointer" ,textDecoration: "underline"}}>
-            Date {sortField === "date" ? (sortOrder === "asc" ? " 🔼" : " 🔽") : ""}
+            <th
+              onClick={() => handleSort("date")}
+              style={{ cursor: "pointer", textDecoration: "underline" }}
+            >
+              Date{" "}
+              {sortField === "date"
+                ? sortOrder === "asc"
+                  ? " 🔼"
+                  : " 🔽"
+                : ""}
             </th>
             <th>Status</th>
             <th>Last Modified By</th>
@@ -223,7 +249,6 @@ const Requests = () => {
           </table>
         </div>
       )}
-     
     </div>
   );
 };

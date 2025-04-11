@@ -33,14 +33,11 @@ const POOrderList = ({ user }) => {
   const [sortField, setSortField] = useState("");
   const [sortOrder, setSortOrder] = useState("asc");
 
-
-   useEffect(() => {
+  useEffect(() => {
     fetchPOOrders();
     fetchPOMaster();
     fetchOrderStatuses();
   }, []);
-
-
 
   // The user object is now passed as a prop
   const isAdmin = user?.role === "Admin";
@@ -165,7 +162,8 @@ const POOrderList = ({ user }) => {
       poMasterIds.includes(status.po_master_id)
     );
 
-    if (relevantStatuses.length === 0) return { status: "Pending", mixed: false };
+    if (relevantStatuses.length === 0)
+      return { status: "Pending", mixed: false };
 
     const uniqueStatuses = new Set(
       relevantStatuses.map((status) => {
@@ -368,37 +366,37 @@ const POOrderList = ({ user }) => {
       setSortOrder("asc");
     }
   };
-  
 
-  const filteredPOOrders = poOrders.filter((order) => {
-    const { status } = getAggregatedStatus(order.id);
-    const matchesName = order.cart_details.vendor_name
-      .toLowerCase()
-      .includes(nameFilter.toLowerCase());
-    const matchesStatus = statusFilter ? status === statusFilter : true;
-    const matchesDate = dateFilter ? order.date === dateFilter : true;
-    return matchesName && matchesStatus && matchesDate;
-  })
-  .sort((a, b) => {
-    if (!sortField) return 0;
+  const filteredPOOrders = poOrders
+    .filter((order) => {
+      const { status } = getAggregatedStatus(order.id);
+      const matchesName = order.cart_details.vendor_name
+        .toLowerCase()
+        .includes(nameFilter.toLowerCase());
+      const matchesStatus = statusFilter ? status === statusFilter : true;
+      const matchesDate = dateFilter ? order.date === dateFilter : true;
+      return matchesName && matchesStatus && matchesDate;
+    })
+    .sort((a, b) => {
+      if (!sortField) return 0;
 
-    let aValue, bValue;
+      let aValue, bValue;
 
-    if (sortField === "id") {
-      aValue = a.id;
-      bValue = b.id;
-    } else if (sortField === "total_cost") {
-      aValue = finalCost(a.id);
-      bValue = finalCost(b.id);
-    } else if (sortField === "date") {
-      aValue = new Date(a.date);
-      bValue = new Date(b.date);
-    }
+      if (sortField === "id") {
+        aValue = a.id;
+        bValue = b.id;
+      } else if (sortField === "total_cost") {
+        aValue = finalCost(a.id);
+        bValue = finalCost(b.id);
+      } else if (sortField === "date") {
+        aValue = new Date(a.date);
+        bValue = new Date(b.date);
+      }
 
-    if (aValue < bValue) return sortOrder === "asc" ? -1 : 1;
-    if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
-    return 0;
-  });
+      if (aValue < bValue) return sortOrder === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
+      return 0;
+    });
 
   const handleOpenModal = (po) => {
     setCurrentPO(po); // Set the current PO details
@@ -428,12 +426,6 @@ const POOrderList = ({ user }) => {
     }
   }, [currentPO]); // Dependency array includes currentPO
 
-
-
-
-  
-  
-
   return (
     <div>
       <h2>PO Order List</h2>
@@ -443,9 +435,20 @@ const POOrderList = ({ user }) => {
         <table>
           <thead>
             <tr>
-            <th onClick={() => handleSort("id")} style={{ cursor: "pointer",textDecoration: "underline" }}>PO ID {sortField === "id" ? (sortOrder === "asc" ? " 🔼" : " 🔽") : ""}</th>
+              <th
+                onClick={() => handleSort("id")}
+                style={{ cursor: "pointer", textDecoration: "underline" }}
+              >
+                PO ID{" "}
+                {sortField === "id"
+                  ? sortOrder === "asc"
+                    ? " 🔼"
+                    : " 🔽"
+                  : ""}
+              </th>
               <th>
-                Vendor Name<input
+                Vendor Name
+                <input
                   type="text"
                   placeholder="Filter Name"
                   value={nameFilter}
@@ -467,7 +470,17 @@ const POOrderList = ({ user }) => {
                   <option value="In Progress">In Progress</option>
                 </select>
               </th>
-              <th onClick={() => handleSort("total_cost")} style={{ cursor: "pointer" ,textDecoration: "underline"}}>Total Cost{" "}{sortField === "total_cost" ? (sortOrder === "asc" ? " 🔼" : " 🔽") : ""}</th>
+              <th
+                onClick={() => handleSort("total_cost")}
+                style={{ cursor: "pointer", textDecoration: "underline" }}
+              >
+                Total Cost{" "}
+                {sortField === "total_cost"
+                  ? sortOrder === "asc"
+                    ? " 🔼"
+                    : " 🔽"
+                  : ""}
+              </th>
               <th>
                 Date
                 <input
@@ -482,7 +495,7 @@ const POOrderList = ({ user }) => {
           </thead>
           <tbody>
             {filteredPOOrders.map((order) => {
-              const { status} = getAggregatedStatus(order.id);
+              const { status } = getAggregatedStatus(order.id);
               const finalPrice = finalCost(order.id);
               return (
                 <tr key={order.id}>
@@ -650,7 +663,6 @@ const POOrderList = ({ user }) => {
 };
 
 export default POOrderList;
-
 
 // third set of code
 

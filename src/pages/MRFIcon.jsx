@@ -14,7 +14,7 @@ const MRFIcon = () => {
       user.role === "Admin" ||
       user.role === "Procurement" ||
       user.role === "Inventory" ||
-      user.role === "User"||
+      user.role === "User" ||
       user.role === "Sub-Admin"
     )
   )

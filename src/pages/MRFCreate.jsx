@@ -152,32 +152,41 @@ const MRFCreate = () => {
   // };
 
   const handleAddRow = () => {
-    setNewRows([...newRows, { component_type: "", specification: "", serial_number: "", checked: false }]);
+    setNewRows([
+      ...newRows,
+      {
+        component_type: "",
+        specification: "",
+        serial_number: "",
+        checked: false,
+      },
+    ]);
   };
-  
 
   const handleNewRowChange = (index, value) => {
     const [componentType, specification] = value.split("||");
-  
+
     // Count how many times this component is already selected
     const alreadySelectedCount = newRows.filter(
       (row) =>
         row.component_type === componentType &&
         row.specification === specification
     ).length;
-  
+
     const availableComponentSerials = availableRequests.filter(
       (item) =>
         item.component_type === componentType &&
         item.specification === specification &&
         item.status === "Available"
     );
-  
+
     if (alreadySelectedCount >= availableComponentSerials.length) {
-      showWarningToast("This component has been selected more than available quantity.");
+      showWarningToast(
+        "This component has been selected more than available quantity."
+      );
       return;
     }
-  
+
     const assignedSerials = newRows
       .filter(
         (row) =>
@@ -185,16 +194,16 @@ const MRFCreate = () => {
           row.specification === specification
       )
       .map((row) => row.serial_number);
-  
+
     const nextAvailable = availableComponentSerials.find(
       (item) => !assignedSerials.includes(item.serial_number)
     );
-  
+
     if (!nextAvailable) {
       showWarningToast("No more available serial numbers for this component.");
       return;
     }
-  
+
     const updatedRows = [...newRows];
     updatedRows[index] = {
       component_type: componentType,
@@ -407,7 +416,7 @@ const MRFCreate = () => {
                   ])
                 ).values()
               );
-            
+
               const selectedItem = availableRequests.find(
                 (item) => item.serial_number === row.serial_number
               );
@@ -422,7 +431,9 @@ const MRFCreate = () => {
                           ? `${row.component_type}||${row.specification}`
                           : ""
                       }
-                      onChange={(e) => handleNewRowChange(index, e.target.value)}
+                      onChange={(e) =>
+                        handleNewRowChange(index, e.target.value)
+                      }
                     >
                       <option value="">Select</option>
                       {[
@@ -522,13 +533,6 @@ const MRFCreate = () => {
 };
 
 export default MRFCreate;
-
-
-
-
-
-
-
 
 // // // src/pages/MRFCreate.jsx
 
@@ -1000,7 +1004,6 @@ export default MRFCreate;
 
 // export default MRFCreate;
 
-
 // import React, { useState, useEffect } from "react";
 // import { useNavigate } from "react-router-dom";
 // import config from "../Config"; // Import config for API endpoints
@@ -1207,7 +1210,7 @@ export default MRFCreate;
 //       );
 //       return {
 //         ...item,
-//         qty: row.qty, 
+//         qty: row.qty,
 //       };
 //     });
 //     const finalRows = [...selectedRows, ...additionalSelectedRows];
@@ -1393,7 +1396,7 @@ export default MRFCreate;
 //                   ])
 //                 ).values()
 //               );
-            
+
 //               const selectedItem = availableRequests.find(
 //                 (item) => item.serial_number === row.serial_number
 //               );
@@ -1476,7 +1479,6 @@ export default MRFCreate;
 //         </table>
 //       </div>
 
-      
 //       {popupVisible && (
 //         <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center" }}>
 //           <div style={{ background: "white", padding: "20px", borderRadius: "5px" }}>
@@ -1494,7 +1496,6 @@ export default MRFCreate;
 //           </div>
 //         </div>
 //       )}
-          
 
 //       <div style={{ alignSelf: "end", justifyContent: "end" }}>
 //         <button
@@ -1520,5 +1521,3 @@ export default MRFCreate;
 // };
 
 // export default MRFCreate;
-
-

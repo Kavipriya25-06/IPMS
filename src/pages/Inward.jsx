@@ -29,14 +29,12 @@ const Inward = () => {
     component_id: null,
   }); // State for new question
 
-
   const [filteredData, setFilteredData] = useState([]);
-  
+
   // Filters
   const [poIdFilter, setPoIdFilter] = useState("");
   const [vendorNameFilter, setVendorNameFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
-
 
   // Utility function to safely access nested fields
   const getNestedValue = (obj, keyPath, defaultValue = "Not Available") => {
@@ -500,36 +498,35 @@ const Inward = () => {
 
   ///////////
 
-    // Filtering logic
-    useEffect(() => {
-      let data = [...inwardData];
-  
-      if (poIdFilter.trim() !== "") {
-        data = data.filter(item =>
-          getNestedValue(item, "po_master.PO_id")
-            .toLowerCase()
-            .includes(poIdFilter.toLowerCase())
-        );
-      }
-  
-      if (vendorNameFilter.trim() !== "") {
-        data = data.filter(item =>
-          getNestedValue(item, "po_master.cart.vendor_name")
-            .toLowerCase()
-            .includes(vendorNameFilter.toLowerCase())
-        );
-      }
-  
-      if (dateFilter.trim() !== "") {
-        data = data.filter(item => {
-          const itemDate = new Date(item.date).toLocaleDateString();
-          return itemDate.includes(dateFilter);
-        });
-      }
-  
-      setFilteredData(data);
-    }, [poIdFilter, vendorNameFilter, dateFilter, inwardData]);
-  
+  // Filtering logic
+  useEffect(() => {
+    let data = [...inwardData];
+
+    if (poIdFilter.trim() !== "") {
+      data = data.filter((item) =>
+        getNestedValue(item, "po_master.PO_id")
+          .toLowerCase()
+          .includes(poIdFilter.toLowerCase())
+      );
+    }
+
+    if (vendorNameFilter.trim() !== "") {
+      data = data.filter((item) =>
+        getNestedValue(item, "po_master.cart.vendor_name")
+          .toLowerCase()
+          .includes(vendorNameFilter.toLowerCase())
+      );
+    }
+
+    if (dateFilter.trim() !== "") {
+      data = data.filter((item) => {
+        const itemDate = new Date(item.date).toLocaleDateString();
+        return itemDate.includes(dateFilter);
+      });
+    }
+
+    setFilteredData(data);
+  }, [poIdFilter, vendorNameFilter, dateFilter, inwardData]);
 
   ////////////////////
 
@@ -552,7 +549,7 @@ const Inward = () => {
       <table>
         <thead>
           <tr>
-          <th>
+            <th>
               PO_ID
               <br />
               <input
@@ -718,7 +715,6 @@ const Inward = () => {
 };
 
 export default Inward;
-
 
 //////////////
 
@@ -1699,6 +1695,3 @@ export default Inward;
 // };
 
 // export default Inward;
-
-
-

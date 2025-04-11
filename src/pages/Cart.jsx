@@ -236,28 +236,27 @@ const Cart = ({ user }) => {
     }
   };
 
-
   const handleRemoveFromCart = async (item) => {
     const confirmed = window.confirm(
       `Remove ${item.component_type} - ${item.component_specification} from cart?`
     );
     if (!confirmed) return;
-  
+
     try {
       //  Step 1: DELETE from cart
       const deleteRes = await fetch(`${config.apiBaseURL}/cart/${item.id}/`, {
         method: "DELETE",
       });
-  
+
       if (!deleteRes.ok) {
         showErrorToast("Failed to delete item from cart.");
         return;
       }
-  
+
       // Step 2: PATCH request_master to set cart_assign = false
       const requestFormatted = item.request_list_id; // e.g., "R_00001"
-      const requestMasterId = item.request_id;        // e.g., 3
-  
+      const requestMasterId = item.request_id; // e.g., 3
+
       if (requestFormatted && requestMasterId) {
         const patchRes = await fetch(
           `${config.apiBaseURL}/request_master/${requestFormatted}/${requestMasterId}/`,
@@ -267,13 +266,13 @@ const Cart = ({ user }) => {
             body: JSON.stringify({ cart_assign: false }),
           }
         );
-  
+
         if (!patchRes.ok) {
           const error = await patchRes.json();
           console.warn("Failed to patch request_master:", error);
         }
       }
-  
+
       showSuccessToast("Removed from cart successfully.");
       fetchCartItems(); //  Refresh cart UI
     } catch (error) {
@@ -281,9 +280,6 @@ const Cart = ({ user }) => {
       showErrorToast("Error removing item from cart.");
     }
   };
-  
-
-
 
   return (
     <div>
@@ -299,13 +295,16 @@ const Cart = ({ user }) => {
         <h2>Cart</h2>
         {cartItems.length === 0 ||
         !cartItems.some((group) =>
-          Object.values(group.requests_by_date || {}).some((requestsGroupedByStatus) =>
-            Object.values(requestsGroupedByStatus || {}).some((requests) =>
-              requests.some((item) => !item.order_placed)
-            )
+          Object.values(group.requests_by_date || {}).some(
+            (requestsGroupedByStatus) =>
+              Object.values(requestsGroupedByStatus || {}).some((requests) =>
+                requests.some((item) => !item.order_placed)
+              )
           )
         ) ? (
-          <p style={{ fontWeight: "bold", fontSize: "18px" }}>Your cart is empty.</p>
+          <p style={{ fontWeight: "bold", fontSize: "18px" }}>
+            Your cart is empty.
+          </p>
         ) : (
           cartItems
             .filter((group) =>
@@ -389,21 +388,22 @@ const Cart = ({ user }) => {
                                           </td>
 
                                           <td>
-  <button
-    onClick={() => handleRemoveFromCart(item)}
-    style={{
-      backgroundColor: "#ff4d4f",
-      color: "white",
-      border: "none",
-      padding: "5px 10px",
-      cursor: "pointer",
-      borderRadius: "5px",
-    }}
-  >
-    Remove
-  </button>
-</td>
-
+                                            <button
+                                              onClick={() =>
+                                                handleRemoveFromCart(item)
+                                              }
+                                              style={{
+                                                backgroundColor: "#ff4d4f",
+                                                color: "white",
+                                                border: "none",
+                                                padding: "5px 10px",
+                                                cursor: "pointer",
+                                                borderRadius: "5px",
+                                              }}
+                                            >
+                                              Remove
+                                            </button>
+                                          </td>
                                         </tr>
                                       ))}
                                   </tbody>

@@ -172,7 +172,6 @@
 
 // export default Mrf;
 
-
 ////////////////////////////////////////////////////////////  Filter by date and status | Approval status
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -184,10 +183,9 @@ const Mrf = () => {
   const [projectDetails, setProjectDetails] = useState([]);
   const [projectName, setProjectName] = useState("");
 
-   // Filter states
-   const [dateFilter, setDateFilter] = useState("");
-   const [statusFilter, setStatusFilter] = useState("");
- 
+  // Filter states
+  const [dateFilter, setDateFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
   useEffect(() => {
     fetchMRFs();
@@ -223,13 +221,11 @@ const Mrf = () => {
   };
 
   const filteredData = mrfData.filter((item) => {
-    const dateMatch = dateFilter
-      ? item.create_date === dateFilter
-      : true;
+    const dateMatch = dateFilter ? item.create_date === dateFilter : true;
     const statusMatch = statusFilter
-      ? (statusFilter === "Approved"
-          ? item.approval === true
-          : item.approval === false)
+      ? statusFilter === "Approved"
+        ? item.approval === true
+        : item.approval === false
       : true;
     return dateMatch && statusMatch;
   });
@@ -256,7 +252,7 @@ const Mrf = () => {
             <th>MRF ID</th>
             <th>Name</th>
             <th>
-              Create Date  
+              Create Date
               <input
                 type="date"
                 value={dateFilter}
