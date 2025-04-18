@@ -8,6 +8,7 @@ import CustomMessagebox from "./CustomMessageBox.jsx";
 import config from "../Config"; // Import config for API endpoints
 import Add from "../assets/Add.png";
 import Cancel from "../assets/cancel.png";
+import Back from "../assets/Back.png";
 
 
 import {
@@ -728,6 +729,14 @@ const VendorDetails = () => {
       <h4>
         Vendor Data for {getVendorName(vendorId)} - {vendorId}
       </h4>
+      
+      <div style={{display: "flex",justifyContent: "space-between",alignItems: "center",marginTop: "10px",}}>
+
+      <button onClick={handleBackClick} style={{background: "transparent",border: "none",cursor: "pointer",padding: "4px",}}
+        title="Back to vendor List">
+       <img src= {Back} alt="Back to Vendor list "style={{ width: "20px", height: "20px" }}/>
+      </button>
+
       <img
         src={showAddProductForm ? Cancel : Add}
         alt={showAddProductForm ? "Cancel New Product" : "Add New Product"}
@@ -735,8 +744,7 @@ const VendorDetails = () => {
         style={{ width: "24px", height: "24px", cursor: "pointer" }}
         onClick={() => setShowAddProductForm(!showAddProductForm)}
       />
-
-
+      </div>
 
       {/* Render CustomMessagebox when showMessageBox is true */}
       {showMessageBox && (
@@ -1137,6 +1145,8 @@ const VendorDetails = () => {
         </div>
       )}
 
+  
+
       <table>
         <thead>
           <tr>
@@ -1320,10 +1330,16 @@ const VendorDetails = () => {
           })}
         </tbody>
       </table>
-      <button onClick={handleBackClick}>Back to Vendor List</button>
+  
       <ToastContainerComponent />
     </div>
   );
 };
 
 export default VendorDetails;
+
+
+//  <button onClick={handleNewRequest}style={{marginTop: "10px",background: "transparent",border: "none",cursor: "pointer",padding: "4px",}}
+//       title="New Request">
+//       <img src= {Add} alt="New Request"style={{ width: "20px", height: "20px" }}/>
+//       </button>

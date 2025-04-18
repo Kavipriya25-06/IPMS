@@ -32,6 +32,8 @@ const Inventory = () => {
   const [tempSpecification, setTempSpecification] = useState(""); // temp specification input
   const [sortField, setSortField] = useState("");
   const [sortOrder, setSortOrder] = useState("asc"); // "asc" or "desc"
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+
 
   useEffect(() => {
     fetchInventoryData();
@@ -212,51 +214,31 @@ const Inventory = () => {
   };
 
   const handleGenerateReport = async () => {
-    const validSerialNumbers = filteredInventory.map(
-      (item) => item.serial_number
-    );
-
+    const validSerialNumbers = filteredInventory.map(item => item.serial_number);
+  
     if (validSerialNumbers.length === 0) {
       alert("No valid inventory items available to generate the report.");
       return;
     }
 
-    try {
-      const fetchDetailsPromises = validSerialNumbers.map(async (serial) => {
-        const response = await fetch(
-          `${config.apiBaseURL}/inventory_details/${serial}/`
-        );
-
-        if (!response.ok) {
-          console.error(`Failed to fetch details for ${serial}`);
-          return {
-            Serial_Number: serial,
-            Component_ID: "N/A",
-            Component_Type: "N/A",
-            Vendor_Name: "N/A",
-            Category: "N/A",
-            Specification: "N/A",
-            UOM: "N/A",
-            Create_Date: "N/A",
-            Status: "N/A",
-            Price: "N/A",
-            SKU_Number_Inventory: "N/A",
-            Request_ID_Assign: "N/A",
-            PO_ID: "N/A",
-            Cart_ID: "N/A",
-            GST: "N/A",
-            GSTN: "N/A",
-            Request_ID: "N/A",
-            Requester_Name: "N/A",
-            BOM_ID: "N/A",
-            BOM_Name: "N/A",
-            Project_ID: "N/A",
-            Project_Name: "N/A",
-          };
-        }
-
+    setIsGeneratingReport(true);
+  
+    const formatPrice = (value) =>
+      value !== undefined && value !== null
+        ? `₹${parseFloat(value).toFixed(2)}`
+        : "N/A";
+  
+    const formatPercentage = (value) =>
+      value !== undefined && value !== null
+        ? `${parseFloat(value).toFixed(2)}%`
+        : "N/A";
+  
+    const fetchInventoryDetails = async (serial) => {
+      try {
+        const response = await fetch(`${config.apiBaseURL}/inventory_details/${serial}/`);
+        if (!response.ok) throw new Error();
         const data = await response.json();
-
+  
         return {
           Serial_Number: serial,
           Component_ID: data.inventory_item?.component_id || "N/A",
@@ -267,42 +249,81 @@ const Inventory = () => {
           UOM: data.inventory_item?.UOM || "N/A",
           Create_Date: data.inventory_item?.create_date || "N/A",
           Status: data.inventory_item?.status || "N/A",
-          Price: formatPrice(data.inventory_item?.price), // Format price correctly
-          SKU_Number_Inventory:
-            data.inventory_item?.sku_number_inventory || "N/A",
+          Price: formatPrice(data.inventory_item?.price),
+          SKU_Number_Inventory: data.inventory_item?.sku_number_inventory || "N/A",
           Request_ID_Assign: data.inventory_item?.Request_id_assign || "N/A",
-
-          // PO Master Details
           PO_ID: data.po_master?.[0]?.PO_id || "N/A",
           Cart_ID: data.po_master?.[0]?.cart_id || "N/A",
-
-          // Cart Details
-          GST: formatPercentage(data.cart?.[0]?.GST), // Format GST correctly
+          GST: formatPercentage(data.cart?.[0]?.GST),
           GSTN: data.cart?.[0]?.gstn || "N/A",
-
-          // Request List Details
           Request_ID: data.request_list?.[0]?.request_id || "N/A",
           Requester_Name: data.request_list?.[0]?.requester_name || "N/A",
           BOM_ID: data.request_list?.[0]?.bom || "N/A",
           BOM_Name: data.request_list?.[0]?.bom_name || "N/A",
-
-          // Project Details
           Project_ID: data.project?.[0]?.project_id || "N/A",
           Project_Name: data.project?.[0]?.project_name || "N/A",
         };
-      });
-
-      const reportData = await Promise.all(fetchDetailsPromises);
-
-      if (reportData.length > 0) {
-        generateCSV(reportData);
+      } catch {
+        return {
+          Serial_Number: serial,
+          Component_ID: "N/A",
+          Component_Type: "N/A",
+          Vendor_Name: "N/A",
+          Category: "N/A",
+          Specification: "N/A",
+          UOM: "N/A",
+          Create_Date: "N/A",
+          Status: "N/A",
+          Price: "N/A",
+          SKU_Number_Inventory: "N/A",
+          Request_ID_Assign: "N/A",
+          PO_ID: "N/A",
+          Cart_ID: "N/A",
+          GST: "N/A",
+          GSTN: "N/A",
+          Request_ID: "N/A",
+          Requester_Name: "N/A",
+          BOM_ID: "N/A",
+          BOM_Name: "N/A",
+          Project_ID: "N/A",
+          Project_Name: "N/A",
+        };
+      }
+    };
+  
+    const chunkArray = (array, size) => {
+      const chunks = [];
+      for (let i = 0; i < array.length; i += size) {
+        chunks.push(array.slice(i, i + size));
+      }
+      return chunks;
+    };
+  
+    const batchSize = 200; // Increase batch size if your backend supports it
+    const serialChunks = chunkArray(validSerialNumbers, batchSize);
+    let allReportData = [];
+  
+    try {
+      for (const chunk of serialChunks) {
+        // Run each chunk concurrently
+        const results = await Promise.all(chunk.map(fetchInventoryDetails));
+        allReportData.push(...results);
+      }
+  
+      if (allReportData.length > 0) {
+        generateCSV(allReportData);
       } else {
         alert("No report data available.");
       }
     } catch (error) {
       console.error("Error generating report:", error);
+      showErrorToast("Report generation failed.");
+    }finally {
+      setIsGeneratingReport(false); // Hide the popup when done
     }
   };
+  
+  
 
   // Function to format price values (₹, commas, two decimal places)
   const formatPrice = (value) => {
@@ -763,6 +784,21 @@ const Inventory = () => {
           </tr>
         </tbody>
       </table>
+
+      {isGeneratingReport && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <p>Generating Report... Please wait. This may take a few minutes.</p>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        .modal-overlay {position: fixed; top: 0; left: 0;
+          right: 0; bottom: 0;background:rgba(0, 0, 0, 0.4);display: flex;justify-content: center;align-items: center;z-index: 999;}
+
+        .modal-content {background: #fff;padding: 20px 40px;border-radius: 8px;box-shadow: 0 0 12px rgba(0, 0, 0, 0.25);font-size: 18px;font-weight: bold;color: #333;}
+      `}</style>
 
       {returnModal && (
         <div className="modal">

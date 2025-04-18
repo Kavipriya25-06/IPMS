@@ -5,7 +5,9 @@ import config from "../Config"; // Ensure this file exists
 import {
   showSuccessToast,
   showErrorToast,
+  showInfoToast,
   showWarningToast,
+  ToastContainerComponent,
 } from "./Toastify.jsx"; // Import Toastify utilities
 
 const Mrfrequest = () => {
@@ -130,6 +132,7 @@ const Mrfrequest = () => {
   
       // Assign the first available serial number
       await assignSerial(availableOptions[0].serial_number, MRFListId);
+      showSuccessToast("Serial number assigned successfully.");
     } catch (error) {
       console.error("Error during assignment:", error);
       showErrorToast("Error during direct assignment process");
@@ -236,7 +239,7 @@ const assignSerial = async (serialNumber, MRFListId) => {
     );
 
     setShowSerialPopup(false);
-    showSuccessToast(`Serial ${serialNumber} assigned successfully`);
+    // showSuccessToast(`Serial ${serialNumber} assigned successfully`);
   } catch (error) {
     console.error("Error during assignment:", error);
     showErrorToast("Error while assigning serial number");
@@ -350,6 +353,8 @@ const assignSerial = async (serialNumber, MRFListId) => {
       setShowPopup(false);
       setReportedBy("");
       setRemarks("");
+
+      showSuccessToast("Component returned and status updated successfully.");
     } catch (error) {
       console.error("Error updating return status:", error);
     }
@@ -622,7 +627,7 @@ const assignSerial = async (serialNumber, MRFListId) => {
     </button>
   </div>
 )} */}
-
+      <ToastContainerComponent />
     </div>
   );
 };

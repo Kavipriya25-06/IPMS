@@ -25,6 +25,8 @@ const POOrderMaster = ({ user }) => {
   const [showPopup, setShowPopup] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedStatus, setSelectedStatus] = useState(null);
+  const [inwardLoadingIds, setInwardLoadingIds] = useState([]);
+
 
   // The user object is now passed as a prop
   const isAdmin = user?.role === "Admin";
@@ -297,6 +299,12 @@ const POOrderMaster = ({ user }) => {
   // };
 
   const handleInward = async (item) => {
+    const componentKey = item.component_id;
+
+    // Prevent if already processing this component
+    if (inwardLoadingIds.includes(componentKey)) return;
+
+    setInwardLoadingIds((prev) => [...prev, componentKey]);
     try {
       const {
         id,
@@ -445,7 +453,10 @@ const POOrderMaster = ({ user }) => {
     } catch (error) {
       console.error("Error in handleInward function:", error);
       alert("An error occurred while performing the inward operation.");
-    }
+    }finally {
+      setTimeout(() => {
+        setInwardLoadingIds((prev) => prev.filter((id) => id !== componentKey));
+      }, 1000); }
   };
 
   useEffect(() => {
@@ -584,15 +595,19 @@ const POOrderMaster = ({ user }) => {
                   </td>
                   {(isAdmin || isProcurement) && (
                     <td>
-                      <button
+                     <button
                         onClick={() => handleInward(po.cart_details)}
                         disabled={
-                          !po.inward_status || // Ensure inward_status is true
-                          orderStatus.received_status !== "Received" // Only enable if received status is "Received"
+                          inwardLoadingIds.includes(po.cart_details.component_id) || // actively processing
+                          orderStatus.received_status !== "Received" ||              // not yet received
+                          !po.inward_status                                           // already inwarded
                         }
                       >
-                        Inward
+                        {inwardLoadingIds.includes(po.cart_details.component_id)
+                          ? "Processing..."
+                          : "Inward"}
                       </button>
+
                     </td>
                   )}
                 </tr>

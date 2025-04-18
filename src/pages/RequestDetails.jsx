@@ -37,15 +37,15 @@ const RequestDetails = ({ user }) => {
   const [requestStatus, setRequestStatus] = useState([]);
   const [bomName, setBomName] = useState([]);
   const [selectedRequestDetailId, setSelectedRequestDetailId] = useState(null);
-
+  const [requestMaster, setRequestMaster] = useState([]);
 
   // The user object is now passed as a prop
   const isAdmin = user?.role === "Admin";
   const isProcurement = user?.role === "Procurement";
 
   useEffect(() => {
-    fetchPriceViewData();
     fetchRequestDetails();
+    fetchPriceViewData();
     fetchInventoryData();
     fetchVendorList();
     fetchRequestStatus();
@@ -59,9 +59,20 @@ const RequestDetails = ({ user }) => {
     }
   }, [details]);
 
+  // useEffect(() => {
+  //   if (details.length && priceViewData.length) {
+  //     const updatedDetails = mergePriceWithRequests(details, priceViewData);
+  //     setDetails(updatedDetails);
+  //     console.log("Updated details", updatedDetails);
+  //   }
+    
+  // }, [priceViewData]);
+
+ 
+
   const fetchRequestDetails = async () => {
     try {
-      const response = await fetch(`${config.apiBaseURL}/request_master/`);
+      const response = await fetch(`${config.apiBaseURL}/price_view_new/`);
       const data = await response.json();
       const filteredDetails = data.filter(
         (detail) => String(detail.request_id) === String(requestId)
@@ -179,48 +190,49 @@ const RequestDetails = ({ user }) => {
       // alert("An error occurred while fetching cart items.");
     }
   };
-  
+
   const handleOrder = async (detail) => {
     if (!detail.vendor_name) {
       setMessageBoxContent("Please select a vendor for this component.");
       setShowMessageBox(true);
       return;
     }
-  
+
+    const requestmasterId = detail.id;
     const selectedVendor = vendorNames.find(
       (vendor) => vendor.vendor_name === detail.vendor_name
     );
     const vendor_id = selectedVendor ? selectedVendor.vendor_id : null;
     const vendor_gstn = selectedVendor ? selectedVendor.gstn : null;
-  
+
     if (!vendor_id) {
       alert("Invalid vendor selected.");
       return;
     }
-  
+
     const inputQuantity = prompt(
       `Enter the quantity (Max: ${detail.qty}):`,
       detail.qty
     );
-  
+
     if (!inputQuantity || isNaN(inputQuantity) || inputQuantity <= 0) {
       alert("Invalid quantity entered.");
       return;
     }
-  
+
     const enteredQuantity = parseInt(inputQuantity, 10);
-  
+
     if (enteredQuantity > detail.qty) {
       alert(`The entered quantity exceeds available quantity (${detail.qty}).`);
       return;
     }
-  
+
     const price = detail.price;
     const tax = detail.tax;
     const gstAmount = (price * tax) / 100;
     const totalCost =
       Math.round((price + gstAmount) * enteredQuantity * 100) / 100;
-  
+
     try {
       //  FULL QUANTITY FLOW (no split)
       if (enteredQuantity === detail.qty) {
@@ -242,20 +254,20 @@ const RequestDetails = ({ user }) => {
           request_list_id: detail.request_id,
           parent_id: null, // No split, so no parent_id
         };
-  
+
         const cartResponse = await fetch(`${config.apiBaseURL}/cart/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(orderData),
         });
-  
+
         if (!cartResponse.ok) {
           const error = await cartResponse.json();
           console.error("Failed to add full to cart:", error);
           showErrorToast("Failed to add to cart.");
           return;
         }
-  
+
         //  Patch original to mark as carted
         await fetch(
           `${config.apiBaseURL}/request_master/${detail.request_id}/${detail.id}/`,
@@ -266,7 +278,7 @@ const RequestDetails = ({ user }) => {
               cart_assign: true,
               assign: false,
               status: "Assigned",
-              vendor:detail.vendor_id,
+              vendor: detail.vendor_id,
             }),
           }
         );
@@ -288,7 +300,7 @@ const RequestDetails = ({ user }) => {
           cart_assign: true,
           status: "Assigned",
         };
-  
+
         const requestMasterResponse = await fetch(
           `${config.apiBaseURL}/request_master/${detail.request_id}/`,
           {
@@ -297,17 +309,17 @@ const RequestDetails = ({ user }) => {
             body: JSON.stringify(newRequestPayload),
           }
         );
-  
+
         if (!requestMasterResponse.ok) {
           const error = await requestMasterResponse.json();
           console.error("Failed to POST to request_master:", error);
           showErrorToast("Failed to create request_master entry.");
           return;
         }
-  
+
         const requestMasterData = await requestMasterResponse.json();
         const newRequestMasterId = requestMasterData.id;
-  
+
         const orderData = {
           component_id: detail.component_id,
           component_type: detail.component_type,
@@ -326,20 +338,20 @@ const RequestDetails = ({ user }) => {
           request_list_id: requestMasterData.request,
           parent_id: detail.id,
         };
-  
+
         const cartResponse = await fetch(`${config.apiBaseURL}/cart/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(orderData),
         });
-  
+
         if (!cartResponse.ok) {
           const cartError = await cartResponse.json();
           console.error("Failed to POST to cart:", cartError);
           showErrorToast("Failed to add to cart.");
           return;
         }
-  
+
         //  PATCH the original request_master to reduce qty
         const remainingQty = detail.qty - enteredQuantity;
         const patchPayload = {
@@ -348,7 +360,7 @@ const RequestDetails = ({ user }) => {
           cart_assign: false,
           assign: false,
         };
-  
+
         await fetch(
           `${config.apiBaseURL}/request_master/${detail.request_id}/${detail.id}/`,
           {
@@ -358,20 +370,31 @@ const RequestDetails = ({ user }) => {
           }
         );
       }
-  
+
       //  Auto-refresh
-      if (typeof fetchRequestDetails === "function") fetchRequestDetails();
+      if (typeof fetchRequestDetails === "function") {fetchRequestDetails(), fetchPriceViewData()}; 
+      // if (typeof fetchPriceViewData === "function") fetchPriceViewData();
+      // setDetails((prevDetails) =>
+      //   prevDetails.map((detail) =>
+      //     detail.id === requestmasterId
+      //       ? {
+      //           ...detail,
+      //           cart_assign: true,
+      //         }
+      //       : detail
+      //   )
+      // );
       if (typeof fetchCartItems === "function") fetchCartItems();
-  
+
       showSuccessToast(`Successfully added ${enteredQuantity} to cart.`);
+      console.log("The details after adding to cart",details);
     } catch (error) {
       console.error("Error during order process:", error);
       showErrorToast("An error occurred while processing the order.");
     }
   };
-  
-  
-  const handleAssign = async (componentId, qty,requestDetailId) => {
+
+  const handleAssign = async (componentId, qty, requestDetailId) => {
     const componentData = inventoryData[componentId];
 
     if (!componentData) {
@@ -401,7 +424,11 @@ const RequestDetails = ({ user }) => {
     }
   };
 
-  const handleUnassign = async (componentId, serialNumbersToDereserve, requestDetailId) => {
+  const handleUnassign = async (
+    componentId,
+    serialNumbersToDereserve,
+    requestDetailId
+  ) => {
     try {
       const componentData = inventoryData[componentId];
 
@@ -460,7 +487,8 @@ const RequestDetails = ({ user }) => {
 
       // Get the request details for this component
       const selectedDetail = details.find(
-        (detail) => detail.component_id === componentId && detail.id === requestDetailId
+        (detail) =>
+          detail.component_id === componentId && detail.id === requestDetailId
       );
 
       if (!selectedDetail || !selectedDetail.id) {
@@ -554,11 +582,12 @@ const RequestDetails = ({ user }) => {
         console.error("Request ID not found for the selected component.");
         alert(
           "Error: Unable to find the request ID for the selected component."
-        );65
+        );
+        65;
         return;
       }
 
-      const  id  = selectedRequestDetailId;
+      const id = selectedRequestDetailId;
       const requestId = selectedDetail.request_id;
 
       for (const serialNumber of selectedSerialNumbers) {
@@ -681,6 +710,30 @@ const RequestDetails = ({ user }) => {
     }
   };
 
+  // Here we place the code to update default vendor
+
+  const mergePriceWithRequests = (details, priceViewData) => {
+    return details.map((item) => {
+      const matched = priceViewData.find(
+        (p) =>
+          p.vendor_id === item.vendor_id &&
+          p.component_type?.toLowerCase().trim() ===
+            item.component_type?.toLowerCase().trim() &&
+          p.component_specification?.toLowerCase().trim() ===
+            item.component_specification?.toLowerCase().trim()
+      );
+
+      return {
+        ...item,
+        vendor_name: matched?.vendor_name ?? item.vendor_name ?? null,
+        price: matched?.latest_price ?? item.price ?? null,
+        tax: matched?.latest_tax ?? item.tax ?? null,
+      };
+    });
+  };
+
+  // console.log("Details from new code", details);
+
   // handle place order button version 2
 
   const getFirstItemId = (group) => {
@@ -764,8 +817,8 @@ const RequestDetails = ({ user }) => {
               ...detail,
               vendor_id: vendorId,
               vendor_name: vendorName,
-              price, // Update price here
-              tax,
+              price: price, // Update price here
+              tax: tax,
             }
           : detail
       )
@@ -1023,7 +1076,7 @@ const RequestDetails = ({ user }) => {
                     assignedComponents[detail.component_id] || detail.qty === 0;
 
                   return (
-                    <tr key={detail.component_id}>
+                    <tr key={`${detail.id}-${detail.component_id}`}>
                       <td>
                         {requestStatus.find(
                           (status) => status.request_id === detail.id
@@ -1034,46 +1087,56 @@ const RequestDetails = ({ user }) => {
                       <td>{detail.component_specification}</td>
                       <td>{detail.unit_of_measurement}</td>
                       <td>
-  {detail.cart_assign ? (
-    <span style={{ color: "#555", fontWeight: "bold", fontStyle: "italic" }}>
-      {
-        detail.vendor_name ||
-        vendorNames.find((v) => v.vendor_id === detail.vendor_id)
-          ?.vendor_name ||
-        "N/A"
-      }
-    </span>
-  ) : detail.vendor_name ? (
-    <span
-      style={{ cursor: "pointer", textDecoration: "underline" }}
-      onClick={() =>
-        handleVendorSelection(
-          detail.component_type,
-          detail.component_specification,
-          detail.component_id
-        )
-      }
-    >
-      {detail.vendor_name}
-    </span>
-  ) : (
-    <span
-      style={{ cursor: "pointer", textDecoration: "underline" }}
-      onClick={() =>
-        handleVendorSelection(
-          detail.component_type,
-          detail.component_specification,
-          detail.component_id
-        )
-      }
-    >
-      {
-        vendorNames.find((vendor) => vendor.vendor_id === detail.vendor_id)
-          ?.vendor_name || ""
-      }
-    </span>
-  )}
-</td>
+                        {detail.cart_assign ? (
+                          <span
+                            style={{
+                              color: "#555",
+                              fontWeight: "bold",
+                              fontStyle: "italic",
+                            }}
+                          >
+                            {detail.vendor_name ||
+                              vendorNames.find(
+                                (v) => v.vendor_id === detail.vendor_id
+                              )?.vendor_name ||
+                              "N/A"}
+                          </span>
+                        ) : detail.vendor_name ? (
+                          <span
+                            style={{
+                              cursor: "pointer",
+                              textDecoration: "underline",
+                            }}
+                            onClick={() =>
+                              handleVendorSelection(
+                                detail.component_type,
+                                detail.component_specification,
+                                detail.component_id
+                              )
+                            }
+                          >
+                            {detail.vendor_name}
+                          </span>
+                        ) : (
+                          <span
+                            style={{
+                              cursor: "pointer",
+                              textDecoration: "underline",
+                            }}
+                            onClick={() =>
+                              handleVendorSelection(
+                                detail.component_type,
+                                detail.component_specification,
+                                detail.component_id
+                              )
+                            }
+                          >
+                            {vendorNames.find(
+                              (vendor) => vendor.vendor_id === detail.vendor_id
+                            )?.vendor_name || ""}
+                          </span>
+                        )}
+                      </td>
 
                       {(isAdmin || isProcurement) && (
                         <td style={{ textAlign: "right" }}>
@@ -1148,7 +1211,11 @@ const RequestDetails = ({ user }) => {
                               }}
                               onClick={() =>
                                 detail.approve &&
-                                handleUnassign(detail.component_id, detail.qty, detail.id)
+                                handleUnassign(
+                                  detail.component_id,
+                                  detail.qty,
+                                  detail.id
+                                )
                               }
                               disabled={!detail.assign || !detail.approve} // Disabled if not approved
                             >
@@ -1176,7 +1243,11 @@ const RequestDetails = ({ user }) => {
                               }}
                               onClick={() =>
                                 detail.approve &&
-                                handleAssign(detail.component_id, detail.qty, detail.id)
+                                handleAssign(
+                                  detail.component_id,
+                                  detail.qty,
+                                  detail.id
+                                )
                               }
                               disabled={
                                 availableQty < detail.qty ||

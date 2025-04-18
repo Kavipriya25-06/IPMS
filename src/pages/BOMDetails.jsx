@@ -473,6 +473,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import config from "../Config"; // Import config for API endpoints
 import DeleteIcon from "../assets/Delete.png"; //  
 import AddIcon from "../assets/Add.png";
+import Back from "../assets/Back.png";
 
 
 
@@ -768,10 +769,19 @@ const handleShowLatestPrice = (productId) => {
           <p>
             <strong>BOM ID:</strong> {selectedBom.bom_id}
           </p>
-          <button onClick={() => setShowAddComponentForm(true)} style={{marginTop: "10px",background: "transparent",border: "none",cursor: "pointer"}}
-          title="Add Component">
-            <img src={AddIcon} alt="" style={{width:"20px",height:"20px"}}/>
-          </button>
+
+          <div style={{display: "flex",justifyContent: "space-between",alignItems: "center",marginTop: "10px",}}>
+
+            <button onClick={() => navigate("/bom")} style={{background: "transparent",border: "none",cursor: "pointer",padding: "4px",}}
+            title="Back to BOM List">
+            <img src= {Back} alt="Back to BOM list "style={{ width: "20px", height: "20px" }}/>
+            </button>
+
+            <button onClick={() => setShowAddComponentForm(true)} style={{background: "transparent",border: "none",cursor: "pointer" ,padding: "4px",}}
+            title="Add Component">
+              <img src={AddIcon} alt="" style={{width:"20px",height:"20px"}}/>
+            </button>
+          </div>
 
           {showAddComponentForm && (
             <div style={{ marginTop: "20px" }}>
@@ -1003,26 +1013,10 @@ const handleShowLatestPrice = (productId) => {
          
         </>
       )}
-
-      
-
-      <button
-        onClick={() => navigate("/bom")}
-        // style={{
-        //   marginTop: "20px",
-        //   padding: "10px 20px",
-        //   // backgroundColor: "#6c757d",
-        //   // color: "#fff",
-        //   border: "none",
-        //   borderRadius: "5px",
-        //   cursor: "pointer",
-        // }}
-      >
-        Back to BOM List
-      </button>
       <ToastContainerComponent />
     </div>
   );
 };
 
 export default BOMDetails;
+
