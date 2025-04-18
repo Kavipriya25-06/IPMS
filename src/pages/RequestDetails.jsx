@@ -37,7 +37,10 @@ const RequestDetails = ({ user }) => {
   const [requestStatus, setRequestStatus] = useState([]);
   const [bomName, setBomName] = useState([]);
   const [selectedRequestDetailId, setSelectedRequestDetailId] = useState(null);
+<<<<<<< HEAD
   const [requestMaster, setRequestMaster] = useState([]);
+=======
+>>>>>>> 03bac4ed13bda8d156d01457d9d90d0cb407be2c
 
   // The user object is now passed as a prop
   const isAdmin = user?.role === "Admin";
@@ -198,7 +201,10 @@ const RequestDetails = ({ user }) => {
       return;
     }
 
+<<<<<<< HEAD
     const requestmasterId = detail.id;
+=======
+>>>>>>> 03bac4ed13bda8d156d01457d9d90d0cb407be2c
     const selectedVendor = vendorNames.find(
       (vendor) => vendor.vendor_name === detail.vendor_name
     );

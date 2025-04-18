@@ -306,7 +306,6 @@ import config from "../Config"; // API Configuration
 import AddIcon from "../assets/Add.png";
 import CancelIcon from "../assets/cancel.png";
 
-
 const ProjectList = () => {
   const [projects, setProjects] = useState([]);
   const [newProject, setNewProject] = useState({
@@ -352,7 +351,12 @@ const ProjectList = () => {
       if (response.ok) {
         const addedProject = await response.json();
         setProjects([...projects, addedProject]); // Update list
-        setNewProject({ project_name: "", description: "", start_date: "", project_type: "" }); // Reset form
+        setNewProject({
+          project_name: "",
+          description: "",
+          start_date: "",
+          project_type: "",
+        }); // Reset form
         setShowAddForm(false); // Hide form
       } else {
         console.error("Failed to add project.");
@@ -366,16 +370,16 @@ const ProjectList = () => {
     const order = sortField === field && sortOrder === "asc" ? "desc" : "asc";
     setSortField(field);
     setSortOrder(order);
-  
+
     const sorted = [...projects].sort((a, b) => {
       const aVal = a[field];
       const bVal = b[field];
-  
+
       if (aVal < bVal) return order === "asc" ? -1 : 1;
       if (aVal > bVal) return order === "asc" ? 1 : -1;
       return 0;
     });
-  
+
     setProjects(sorted);
   };
 
@@ -400,7 +404,6 @@ const ProjectList = () => {
           style={{ width: "20px", height: "20px" }}
         />
       </button>
-
 
       {showAddForm && (
         <form onSubmit={handleAddProject}>
@@ -445,7 +448,7 @@ const ProjectList = () => {
           <button type="submit">Add Project</button>
         </form>
       )}
-      
+
       <table
         style={{
           width: "100%",
@@ -455,8 +458,20 @@ const ProjectList = () => {
       >
         <thead>
           <tr style={{ backgroundColor: "#f4f4f4" }}>
-          <th onClick={() => handleSort("project_id")} style={{ textDecoration: "underline", cursor: "pointer", padding: "10px" }}>
-              Project ID {sortField === "project_id" ? (sortOrder === "asc" ? " 🔼" : " 🔽") : ""}
+            <th
+              onClick={() => handleSort("project_id")}
+              style={{
+                textDecoration: "underline",
+                cursor: "pointer",
+                padding: "10px",
+              }}
+            >
+              Project ID{" "}
+              {sortField === "project_id"
+                ? sortOrder === "asc"
+                  ? " 🔼"
+                  : " 🔽"
+                : ""}
             </th>
             <th style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>
               Project Name
@@ -464,8 +479,20 @@ const ProjectList = () => {
             <th style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>
               Description
             </th>
-            <th onClick={() => handleSort("start_date")} style={{ textDecoration: "underline", cursor: "pointer", padding: "10px" }}>
-              Start Date {sortField === "start_date" ? (sortOrder === "asc" ? " 🔼" : " 🔽") : ""}
+            <th
+              onClick={() => handleSort("start_date")}
+              style={{
+                textDecoration: "underline",
+                cursor: "pointer",
+                padding: "10px",
+              }}
+            >
+              Start Date{" "}
+              {sortField === "start_date"
+                ? sortOrder === "asc"
+                  ? " 🔼"
+                  : " 🔽"
+                : ""}
             </th>
             <th style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>
               Project Type
@@ -505,7 +532,6 @@ const ProjectList = () => {
           )}
         </tbody>
       </table>
-
     </div>
   );
 };

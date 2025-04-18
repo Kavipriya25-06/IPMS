@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import config from "../Config"; 
+import config from "../Config";
 
 const ResetPassword = () => {
   const { id, token } = useParams(); // from URL

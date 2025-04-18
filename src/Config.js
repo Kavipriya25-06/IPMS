@@ -1,8 +1,13 @@
 
 // src/config.js
 const config = {
-     apiBaseURL: "http://127.0.0.1:8000",
+<<<<<<< HEAD
+     //apiBaseURL: "http://127.0.0.1:8000",
     //apiBaseURL: "http://148.135.138.195:8000",
+=======
+    // apiBaseURL: "http://127.0.0.1:8000",
+    apiBaseURL: "http://148.135.138.195:8000",
+>>>>>>> 03bac4ed13bda8d156d01457d9d90d0cb407be2c
     endpoints: {
       // Admin endpoint
       admin: "/admin/",

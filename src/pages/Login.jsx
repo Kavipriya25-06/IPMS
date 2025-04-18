@@ -28,17 +28,17 @@ const Login = () => {
       const response = await fetch(`${config.apiBaseURL}/register/`);
       const users = await response.json();
       const user = users.find((u) => u.email === email);
-  
+
       if (!user) {
         setError("Email not found.");
         return;
       }
-  
+
       if (!user.status) {
         setError("Your account is inactive. Please contact admin.");
         return;
       }
-  
+
       const success = await login(email, password);
       if (success) {
         navigate("/"); // Redirect to homepage on successful login
@@ -55,18 +55,20 @@ const Login = () => {
       setError("Please enter your email.");
       return;
     }
-  
+
     try {
       const response = await fetch(`${config.apiBaseURL}/forgot-password/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-  
+
       const data = await response.json();
-  
+
       if (response.ok) {
-        showSuccessToast("Success! You can now change your password through the link sent to your email.");
+        showSuccessToast(
+          "Success! You can now change your password through the link sent to your email."
+        );
         setError(""); // Clear any previous error
       } else {
         // Backend returns { error: "Email not found." }
@@ -77,7 +79,6 @@ const Login = () => {
       setError("Something went wrong. Please try again later.");
     }
   };
-  
 
   const handleResetPassword = async () => {
     if (!newPassword) {
@@ -163,7 +164,6 @@ const Login = () => {
               >
                 Forgot password?
               </button>
-
             </>
           ) : (
             <>
@@ -189,13 +189,10 @@ const Login = () => {
       </div>
       <ToastContainerComponent />
     </div>
-    
   );
 };
 
 export default Login;
-
-
 
 // import React, { useState } from "react";
 // import { useNavigate } from "react-router-dom";

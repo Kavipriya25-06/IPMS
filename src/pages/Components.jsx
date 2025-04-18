@@ -7,7 +7,6 @@ import tagIcon from "../assets/Tag_icon.png";
 import config from "../Config"; // Import config for API endpoints
 import "../App.css";
 
-
 import {
   showSuccessToast,
   showErrorToast,
@@ -53,8 +52,6 @@ const Component = () => {
 
   const [sortField, setSortField] = useState();
   const [sortOrder, setSortOrder] = useState("asc");
-  
-
 
   // Function to get unique component types based on the selected component type
   const getFilteredComponentTypes = () => {
@@ -363,34 +360,37 @@ const Component = () => {
     setShowPopup(false); // Close the pop-up when clicking outside
   };
 
-
   const handleSaveTallyReference = async (componentId) => {
     const target = components.find(
       (c) => (c.component_id?.component_id || c.component_id) === componentId
     );
-  
+
     const payload = {
       ...target.component_id,
       tally_reference: editedTallyRef,
     };
-  
+
     try {
-      const response = await fetch(`${config.apiBaseURL}/component/${componentId}/`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-  
+      const response = await fetch(
+        `${config.apiBaseURL}/component/${componentId}/`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
       if (response.ok) {
         showSuccessToast("Tally Reference updated!");
         setEditTallyRefId(null);
-  
+
         // Update the components state locally
         setComponents((prev) =>
           prev.map((item) =>
-            (item.component_id?.component_id || item.component_id) === componentId
+            (item.component_id?.component_id || item.component_id) ===
+            componentId
               ? {
                   ...item,
                   component_id: {
@@ -418,12 +418,12 @@ const Component = () => {
       setSortOrder("asc");
     }
   };
-  
+
   // Corrected sorting logic
   const sortedComponents = [...components].sort((a, b) => {
     const getValue = (item, field) => {
       const component = item.component_id || {};
-  
+
       if (field === "component_id") {
         const match = component.component_id.match(/(\d+)$/);
         return match ? parseInt(match[1], 10) : 0;
@@ -431,15 +431,14 @@ const Component = () => {
         return (component[field] || "").toLowerCase();
       }
     };
-  
+
     const aValue = getValue(a, sortField);
     const bValue = getValue(b, sortField);
-  
+
     if (aValue < bValue) return sortOrder === "asc" ? -1 : 1;
     if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
     return 0;
   });
-  
 
   return (
     <div>
@@ -483,14 +482,19 @@ const Component = () => {
       <table>
         <thead>
           <tr>
-          <th
-            style={{ textDecoration: "underline", cursor: "pointer" }}
-            onClick={() => handleSort("component_id")}
-          >
-            Component ID {sortField === "component_id" ? (sortOrder === "asc" ? "🔼" : "🔽") : ""}
-          </th>
+            <th
+              style={{ textDecoration: "underline", cursor: "pointer" }}
+              onClick={() => handleSort("component_id")}
+            >
+              Component ID{" "}
+              {sortField === "component_id"
+                ? sortOrder === "asc"
+                  ? "🔼"
+                  : "🔽"
+                : ""}
+            </th>
 
-          <th>
+            <th>
               Category
               <select
                 value={selectedCategory}
@@ -522,12 +526,16 @@ const Component = () => {
               style={{ textDecoration: "underline", cursor: "pointer" }}
               onClick={() => handleSort("component_specification")}
             >
-              Specification {sortField === "component_specification" ? (sortOrder === "asc" ? "🔼" : "🔽") : ""}
+              Specification{" "}
+              {sortField === "component_specification"
+                ? sortOrder === "asc"
+                  ? "🔼"
+                  : "🔽"
+                : ""}
             </th>
             <th>Tally Reference</th>
             <th>UOM</th>
-            
-           
+
             <th>
               Tags
               <select
@@ -565,11 +573,15 @@ const Component = () => {
                         />
                         <button
                           style={{ marginLeft: "4px" }}
-                          onClick={() => handleSaveTallyReference(component.component_id)}
+                          onClick={() =>
+                            handleSaveTallyReference(component.component_id)
+                          }
                         >
                           Save
                         </button>
-                        <button onClick={() => setEditTallyRefId(null)}>Cancel</button>
+                        <button onClick={() => setEditTallyRefId(null)}>
+                          Cancel
+                        </button>
                       </>
                     ) : (
                       <span
@@ -585,7 +597,7 @@ const Component = () => {
                     )}
                   </td>
                   <td>{component.unit_of_measurement}</td>
-                  
+
                   <td>
                     <div>
                       {getTagsForComponent(component.component_id).length >

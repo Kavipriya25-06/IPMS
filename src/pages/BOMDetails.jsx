@@ -27,8 +27,6 @@
 //   const [loadingComponents, setLoadingComponents] = useState(true);
 //   const [priceTables, setPriceTables] = useState([]);
 
-  
-
 //   // Fetch BOM details and related components
 //   useEffect(() => {
 //     const fetchBomDetails = async () => {
@@ -374,7 +372,7 @@
 //                 <th>Category</th>
 //                 <th>Component Type</th>
 //                 <th>Specification</th>
-//                 <th>UOM</th>          
+//                 <th>UOM</th>
 //                 <th>Quantity</th>
 //                 <th>Vendor</th>
 //                 <th>Price</th>
@@ -430,11 +428,9 @@
 //               </tr>
 //             </tfoot>
 //           </table>
-         
+
 //         </>
 //       )}
-
-      
 
 //       <button
 //         onClick={() => navigate("/bom")}
@@ -457,25 +453,12 @@
 
 // export default BOMDetails;
 
-
-
-
-
-
-
-
-
-
-
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import config from "../Config"; // Import config for API endpoints
-import DeleteIcon from "../assets/Delete.png"; //  
+import DeleteIcon from "../assets/Delete.png"; //
 import AddIcon from "../assets/Add.png";
 import Back from "../assets/Back.png";
-
-
 
 import {
   showSuccessToast,
@@ -505,8 +488,6 @@ const BOMDetails = () => {
   const [loadingComponents, setLoadingComponents] = useState(true);
   const [priceTables, setPriceTables] = useState([]);
   const [showLatestPrice, setShowLatestPrice] = useState(false);
-
-  
 
   // Fetch BOM details and related components
   useEffect(() => {
@@ -560,21 +541,23 @@ const BOMDetails = () => {
 
     const fetchAllData = async () => {
       try {
-        const [bomRes, bomMasterRes, vendorRes, componentRes, priceRes] = await Promise.all([
-          fetch(`${config.apiBaseURL}/bom_list/`),
-          fetch(`${config.apiBaseURL}/bom_master/`),
-          fetch(`${config.apiBaseURL}/vendor_list/`),
-          fetch(`${config.apiBaseURL}/component/`),
-          fetch(`${config.apiBaseURL}/price_tables/`),
-        ]);
+        const [bomRes, bomMasterRes, vendorRes, componentRes, priceRes] =
+          await Promise.all([
+            fetch(`${config.apiBaseURL}/bom_list/`),
+            fetch(`${config.apiBaseURL}/bom_master/`),
+            fetch(`${config.apiBaseURL}/vendor_list/`),
+            fetch(`${config.apiBaseURL}/component/`),
+            fetch(`${config.apiBaseURL}/price_tables/`),
+          ]);
 
-        const [bomData, bomMasterData, vendorData, componentData, priceData] = await Promise.all([
-          bomRes.json(),
-          bomMasterRes.json(),
-          vendorRes.json(),
-          componentRes.json(),
-          priceRes.json(),
-        ]);
+        const [bomData, bomMasterData, vendorData, componentData, priceData] =
+          await Promise.all([
+            bomRes.json(),
+            bomMasterRes.json(),
+            vendorRes.json(),
+            componentRes.json(),
+            priceRes.json(),
+          ]);
 
         setSelectedBom(bomData.find((b) => b.bom_id === bomId));
         setSelectedComponents(bomMasterData.filter((b) => b.bom === bomId));
@@ -600,11 +583,11 @@ const BOMDetails = () => {
   const getLatestPriceInfo = (productId) => {
     const entries = priceTables.filter((e) => e.product === productId);
     if (entries.length === 0) return { price: "-", tax: "-", date: "-" };
-  
+
     const latest = entries.sort(
       (a, b) => new Date(b.current_time) - new Date(a.current_time)
     )[0];
-  
+
     return {
       price: latest.price,
       tax: `${latest.tax}%`,
@@ -618,12 +601,12 @@ const BOMDetails = () => {
         (component) =>
           component.component.component_id === newComponent.component
       );
-  
+
       if (exists) {
         alert("This component is already added to the BOM.");
         return;
       }
-  
+
       if (
         !newComponent.component ||
         !newComponent.vendor ||
@@ -632,33 +615,35 @@ const BOMDetails = () => {
         alert("All fields are required.");
         return;
       }
-  
+
       // Step 1: Find the selected component to get product_id
       const selectedComp = components.find(
         (comp) => comp.component_id === newComponent.component
       );
-  
+
       if (!selectedComp) {
         alert("Component not found.");
         return;
       }
-  
+
       const productId = selectedComp.product_id;
-  
+
       // Step 2: Get latest price info for the product
-      const matchingPrices = priceTables.filter((entry) => entry.product === productId);
+      const matchingPrices = priceTables.filter(
+        (entry) => entry.product === productId
+      );
       const latestPriceEntry = matchingPrices.sort(
         (a, b) => new Date(b.current_time) - new Date(a.current_time)
       )[0];
-  
+
       if (!latestPriceEntry) {
         alert("No price data found for this component.");
         return;
       }
-  
+
       // Step 3: Format date as YYYY-MM-DD
       const latestDate = latestPriceEntry.current_time.split("T")[0];
-  
+
       // Step 4: Construct payload with date
       const payload = {
         bom: bomId,
@@ -669,15 +654,15 @@ const BOMDetails = () => {
         tax: latestPriceEntry.tax,
         date: latestDate, // <- Include date here
       };
-  
+
       console.log("Payload to POST:", payload);
-  
+
       const response = await fetch(`${config.apiBaseURL}/bom_master/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-  
+
       if (response.ok) {
         showSuccessToast("Component added successfully!");
 
@@ -706,61 +691,69 @@ const BOMDetails = () => {
   };
 
   const handleDeleteComponent = async (bomComponentId) => {
-  if (!window.confirm("Are you sure you want to delete this component from the BOM?")) return;
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this component from the BOM?"
+      )
+    )
+      return;
 
-  try {
-    const response = await fetch(`${config.apiBaseURL}/bom_master/${bomComponentId}/`, {
-      method: "DELETE",
-    });
-
-    if (response.ok) {
-      showSuccessToast("Component deleted successfully.");
-      setSelectedComponents((prev) =>
-        prev.filter((component) => component.id !== bomComponentId)
+    try {
+      const response = await fetch(
+        `${config.apiBaseURL}/bom_master/${bomComponentId}/`,
+        {
+          method: "DELETE",
+        }
       );
-    } else {
-      showErrorToast("Failed to delete component.");
+
+      if (response.ok) {
+        showSuccessToast("Component deleted successfully.");
+        setSelectedComponents((prev) =>
+          prev.filter((component) => component.id !== bomComponentId)
+        );
+      } else {
+        showErrorToast("Failed to delete component.");
+      }
+    } catch (error) {
+      console.error("Error deleting component:", error);
+      showErrorToast("An error occurred while deleting.");
     }
-  } catch (error) {
-    console.error("Error deleting component:", error);
-    showErrorToast("An error occurred while deleting.");
-  }
-};
+  };
 
-const calculateTotalPrice = () => {
-  return selectedComponents.reduce((total, component) => {
-    const unitPrice = parseFloat(component.price || 0);
-    const quantity = parseFloat(component.quantity || 0);
-    const taxRate = parseFloat(component.tax || 0);
+  const calculateTotalPrice = () => {
+    return selectedComponents.reduce((total, component) => {
+      const unitPrice = parseFloat(component.price || 0);
+      const quantity = parseFloat(component.quantity || 0);
+      const taxRate = parseFloat(component.tax || 0);
 
-    const priceWithTax = unitPrice + (unitPrice * taxRate) / 100;
-    return total + priceWithTax * quantity;
-  }, 0);
-};
+      const priceWithTax = unitPrice + (unitPrice * taxRate) / 100;
+      return total + priceWithTax * quantity;
+    }, 0);
+  };
 
-///
+  ///
 
-const handleShowLatestPrice = (productId) => {
-  const matchingPrices = priceTables.filter((p) => p.product === productId);
-  if (matchingPrices.length === 0) {
-    showWarningToast("No price entry found for this component.");
-    return;
-  }
+  const handleShowLatestPrice = (productId) => {
+    const matchingPrices = priceTables.filter((p) => p.product === productId);
+    if (matchingPrices.length === 0) {
+      showWarningToast("No price entry found for this component.");
+      return;
+    }
 
-  const latest = matchingPrices.sort(
-    (a, b) => new Date(b.current_time) - new Date(a.current_time)
-  )[0];
+    const latest = matchingPrices.sort(
+      (a, b) => new Date(b.current_time) - new Date(a.current_time)
+    )[0];
 
-  const formattedDate = new Date(latest.current_time).toLocaleDateString("en-IN");
+    const formattedDate = new Date(latest.current_time).toLocaleDateString(
+      "en-IN"
+    );
 
-  showInfoToast(
-    `Latest Price: ₹${latest.price}, Tax: ${latest.tax}%, Date: ${formattedDate}`
-  );
-};
+    showInfoToast(
+      `Latest Price: ₹${latest.price}, Tax: ${latest.tax}%, Date: ${formattedDate}`
+    );
+  };
 
-
-
-///
+  ///
   return (
     <div style={{ padding: "20px" }}>
       {selectedBom && (
@@ -769,6 +762,7 @@ const handleShowLatestPrice = (productId) => {
           <p>
             <strong>BOM ID:</strong> {selectedBom.bom_id}
           </p>
+<<<<<<< HEAD
 
           <div style={{display: "flex",justifyContent: "space-between",alignItems: "center",marginTop: "10px",}}>
 
@@ -782,6 +776,24 @@ const handleShowLatestPrice = (productId) => {
               <img src={AddIcon} alt="" style={{width:"20px",height:"20px"}}/>
             </button>
           </div>
+=======
+          <button
+            onClick={() => setShowAddComponentForm(true)}
+            style={{
+              marginTop: "10px",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+            }}
+            title="Add Component"
+          >
+            <img
+              src={AddIcon}
+              alt=""
+              style={{ width: "20px", height: "20px" }}
+            />
+          </button>
+>>>>>>> 03bac4ed13bda8d156d01457d9d90d0cb407be2c
 
           {showAddComponentForm && (
             <div style={{ marginTop: "20px" }}>
@@ -802,13 +814,13 @@ const handleShowLatestPrice = (productId) => {
                   }}
                 >
                   <option value=""> Select Component Type </option>
-                  {Array.from(new Set(components.map((c) => c.component_type))).map(
-                    (type) => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    )
-                  )}
+                  {Array.from(
+                    new Set(components.map((c) => c.component_type))
+                  ).map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
                 </select>
 
                 {/* Component Specification Dropdown */}
@@ -834,20 +846,26 @@ const handleShowLatestPrice = (productId) => {
                         setLoadingVendors(true);
 
                         // Fetch all vendors
-                        const response = await fetch(`${config.apiBaseURL}/vendor_list/`);
+                        const response = await fetch(
+                          `${config.apiBaseURL}/vendor_list/`
+                        );
                         const allVendors = await response.json();
 
                         // Find the vendor using vendor_id from the selected component
                         const matchedVendor = allVendors.find(
-                          (vendor) => vendor.vendor_id === selectedComp.vendor_id
+                          (vendor) =>
+                            vendor.vendor_id === selectedComp.vendor_id
                         );
 
                         const productId = selectedComp.product_id;
 
                         // Get latest price info from priceTables
-                        const matchingPrices = priceTables.filter(p => p.product === productId);
+                        const matchingPrices = priceTables.filter(
+                          (p) => p.product === productId
+                        );
                         const latestPriceEntry = matchingPrices.sort(
-                          (a, b) => new Date(b.current_time) - new Date(a.current_time)
+                          (a, b) =>
+                            new Date(b.current_time) - new Date(a.current_time)
                         )[0];
 
                         setNewComponent((prev) => ({
@@ -860,7 +878,10 @@ const handleShowLatestPrice = (productId) => {
                         if (matchedVendor) setVendors([matchedVendor]);
                         else setVendors([]);
                       } catch (error) {
-                        console.error("Error processing vendor/price info:", error);
+                        console.error(
+                          "Error processing vendor/price info:",
+                          error
+                        );
                         setVendors([]);
                       } finally {
                         setLoadingVendors(false);
@@ -870,7 +891,10 @@ const handleShowLatestPrice = (productId) => {
                 >
                   <option value=""> Select Specification </option>
                   {components
-                    .filter((comp) => comp.component_type === newComponent.componentType)
+                    .filter(
+                      (comp) =>
+                        comp.component_type === newComponent.componentType
+                    )
                     .map((comp) => (
                       <option key={comp.component_id} value={comp.component_id}>
                         {comp.component_specification}
@@ -885,7 +909,10 @@ const handleShowLatestPrice = (productId) => {
                   placeholder="Quantity"
                   value={newComponent.quantity}
                   onChange={(e) =>
-                    setNewComponent({ ...newComponent, quantity: e.target.value })
+                    setNewComponent({
+                      ...newComponent,
+                      quantity: e.target.value,
+                    })
                   }
                 />
 
@@ -906,12 +933,20 @@ const handleShowLatestPrice = (productId) => {
 
                 {/* Submit & Cancel Buttons */}
                 <button onClick={handleAddComponent}>Submit</button>
-                <button onClick={() => setShowAddComponentForm(false)}>Cancel</button>
+                <button onClick={() => setShowAddComponentForm(false)}>
+                  Cancel
+                </button>
               </div>
             </div>
           )}
 
-          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "10px" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginBottom: "10px",
+            }}
+          >
             <button
               onClick={() => setShowLatestPrice(true)}
               style={{
@@ -937,20 +972,26 @@ const handleShowLatestPrice = (productId) => {
                 <th>Category</th>
                 <th>Component Type</th>
                 <th>Specification</th>
-                <th>UOM</th>          
+                <th>UOM</th>
                 <th>Quantity</th>
                 <th>Vendor</th>
                 <th>Date</th>
                 <th>Price</th>
-                <th>Tax</th> 
-                <th style={{ backgroundColor: "#82817f" }}>Latest Price</th>     {/* New column */}
-                <th style={{ backgroundColor: "#82817f" }}>Latest Date</th>      {/* New column */}
+                <th>Tax</th>
+                <th style={{ backgroundColor: "#82817f" }}>
+                  Latest Price
+                </th>{" "}
+                {/* New column */}
+                <th style={{ backgroundColor: "#82817f" }}>Latest Date</th>{" "}
+                {/* New column */}
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {selectedComponents.map((component, index) => {
-                const { price, tax,date  } = getLatestPriceInfo(component.component.product_id);
+                const { price, tax, date } = getLatestPriceInfo(
+                  component.component.product_id
+                );
                 return (
                   <tr key={index}>
                     <td>{component.component.category}</td>
@@ -960,47 +1001,60 @@ const handleShowLatestPrice = (productId) => {
                     <td>{component.quantity}</td>
                     <td>{component.vendor.vendor_name}</td>
                     <td>{component.date}</td>
-                    <td style={{ textAlign: "right" }}>₹{parseFloat(component.price || 0).toLocaleString("en-IN", {
-                     minimumFractionDigits: 2,maximumFractionDigits: 2,})}
+                    <td style={{ textAlign: "right" }}>
+                      ₹
+                      {parseFloat(component.price || 0).toLocaleString(
+                        "en-IN",
+                        {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        }
+                      )}
                     </td>
                     <td>{component.tax}%</td>
                     <td style={{ textAlign: "right" }}>
-                    {showLatestPrice
-              ? `₹${parseFloat(price || 0).toLocaleString("en-IN", {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}`:""}
-          </td>
-          <td>{showLatestPrice ? date : ""}</td>
-          <td>
-            <button
-              style={{
-                border: "none",
-                background: "transparent",
-                padding: "5px",
-                cursor: "pointer"
-              }}
-              onClick={() => handleDeleteComponent(component.id)}
-              title="Delete"
-            >
-              <img
-                src={DeleteIcon}
-                alt="Delete"
-                style={{ width: "20px", height: "20px" }}
-              />
-            </button>
-          </td>
-      
+                      {showLatestPrice
+                        ? `₹${parseFloat(price || 0).toLocaleString("en-IN", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}`
+                        : ""}
+                    </td>
+                    <td>{showLatestPrice ? date : ""}</td>
+                    <td>
+                      <button
+                        style={{
+                          border: "none",
+                          background: "transparent",
+                          padding: "5px",
+                          cursor: "pointer",
+                        }}
+                        onClick={() => handleDeleteComponent(component.id)}
+                        title="Delete"
+                      >
+                        <img
+                          src={DeleteIcon}
+                          alt="Delete"
+                          style={{ width: "20px", height: "20px" }}
+                        />
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
             </tbody>
             <tfoot>
               <tr>
-                <td colSpan="7" style={{ textAlign: "right", fontWeight: "bold" }}>
+                <td
+                  colSpan="7"
+                  style={{ textAlign: "right", fontWeight: "bold" }}
+                >
                   Total Price (incl. Tax):
                 </td>
-                <td colSpan="2" style={{ textAlign: "right", fontWeight: "bold" }}>
+                <td
+                  colSpan="2"
+                  style={{ textAlign: "right", fontWeight: "bold" }}
+                >
                   ₹
                   {calculateTotalPrice().toLocaleString("en-IN", {
                     minimumFractionDigits: 2,
@@ -1010,9 +1064,26 @@ const handleShowLatestPrice = (productId) => {
               </tr>
             </tfoot>
           </table>
-         
         </>
       )}
+<<<<<<< HEAD
+=======
+
+      <button
+        onClick={() => navigate("/bom")}
+        // style={{
+        //   marginTop: "20px",
+        //   padding: "10px 20px",
+        //   // backgroundColor: "#6c757d",
+        //   // color: "#fff",
+        //   border: "none",
+        //   borderRadius: "5px",
+        //   cursor: "pointer",
+        // }}
+      >
+        Back to BOM List
+      </button>
+>>>>>>> 03bac4ed13bda8d156d01457d9d90d0cb407be2c
       <ToastContainerComponent />
     </div>
   );
