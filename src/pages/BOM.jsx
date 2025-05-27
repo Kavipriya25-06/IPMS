@@ -1,9 +1,7 @@
-// src/pages/BOM.jsx
 
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import config from "../Config"; // Import config for API endpoints
-<<<<<<< HEAD
 import {
   sortData,
   toggleSortDirection,
@@ -12,15 +10,11 @@ import {
 import AddIcon from "../assets/Add.png";
 import Delete from "../assets/Delete.png";
 
-=======
-import { sortData, toggleSortDirection, renderSortArrow } from "../Sort";
->>>>>>> 03bac4ed13bda8d156d01457d9d90d0cb407be2c
 
 const BOM = () => {
   const [boms, setBoms] = useState([]); // List of all BOMs
   const [bomQuantities, setBomQuantities] = useState({});
   const navigate = useNavigate(); // Initialize useNavigate
-<<<<<<< HEAD
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "ascending" });
 
   const [showForm, setShowForm] = useState(false); 
@@ -29,11 +23,6 @@ const BOM = () => {
     created_by: "",
     last_modified_by: "",
     number_of_components:0
-=======
-  const [sortConfig, setSortConfig] = useState({
-    key: null,
-    direction: "ascending",
->>>>>>> 03bac4ed13bda8d156d01457d9d90d0cb407be2c
   });
 
   useEffect(() => {
@@ -71,7 +60,6 @@ const BOM = () => {
   const handleSort = (key) => {
     setSortConfig((prev) => toggleSortDirection(prev, key));
   };
-<<<<<<< HEAD
 
 
     const handleInputChange = (e) => {
@@ -139,8 +127,6 @@ const BOM = () => {
       }
     };
   
-=======
->>>>>>> 03bac4ed13bda8d156d01457d9d90d0cb407be2c
 
   return (
     <div>
@@ -178,7 +164,6 @@ const BOM = () => {
       <table>
         <thead>
           <tr>
-<<<<<<< HEAD
            <th onClick={() => handleSort("bom_id")} style={{ textDecoration: "underline", cursor: "pointer" }}>BOM ID {renderSortArrow(sortConfig, "bom_id")}</th>
           <th onClick={() => handleSort("bom_name")} style={{ textDecoration: "underline", cursor: "pointer" }}>BOM Name {renderSortArrow(sortConfig, "bom_name")}</th>
           <th onClick={() => handleSort("quantity")} style={{ textDecoration: "underline", cursor: "pointer" }}>Number of Components {renderSortArrow(sortConfig, "quantity")}</th>
@@ -187,45 +172,10 @@ const BOM = () => {
           <th>Last Modified By </th>
           <th onClick={() => handleSort("last_modified_date")} style={{ textDecoration: "underline", cursor: "pointer" }}>Last Modified Date {renderSortArrow(sortConfig,"last_modified_date")}</th>
           <th>Actions</th>
-=======
-            <th
-              onClick={() => handleSort("bom_id")}
-              style={{ textDecoration: "underline", cursor: "pointer" }}
-            >
-              BOM ID {renderSortArrow(sortConfig, "bom_id")}
-            </th>
-            <th
-              onClick={() => handleSort("bom_name")}
-              style={{ textDecoration: "underline", cursor: "pointer" }}
-            >
-              BOM Name {renderSortArrow(sortConfig, "bom_name")}
-            </th>
-            <th
-              onClick={() => handleSort("quantity")}
-              style={{ textDecoration: "underline", cursor: "pointer" }}
-            >
-              Number of Components {renderSortArrow(sortConfig, "quantity")}
-            </th>
-            <th>Created By </th>
-            <th
-              onClick={() => handleSort("created_date")}
-              style={{ textDecoration: "underline", cursor: "pointer" }}
-            >
-              Created Date {renderSortArrow(sortConfig, "created_date")}
-            </th>
-            <th>Last Modified By </th>
-            <th
-              onClick={() => handleSort("last_modified_date")}
-              style={{ textDecoration: "underline", cursor: "pointer" }}
-            >
-              Last Modified Date{" "}
-              {renderSortArrow(sortConfig, "last_modified_date")}
-            </th>
->>>>>>> 03bac4ed13bda8d156d01457d9d90d0cb407be2c
           </tr>
         </thead>
         <tbody>
-          {sortData(boms, sortConfig, (item, key) => {
+        {sortData(boms, sortConfig, (item, key) => {
             if (key === "quantity") return bomQuantities[item.bom_id] || 0;
             if (key === "created_date" || key === "last_modified_date")
               return new Date(item[key]);

@@ -37,14 +37,13 @@ const RequestDetails = ({ user }) => {
   const [requestStatus, setRequestStatus] = useState([]);
   const [bomName, setBomName] = useState([]);
   const [selectedRequestDetailId, setSelectedRequestDetailId] = useState(null);
-<<<<<<< HEAD
+
   const [requestMaster, setRequestMaster] = useState([]);
-=======
->>>>>>> 03bac4ed13bda8d156d01457d9d90d0cb407be2c
 
   // The user object is now passed as a prop
   const isAdmin = user?.role === "Admin";
   const isProcurement = user?.role === "Procurement";
+  const isInventory = user?.role === "Inventory"
 
   useEffect(() => {
     fetchRequestDetails();
@@ -201,10 +200,9 @@ const RequestDetails = ({ user }) => {
       return;
     }
 
-<<<<<<< HEAD
+
     const requestmasterId = detail.id;
-=======
->>>>>>> 03bac4ed13bda8d156d01457d9d90d0cb407be2c
+
     const selectedVendor = vendorNames.find(
       (vendor) => vendor.vendor_name === detail.vendor_name
     );
@@ -1069,7 +1067,7 @@ const RequestDetails = ({ user }) => {
                 <th>Quantity</th>
                 <th>Available Quantity</th>
                 {/* <th>Approval</th> */}
-                {(isAdmin || isProcurement) && <th>Actions</th>}
+                {(isAdmin || isProcurement || isInventory) && <th>Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -1196,7 +1194,7 @@ const RequestDetails = ({ user }) => {
                         {detail.approve ? "Approved" : "Approve"}
                       </button>
                     </td> */}
-                      {(isAdmin || isProcurement) && (
+                      {(isAdmin || isProcurement  || isInventory) && (
                         <td>
                           {detail.assign || detail.qty === 0 ? (
                             <button
@@ -1297,6 +1295,7 @@ const RequestDetails = ({ user }) => {
                     </tr>
                   );
                 })}
+            {["admin", "sub-admin", "procurement", "finance"].includes(user?.role?.toLowerCase().trim()) && (
               <tr style={{ fontWeight: "bold" }}>
                 <td colSpan="6">Total Cost (Including Tax):</td>
                 <td style={{ textAlign: "right" }}>
@@ -1308,6 +1307,7 @@ const RequestDetails = ({ user }) => {
                 </td>
                 <td colSpan="4"></td>
               </tr>
+            )}
             </tbody>
           </table>
 

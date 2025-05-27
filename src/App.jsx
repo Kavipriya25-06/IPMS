@@ -188,7 +188,7 @@ function App() {
             </li>
             <li
               className={
-                isTabEnabled(["Admin", "Sub-Admin", "Procurement", "User"])
+                isTabEnabled(["Admin", "Sub-Admin", "Procurement", "User","Inventory"])
                   ? ""
                   : "disabled"
               }

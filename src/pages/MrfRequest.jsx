@@ -9,6 +9,8 @@ import {
   showWarningToast,
   ToastContainerComponent,
 } from "./Toastify.jsx"; // Import Toastify utilities
+import { useAuth } from "../AuthContext";
+
 
 const Mrfrequest = () => {
   const { MRF_id } = useParams();
@@ -39,6 +41,17 @@ const Mrfrequest = () => {
     component_id: null,
   }); // State for new question
 
+  const { user } = useAuth(); 
+
+  const role = user?.role?.toLowerCase().trim();
+  const isAdmin = role === "admin";
+  const isSubAdmin = role === "sub-admin";
+  const isUser = role === "user";
+
+  const canApproveMRF = isAdmin || isSubAdmin;
+  const canSeeActions = !isUser;
+
+
   useEffect(() => {
     fetchMrfData();
     fetchMrfListData();
@@ -51,7 +64,7 @@ const Mrfrequest = () => {
       const data = await response.json();
       const filteredData = data.find((item) => item.MRF_id === MRF_id);
       setMrfData(data);
-      setMrfData(filteredData);
+      setMrfData(filteredData)
       setApprovalStatus(filteredData.approval);
       console.log("Approval", filteredData);
       console.log("Approval");
@@ -103,39 +116,33 @@ const Mrfrequest = () => {
         throw new Error("Failed to fetch inventory data");
       }
       const inventoryData = await response.json();
-
+  
       // If status is not "Available", assign directly
-      const currentItem = inventoryData.find(
-        (inv) => inv.serial_number === serialNumber
-      );
+      const currentItem = inventoryData.find(inv => inv.serial_number === serialNumber);
       if (!currentItem) {
         showErrorToast("Serial number not found in inventory.");
         return;
       }
-
+  
       if (currentItem.status !== "Available") {
         await assignSerial(serialNumber, MRFListId);
         return;
       }
-
+  
       // Else, find the next available serial number matching component & specification
       const availableOptions = inventoryData.filter(
         (inv) =>
-          inv.component_type?.toLowerCase().trim() ===
-            item.component_type?.toLowerCase().trim() &&
+          inv.component_type?.toLowerCase().trim() === item.component_type?.toLowerCase().trim() &&
           inv.specification?.toLowerCase().trim() ===
-            (item.component_specification?.toLowerCase().trim() ||
-              item.specification?.toLowerCase().trim()) &&
+            (item.component_specification?.toLowerCase().trim() || item.specification?.toLowerCase().trim()) &&
           inv.status === "Available"
       );
-
+  
       if (availableOptions.length === 0) {
-        showWarningToast(
-          "No available serial numbers found for this component."
-        );
+        showWarningToast("No available serial numbers found for this component.");
         return;
       }
-
+  
       // Assign the first available serial number
       await assignSerial(availableOptions[0].serial_number, MRFListId);
       showSuccessToast("Serial number assigned successfully.");
@@ -208,58 +215,19 @@ const Mrfrequest = () => {
     }));
   };
 
+
   // Function to assign the selected serial number from popup
-  const assignSerial = async (serialNumber, MRFListId) => {
-    try {
-      const response = await fetch(
-        `${config.apiBaseURL}/inventory/${serialNumber}/`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: "In_drone" }),
-        }
-      );
+const assignSerial = async (serialNumber, MRFListId) => {
+  try {
+    const response = await fetch(`${config.apiBaseURL}/inventory/${serialNumber}/`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "In_drone" }),
+    });
 
-      if (!response.ok) {
-        throw new Error("Failed to update inventory status");
-      }
-
-      const updateMRFResponse = await fetch(
-        `${config.apiBaseURL}/MRFList/${MRFListId}/`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: false,
-            serial_number: serialNumber,
-          }),
-        }
-      );
-
-      if (!updateMRFResponse.ok) {
-        throw new Error("Failed to update MRF action status");
-      }
-
-      setMrfListData((prevData) =>
-        prevData.map((item) =>
-          item.id === MRFListId
-            ? {
-                ...item,
-                status: "In_drone",
-                action: false,
-                serial_number: serialNumber,
-              }
-            : item
-        )
-      );
-
-      setShowSerialPopup(false);
-      showSuccessToast(`Serial ${serialNumber} assigned successfully`);
-    } catch (error) {
-      console.error("Error during assignment:", error);
-      showErrorToast("Error while assigning serial number");
+    if (!response.ok) {
+      throw new Error("Failed to update inventory status");
     }
-<<<<<<< HEAD
 
     const updateMRFResponse = await fetch(`${config.apiBaseURL}/MRFList/${MRFListId}/`, {
       method: "PATCH",
@@ -290,9 +258,6 @@ const Mrfrequest = () => {
     showErrorToast("Error while assigning serial number");
   }
 };
-=======
-  };
->>>>>>> 03bac4ed13bda8d156d01457d9d90d0cb407be2c
 
   const handleSubmitQC = async () => {
     if (!newQuestion.qcQuestions || newQuestion.qcQuestions.length === 0) {
@@ -411,14 +376,7 @@ const Mrfrequest = () => {
   return (
     <div>
       <h2>Material Request Data for {MRF_id}</h2>
-      <div
-        style={{
-          display: "flex",
-          gap: "20px",
-          marginBottom: "10px",
-          alignItems: "center",
-        }}
-      >
+      <div style={{ display: "flex", gap: "20px", marginBottom: "10px", alignItems: "center" }}>
         <div>
           <strong>Requester Name:</strong> {mrfData.name}
         </div>
@@ -432,7 +390,7 @@ const Mrfrequest = () => {
       <div style={{ marginBottom: "15px" }}>
         <strong>Approval Status:</strong>{" "}
         {approvalStatus ? "Approved" : "Pending"}
-        {!approvalStatus && (
+        {!approvalStatus && canApproveMRF && (
           <button
             onClick={handleApproval}
             style={{
@@ -458,7 +416,7 @@ const Mrfrequest = () => {
             <th>Unit of Measurement</th>
             <th>Category</th>
             <th>Serial Number</th>
-            <th>Actions</th>
+            {canSeeActions && <th>Actions</th>} 
           </tr>
         </thead>
         <tbody>
@@ -479,7 +437,8 @@ const Mrfrequest = () => {
                 <td>{item.unit_of_measurement}</td>
                 <td>{item.category}</td>
                 <td>{item.action === false ? item.serial_number : "-"}</td>
-
+                
+                {canSeeActions && (
                 <td>
                   {item.returns ? (
                     <button
@@ -495,9 +454,7 @@ const Mrfrequest = () => {
                     </button>
                   ) : item.action ? (
                     <button
-                      onClick={() =>
-                        handleAssign(item.serial_number, item.id, item)
-                      }
+                      onClick={() => handleAssign(item.serial_number, item.id,item)}
                       disabled={!approvalStatus}
                       style={{
                         padding: "5px 10px",
@@ -540,6 +497,7 @@ const Mrfrequest = () => {
                     </>
                   )}
                 </td>
+                )}
               </tr>
             ))
           )}
@@ -592,7 +550,7 @@ const Mrfrequest = () => {
                 onChange={(e) => setReturnStatus(e.target.value)}
               />{" "}
               Damaged
-            </label>
+            </label>*
           </div>
           <button onClick={handleReturnSubmit}>Submit</button>
           <button onClick={() => setShowPopup(false)}>Cancel</button>
@@ -654,7 +612,7 @@ const Mrfrequest = () => {
         </div>
       )}
 
-      {/* {showSerialPopup && selectedItemForAssign && (
+{/* {showSerialPopup && selectedItemForAssign && (
   <div className="popup">
     <h3>Choose Available Serial Number</h3>
     {alternativeSerials.length > 0 ? (
@@ -684,10 +642,7 @@ const Mrfrequest = () => {
     </button>
   </div>
 )} */}
-<<<<<<< HEAD
       <ToastContainerComponent />
-=======
->>>>>>> 03bac4ed13bda8d156d01457d9d90d0cb407be2c
     </div>
   );
 };

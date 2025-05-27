@@ -762,7 +762,7 @@ const BOMDetails = () => {
           <p>
             <strong>BOM ID:</strong> {selectedBom.bom_id}
           </p>
-<<<<<<< HEAD
+
 
           <div style={{display: "flex",justifyContent: "space-between",alignItems: "center",marginTop: "10px",}}>
 
@@ -776,24 +776,7 @@ const BOMDetails = () => {
               <img src={AddIcon} alt="" style={{width:"20px",height:"20px"}}/>
             </button>
           </div>
-=======
-          <button
-            onClick={() => setShowAddComponentForm(true)}
-            style={{
-              marginTop: "10px",
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-            }}
-            title="Add Component"
-          >
-            <img
-              src={AddIcon}
-              alt=""
-              style={{ width: "20px", height: "20px" }}
-            />
-          </button>
->>>>>>> 03bac4ed13bda8d156d01457d9d90d0cb407be2c
+
 
           {showAddComponentForm && (
             <div style={{ marginTop: "20px" }}>
@@ -1066,8 +1049,7 @@ const BOMDetails = () => {
           </table>
         </>
       )}
-<<<<<<< HEAD
-=======
+
 
       <button
         onClick={() => navigate("/bom")}
@@ -1083,7 +1065,7 @@ const BOMDetails = () => {
       >
         Back to BOM List
       </button>
->>>>>>> 03bac4ed13bda8d156d01457d9d90d0cb407be2c
+
       <ToastContainerComponent />
     </div>
   );

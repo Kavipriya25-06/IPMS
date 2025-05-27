@@ -32,21 +32,21 @@ const Inward = () => {
   }); // State for new question
 
   const [filteredData, setFilteredData] = useState([]);
-<<<<<<< HEAD
+
 
   // // Filters
   // const [poIdFilter, setPoIdFilter] = useState("");
   // const [vendorNameFilter, setVendorNameFilter] = useState("");
   // const [dateFilter, setDateFilter] = useState("");
 
-=======
+
 
   // Filters
   const [poIdFilter, setPoIdFilter] = useState("");
   const [vendorNameFilter, setVendorNameFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
 
->>>>>>> 03bac4ed13bda8d156d01457d9d90d0cb407be2c
+
   // Utility function to safely access nested fields
   const getNestedValue = (obj, keyPath, defaultValue = "Not Available") => {
     try {
@@ -649,7 +649,7 @@ const Inward = () => {
 
   ///////////
 
-<<<<<<< HEAD
+
   // // Filtering logic
   // useEffect(() => {
   //   let data = [...inwardData];
@@ -681,7 +681,7 @@ const Inward = () => {
 
   //   setFilteredData(data);
   // }, [poIdFilter, vendorNameFilter, dateFilter, inwardData]);
-=======
+
   // Filtering logic
   useEffect(() => {
     let data = [...inwardData];
@@ -711,7 +711,7 @@ const Inward = () => {
 
     setFilteredData(data);
   }, [poIdFilter, vendorNameFilter, dateFilter, inwardData]);
->>>>>>> 03bac4ed13bda8d156d01457d9d90d0cb407be2c
+
 
   ////////////////////
 
@@ -905,8 +905,6 @@ const Inward = () => {
 
 export default Inward;
 
-<<<<<<< HEAD
-=======
 //////////////
 
 // import React, { useState, useEffect } from "react";
@@ -1886,4 +1884,4 @@ export default Inward;
 // };
 
 // export default Inward;
->>>>>>> 03bac4ed13bda8d156d01457d9d90d0cb407be2c
+

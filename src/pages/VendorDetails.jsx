@@ -10,6 +10,7 @@ import Add from "../assets/Add.png";
 import Cancel from "../assets/cancel.png";
 import Back from "../assets/Back.png";
 
+
 import {
   showSuccessToast,
   showErrorToast,
@@ -506,7 +507,7 @@ const VendorDetails = () => {
           component_specification: "",
           unit_of_measurement: "",
           vendor: vendorId,
-          active: true,
+          active:true,
         });
         setShowAddProductForm(false);
 
@@ -681,12 +682,13 @@ const VendorDetails = () => {
   //   });
   // };
 
+
   const saveRemarks = async (index) => {
     const product = selectedVendorData[index];
     const payload = {
       remarks: product.editableRemarks || "",
     };
-
+  
     try {
       const response = await fetch(
         `${config.apiBaseURL}/vendor_master/${product.product_id}/`,
@@ -698,7 +700,7 @@ const VendorDetails = () => {
           body: JSON.stringify(payload),
         }
       );
-
+  
       if (response.ok) {
         const updatedProduct = await response.json();
         const updatedList = [...selectedVendorData];
@@ -718,6 +720,9 @@ const VendorDetails = () => {
       showErrorToast("Error occurred while updating remarks.");
     }
   };
+  
+
+
 
   return (
     <div>
@@ -739,10 +744,7 @@ const VendorDetails = () => {
         style={{ width: "24px", height: "24px", cursor: "pointer" }}
         onClick={() => setShowAddProductForm(!showAddProductForm)}
       />
-<<<<<<< HEAD
       </div>
-=======
->>>>>>> 03bac4ed13bda8d156d01457d9d90d0cb407be2c
 
       {/* Render CustomMessagebox when showMessageBox is true */}
       {showMessageBox && (
@@ -1311,22 +1313,13 @@ const VendorDetails = () => {
                         placeholder="Enter remarks"
                       />
                       <button onClick={() => saveRemarks(index)}>Save</button>
-                      <button
-                        onClick={() =>
-                          cancelEditField(index, "isEditingRemarks")
-                        }
-                      >
+                      <button onClick={() => cancelEditField(index, "isEditingRemarks")}>
                         Cancel
                       </button>
                     </>
                   ) : (
                     <>
-                      <span
-                        onClick={() =>
-                          enableEditField(index, "isEditingRemarks")
-                        }
-                        style={{ cursor: "pointer", color: "#007bff" }}
-                      >
+                      <span onClick={() => enableEditField(index, "isEditingRemarks")} style={{ cursor: "pointer", color: "#007bff" }}>
                         {product.remarks || "Click to add remarks"}
                       </span>
                     </>
