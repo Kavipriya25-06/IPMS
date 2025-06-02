@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import config from "../Config"; // Import config for API endpoints
 import Add from "../assets/Add.png";
+import { PencilSquareIcon } from "@heroicons/react/24/solid";
 
 // Popup Modal Component
 const Modal = ({ isOpen, onClose, children }) => {
@@ -10,7 +11,7 @@ const Modal = ({ isOpen, onClose, children }) => {
 
   return (
     <div className="popup">
-      <button className="close-button" onClick={onClose}>
+      <button className="x-button" onClick={onClose}>
         &times;
       </button>
       {children}
@@ -33,6 +34,8 @@ const Vendors = () => {
     vendor_name: "",
     gstn: "",
   });
+  const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
+
   const navigate = useNavigate();
   const [newVendor, setNewVendor] = useState({
     vendor_name: "",
@@ -51,6 +54,19 @@ const Vendors = () => {
   useEffect(() => {
     fetchVendorData();
     fetchPocData();
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const fetchVendorData = async () => {
@@ -133,6 +149,13 @@ const Vendors = () => {
     } catch (error) {
       console.error("Error updating POC:", error);
     }
+  };
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth", // Smooth scroll effect
+    });
   };
 
   const [isAdding, setIsAdding] = useState(false);
@@ -523,110 +546,123 @@ const Vendors = () => {
 
   return (
     <div>
-      <h2>Vendors</h2>
-
-      <div className="search-bar-container">
-        <input
-          type="text"
-          className="search-bar"
-          placeholder="Search by Vendor Name or Component Type"
-          value={searchQuery}
-          onChange={(e) => handleSearch(e.target.value)}
-        />
-        <span className="search-icon">
-          <i className="fa fa-search" aria-hidden="true"></i>
-        </span>
-      </div>
-
-      <button
-        onClick={() => setIsAddingVendor(true)}
+      <div
+        className="header"
         style={{
-          marginTop: "10px",
-          background: "transparent",
-          border: "none",
-          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
         }}
-        title="Add Vendor"
       >
-        <img src={Add} alt="" style={{ width: "20px", height: "20px" }} />
-      </button>
+        <h2>Vendors</h2>
 
-      {/* Modal for Adding New Vendor */}
-      <Modal isOpen={isAddingVendor} onClose={() => setIsAddingVendor(false)}>
-        <h4>Add New Vendor</h4>
-        <input
-          type="text"
-          placeholder="Vendor Name"
-          value={newVendor.vendor_name}
-          onChange={(e) =>
-            handleVendorInputChange("vendor_name", e.target.value)
-          }
-        />
-        <input
-          type="text"
-          placeholder="GSTN"
-          value={newVendor.gstn}
-          onChange={(e) => handleVendorInputChange("gstn", e.target.value)}
-        />
-        <button onClick={handleAddVendor}>Save Vendor</button>
-        <button onClick={() => setIsAddingVendor(false)}>Cancel</button>
-      </Modal>
+        <button
+          style={{
+            cursor: "pointer",
+            marginLeft: "auto",
+            marginRight: 20,
+            background: "transparent",
+            border: "none",
+          }}
+          title="Add Vendor"
+          onClick={() => setIsAddingVendor(true)}
+        >
+          <img src={Add} alt="" style={{ width: "20px", height: "20px" }} />
+        </button>
 
-      {/* Modal for Adding New Sub-Vendor (POC) */}
-      <Modal
-        isOpen={isAddingSubVendor}
-        onClose={() => setIsAddingSubVendor(false)}
-      >
-        <h4>Add Point of Contact for Vendor: {newVendorId}</h4>
-        <input
-          type="text"
-          placeholder="Point of Contact"
-          value={newSubVendor.point_of_contact}
-          onChange={(e) =>
-            handleSubVendorInputChange("point_of_contact", e.target.value)
-          }
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          value={newSubVendor.email}
-          onChange={(e) => {
-            const value = e.target.value;
-            handleSubVendorInputChange("email", value);
-            setErrors((prevErrors) => ({
-              ...prevErrors,
-              email: validateEmail(value) ? "" : "Invalid email address",
-            }));
-          }}
-        />
-        {errors.email && <span className="error-message">{errors.email}</span>}
-        <input
-          type="text"
-          placeholder="Phone Number"
-          value={newSubVendor.phone_number}
-          onChange={(e) => {
-            const value = e.target.value;
-            handleSubVendorInputChange("phone_number", value);
-            setErrors((prevErrors) => ({
-              ...prevErrors,
-              phone_number: validatePhoneNumber(value)
-                ? ""
-                : "Phone number must be 10 digits",
-            }));
-          }}
-        />
-        {errors.phone_number && (
-          <span className="error-message">{errors.phone_number}</span>
-        )}
-        <input
-          type="text"
-          placeholder="Location"
-          value={newSubVendor.location}
-          onChange={(e) =>
-            handleSubVendorInputChange("location", e.target.value)
-          }
-        />
-        {/* <select
+        {/* Modal for Adding New Vendor */}
+        <Modal isOpen={isAddingVendor} onClose={() => setIsAddingVendor(false)}>
+          <div className="modal-content">
+            <h4>Add New Vendor</h4>
+            <input
+              type="text"
+              placeholder="Vendor Name"
+              value={newVendor.vendor_name}
+              onChange={(e) =>
+                handleVendorInputChange("vendor_name", e.target.value)
+              }
+            />
+            <input
+              type="text"
+              placeholder="GSTN"
+              value={newVendor.gstn}
+              onChange={(e) => handleVendorInputChange("gstn", e.target.value)}
+            />
+            <div className="modal-buttons">
+              <button
+                className="modal-button save-button"
+                onClick={handleAddVendor}
+              >
+                Save Vendor
+              </button>
+              <button
+                className="modal-button cancel-button"
+                onClick={() => setIsAddingVendor(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Modal for Adding New Sub-Vendor (POC) */}
+        <Modal
+          isOpen={isAddingSubVendor}
+          onClose={() => setIsAddingSubVendor(false)}
+        >
+          <div className="modal-content">
+            <h4>Add Point of Contact for Vendor: {newVendorId}</h4>
+            <input
+              type="text"
+              placeholder="Point of Contact"
+              value={newSubVendor.point_of_contact}
+              onChange={(e) =>
+                handleSubVendorInputChange("point_of_contact", e.target.value)
+              }
+            />
+            <input
+              type="email"
+              placeholder="Email"
+              value={newSubVendor.email}
+              onChange={(e) => {
+                const value = e.target.value;
+                handleSubVendorInputChange("email", value);
+                setErrors((prevErrors) => ({
+                  ...prevErrors,
+                  email: validateEmail(value) ? "" : "Invalid email address",
+                }));
+              }}
+            />
+            {errors.email && (
+              <span className="error-message">{errors.email}</span>
+            )}
+            <input
+              type="text"
+              placeholder="Phone Number"
+              value={newSubVendor.phone_number}
+              onChange={(e) => {
+                const value = e.target.value;
+                handleSubVendorInputChange("phone_number", value);
+                setErrors((prevErrors) => ({
+                  ...prevErrors,
+                  phone_number: validatePhoneNumber(value)
+                    ? ""
+                    : "Phone number must be 10 digits",
+                }));
+              }}
+            />
+            {errors.phone_number && (
+              <span className="error-message">{errors.phone_number}</span>
+            )}
+            <input
+              type="text"
+              placeholder="Location"
+              value={newSubVendor.location}
+              onChange={(e) =>
+                handleSubVendorInputChange("location", e.target.value)
+              }
+            />
+            {/* <select
           value={newSubVendor.category}
           onChange={(e) =>
             handleSubVendorInputChange("category", e.target.value)
@@ -639,129 +675,177 @@ const Vendors = () => {
           <option value="Electronics">Electronics</option>
           <option value="Payload">Payload</option>
         </select> */}
-        <button onClick={handleAddSubVendor}>Save Point of Contact</button>
-        <button onClick={() => setIsAddingSubVendor(false)}>Cancel</button>
-      </Modal>
-      <table>
-        <thead>
-          <tr>
-            <th>Vendor Name</th>
-            <th>GSTIN</th>
-            <th>Primary POC</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th>Location</th>
-            {/* <th>Category</th> */}
-            <th>Actions</th>
-            <th>status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {vendorData.map((vendor) => {
-            const vendorPocs = getVendorPocs(vendor.vendor_id);
-            const selectedPocId = primaryPocSelection[vendor.vendor_id];
-            const defaultPoc = vendorPocs.find((poc) => poc.default_poc) || {};
-            const defaultPocDetails = pocData.find(
-              (poc) => poc.vendor === vendor.vendor_id && poc.default_poc
-            );
-            const primaryPoc =
-              vendorPocs.find((poc) => poc.id === selectedPocId) ||
-              vendorPocs[0] ||
-              {};
+            <div className="modal-buttons">
+              <button
+                className="modal-button save-button"
+                onClick={handleAddSubVendor}
+              >
+                Save Vendor
+              </button>
+              <button
+                className="modal-button cancel-button"
+                onClick={() => setIsAddingSubVendor(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </Modal>
 
-            // const primaryPoc = vendorPocs[0] || {}; // Use the first POC as the primary one
-            return (
-              <tr key={vendor.vendor_id}>
-                <td>
-                  {isEditingVendor === vendor.vendor_id ? (
-                    <div>
+        <div>
+          <div className="search-bar-container">
+            <input
+              type="text"
+              className="search-bar"
+              placeholder="Search by Vendor Name or Component Type"
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+            />
+            <span className="search-icon">
+              <i className="fa fa-search" aria-hidden="true"></i>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Vendor Name</th>
+              <th>GSTIN</th>
+              <th>Primary POC</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Location</th>
+              {/* <th>Category</th> */}
+              <th>Actions</th>
+              <th>status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {vendorData.map((vendor) => {
+              const vendorPocs = getVendorPocs(vendor.vendor_id);
+              const selectedPocId = primaryPocSelection[vendor.vendor_id];
+              const defaultPoc =
+                vendorPocs.find((poc) => poc.default_poc) || {};
+              const defaultPocDetails = pocData.find(
+                (poc) => poc.vendor === vendor.vendor_id && poc.default_poc
+              );
+              const primaryPoc =
+                vendorPocs.find((poc) => poc.id === selectedPocId) ||
+                vendorPocs[0] ||
+                {};
+
+              // const primaryPoc = vendorPocs[0] || {}; // Use the first POC as the primary one
+              return (
+                <tr key={vendor.vendor_id}>
+                  <td
+                    className="specification-cell"
+                    title={vendor.vendor_name || ""}
+                  >
+                    {isEditingVendor === vendor.vendor_id ? (
+                      <div>
+                        <input
+                          type="text"
+                          value={editedVendorName.vendor_name}
+                          onChange={(e) =>
+                            setEditedVendorName({
+                              ...editedVendorName,
+                              vendor_name: e.target.value,
+                            })
+                          }
+                          autoFocus
+                        />
+                      </div>
+                    ) : (
+                      <span
+                        onClick={() => handleVendorNameClick(vendor.vendor_id)}
+                        style={{
+                          cursor: "pointer",
+                          textDecoration: "underline",
+                        }}
+                      >
+                        {vendor.vendor_name}
+                      </span>
+                    )}
+                  </td>
+                  <td>
+                    {isEditingVendor === vendor.vendor_id ? (
                       <input
                         type="text"
-                        value={editedVendorName.vendor_name}
+                        value={editedVendorName.gstn}
                         onChange={(e) =>
                           setEditedVendorName({
                             ...editedVendorName,
-                            vendor_name: e.target.value,
+                            gstn: e.target.value,
                           })
                         }
-                        autoFocus
                       />
-                    </div>
-                  ) : (
-                    <span
-                      onClick={() => handleVendorNameClick(vendor.vendor_id)}
+                    ) : (
+                      vendor.gstn
+                    )}
+                  </td>
+                  <td
+                    onClick={() => handlePocClick(vendor.vendor_id)}
+                    style={{ cursor: "pointer", textDecoration: "underline" }}
+                  >
+                    {defaultPoc.point_of_contact || "N/A"}
+                  </td>
+                  <td>{defaultPoc.email || "N/A"}</td>
+                  <td>{defaultPoc.phone_number || "N/A"}</td>
+                  <td>{defaultPoc.location || "N/A"}</td>
+                  {/* <td>{primaryPoc.category || "N/A"}</td> */}
+                  <td>
+                    {isEditingVendor === vendor.vendor_id ? (
+                      <>
+                        <button
+                          className="vendor-button save-button"
+                          onClick={() => handleSaveVendorName(vendor.vendor_id)}
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          className="vendor-button cancel-button"
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => handleEditVendorName(vendor)}
+                        className="vendor-button edit-button"
+                        aria-label="Edit vendor"
+                        style={{ border: "none", cursor: "pointer" }}
+                      >
+                        <PencilSquareIcon className="text-black" />
+                      </button>
+                    )}
+                  </td>
+                  <td>
+                    <button
+                      onClick={() =>
+                        toggleVendorStatus(vendor.vendor_id, vendor.active)
+                      }
                       style={{
+                        backgroundColor: vendor.active ? "#17c755" : "#ee6e3f",
+                        color: "white",
+                        padding: "5px 10px",
+                        border: "none",
                         cursor: "pointer",
-                        textDecoration: "underline",
+                        borderRadius: "10px",
                       }}
                     >
-                      {vendor.vendor_name}
-                    </span>
-                  )}
-                </td>
-                <td>
-                  {isEditingVendor === vendor.vendor_id ? (
-                    <input
-                      type="text"
-                      value={editedVendorName.gstn}
-                      onChange={(e) =>
-                        setEditedVendorName({
-                          ...editedVendorName,
-                          gstn: e.target.value,
-                        })
-                      }
-                    />
-                  ) : (
-                    vendor.gstn
-                  )}
-                </td>
-                <td
-                  onClick={() => handlePocClick(vendor.vendor_id)}
-                  style={{ cursor: "pointer", textDecoration: "underline" }}
-                >
-                  {defaultPoc.point_of_contact || "N/A"}
-                </td>
-                <td>{defaultPoc.email || "N/A"}</td>
-                <td>{defaultPoc.phone_number || "N/A"}</td>
-                <td>{defaultPoc.location || "N/A"}</td>
-                {/* <td>{primaryPoc.category || "N/A"}</td> */}
-                <td>
-                  {isEditingVendor === vendor.vendor_id ? (
-                    <>
-                      <button
-                        onClick={() => handleSaveVendorName(vendor.vendor_id)}
-                      >
-                        Save
-                      </button>
-                      <button onClick={handleCancelEdit}>Cancel</button>
-                    </>
-                  ) : (
-                    <button onClick={() => handleEditVendorName(vendor)}>
-                      Edit
+                      {vendor.active ? "Active" : "Inactive"}
                     </button>
-                  )}
-                </td>
-                <td>
-                  <button
-                    onClick={() =>
-                      toggleVendorStatus(vendor.vendor_id, vendor.active)
-                    }
-                    style={{
-                      backgroundColor: vendor.active ? "green" : "red",
-                      color: "white",
-                      padding: "5px 10px",
-                      border: "none",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {vendor.active ? "Active" : "Inactive"}
-                  </button>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
       {/* <button
         onClick={() => setIsAddingVendor(true)}
         style={{ marginTop: "10px" }}
@@ -898,19 +982,18 @@ const Vendors = () => {
                   <td>
                     {isEditing === poc.id ? (
                       <>
-                        <button onClick={() => handleSavePoc(poc.id)}>
+                        <button className="edit-button" onClick={() => handleSavePoc(poc.id)}>
                           Save
                         </button>
-                        <button onClick={() => setIsEditing(null)}>
+                        <button className="delete-button" onClick={() => setIsEditing(null)}>
                           Cancel
                         </button>
                       </>
                     ) : (
-                      <button onClick={() => setIsEditing(poc.id)}>Edit</button>
+                     <button className="edit-button" onClick={() => setIsEditing(poc.id)}>Edit</button>
                     )}
-                    <button onClick={() => handleDeletePoc(poc.id)}>
-                      Delete
-                    </button>
+                    <button className="delete-button" onClick={() => handleDeletePoc(poc.id)}>Delete</button>
+
                   </td>
                 </tr>
               ))}
@@ -1002,9 +1085,32 @@ const Vendors = () => {
               )}
             </tbody>
           </table>
-          <button onClick={() => setIsAdding(true)}>Add POC</button>
-          <button onClick={() => setShowPocPopup(false)}>Close</button>
+        <div className="modal-footer">
+  <button className="action-button add-button" onClick={() => setIsAdding(true)}>Add POC</button>
+  <button className="action-button close-button" onClick={() => setShowPocPopup(false)}>Close</button>
+</div>
+
         </div>
+      )}
+      {showScrollTop && (
+        <button
+          style={{
+            position: "fixed",
+            bottom: "20px",
+            right: "20px",
+            padding: "10px 15px",
+            fontSize: "18px",
+            backgroundColor: "#f57c00",
+            color: "white",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer",
+            zIndex: 1000,
+          }}
+          onClick={scrollToTop}
+        >
+          ↑
+        </button>
       )}
     </div>
   );

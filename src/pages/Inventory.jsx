@@ -33,7 +33,7 @@ const Inventory = () => {
   const [sortField, setSortField] = useState("");
   const [sortOrder, setSortOrder] = useState("asc"); // "asc" or "desc"
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
-
+  const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
 
   useEffect(() => {
     fetchInventoryData();
@@ -41,6 +41,19 @@ const Inventory = () => {
     fetchVendorMasterData();
     fetchMetaTags();
   }, [selectedStatus]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     filterInventory();
@@ -69,6 +82,13 @@ const Inventory = () => {
     } catch (error) {
       console.error("Error fetching inventory data:", error);
     }
+  };
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth", // Smooth scroll effect
+    });
   };
 
   const filterByDate = () => {
@@ -214,31 +234,35 @@ const Inventory = () => {
   };
 
   const handleGenerateReport = async () => {
-    const validSerialNumbers = filteredInventory.map(item => item.serial_number);
-  
+    const validSerialNumbers = filteredInventory.map(
+      (item) => item.serial_number
+    );
+
     if (validSerialNumbers.length === 0) {
       alert("No valid inventory items available to generate the report.");
       return;
     }
 
     setIsGeneratingReport(true);
-  
+
     const formatPrice = (value) =>
       value !== undefined && value !== null
         ? `₹${parseFloat(value).toFixed(2)}`
         : "N/A";
-  
+
     const formatPercentage = (value) =>
       value !== undefined && value !== null
         ? `${parseFloat(value).toFixed(2)}%`
         : "N/A";
-  
+
     const fetchInventoryDetails = async (serial) => {
       try {
-        const response = await fetch(`${config.apiBaseURL}/inventory_details/${serial}/`);
+        const response = await fetch(
+          `${config.apiBaseURL}/inventory_details/${serial}/`
+        );
         if (!response.ok) throw new Error();
         const data = await response.json();
-  
+
         return {
           Serial_Number: serial,
           Component_ID: data.inventory_item?.component_id || "N/A",
@@ -250,7 +274,8 @@ const Inventory = () => {
           Create_Date: data.inventory_item?.create_date || "N/A",
           Status: data.inventory_item?.status || "N/A",
           Price: formatPrice(data.inventory_item?.price),
-          SKU_Number_Inventory: data.inventory_item?.sku_number_inventory || "N/A",
+          SKU_Number_Inventory:
+            data.inventory_item?.sku_number_inventory || "N/A",
           Request_ID_Assign: data.inventory_item?.Request_id_assign || "N/A",
           PO_ID: data.po_master?.[0]?.PO_id || "N/A",
           Cart_ID: data.po_master?.[0]?.cart_id || "N/A",
@@ -290,7 +315,7 @@ const Inventory = () => {
         };
       }
     };
-  
+
     const chunkArray = (array, size) => {
       const chunks = [];
       for (let i = 0; i < array.length; i += size) {
@@ -298,18 +323,18 @@ const Inventory = () => {
       }
       return chunks;
     };
-  
+
     const batchSize = 200; // Increase batch size if your backend supports it
     const serialChunks = chunkArray(validSerialNumbers, batchSize);
     let allReportData = [];
-  
+
     try {
       for (const chunk of serialChunks) {
         // Run each chunk concurrently
         const results = await Promise.all(chunk.map(fetchInventoryDetails));
         allReportData.push(...results);
       }
-  
+
       if (allReportData.length > 0) {
         generateCSV(allReportData);
       } else {
@@ -318,12 +343,10 @@ const Inventory = () => {
     } catch (error) {
       console.error("Error generating report:", error);
       showErrorToast("Report generation failed.");
-    }finally {
+    } finally {
       setIsGeneratingReport(false); // Hide the popup when done
     }
   };
-  
-  
 
   // Function to format price values (₹, commas, two decimal places)
   const formatPrice = (value) => {
@@ -545,258 +568,279 @@ const Inventory = () => {
     <div className="inventory-container">
       <div className="header">
         <h2>Inventory Data</h2>
-        <button
-          className="generate-report-button"
-          onClick={handleGenerateReport}
-        >
-          Generate Report
-        </button>
 
-        {/* Date Filter Button & Inputs */}
-        <div className="date-filter">
-          <label>From Date:</label>
-          <input
-            type="date"
-            value={fromDate}
-            onChange={(e) => setFromDate(e.target.value)}
-          />
-          <label> To Date:</label>
-          <input
-            type="date"
-            value={toDate}
-            onChange={(e) => setToDate(e.target.value)}
-          />
-          <button className="filter-button" onClick={filterByDate}>
-            Filter by Date
-          </button>
-          <button onClick={clearDateFilter}>Clear Date</button>
-        </div>
-
-        <div>
-          <label>Status:</label>
-          <select
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
+        <div className="header-controls">
+          <button
+            className="generate-report-button"
+            onClick={handleGenerateReport}
           >
-            <option value="">All</option>
-            <option value="Available">Available</option>
-            <option value="Reserved">Reserved</option>
-            <option value="In_drone">In Drone</option>
-            <option value="Damaged">Damaged</option>
-            <option value="Repair">Repair</option>
-          </select>
-        </div>
+            Generate Report
+          </button>
 
-        <div className="search-bar-container">
-          <input
-            type="text"
-            className="search-bar"
-            placeholder="Search by tag..."
-            value={selectedTag}
-            onChange={(e) => setSelectedTag(e.target.value)}
-          />
-          <span className="search-icon">
-            <i className="fa fa-search" aria-hidden="true"></i>
-          </span>
+          <div className="date-filter">
+            <label>From:</label>
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+            />
+            <label>To:</label>
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+            />
+            <button className="filter-button" onClick={filterByDate}>
+              Filter
+            </button>
+            <button className="clear-button" onClick={clearDateFilter}>
+              Clear
+            </button>
+          </div>
+
+          <div className="status-filter">
+            <label>Status:</label>
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+            >
+              <option value="">All</option>
+              <option value="Available">Available</option>
+              <option value="Reserved">Reserved</option>
+              <option value="In_drone">In Drone</option>
+              <option value="Damaged">Damaged</option>
+              <option value="Repair">Repair</option>
+            </select>
+          </div>
+
+          <div className="search-bar-container">
+            <input
+              type="text"
+              className="search-bar"
+              placeholder="Search by tag..."
+              value={selectedTag}
+              onChange={(e) => setSelectedTag(e.target.value)}
+            />
+            <span className="search-icon">
+              <i className="fa fa-search" aria-hidden="true"></i>
+            </span>
+          </div>
         </div>
       </div>
-      <table className="inventory-table">
-        <thead>
-          <tr>
-            <th
-              onClick={() => handleSort("component_id")}
-              style={{ textDecoration: "underline", cursor: "pointer" }}
-            >
-              Component ID{" "}
-              {sortField === "component_id"
-                ? sortOrder === "asc"
-                  ? " 🔼"
-                  : " 🔽"
-                : ""}
-            </th>
-            <th
-              onClick={() => handleSort("serial_number")}
-              style={{ textDecoration: "underline", cursor: "pointer" }}
-            >
-              Serial Number{" "}
-              {sortField === "serial_number"
-                ? sortOrder === "asc"
-                  ? " 🔼"
-                  : " 🔽"
-                : ""}
-            </th>
-            <th>SKU Number</th>
-            <th
-              onClick={() => handleSort("category")}
-              style={{ textDecoration: "underline", cursor: "pointer" }}
-            >
-              Category{" "}
-              {sortField === "category"
-                ? sortOrder === "asc"
-                  ? " 🔼"
-                  : " 🔽"
-                : ""}
-            </th>
-            <th
-              onClick={() => handleSort("component_type")}
-              style={{ textDecoration: "underline", cursor: "pointer" }}
-            >
-              Component Type{" "}
-              {sortField === "component_type"
-                ? sortOrder === "asc"
-                  ? " 🔼"
-                  : " 🔽"
-                : ""}
-            </th>
-            <th
-              onClick={() => handleSort("specification")}
-              style={{ textDecoration: "underline", cursor: "pointer" }}
-            >
-              Specification{" "}
-              {sortField === "specification"
-                ? sortOrder === "asc"
-                  ? " 🔼"
-                  : " 🔽"
-                : ""}
-            </th>
-            <th>UOM</th>
-            <th
-              onClick={() => handleSort("vendor_name")}
-              style={{ textDecoration: "underline", cursor: "pointer" }}
-            >
-              Vendor{" "}
-              {sortField === "vendor_name"
-                ? sortOrder === "asc"
-                  ? " 🔼"
-                  : " 🔽"
-                : ""}
-            </th>
-            <th
-              onClick={() => handleSort("create_date")}
-              style={{ textDecoration: "underline", cursor: "pointer" }}
-            >
-              Created Date{" "}
-              {sortField === "create_date"
-                ? sortOrder === "asc"
-                  ? " 🔼"
-                  : " 🔽"
-                : ""}
-            </th>
-            <th
-              onClick={() => handleSort("price")}
-              style={{ textDecoration: "underline", cursor: "pointer" }}
-            >
-              Price{" "}
-              {sortField === "price"
-                ? sortOrder === "asc"
-                  ? " 🔼"
-                  : " 🔽"
-                : ""}
-            </th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {Object.keys(groupedData).length > 0 ? (
-            Object.keys(groupedData).map((componentId) => {
-              const componentRows = groupedData[componentId];
-              const componentRowsCount =
-                groupedData[componentId].filter(
-                  (row) =>
-                    row.status === "Available" || row.status === "Reserved"
-                ).length || 0;
-              const firstRow = componentRows[0];
-              const component = componentData[componentId] || {};
-              const isExpanded = expandedComponents[componentId];
 
-              return (
-                <React.Fragment key={componentId}>
-                  <tr
-                    onClick={() => toggleExpand(componentId)}
-                    className="clickable-row"
-                    style={{
-                      cursor: "pointer",
-                      backgroundColor: componentRows.some(
-                        (row) => row.status !== "Available"
-                      )
-                        ? "white"
-                        : "", // Highlight disabled rows
-                    }}
-                  >
-                    <td
+      <div className="table-scroll-horizontal">
+        <table className="inventory-table">
+          <thead>
+            <tr>
+              <th
+                onClick={() => handleSort("component_id")}
+                style={{ textDecoration: "underline", cursor: "pointer" }}
+              >
+                Component ID{" "}
+                {sortField === "component_id"
+                  ? sortOrder === "asc"
+                    ? " 🔼"
+                    : " 🔽"
+                  : ""}
+              </th>
+              <th
+                onClick={() => handleSort("serial_number")}
+                style={{ textDecoration: "underline", cursor: "pointer" }}
+              >
+                Serial Number{" "}
+                {sortField === "serial_number"
+                  ? sortOrder === "asc"
+                    ? " 🔼"
+                    : " 🔽"
+                  : ""}
+              </th>
+              <th>SKU Number</th>
+              <th
+                onClick={() => handleSort("category")}
+                style={{ textDecoration: "underline", cursor: "pointer" }}
+              >
+                Category{" "}
+                {sortField === "category"
+                  ? sortOrder === "asc"
+                    ? " 🔼"
+                    : " 🔽"
+                  : ""}
+              </th>
+              <th
+                onClick={() => handleSort("component_type")}
+                style={{ textDecoration: "underline", cursor: "pointer" }}
+              >
+                Component Type{" "}
+                {sortField === "component_type"
+                  ? sortOrder === "asc"
+                    ? " 🔼"
+                    : " 🔽"
+                  : ""}
+              </th>
+              <th
+                onClick={() => handleSort("specification")}
+                style={{ textDecoration: "underline", cursor: "pointer" }}
+              >
+                Specification{" "}
+                {sortField === "specification"
+                  ? sortOrder === "asc"
+                    ? " 🔼"
+                    : " 🔽"
+                  : ""}
+              </th>
+              <th>UOM</th>
+              <th
+                onClick={() => handleSort("vendor_name")}
+                style={{ textDecoration: "underline", cursor: "pointer" }}
+              >
+                Vendor{" "}
+                {sortField === "vendor_name"
+                  ? sortOrder === "asc"
+                    ? " 🔼"
+                    : " 🔽"
+                  : ""}
+              </th>
+              <th
+                onClick={() => handleSort("create_date")}
+                style={{ textDecoration: "underline", cursor: "pointer" }}
+              >
+                Created Date{" "}
+                {sortField === "create_date"
+                  ? sortOrder === "asc"
+                    ? " 🔼"
+                    : " 🔽"
+                  : ""}
+              </th>
+              <th
+                onClick={() => handleSort("price")}
+                style={{ textDecoration: "underline", cursor: "pointer" }}
+              >
+                Price{" "}
+                {sortField === "price"
+                  ? sortOrder === "asc"
+                    ? " 🔼"
+                    : " 🔽"
+                  : ""}
+              </th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Object.keys(groupedData).length > 0 ? (
+              Object.keys(groupedData).map((componentId) => {
+                const componentRows = groupedData[componentId];
+                const componentRowsCount =
+                  groupedData[componentId].filter(
+                    (row) =>
+                      row.status === "Available" || row.status === "Reserved"
+                  ).length || 0;
+                const firstRow = componentRows[0];
+                const component = componentData[componentId] || {};
+                const isExpanded = expandedComponents[componentId];
+
+                return (
+                  <React.Fragment key={componentId}>
+                    <tr
+                      onClick={() => toggleExpand(componentId)}
+                      className="clickable-row"
                       style={{
-                        textDecoration:
-                          componentRows.length > 1 ? "underline" : "none",
+                        cursor: "pointer",
+                        backgroundColor: componentRows.some(
+                          (row) => row.status !== "Available"
+                        )
+                          ? "white"
+                          : "", // Highlight disabled rows
                       }}
                     >
-                      {componentId}
-                    </td>
-                    <td
-                      style={{ color: "Grey", fontStyle: "italic" }}
-                    >{`Quantity: ${componentRowsCount}`}</td>
-                    <td>{component.sku_number}</td>
-                    <td>{component.category || ""}</td>
-                    <td>{component.component_type || ""}</td>
-                    <td
-                      onDoubleClick={() => {
-                        setEditingComponentSpec(componentId);
-                        setTempSpecification(firstRow.specification || "");
-                      }}
-                      style={{ cursor: "pointer" }}
-                    >
-                      {editingComponentSpec === componentId ? (
-                        <>
-                          <input
-                            type="text"
-                            value={tempSpecification}
-                            onChange={(e) =>
-                              setTempSpecification(e.target.value)
-                            }
-                            autoFocus
-                          />
-                          <button
-                            onClick={() => handleSaveSpecification(componentId)}
-                          >
-                            Save
-                          </button>
-                          <button onClick={() => cancelSpecificationEdit()}>
-                            Cancel
-                          </button>
-                        </>
-                      ) : (
-                        <span>{firstRow.specification || "Not Available"}</span>
-                      )}
-                    </td>
-                    <td>{firstRow.UOM || ""}</td>
-                    <td>{firstRow.vendor_name || ""}</td>
-                    <td>
-                      {firstRow.create_date || new Date().toLocaleDateString()}
-                    </td>
-                    <td style={{ textAlign: "right" }}>
-                      ₹
-                      {parseFloat(firstRow.price).toLocaleString("en-IN", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </td>
-                    <td></td>
-                  </tr>
-
-                  {isExpanded &&
-                    componentRows.map((row, index) => (
-                      <tr
-                        key={index}
-                        className="expanded-row"
+                      <td
                         style={{
-                          backgroundColor: !row.status ? "#e0e0e0" : "#ededed", // Highlight disabled items
-                          color:
-                            row.status !== "Available" ? "#a0a0a0" : "inherit",
+                          textDecoration:
+                            componentRows.length > 1 ? "underline" : "none",
                         }}
                       >
-                        <td>{row.component_id}</td>
-                        <td>
-                          {row.serial_number}{" "}
-                          {/* {!row.status && (
+                        {componentId}
+                      </td>
+                      <td
+                        style={{ color: "Grey", fontStyle: "italic" }}
+                      >{`Quantity: ${componentRowsCount}`}</td>
+                      <td>{component.sku_number}</td>
+                      <td>{component.category || ""}</td>
+                      <td>{component.component_type || ""}</td>
+                      <td
+                        onDoubleClick={() => {
+                          setEditingComponentSpec(componentId);
+                          setTempSpecification(firstRow.specification || "");
+                        }}
+                        style={{ cursor: "pointer" }}
+                        className="specification-cell"
+                      >
+                        {editingComponentSpec === componentId ? (
+                          <>
+                            <input
+                              type="text"
+                              value={tempSpecification}
+                              onChange={(e) =>
+                                setTempSpecification(e.target.value)
+                              }
+                              autoFocus
+                            />
+                            <button
+                              onClick={() =>
+                                handleSaveSpecification(componentId)
+                              }
+                            >
+                              Save
+                            </button>
+                            <button onClick={() => cancelSpecificationEdit()}>
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <span>
+                            {firstRow.specification || "Not Available"}
+                          </span>
+                        )}
+                      </td>
+                      <td>{firstRow.UOM || ""}</td>
+                      <td
+                        className="specification-cell"
+                        title={firstRow.vendor_name || ""}
+                      >
+                        {firstRow.vendor_name || ""}
+                      </td>
+                      <td>
+                        {firstRow.create_date ||
+                          new Date().toLocaleDateString()}
+                      </td>
+                      <td style={{ textAlign: "right" }}>
+                        ₹
+                        {parseFloat(firstRow.price).toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </td>
+                      <td></td>
+                    </tr>
+
+                    {isExpanded &&
+                      componentRows.map((row, index) => (
+                        <tr
+                          key={index}
+                          className="expanded-row"
+                          style={{
+                            backgroundColor: !row.status
+                              ? "#e0e0e0"
+                              : "#ededed", // Highlight disabled items
+                            color:
+                              row.status !== "Available"
+                                ? "#a0a0a0"
+                                : "inherit",
+                          }}
+                        >
+                          <td>{row.component_id}</td>
+                          <td>
+                            {row.serial_number}{" "}
+                            {/* {!row.status && (
                             <button
                               className="return-button"
                               onClick={() => openReturnModal(row)}
@@ -804,77 +848,82 @@ const Inventory = () => {
                               Return
                             </button>
                           )} */}
-                        </td>
-                        <td
-                          onDoubleClick={() =>
-                            handleDoubleClick(row.id, row.sku_number)
-                          }
-                          style={{ cursor: "pointer" }}
-                        >
-                          {editingSKU === row.id ? (
-                            <>
-                              <input
-                                type="text"
-                                value={tempSKU}
-                                onChange={(e) =>
-                                  handleSKUChange(e.target.value)
-                                }
-                                autoFocus
-                              />
-                              <button onClick={() => handleSaveSKU(row.id)}>
-                                Save
-                              </button>
-                              <button onClick={handleCancelEdit}>Cancel</button>
-                            </>
-                          ) : (
-                            <span>{row.sku_number_inventory}</span>
-                          )}
-                        </td>
-                        <td>{component.category || ""}</td>
-                        <td>{component.component_type || ""}</td>
-                        <td>{row.specification || ""}</td>
-                        <td>{row.UOM || ""}</td>
-                        <td>{row.vendor_name || ""}</td>
-                        <td>
-                          {row.create_date || new Date().toLocaleDateString()}
-                        </td>
-                        <td style={{ textAlign: "right" }}>
-                          ₹
-                          {parseFloat(row.price).toLocaleString("en-IN", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
-                        </td>
-                        <td>{row.status}</td>
-                      </tr>
-                    ))}
-                </React.Fragment>
-              );
-            })
-          ) : (
+                          </td>
+                          <td
+                            onDoubleClick={() =>
+                              handleDoubleClick(row.id, row.sku_number)
+                            }
+                            style={{ cursor: "pointer" }}
+                          >
+                            {editingSKU === row.id ? (
+                              <>
+                                <input
+                                  type="text"
+                                  value={tempSKU}
+                                  onChange={(e) =>
+                                    handleSKUChange(e.target.value)
+                                  }
+                                  autoFocus
+                                />
+                                <button onClick={() => handleSaveSKU(row.id)}>
+                                  Save
+                                </button>
+                                <button onClick={handleCancelEdit}>
+                                  Cancel
+                                </button>
+                              </>
+                            ) : (
+                              <span>{row.sku_number_inventory}</span>
+                            )}
+                          </td>
+                          <td>{component.category || ""}</td>
+                          <td>{component.component_type || ""}</td>
+                          <td>{row.specification || ""}</td>
+                          <td>{row.UOM || ""}</td>
+                          <td>{row.vendor_name || ""}</td>
+                          <td>
+                            {row.create_date || new Date().toLocaleDateString()}
+                          </td>
+                          <td style={{ textAlign: "right" }}>
+                            ₹
+                            {parseFloat(row.price).toLocaleString("en-IN", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </td>
+                          <td>{row.status}</td>
+                        </tr>
+                      ))}
+                  </React.Fragment>
+                );
+              })
+            ) : (
+              <tr>
+                <td colSpan="9" className="no-data">
+                  No inventory data available
+                </td>
+              </tr>
+            )}
             <tr>
-              <td colSpan="9" className="no-data">
-                No inventory data available
-              </td>
-            </tr>
-          )}
-          <tr>
-            <td style={{ fontWeight: "bold" }}>Total Inventory count</td>
-            <td>
-              {/* {filteredInventory.filter(
+              <td style={{ fontWeight: "bold" }}>Total Inventory count</td>
+              <td>
+                {/* {filteredInventory.filter(
                 (row) => row.status === "Available" || row.status === "Reserved"
               ).length || 0} */}
-              {filteredInventory.length || 0}
-            </td>
-            <td colSpan="10" className="no-data"></td>
-          </tr>
-        </tbody>
-      </table>
+                {filteredInventory.length || 0}
+              </td>
+              <td colSpan="10" className="no-data"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
       {isGeneratingReport && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <p>Generating Report... Please wait. This may take a few minutes.</p>
+            <p>
+              Generating Report... Please wait. This may take a few minutes.
+            </p>
           </div>
         </div>
       )}
@@ -932,6 +981,7 @@ const Inventory = () => {
                 placeholder="Enter your name"
               />
             </label>
+
             <div className="modal-buttons">
               <button className="confirm-button" onClick={handleReturn}>
                 Confirm Return
@@ -1020,6 +1070,26 @@ const Inventory = () => {
 
 
       `}</style>
+      {showScrollTop && (
+        <button
+          style={{
+            position: "fixed",
+            bottom: "20px",
+            right: "20px",
+            padding: "10px 15px",
+            fontSize: "18px",
+            backgroundColor: "#f57c00",
+            color: "white",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer",
+            zIndex: 1000,
+          }}
+          onClick={scrollToTop}
+        >
+          ↑
+        </button>
+      )}
     </div>
   );
 };

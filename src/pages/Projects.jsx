@@ -384,9 +384,14 @@ const ProjectList = () => {
   };
 
   return (
-    <div style={{ fontFamily: "Arial, sans-serif", padding: "20px" }}>
+    <div>
+      <div className="header"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}>
       <h2>Project List</h2>
-
       <button
         onClick={() => setShowAddForm(!showAddForm)}
         style={{
@@ -404,50 +409,61 @@ const ProjectList = () => {
           style={{ width: "20px", height: "20px" }}
         />
       </button>
+      </div>
 
-      {showAddForm && (
-        <form onSubmit={handleAddProject}>
-          <select
-            name="project_type"
-            value={newProject.project_type}
-            onChange={handleInputChange}
-            required
-          >
-            <option value="">Select Project Type</option>
-            <option value="R&D">R&D</option>
-            <option value="OPS">OPS</option>
-            <option value="SER">SER</option>
-            <option value="MISC">MISC</option>
-            <option value="U/D">U/D</option>
-            {/* Add more options if necessary */}
-          </select>
+{showAddForm && (
+  <div className="add-project-container">
 
-          <input
-            type="text"
-            name="project_name"
-            value={newProject.project_name}
-            onChange={handleInputChange}
-            required
-            placeholder="Project Name"
-          />
-          <input
-            type="text"
-            name="description"
-            value={newProject.description}
-            onChange={handleInputChange}
-            required
-            placeholder="Description"
-          />
-          <input
-            type="date"
-            name="start_date"
-            value={newProject.start_date}
-            onChange={handleInputChange}
-            required
-          />
-          <button type="submit">Add Project</button>
-        </form>
-      )}
+    {/* Add Project Form */}
+    <form onSubmit={handleAddProject} className="add-project-form">
+  <select
+    name="project_type"
+    value={newProject.project_type}
+    onChange={handleInputChange}
+    required
+  >
+    <option value="">Select Project Type</option>
+    <option value="R&D">R&D</option>
+    <option value="OPS">OPS</option>
+    <option value="SER">SER</option>
+    <option value="MISC">MISC</option>
+    <option value="U/D">U/D</option>
+  </select>
+
+  <input
+    type="text"
+    name="project_name"
+    value={newProject.project_name}
+    onChange={handleInputChange}
+    required
+    placeholder="Project Name"
+  />
+  <input
+    type="text"
+    name="description"
+    value={newProject.description}
+    onChange={handleInputChange}
+    required
+    placeholder="Description"
+  />
+  <input
+    type="date"
+    name="start_date"
+    value={newProject.start_date}
+    onChange={handleInputChange}
+    required
+  />
+
+  <div className="form-buttons">
+    <button type="submit" className="add-button">Add Project</button>
+    <button type="button" className="cancel-button" onClick={() => setShowAddForm(false)}>Cancel</button>
+  </div>
+</form>
+
+  </div>
+)}
+
+
 
       <table
         style={{
@@ -510,7 +526,7 @@ const ProjectList = () => {
                   onClick={() => navigate(`/projects/${project.project_id}`)}
                   style={{
                     cursor: "pointer",
-                    color: "blue",
+                    color: "black",
                     textDecoration: "underline",
                     padding: "10px",
                   }}

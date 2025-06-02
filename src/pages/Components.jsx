@@ -43,6 +43,7 @@ const Component = () => {
   const [selectedComponentType, setSelectedComponentType] = useState(""); // For filtering by Component Type
   const [selectedCategory, setSelectedCategory] = useState(""); // For filtering by Category
   const [selectedTag, setSelectedTag] = useState(""); // Component specification selected for filtering
+  const [tagsDropdownOpen, setTagsDropdownOpen] = useState(false);
 
   const [tagsChoices, setTagsChoices] = useState(""); // Tags filter
   const [selectedSpecification, setSelectedSpecification] = useState("");
@@ -52,6 +53,9 @@ const Component = () => {
 
   const [sortField, setSortField] = useState();
   const [sortOrder, setSortOrder] = useState("asc");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [componentTypeDropdownOpen, setComponentTypeDropdownOpen] =
+    React.useState(false);
 
   // Function to get unique component types based on the selected component type
   const getFilteredComponentTypes = () => {
@@ -117,6 +121,42 @@ const Component = () => {
     fetchTestTags();
     fetchAvailableTags();
   }, []);
+
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+  document.removeEventListener("click", handleClickOutside);
+    };
+  }, []);
+
+  const componentTypeDropdownRef = useRef(null);
+
+  useEffect(() => {
+  const handleClickOutside = (event) => {
+    if (
+      componentTypeDropdownRef.current &&
+      !componentTypeDropdownRef.current.contains(event.target)
+    ) {
+      setComponentTypeDropdownOpen(false);
+    }
+  };
+
+  document.addEventListener("mousedown", handleClickOutside);
+
+  return () => {
+    document.removeEventListener("click", handleClickOutside);
+  };
+}, []);
+
 
   // Function to fetch data from the API
   const fetchComponents = async (isFiltering = false, resetPage = false) => {
@@ -444,14 +484,7 @@ const Component = () => {
     <div>
       <div className="header">
         <h2>Component List</h2>
-        <button
-          style={{
-            cursor: "pointer",
-            marginLeft: "auto",
-            marginRight: 20,
-          }}
-          onClick={handleTagIconClick}
-        >
+        <button className="create-tag-button" onClick={handleTagIconClick}>
           Create Tag
         </button>
         {/* <img
@@ -479,198 +512,253 @@ const Component = () => {
           </span>
         </div>
       </div>
-      <table>
-        <thead>
-          <tr>
-            <th
-              style={{ textDecoration: "underline", cursor: "pointer" }}
-              onClick={() => handleSort("component_id")}
-            >
-              Component ID{" "}
-              {sortField === "component_id"
-                ? sortOrder === "asc"
-                  ? "🔼"
-                  : "🔽"
-                : ""}
-            </th>
+      <div>
+        <div className="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th
+                  style={{ textDecoration: "underline", cursor: "pointer" }}
+                  onClick={() => handleSort("component_id")}
+                >
+                  Component ID{" "}
+                  {sortField === "component_id"
+                    ? sortOrder === "asc"
+                      ? "🔼"
+                      : "🔽"
+                    : ""}
+                </th>
 
-            <th>
-              Category
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-              >
-                <option value="">All</option>
-                {getFilteredCategories().map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-            </th>
-            <th>
-              Component Type
-              <select
-                value={selectedComponentType}
-                onChange={(e) => setSelectedComponentType(e.target.value)}
-              >
-                <option value="">All</option>
-                {getFilteredComponentTypes().map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
-            </th>
-            <th
-              style={{ textDecoration: "underline", cursor: "pointer" }}
-              onClick={() => handleSort("component_specification")}
-            >
-              Specification{" "}
-              {sortField === "component_specification"
-                ? sortOrder === "asc"
-                  ? "🔼"
-                  : "🔽"
-                : ""}
-            </th>
-            <th>Tally Reference</th>
-            <th>UOM</th>
+                <th className="category-dropdown-wrapper" ref={dropdownRef}>
+                  <div
+                    className="category-dropdown"
+                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                  >
+                    {selectedCategory || "Category"}
+                  </div>
 
-            <th>
-              Tags
-              <select
-                value={tagsChoices}
-                onChange={(e) => setTagsChoices(e.target.value)}
-              >
-                <option value="">All</option>
-                {getFilteredTags().map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {sortedComponents.length > 0 ? (
-            sortedComponents.map((item, index) => {
-              const component = item.component_id || {};
-              return (
-                <tr key={index}>
-                  <td>{component.component_id}</td>
-                  <td>{component.category}</td>
-                  <td>{component.component_type}</td>
-                  <td>{component.component_specification}</td>
-                  <td>
-                    {editTallyRefId === component.component_id ? (
-                      <>
-                        <input
-                          type="text"
-                          value={editedTallyRef}
-                          onChange={(e) => setEditedTallyRef(e.target.value)}
-                          style={{ width: "80px" }}
-                        />
-                        <button
-                          style={{ marginLeft: "4px" }}
-                          onClick={() =>
-                            handleSaveTallyReference(component.component_id)
-                          }
-                        >
-                          Save
-                        </button>
-                        <button onClick={() => setEditTallyRefId(null)}>
-                          Cancel
-                        </button>
-                      </>
-                    ) : (
-                      <span
-                        style={{ cursor: "pointer", color: "#007bff" }}
-                        title="Click to edit"
+                  {dropdownOpen && (
+                    <div className="category-dropdown-options">
+                      <div
+                        className="category-dropdown-option"
                         onClick={() => {
-                          setEditTallyRefId(component.component_id);
-                          setEditedTallyRef(component.tally_reference || "");
+                          setSelectedCategory("");
+                          setDropdownOpen(false);
                         }}
                       >
-                        {component.tally_reference || "Click to add"}
-                      </span>
-                    )}
-                  </td>
-                  <td>{component.unit_of_measurement}</td>
-
-                  <td>
-                    <div>
-                      {getTagsForComponent(component.component_id).length >
-                      0 ? (
-                        getTagsForComponent(component.component_id).map(
-                          (tag) => (
-                            <span key={tag.id} className="tag">
-                              {tag.tags}
-                              <button
-                                onClick={() =>
-                                  deleteTag(tag.id, component.component_id)
-                                }
-                              >
-                                ×
-                              </button>
-                            </span>
-                          )
-                        )
-                      ) : (
-                        <span>No tags available</span>
-                      )}
-                      <button
-                        style={{
-                          marginLeft: "8px",
-                          background: "e2dede",
-                          width: "24px",
-                          height: "24px",
-                          borderRadius: "50%",
-                          border: "none",
-                          cursor: "pointer",
-                          color: "blue",
-                          fontSize: "16px",
-                        }}
-                        onClick={() =>
-                          handleAddTagClick(component.component_id)
-                        }
-                      >
-                        +
-                      </button>
-                    </div>
-                    {/* Add Tag Dropdown/Modal */}
-                    {selectedComponent === component.component_id && (
-                      <div style={{ marginTop: "8px" }}>
-                        <select
-                          value={newTag}
-                          onChange={(e) => setNewTag(e.target.value)}
-                        >
-                          <option value="">Select a tag</option>
-                          {availableTags.map((tag) => (
-                            <option key={tag.id} value={tag.tags}>
-                              {tag.tags}
-                            </option>
-                          ))}
-                        </select>
-                        <button onClick={handleAddTag}>Add Tag</button>
-                        <button onClick={() => setSelectedComponent(null)}>
-                          Cancel
-                        </button>
+                        All
                       </div>
-                    )}
+                      {getFilteredCategories().map((category) => (
+                        <div
+                          key={category}
+                          className="category-dropdown-option"
+                          onClick={() => {
+                            setSelectedCategory(category);
+                            setDropdownOpen(false);
+                          }}
+                        >
+                          {category}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </th>
+
+                <th className="component-type-dropdown-wrapper" ref={componentTypeDropdownRef}>
+                  <div
+                    className="component-type-dropdown"
+                    onClick={() =>
+                      setComponentTypeDropdownOpen(!componentTypeDropdownOpen)
+                    }
+                  >
+                    {selectedComponentType || "Component Type"}
+                  </div>
+
+                  {componentTypeDropdownOpen && (
+                    <div className="component-type-dropdown-options">
+                      <div
+                        className="component-type-dropdown-option"
+                        onClick={() => {
+                          setSelectedComponentType("");
+                          setComponentTypeDropdownOpen(false);
+                        }}
+                      >
+                        All
+                      </div>
+                      {getFilteredComponentTypes().map((type) => (
+                        <div
+                          key={type}
+                          className="component-type-dropdown-option"
+                          onClick={() => {
+                            setSelectedComponentType(type);
+                            setComponentTypeDropdownOpen(false);
+                          }}
+                        >
+                          {type}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </th>
+
+                <th
+                  style={{ textDecoration: "underline", cursor: "pointer" }}
+                  onClick={() => handleSort("component_specification")}
+                >
+                  Specification{" "}
+                  {sortField === "component_specification"
+                    ? sortOrder === "asc"
+                      ? "🔼"
+                      : "🔽"
+                    : ""}
+                </th>
+                <th>Tally Reference</th>
+                <th>UOM</th>
+
+                <th
+                  className="tags-dropdown-wrapper"
+                  style={{ position: "relative" }}
+                >
+                  <div
+                    className="tags-dropdown"
+                    onClick={() => setTagsDropdownOpen(!tagsDropdownOpen)}
+                    style={{ cursor: "pointer", userSelect: "none" }}
+                  >
+                    {tagsChoices || "Tags"}
+                  </div>
+
+                  {tagsDropdownOpen && (
+                    <div className="tags-dropdown-options">
+                      <div
+                        className="tags-dropdown-option"
+                        onClick={() => {
+                          setTagsChoices("");
+                          setTagsDropdownOpen(false);
+                        }}
+                      >
+                        All
+                      </div>
+                      {getFilteredTags().map((tag) => (
+                        <div
+                          key={tag}
+                          className="tags-dropdown-option"
+                          onClick={() => {
+                            setTagsChoices(tag);
+                            setTagsDropdownOpen(false);
+                          }}
+                        >
+                          {tag}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedComponents.length > 0 ? (
+                sortedComponents.map((item, index) => {
+                  const component = item.component_id || {};
+                  return (
+                    <tr key={index}>
+                      <td>{component.component_id}</td>
+                      <td>{component.category}</td>
+                      <td>{component.component_type}</td>
+                      <td className="specification-cell"
+                      title={component.component_specification || ""}>
+                        {component.component_specification}
+                      </td>
+                      <td>
+                        {editTallyRefId === component.component_id ? (
+                          <>
+                            <div className="tally-edit-container">
+                              <input
+                                type="text"
+                                value={editedTallyRef}
+                                onChange={(e) =>
+                                  setEditedTallyRef(e.target.value)
+                                }
+                                className="tally-input"
+                              />
+                              <div className="tally-actions">
+                                <button
+                                  className="tally-button save-button"
+                                  onClick={() =>
+                                    handleSaveTallyReference(
+                                      component.component_id
+                                    )
+                                  }
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  className="tally-button cancel-button"
+                                  onClick={() => setEditTallyRefId(null)}
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <span
+                            style={{ cursor: "pointer", color: "#007bff" }}
+                            title="Click to edit"
+                            onClick={() => {
+                              setEditTallyRefId(component.component_id);
+                              setEditedTallyRef(
+                                component.tally_reference || ""
+                              );
+                            }}
+                          >
+                            {component.tally_reference || "Click to add"}
+                          </span>
+                        )}
+                      </td>
+                      <td>{component.unit_of_measurement}</td>
+
+                      <td>
+                        <div className="tags-wrapper">
+                          <div className="tags-list">
+                            {getTagsForComponent(component.component_id).map(
+                              (tag) => (
+                                <span key={tag.id} className="tag">
+                                  {tag.tags}
+                                  <button
+                                    onClick={() =>
+                                      deleteTag(tag.id, component.component_id)
+                                    }
+                                  >
+                                    ×
+                                  </button>
+                                </span>
+                              )
+                            )}
+                          </div>
+                          <button
+                            className="add-tag-button"
+                            onClick={() =>
+                              handleAddTagClick(component.component_id)
+                            }
+                          >
+                            +
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan="8" style={{ textAlign: "center" }}>
+                    No components found for the given search.
                   </td>
                 </tr>
-              );
-            })
-          ) : (
-            <tr>
-              <td colSpan="8" style={{ textAlign: "center" }}>
-                No components found for the given search.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
       {loading && <p>Loading...</p>}
       {!hasMore && <p>No more data available</p>}
 
@@ -709,15 +797,16 @@ const Component = () => {
             boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
             zIndex: 1000,
           }}
+          className="add-tag-popup"
         >
-          <h3>Enter a Tag</h3>
+          <h3 >Enter a Tag</h3>
           <input
             type="text"
             value={newTagName}
             onChange={(e) => setNewTagName(e.target.value)}
             placeholder="Enter tag name"
-            style={{ width: "100%", padding: "2px", marginTop: "10px" }}
           />
+          <div className="popup-actions">
           <button
             onClick={async () => {
               if (!newTagName.trim()) {
@@ -767,18 +856,10 @@ const Component = () => {
                 alert("An error occurred while creating the tag.");
               }
             }}
-            style={{
-              marginTop: "10px",
-              padding: "8px 12px",
-              background: "#4caf50",
-              color: "#fff",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
           >
             Create
           </button>
+          </div>
         </div>
       )}
 

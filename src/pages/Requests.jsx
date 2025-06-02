@@ -139,6 +139,12 @@ const Requests = () => {
 
   return (
     <div>
+      <div className="header"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}>
       <h2>Request List</h2>
 
       <button
@@ -158,6 +164,7 @@ const Requests = () => {
           style={{ width: "20px", height: "20px" }}
         />
       </button>
+      </div>
 
       <table>
         <thead>

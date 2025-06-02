@@ -153,10 +153,75 @@ table {
   width: 100%;
 }
 
+.table-container {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  white-space: nowrap;
+  border: 1px solid #ddd;
+  padding-bottom: 4px; /* optional: space below table */
+}
+
+/* Optional: if you want the table to take full width when possible */
+.table-container table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* Optional: Better table visuals */
+.table-container th,
+.table-container td {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  text-align: left;
+}
+
+.table-scroll-wrapper {
+  max-height: 500px; /* or any desired height */
+  overflow-y: auto;
+  position: relative;
+  border: 1px solid #ddd;
+}
+
+.specification-cell {
+  max-width: 200px; /* adjust as needed */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Ensure headers/wrappers are positioned correctly */
+
+/* Style the dropdown containers to float above the scroll area */
+.category-dropdown-options,
+.component-type-dropdown-options,
+.tags-dropdown-options {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1000;
+  background-color: white;
+  border: 1px solid #ccc;
+  max-height: 200px;
+  overflow-y: auto;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.table-scroll-wrapper th,
+.table-scroll-wrapper td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: left;
+  width: 150px; /* Fixed width per column to force overflow */
+  white-space: nowrap;
+  /* overflow: hidden; */
+}
+
 th,
 td {
   padding: 12px;
   border: 1px solid #ddd;
+  white-space: nowrap; /* Prevent text wrapping */
 }
 
 th {
@@ -247,7 +312,7 @@ tbody tr:hover {
 }
 
 /* Close Button */
-.close-button {
+.x-button {
   position: absolute;
   top: 10px;
   right: 10px;
@@ -256,6 +321,146 @@ tbody tr:hover {
   border: none;
   cursor: pointer;
   color: #333;
+}
+
+.bom-form {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: none;
+  border-radius: 8px;
+  margin-top: 10px;
+  margin-bottom: 20px;
+}
+
+.bom-form input[type="text"] {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  width: 200px;
+}
+
+.bom-form input[type="text"]:focus {
+  border-color: #f58720;
+  outline: none;
+}
+
+.bom-form button {
+  padding: 8px 16px;
+  background-color: #f58720;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.bom-form button:hover {
+  background-color: #f5b578;
+}
+
+.add-component-form {
+  background-color: #f9f9f9;
+  padding: 20px;
+  margin-top: 20px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  max-width: 400px;
+}
+
+.back-button {
+  margin-top: 20px;
+  padding: 10px;
+  background-color: #6c757d;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.back-button:hover {
+  background-color: rgb(187, 183, 183);
+}
+
+.add-component-form h4 {
+  margin-bottom: 20px;
+  margin-top: -1px;
+  color: #333;
+  text-align: center;
+  font-size: 18px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  row-gap: 12px;
+  column-gap: 16px;
+  align-items: center;
+}
+
+.form-grid label {
+  font-weight: 500;
+  color: #444;
+}
+
+.form-grid input {
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1px solid #aaa;
+  font-size: 14px;
+  width: 90%;
+}
+
+.form-grid select {
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1px solid #aaa;
+  font-size: 14px;
+  width: 93.5%;
+}
+
+.vendor-loading {
+  grid-column: 1 / span 2;
+  color: #999;
+}
+
+.form-buttons {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end; /* Align to right */
+}
+
+.form-buttons button {
+  padding: 6px 14px;
+  border-radius: 5px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+}
+
+.form-buttons button:first-child {
+  background-color: #f58720;
+  color: white;
+}
+
+.form-buttons button:first-child:hover {
+  background-color: #f1ba86;
+  color: white;
+}
+
+.form-buttons button:last-child {
+  background-color: gray;
+  color: white;
+}
+
+.form-buttons button:last-child:hover {
+  background-color: rgb(189, 187, 187);
+  color: white;
 }
 
 /* Table Inside Modal */
@@ -327,15 +532,15 @@ tbody tr:hover {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  /*width: 80%; /* Adjust width as needed */
-  max-height: 90%; /* Limit the height to 90% of the viewport */
-  overflow-y: auto; /* Enable vertical scrolling if content exceeds height */
-  background: #fff; /* Background color */
-  border-radius: 8px; /* Rounded corners */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow */
-  z-index: 1000; /* Ensure the popup is above other elements */
-  padding: 20px; /* Spacing inside the popup */
-  box-sizing: border-box; /* Include padding in width and height calculations */
+  width: 400px; /* Fixed width */
+  max-height: 90vh; /* Adjust to prevent overflow */
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 /* Close button styles */
@@ -352,7 +557,8 @@ tbody tr:hover {
 }
 
 .close-button:hover {
-  color: red; /* Change color on hover */
+  background-color: rgb(174, 173, 173);
+  color: white; /* Change color on hover */
 }
 
 /* Popup header */
@@ -457,39 +663,344 @@ tbody tr:hover {
   background: darkred; /* Change color on hover */
 }
 
-.search-bar-container {
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.tag-dropdown-wrapper {
   position: relative;
-  width: 100%;
-  max-width: 400px;
-  margin: 0px;
+}
+
+.tag-dropdown-options {
+  position: absolute;
+  z-index: 10;
+  background: white;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+.tally-edit-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.tally-input {
+  width: 100px;
+  padding: 6px 8px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.tally-actions {
+  margin-top: 6px;
+  display: flex;
+  gap: 8px;
+}
+
+.tally-button {
+  padding: 6px 12px;
+  font-size: 14px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.save-button {
+  background-color: #4caf50;
+  color: white;
+}
+
+.cancel-button {
+  background-color: #f44336;
+  color: white;
+}
+
+/* Sticky footer inside popup */
+.modal-footer {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  background: #fff;
+  padding: 12px 16px;
+  display: flex;
+  gap: 10px;
+  border-top: 1px solid #ddd;
+  z-index: 10;
+}
+
+/* Table button styles */
+.action-button {
+  padding: 6px 12px;
+  font-size: 14px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.add-button {
+  background-color: #f58720;
+  color: white;
+}
+
+.add-button:hover {
+  background-color: #f3be8d;
+  color: white;
+}
+
+.close-button {
+  background-color: gray;
+  color: white;
+  font-weight: 100;
+}
+
+.edit-button {
+  background-color: #f58720;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 5px;
+  margin-right: 10px;
+  cursor: pointer;
+}
+
+.edit-button:hover {
+  background-color: #f1ba86;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 5px;
+  margin-right: 10px;
+  cursor: pointer;
+}
+
+.delete-button {
+  background-color: gray;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 5px;
+  cursor: pointer;
+  margin-right: 10px;
+  color: #ee6e3f;
+}
+
+.delete-button:hover {
+  background-color: rgb(176, 174, 174);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 5px;
+  cursor: pointer;
+}
+
+.save-button {
+  background-color: #28a745;
+  color: white;
+}
+
+.cancel-button {
+  background-color: #999;
+  color: white;
+}
+
+/* Optional: table width consistency */
+table th,
+table td {
+  text-align: left;
+  padding: 8px 12px;
+  vertical-align: middle;
+}
+
+.create-tag-button {
+  cursor: pointer;
+  margin-left: auto;
+  margin-right: 20px;
+  padding: 8px 16px;
+  background-color: rgb(206, 206, 206); /* Green background */
+  color: black;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 500;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.create-tag-button:hover {
+  background-color: gray; /* Darker green on hover */
+  transform: scale(1.05);
+}
+
+.create-tag-button:active {
+  background-color: gray;
+  transform: scale(0.98);
+}
+.category-dropdown {
+  cursor: pointer;
+  padding: 6px 12px;
+  border: none;
+  background-color: transparent;
+  display: flex;
+  align-items: center;
+  width: 150px;
+  font-weight: bold;
+  position: relative;
+}
+
+.category-dropdown::after {
+  content: "▼"; /* Dropdown arrow */
+  font-size: 12px;
+  margin-left: 4px !important;
+  color: #333;
+}
+
+.category-dropdown-options {
+  position: absolute;
+  top: 120%;
+  left: 10;
+  width: 150px;
+  background-color: rgb(195, 194, 194);
+  border: 1px solid #ccc;
+  color: black;
+  border-radius: 4px;
+  z-index: 10;
+  max-height: 300px;
+  overflow-y: auto;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.category-dropdown-option {
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.category-dropdown-option:hover {
+  background-color: #f0f0f0;
+}
+
+.category-dropdown-wrapper {
+  position: relative;
+}
+
+.component-type-dropdown-wrapper {
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+}
+
+.component-type-dropdown {
+  padding: 6px 12px;
+  border-radius: 4px;
+  /* border: 1px solid transparent; */
+  display: inline-block;
+  /* Optional: add a subtle hover effect */
+  transition: border-color 0.2s ease;
+}
+
+.component-type-dropdown::after {
+  content: "▼"; /* Dropdown arrow */
+  font-size: 12px;
+  margin-left: 4px !important;
+  color: #333;
+}
+
+.component-type-dropdown:hover {
+  border-color: #aaa;
+}
+
+.component-type-dropdown-options {
+  position: absolute;
+  top: 110%;
+  left: 10;
+  background-color: rgb(195, 194, 194);
+  border: 1px solid #ccc;
+  color: black;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  margin-top: 4px;
+  border-radius: 4px;
+  z-index: 10;
+  min-width: 150px;
+  max-height: 300px; /* Fixed max height */
+  overflow-y: auto; /* Scroll vertically when content overflows */
+  overflow-x: hidden;
+}
+
+.component-type-dropdown-option {
+  padding: 6px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.component-type-dropdown-option:hover {
+  background-color: #f0f0f0;
+}
+
+.tags-dropdown {
+  padding: 6px 12px;
+  border-radius: 4px;
+  /* border: 1px solid #ccc; */
+  min-width: 100px;
+  display: inline-block;
+}
+
+.tags-dropdown-options {
+  position: absolute;
+  top: 110%;
+  left: 10;
+  background-color: rgb(195, 194, 194);
+  border: 1px solid #ccc;
+  color: black;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  margin-top: 4px;
+  border-radius: 4px;
+  z-index: 10;
+  min-width: 100px;
+  max-height: 300px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.tags-dropdown::after {
+  content: "▼"; /* Dropdown arrow */
+  font-size: 12px;
+  margin-left: 4px !important;
+  color: #333 !important;
+}
+
+.tags-dropdown-option {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.tags-dropdown-option:hover {
+  background-color: #f0f0f0;
+}
+
+.search-bar-container {
+  top: 150px; /* distance from top */
+  right: 140px; /* distance from right */
+  display: flex;
+  align-items: center;
+  background-color: white;
+  padding: 5px 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  z-index: 1000; /* make sure it's on top */
 }
 
 .search-bar {
-  width: 100%;
-  padding: 10px 40px 10px 15px;
-  border: 2px solid #ccc;
-  border-radius: 25px;
-  font-size: 16px;
+  border: none;
   outline: none;
-  box-sizing: border-box;
-  transition: border-color 0.3s;
-}
-
-.search-bar:focus {
-  border-color: #007bff;
+  padding: 6px 8px;
+  font-size: 14px;
 }
 
 .search-icon {
-  position: absolute;
-  top: 50%;
-  right: 15px;
-  transform: translateY(-50%);
+  margin-left: 8px;
   color: #888;
-  font-size: 18px;
-}
-
-.search-icon i {
-  pointer-events: none; /* Prevent clicking on the icon */
 }
 
 .assign-meta-tags-container {
@@ -506,6 +1017,152 @@ tbody tr:hover {
   margin-bottom: 20px;
   text-align: center;
 }
+
+.tag button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: red;
+  font-weight: bold;
+}
+
+.add-tag-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  width: 300px;
+  max-width: 90%;
+}
+
+.add-tag-popup h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.add-tag-popup input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.add-tag-popup input:focus {
+  border-color: #f58720;
+  outline: none;
+}
+
+.popup-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.add-tag-popup button {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: #f58720;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+
+.add-tag-popup button:hover {
+  background: #f58720;
+
+}
+
+.popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 400px;
+  max-width: 90%;
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.popup h3 {
+  margin: 0;
+  font-size: 20px;
+  color: #333;
+  text-align: center;
+}
+
+.popup input,
+.popup select {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.popup-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.popup-actions button {
+  padding: 8px 14px;
+  font-weight: 500;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.popup-actions button:first-child {
+  background-color: #f58720;
+  color: white;
+}
+
+.popup-actions button:first-child:hover {
+  background-color: #f1ba86;
+  color: white;
+}
+
+.popup-actions button:last-child {
+  background-color: gray;
+  color: white;
+}
+
+.popup-actions button:last-child:hover {
+  background-color: rgb(187, 186, 186);
+  color: white;
+}
+
+
+
+
+/* .add-tag-button {
+  flex-shrink: 0;
+  background-color: #e2e2e2;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  color: blue;
+  font-size: 16px;
+} */
 
 .form-group {
   margin-bottom: 15px;
@@ -525,21 +1182,110 @@ tbody tr:hover {
   border-radius: 4px;
 }
 
-.add-tag-button {
-  display: block;
-  width: 100%;
-  padding: 10px;
-  background-color: #14bf36;
-  color: #fff;
-  font-size: 16px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-top: 10px;
+.tags-wrapper {
+  display: flex;
+  align-items: center; /* vertically center tags and button */
+  gap: 6px; /* small horizontal gap between tags-list and button */
+  flex-wrap: wrap; /* allow tags to wrap to next line if needed */
 }
 
-.add-tag-button:hover {
-  background-color: #4bdc3d;
+.tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px; /* smaller gap between each tag */
+  max-width: 100%; /* avoid overflow */
+}
+
+/* .header {
+  margin-bottom: 20px;
+}
+
+.header h2 {
+  margin-bottom: 12px;
+  font-size: 24px;
+} */
+
+.header-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  row-gap: 10px;
+}
+
+.generate-report-button,
+.filter-button,
+.clear-button {
+  padding: 6px 12px;
+  border: none;
+  background-color: #f58720;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.generate-report-button:hover,
+.filter-button:hover,
+.clear-button:hover {
+  background-color: #f7bc85;
+}
+
+.date-filter,
+.status-filter,
+.search-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.date-filter label,
+.status-filter label {
+  font-weight: 500;
+}
+
+/* .search-bar-container {
+  position: relative;
+}
+
+.search-bar {
+  padding: 6px 30px 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.search-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #888;
+} */
+
+.tag button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: red;
+  font-weight: bold;
+}
+
+.add-tag input{
+  padding: 10px;
+}
+.add-tag-button {
+  flex-shrink: 0;
+  background-color: #e2e2e2;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  color: blue;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Center "+" horizontally and vertically */
 }
 
 .feedback-message {
@@ -596,3 +1342,304 @@ tbody tr:hover {
     transform: rotate(360deg);
   }
 }
+
+.table-scroll-horizontal {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  border: 1px solid #ccc;
+}
+
+.inventory-table {
+  min-width: 1200px; /* or based on your column width needs */
+  width: max-content;
+  border-collapse: collapse;
+}
+
+.inventory-table th,
+.inventory-table td {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  white-space: nowrap;
+}
+
+/* General button styles */
+.vendor-button {
+  display: inline-flex;
+  padding: 3px;
+  margin: 2px 5px;
+  font-size: 14px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+/* Edit button */
+/* .edit-button {
+  background-color: #f58720;
+  color: white;
+}
+.edit-button:hover {
+  background-color: #f1ba86;
+} */
+
+/* Save button */
+.save-button {
+  background-color: #f58720;
+  color: white;
+}
+.save-button:hover {
+  background-color: #f1ba86;
+}
+
+/* Cancel button */
+.cancel-button {
+  background-color: #9e9e9e;
+  color: white;
+}
+.cancel-button:hover {
+  background-color: #757575;
+}
+
+.text-black {
+  width: 15px;
+  height: 15px;
+  color: black;
+}
+
+.modal-content {
+  background: none;
+  padding: 1px;
+  max-width: 500px;
+  margin: 4px auto;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-content h4 {
+  margin-top: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+}
+
+.modal-content input,
+.modal-content select {
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.modal-content button {
+  padding: 10px 14px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.modal-content button:first-of-type {
+  background-color: #f58720;
+  color: white;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.modal-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.modal-content button:first-of-type:hover {
+  background-color: #f6c190;
+  color: white;
+}
+
+.modal-content button:last-of-type {
+  background-color: #6c757d;
+  color: white;
+}
+
+.error-message {
+  color: red;
+  font-size: 12px;
+  margin-top: -10px;
+}
+
+.attachment-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.attachment-view a {
+  color: black;
+  font-weight: 500;
+}
+
+.attachment-view a:hover {
+  text-decoration: underline;
+}
+
+.attachment-edit button {
+  margin-top: 4px;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.attachment-edit button:first-of-type {
+  background-color: #f58720;
+  color: white;
+  margin-right: 6px;
+}
+
+.attachment-edit button:last-of-type {
+  background-color: gray;
+  color: white;
+}
+
+.attachment-edit button:last-of-type:hover {
+  background-color: rgb(181, 180, 180);
+  color: white;
+}
+
+.image-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.image-preview img.product-thumbnail {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+.image-edit button {
+  margin-top: 4px;
+  padding: 5px 10px;
+  font-size: 13px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.image-edit button:first-of-type {
+  background-color: #f58720;
+  color: white;
+  margin-right: 6px;
+}
+
+.image-edit button:first-of-type:hover {
+  background-color: #f1ba86;
+  color: white;
+  margin-right: 6px;
+}
+
+.image-edit button:last-of-type {
+  background-color: gray;
+  color: white;
+}
+.image-edit button:last-of-type:hover {
+  background-color: rgb(184, 182, 182);
+  color: white;
+}
+
+.edit-button {
+  background-color: gray;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  cursor: pointer;
+  padding: 6px 12px;
+  font-weight: 500;
+}
+
+.edit-button:hover {
+  background-color: rgb(174, 171, 171);
+  border: none;
+  border-radius: 5px;
+  color: white;
+  cursor: pointer;
+  padding: 6px 12px;
+  font-weight: 500;
+}
+
+
+.add-project-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  max-width: 400px;
+  background: #f9f9f9;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.add-project-form input,
+.add-project-form select {
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.form-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.add-button {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.cancel-button {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.add-button:hover {
+  background-color: #45a049;
+}
+
+.cancel-button:hover {
+  background-color: #d32f2f;
+}
+
+

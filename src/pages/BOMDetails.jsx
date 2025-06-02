@@ -763,27 +763,54 @@ const BOMDetails = () => {
             <strong>BOM ID:</strong> {selectedBom.bom_id}
           </p>
 
-
-          <div style={{display: "flex",justifyContent: "space-between",alignItems: "center",marginTop: "10px",}}>
-
-            <button onClick={() => navigate("/bom")} style={{background: "transparent",border: "none",cursor: "pointer",padding: "4px",}}
-            title="Back to BOM List">
-            <img src= {Back} alt="Back to BOM list "style={{ width: "20px", height: "20px" }}/>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginTop: "10px",
+            }}
+          >
+            <button
+              onClick={() => navigate("/bom")}
+              style={{
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                padding: "4px",
+              }}
+              title="Back to BOM List"
+            >
+              <img
+                src={Back}
+                alt="Back to BOM list "
+                style={{ width: "20px", height: "20px" }}
+              />
             </button>
 
-            <button onClick={() => setShowAddComponentForm(true)} style={{background: "transparent",border: "none",cursor: "pointer" ,padding: "4px",}}
-            title="Add Component">
-              <img src={AddIcon} alt="" style={{width:"20px",height:"20px"}}/>
+            <button
+              onClick={() => setShowAddComponentForm(true)}
+              style={{
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                padding: "4px",
+              }}
+              title="Add Component"
+            >
+              <img
+                src={AddIcon}
+                alt=""
+                style={{ width: "20px", height: "20px" }}
+              />
             </button>
           </div>
 
-
           {showAddComponentForm && (
-            <div style={{ marginTop: "20px" }}>
+            <div className="add-component-form">
               <h4>Add New Component</h4>
-              <div>
-                {/* Component Type Dropdown */}
-                <label>Component Type </label>
+              <div className="form-grid">
+                <label>Component Type</label>
                 <select
                   value={newComponent.componentType || ""}
                   onChange={(e) => {
@@ -796,7 +823,7 @@ const BOMDetails = () => {
                     });
                   }}
                 >
-                  <option value=""> Select Component Type </option>
+                  <option value="">Select Component Type</option>
                   {Array.from(
                     new Set(components.map((c) => c.component_type))
                   ).map((type) => (
@@ -806,8 +833,7 @@ const BOMDetails = () => {
                   ))}
                 </select>
 
-                {/* Component Specification Dropdown */}
-                <label> Component Specification </label>
+                <label>Component Specification</label>
                 <select
                   value={newComponent.component}
                   onChange={async (e) => {
@@ -819,7 +845,7 @@ const BOMDetails = () => {
                     setNewComponent((prev) => ({
                       ...prev,
                       component: componentId,
-                      vendor: "", // Reset before lookup
+                      vendor: "",
                       price: "",
                       tax: "",
                     }));
@@ -827,22 +853,16 @@ const BOMDetails = () => {
                     if (selectedComp) {
                       try {
                         setLoadingVendors(true);
-
-                        // Fetch all vendors
                         const response = await fetch(
                           `${config.apiBaseURL}/vendor_list/`
                         );
                         const allVendors = await response.json();
-
-                        // Find the vendor using vendor_id from the selected component
                         const matchedVendor = allVendors.find(
                           (vendor) =>
                             vendor.vendor_id === selectedComp.vendor_id
                         );
 
                         const productId = selectedComp.product_id;
-
-                        // Get latest price info from priceTables
                         const matchingPrices = priceTables.filter(
                           (p) => p.product === productId
                         );
@@ -872,7 +892,7 @@ const BOMDetails = () => {
                     }
                   }}
                 >
-                  <option value=""> Select Specification </option>
+                  <option value="">Select Specification</option>
                   {components
                     .filter(
                       (comp) =>
@@ -885,8 +905,7 @@ const BOMDetails = () => {
                     ))}
                 </select>
 
-                {/* Quantity Input */}
-                <label> Quantity </label>
+                <label>Quantity</label>
                 <input
                   type="number"
                   placeholder="Quantity"
@@ -899,10 +918,9 @@ const BOMDetails = () => {
                   }
                 />
 
-                {/* Vendor Name Display */}
-                <label> Vendor </label>
+                <label>Vendor</label>
                 {loadingVendors ? (
-                  <p>Loading vendor...</p>
+                  <p className="vendor-loading">Loading vendor...</p>
                 ) : newComponent.vendor ? (
                   <input
                     type="text"
@@ -913,8 +931,9 @@ const BOMDetails = () => {
                     }
                   />
                 ) : null}
+              </div>
 
-                {/* Submit & Cancel Buttons */}
+              <div className="form-buttons">
                 <button onClick={handleAddComponent}>Submit</button>
                 <button onClick={() => setShowAddComponentForm(false)}>
                   Cancel
@@ -946,122 +965,121 @@ const BOMDetails = () => {
           </div>
 
           {/* <h4>Components:</h4> */}
-          <table
-            border="1"
-            style={{ width: "100%", borderCollapse: "collapse" }}
-          >
-            <thead>
-              <tr>
-                <th>Category</th>
-                <th>Component Type</th>
-                <th>Specification</th>
-                <th>UOM</th>
-                <th>Quantity</th>
-                <th>Vendor</th>
-                <th>Date</th>
-                <th>Price</th>
-                <th>Tax</th>
-                <th style={{ backgroundColor: "#82817f" }}>
-                  Latest Price
-                </th>{" "}
-                {/* New column */}
-                <th style={{ backgroundColor: "#82817f" }}>Latest Date</th>{" "}
-                {/* New column */}
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {selectedComponents.map((component, index) => {
-                const { price, tax, date } = getLatestPriceInfo(
-                  component.component.product_id
-                );
-                return (
-                  <tr key={index}>
-                    <td>{component.component.category}</td>
-                    <td>{component.component.component_type}</td>
-                    <td>{component.component.component_specification}</td>
-                    <td>{component.component.unit_of_measurement}</td>
-                    <td>{component.quantity}</td>
-                    <td>{component.vendor.vendor_name}</td>
-                    <td>{component.date}</td>
-                    <td style={{ textAlign: "right" }}>
-                      ₹
-                      {parseFloat(component.price || 0).toLocaleString(
-                        "en-IN",
-                        {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        }
-                      )}
-                    </td>
-                    <td>{component.tax}%</td>
-                    <td style={{ textAlign: "right" }}>
-                      {showLatestPrice
-                        ? `₹${parseFloat(price || 0).toLocaleString("en-IN", {
+          <div className="table-container">
+            <table
+              border="1"
+              style={{ width: "100%", borderCollapse: "collapse" }}
+            >
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Component Type</th>
+                  <th>Specification</th>
+                  <th>UOM</th>
+                  <th>Quantity</th>
+                  <th>Vendor</th>
+                  <th>Date</th>
+                  <th>Price</th>
+                  <th>Tax</th>
+                  <th style={{ backgroundColor: "#82817f" }}>
+                    Latest Price
+                  </th>{" "}
+                  {/* New column */}
+                  <th style={{ backgroundColor: "#82817f" }}>
+                    Latest Date
+                  </th>{" "}
+                  {/* New column */}
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {selectedComponents.map((component, index) => {
+                  const { price, tax, date } = getLatestPriceInfo(
+                    component.component.product_id
+                  );
+                  return (
+                    <tr key={index}>
+                      <td>{component.component.category}</td>
+                      <td>{component.component.component_type}</td>
+                      <td className="specification-cell">
+                        {component.component.component_specification}
+                      </td>
+                      <td>{component.component.unit_of_measurement}</td>
+                      <td>{component.quantity}</td>
+                      <td className="specification-cell">
+                        {component.vendor.vendor_name}
+                      </td>
+                      <td>{component.date}</td>
+                      <td style={{ textAlign: "right" }}>
+                        ₹
+                        {parseFloat(component.price || 0).toLocaleString(
+                          "en-IN",
+                          {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
-                          })}`
-                        : ""}
-                    </td>
-                    <td>{showLatestPrice ? date : ""}</td>
-                    <td>
-                      <button
-                        style={{
-                          border: "none",
-                          background: "transparent",
-                          padding: "5px",
-                          cursor: "pointer",
-                        }}
-                        onClick={() => handleDeleteComponent(component.id)}
-                        title="Delete"
-                      >
-                        <img
-                          src={DeleteIcon}
-                          alt="Delete"
-                          style={{ width: "20px", height: "20px" }}
-                        />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-            <tfoot>
-              <tr>
-                <td
-                  colSpan="7"
-                  style={{ textAlign: "right", fontWeight: "bold" }}
-                >
-                  Total Price (incl. Tax):
-                </td>
-                <td
-                  colSpan="2"
-                  style={{ textAlign: "right", fontWeight: "bold" }}
-                >
-                  ₹
-                  {calculateTotalPrice().toLocaleString("en-IN", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                </td>
-              </tr>
-            </tfoot>
-          </table>
+                          }
+                        )}
+                      </td>
+                      <td>{component.tax}%</td>
+                      <td style={{ textAlign: "right" }}>
+                        {showLatestPrice
+                          ? `₹${parseFloat(price || 0).toLocaleString("en-IN", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}`
+                          : ""}
+                      </td>
+                      <td>{showLatestPrice ? date : ""}</td>
+                      <td>
+                        <button
+                          style={{
+                            border: "none",
+                            background: "transparent",
+                            padding: "5px",
+                            cursor: "pointer",
+                          }}
+                          onClick={() => handleDeleteComponent(component.id)}
+                          title="Delete"
+                        >
+                          <img
+                            src={DeleteIcon}
+                            alt="Delete"
+                            style={{ width: "20px", height: "20px" }}
+                          />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td
+                    colSpan="7"
+                    style={{ textAlign: "right", fontWeight: "bold" }}
+                  >
+                    Total Price (incl. Tax):
+                  </td>
+                  <td
+                    colSpan="2"
+                    style={{ textAlign: "right", fontWeight: "bold" }}
+                  >
+                    ₹
+                    {calculateTotalPrice().toLocaleString("en-IN", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
         </>
       )}
 
-
       <button
         onClick={() => navigate("/bom")}
-        // style={{
-        //   marginTop: "20px",
-        //   padding: "10px 20px",
-        //   // backgroundColor: "#6c757d",
-        //   // color: "#fff",
-        //   border: "none",
-        //   borderRadius: "5px",
-        //   cursor: "pointer",
-        // }}
+        className="back-button"
       >
         Back to BOM List
       </button>
@@ -1072,4 +1090,3 @@ const BOMDetails = () => {
 };
 
 export default BOMDetails;
-

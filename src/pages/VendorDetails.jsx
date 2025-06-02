@@ -10,7 +10,6 @@ import Add from "../assets/Add.png";
 import Cancel from "../assets/cancel.png";
 import Back from "../assets/Back.png";
 
-
 import {
   showSuccessToast,
   showErrorToast,
@@ -507,7 +506,7 @@ const VendorDetails = () => {
           component_specification: "",
           unit_of_measurement: "",
           vendor: vendorId,
-          active:true,
+          active: true,
         });
         setShowAddProductForm(false);
 
@@ -682,13 +681,12 @@ const VendorDetails = () => {
   //   });
   // };
 
-
   const saveRemarks = async (index) => {
     const product = selectedVendorData[index];
     const payload = {
       remarks: product.editableRemarks || "",
     };
-  
+
     try {
       const response = await fetch(
         `${config.apiBaseURL}/vendor_master/${product.product_id}/`,
@@ -700,7 +698,7 @@ const VendorDetails = () => {
           body: JSON.stringify(payload),
         }
       );
-  
+
       if (response.ok) {
         const updatedProduct = await response.json();
         const updatedList = [...selectedVendorData];
@@ -720,30 +718,45 @@ const VendorDetails = () => {
       showErrorToast("Error occurred while updating remarks.");
     }
   };
-  
-
-
 
   return (
     <div>
       <h4>
         Vendor Data for {getVendorName(vendorId)} - {vendorId}
       </h4>
-      
-      <div style={{display: "flex",justifyContent: "space-between",alignItems: "center",marginTop: "10px",}}>
 
-      <button onClick={handleBackClick} style={{background: "transparent",border: "none",cursor: "pointer",padding: "4px",}}
-        title="Back to vendor List">
-       <img src= {Back} alt="Back to Vendor list "style={{ width: "20px", height: "20px" }}/>
-      </button>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginTop: "10px",
+        }}
+      >
+        <button
+          onClick={handleBackClick}
+          style={{
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            padding: "4px",
+          }}
+          title="Back to vendor List"
+        >
+          <img
+            src={Back}
+            alt="Back to Vendor list "
+            style={{ width: "20px", height: "20px" }}
+          />
+        </button>
 
-      <img
-        src={showAddProductForm ? Cancel : Add}
-        alt={showAddProductForm ? "Cancel New Product" : "Add New Product"}
-        title={showAddProductForm ? "Cancel New Product" : "Add New Product"}
-        style={{ width: "24px", height: "24px", cursor: "pointer" }}
-        onClick={() => setShowAddProductForm(!showAddProductForm)}
-      />
+        <img
+          src={showAddProductForm ? Cancel : Add}
+          alt={showAddProductForm ? "Cancel New Product" : "Add New Product"}
+          title={showAddProductForm ? "Cancel New Product" : "Add New Product"}
+          style={{ width: "24px", height: "24px", cursor: "pointer" }}
+          onClick={() => setShowAddProductForm(!showAddProductForm)}
+        />
       </div>
 
       {/* Render CustomMessagebox when showMessageBox is true */}
@@ -758,6 +771,7 @@ const VendorDetails = () => {
       {showAddProductForm && (
         <div className="popup">
           <h3>Add New Product</h3>
+
           <input
             type="text"
             placeholder="Product Description"
@@ -772,31 +786,23 @@ const VendorDetails = () => {
             value={newProduct.last_price}
             onChange={(e) => handleInputChange("last_price", e.target.value)}
           />
-
           <input
             type="number"
             placeholder="Tax %"
             value={newProduct.tax}
             onChange={(e) => handleInputChange("tax", e.target.value)}
           />
-
           <select
             value={newProduct.category}
             onChange={(e) => handleInputChange("category", e.target.value)}
           >
             <option value="">Select Category</option>
-            {/* <option value="Airframe">Airframe</option>
-            <option value="Communication">Communication</option>
-            <option value="Electricals">Electricals</option>
-            <option value="Electronics">Electronics</option>
-            <option value="Payload">Payload</option> */}
             {choices.category_choices.map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
               </option>
             ))}
           </select>
-
           <select
             value={newProduct.component_type}
             onChange={(e) =>
@@ -804,27 +810,6 @@ const VendorDetails = () => {
             }
           >
             <option value="">Select Component Type</option>
-            {/* <option value="Controller">Controller</option>
-            <option value="Frame parts & Tank">Frame parts & Tank</option>
-            <option value="Battery">Battery</option>
-            <option value="Sensor">Sensor</option>
-            <option value="Motors ESC & Propeller Combo">
-              Motors ESC & Propeller Combo
-            </option>
-            <option value="Flight controller">Flight controller</option>
-            <option value="3D Printed parts">3D Printed parts</option>
-            <option value="Carrycase">Carrycase</option>
-            <option value="Battery Charger">Battery Charger</option>
-            <option value="GPS">GPS</option>
-            <option value="Aluminium Mount">Aluminium Mount</option>
-            <option value="CF Sheet">CF Sheet</option>
-            <option value="Sprayer System">Sprayer System</option>
-            <option value="BEC">BEC</option>
-            <option value="PDB">PDB</option>
-            <option value="Connectors">Connectors</option>
-            <option value="Cables">Cables</option>
-            <option value="Water Jet cutting">Water Jet cutting</option>
-            <option value="Consumables">Consumables</option> */}
             {choices.component_type_list.map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
@@ -857,8 +842,11 @@ const VendorDetails = () => {
               handleInputChange("attachments", e.target.files[0])
             }
           />
-          <button onClick={handleAddNewProduct}>Save Product</button>
-          <button onClick={() => setShowAddProductForm(false)}>Cancel</button>
+
+          <div className="popup-actions">
+            <button onClick={handleAddNewProduct}>Save Product</button>
+            <button onClick={() => setShowAddProductForm(false)}>Cancel</button>
+          </div>
         </div>
       )}
 
@@ -999,8 +987,14 @@ const VendorDetails = () => {
             )}
           </div>
 
-          <button onClick={handleSaveEditProduct}>Save Changes</button>
-          <button onClick={() => setShowEditProductForm(false)}>Cancel</button>
+          <div className="popup-actions">
+            <button className="" onClick={handleSaveEditProduct}>
+              Save Changes
+            </button>
+            <button onClick={() => setShowEditProductForm(false)}>
+              Cancel
+            </button>
+          </div>
         </div>
       )}
 
@@ -1145,199 +1139,241 @@ const VendorDetails = () => {
         </div>
       )}
 
-  
+      <div className="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Product ID</th>
+              <th>Product Description</th>
+              <th>Component Type</th>
+              <th>UOM</th>
+              <th>Component ID</th>
+              <th>Last Price</th>
+              <th>Tax %</th>
+              <th>Image</th>
+              <th>Attachments</th>
+              <th>Actions</th>
+              <th>Status</th>
+              <th>Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            {selectedVendorData.map((product, index) => {
+              const isAddedToComp = !!componentMasterData[product.product_id]; // Check if the product is in component master
 
-      <table>
-        <thead>
-          <tr>
-            <th>Product ID</th>
-            <th>Product Description</th>
-            <th>Component Type</th>
-            <th>UOM</th>
-            <th>Component ID</th>
-            <th>Last Price</th>
-            <th>Tax %</th>
-            <th>Image</th>
-            <th>Attachments</th>
-            <th>Actions</th>
-            <th>Status</th>
-            <th>Remarks</th>
-          </tr>
-        </thead>
-        <tbody>
-          {selectedVendorData.map((product, index) => {
-            const isAddedToComp = !!componentMasterData[product.product_id]; // Check if the product is in component master
-
-            return (
-              <tr key={product.product_id || index}>
-                <td>{product.product_id}</td>
-                <td>{product.product_description}</td>
-                <td>{product.component_type}</td>
-                <td>{product.unit_of_measurement}</td>
-                <td>{getComponentId(product.product_id)}</td>
-                <td
-                  onClick={() => handlePriceClick(product.product_id)}
-                  style={{
-                    cursor: "pointer",
-                    textDecoration: "underline",
-                    textAlign: "right",
-                  }}
-                >
-                  ₹
-                  {parseFloat(product.last_price).toLocaleString("en-IN", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                </td>
-                <td style={{ textAlign: "right" }}>{product.tax}%</td>
-                {/* Image editing section */}
-                <td>
-                  {product.img ? (
-                    <img
-                      src={`${config.apiBaseURL}${product.img}`}
-                      alt="Product"
-                      style={{ width: "50px", height: "50px" }}
-                    />
-                  ) : (
-                    "No Image"
-                  )}
-                  {product.isEditingImage ? (
-                    <>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) =>
-                          handleImageChange(index, e.target.files[0])
-                        }
-                      />
-                      <button onClick={() => saveImage(index)}>Save</button>
-                      <button
-                        onClick={() => cancelEditField(index, "isEditingImage")}
-                      >
-                        Cancel
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={() => enableEditField(index, "isEditingImage")}
-                    >
-                      Edit Image
-                    </button>
-                  )}
-                </td>
-                {/* Attachment Editing Section */}
-                <td>
-                  {product.attachments ? (
-                    <a
-                      href={`${config.apiBaseURL}${product.attachments}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      View Attachment
-                    </a>
-                  ) : (
-                    "No Attachments"
-                  )}
-                  {product.isEditingAttachment ? (
-                    <>
-                      <input
-                        type="file"
-                        onChange={(e) =>
-                          handleAttachmentChange(index, e.target.files[0])
-                        }
-                      />
-                      <button onClick={() => saveAttachment(index)}>
-                        Save
-                      </button>
-                      <button
-                        onClick={() =>
-                          cancelEditField(index, "isEditingAttachment")
-                        }
-                      >
-                        Cancel
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={() =>
-                        enableEditField(index, "isEditingAttachment")
-                      }
-                    >
-                      Edit Attachment
-                    </button>
-                  )}
-                </td>
-                <td>
-                  <button onClick={() => handleEditClickVendorMaster(index)}>
-                    Edit
-                  </button>
-
-                  <button
-                    onClick={() => handleAddComponent(product)}
-                    disabled={isAddedToComp}
-                  >
-                    {isAddedToComp ? "Already Added" : "Add to Comp"}
-                  </button>
-                </td>
-                <td>
-                  <button
-                    onClick={() =>
-                      toggleVendorStatus(
-                        product.product_id,
-                        product.active,
-                        product.vendor
-                      )
-                    }
+              return (
+                <tr key={product.product_id || index}>
+                  <td>{product.product_id}</td>
+                  <td>{product.product_description}</td>
+                  <td>{product.component_type}</td>
+                  <td>{product.unit_of_measurement}</td>
+                  <td>{getComponentId(product.product_id)}</td>
+                  <td
+                    onClick={() => handlePriceClick(product.product_id)}
                     style={{
-                      backgroundColor: product.active ? "green" : "red",
-                      color: "white",
-                      padding: "5px 10px",
-                      border: "none",
                       cursor: "pointer",
+                      textDecoration: "underline",
+                      textAlign: "right",
                     }}
                   >
-                    {product.active ? "Active" : "Inactive"}
-                  </button>
-                </td>
-                <td>
-                  {product.isEditingRemarks ? (
-                    <>
-                      <input
-                        type="text"
-                        value={product.editableRemarks || ""}
-                        onChange={(e) => {
-                          const updated = [...selectedVendorData];
-                          updated[index].editableRemarks = e.target.value;
-                          setSelectedVendorData(updated);
-                        }}
-                        placeholder="Enter remarks"
-                      />
-                      <button onClick={() => saveRemarks(index)}>Save</button>
-                      <button onClick={() => cancelEditField(index, "isEditingRemarks")}>
-                        Cancel
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <span onClick={() => enableEditField(index, "isEditingRemarks")} style={{ cursor: "pointer", color: "#007bff" }}>
-                        {product.remarks || "Click to add remarks"}
-                      </span>
-                    </>
-                  )}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-  
+                    ₹
+                    {parseFloat(product.last_price).toLocaleString("en-IN", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </td>
+                  <td style={{ textAlign: "right" }}>{product.tax}%</td>
+                  {/* Image editing section */}
+                  <td>
+                    <div className="image-cell">
+                      {/* Top: Image or No Image */}
+                      <div className="image-preview">
+                        {product.img ? (
+                          <img
+                            src={`${config.apiBaseURL}${product.img}`}
+                            alt="Product"
+                            className="product-thumbnail"
+                          />
+                        ) : (
+                          <span>No Image</span>
+                        )}
+                      </div>
+
+                      {/* Bottom: Edit/Save/Cancel Buttons */}
+                      <div className="image-edit">
+                        {product.isEditingImage ? (
+                          <>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) =>
+                                handleImageChange(index, e.target.files[0])
+                              }
+                            />
+                            <button onClick={() => saveImage(index)}>
+                              Save
+                            </button>
+                            <button
+                              onClick={() =>
+                                cancelEditField(index, "isEditingImage")
+                              }
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() =>
+                              enableEditField(index, "isEditingImage")
+                            }
+                          >
+                            Edit Image
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* Attachment Editing Section */}
+                  <td>
+                    <div className="attachment-cell">
+                      {/* Top: View Attachment or No Attachments */}
+                      <div className="attachment-view">
+                        {product.attachments ? (
+                          <a
+                            href={`${config.apiBaseURL}${product.attachments}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            View Attachment
+                          </a>
+                        ) : (
+                          <span>No Attachments</span>
+                        )}
+                      </div>
+
+                      {/* Bottom: Edit or Save/Cancel Buttons */}
+                      <div className="attachment-edit">
+                        {product.isEditingAttachment ? (
+                          <>
+                            <input
+                              type="file"
+                              onChange={(e) =>
+                                handleAttachmentChange(index, e.target.files[0])
+                              }
+                            />
+                            <button onClick={() => saveAttachment(index)}>
+                              Save
+                            </button>
+                            <button
+                              onClick={() =>
+                                cancelEditField(index, "isEditingAttachment")
+                              }
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() =>
+                              enableEditField(index, "isEditingAttachment")
+                            }
+                          >
+                            Edit Attachment
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+
+                  <td>
+                    <div style={{ display: "flex",
+                       gap: "10px",}}>
+                   <button
+  onClick={() => handleEditClickVendorMaster(index)}
+  className="edit-button"
+>
+  Edit
+</button>
+
+
+                    <button
+                      onClick={() => handleAddComponent(product)}
+                      disabled={isAddedToComp}
+                    >
+                      {isAddedToComp ? "Already Added" : "Add to Comp"}
+                    </button>
+                    </div>
+                  </td>
+                  <td>
+                    <button
+                      onClick={() =>
+                        toggleVendorStatus(
+                          product.product_id,
+                          product.active,
+                          product.vendor
+                        )
+                      }
+                      style={{
+                        backgroundColor: product.active ? "green" : "red",
+                        color: "white",
+                        padding: "5px 10px",
+                        border: "none",
+                        cursor: "pointer",
+                        borderRadius: "10px",
+                      }}
+                    >
+                      {product.active ? "Active" : "Inactive"}
+                    </button>
+                  </td>
+                  <td>
+                    {product.isEditingRemarks ? (
+                      <>
+                        <input
+                          type="text"
+                          value={product.editableRemarks || ""}
+                          onChange={(e) => {
+                            const updated = [...selectedVendorData];
+                            updated[index].editableRemarks = e.target.value;
+                            setSelectedVendorData(updated);
+                          }}
+                          placeholder="Enter remarks"
+                        />
+                        <button onClick={() => saveRemarks(index)}>Save</button>
+                        <button
+                          onClick={() =>
+                            cancelEditField(index, "isEditingRemarks")
+                          }
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <span
+                          onClick={() =>
+                            enableEditField(index, "isEditingRemarks")
+                          }
+                          style={{ cursor: "pointer", color: "#007bff" }}
+                        >
+                          {product.remarks || "Click to add remarks"}
+                        </span>
+                      </>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
       <ToastContainerComponent />
     </div>
   );
 };
 
 export default VendorDetails;
-
 
 //  <button onClick={handleNewRequest}style={{marginTop: "10px",background: "transparent",border: "none",cursor: "pointer",padding: "4px",}}
 //       title="New Request">

@@ -48,7 +48,9 @@ const ProjectMaster = () => {
 
   return (
     <div style={{ padding: "20px" }}>
-      <button onClick={() => navigate(-1)}>Back to Project List</button>
+<button onClick={() => navigate(-1)} className="back-button">
+  Back to Project List
+</button>
       <h2>Project Master Details</h2>
       {projectDetails ? (
         <table>
