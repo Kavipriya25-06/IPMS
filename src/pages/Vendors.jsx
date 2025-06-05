@@ -572,7 +572,7 @@ const Vendors = () => {
 
         {/* Modal for Adding New Vendor */}
         <Modal isOpen={isAddingVendor} onClose={() => setIsAddingVendor(false)}>
-          <div className="modal-content">
+          <div className="modal-contents">
             <h4>Add New Vendor</h4>
             <input
               type="text"
@@ -982,18 +982,33 @@ const Vendors = () => {
                   <td>
                     {isEditing === poc.id ? (
                       <>
-                        <button className="edit-button" onClick={() => handleSavePoc(poc.id)}>
+                        <button
+                          className="edit-button"
+                          onClick={() => handleSavePoc(poc.id)}
+                        >
                           Save
                         </button>
-                        <button className="delete-button" onClick={() => setIsEditing(null)}>
+                        <button
+                          className="delete-button"
+                          onClick={() => setIsEditing(null)}
+                        >
                           Cancel
                         </button>
                       </>
                     ) : (
-                     <button className="edit-button" onClick={() => setIsEditing(poc.id)}>Edit</button>
+                      <button
+                        className="edit-button"
+                        onClick={() => setIsEditing(poc.id)}
+                      >
+                        Edit
+                      </button>
                     )}
-                    <button className="delete-button" onClick={() => handleDeletePoc(poc.id)}>Delete</button>
-
+                    <button
+                      className="delete-button"
+                      onClick={() => handleDeletePoc(poc.id)}
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -1085,11 +1100,20 @@ const Vendors = () => {
               )}
             </tbody>
           </table>
-        <div className="modal-footer">
-  <button className="action-button add-button" onClick={() => setIsAdding(true)}>Add POC</button>
-  <button className="action-button close-button" onClick={() => setShowPocPopup(false)}>Close</button>
-</div>
-
+          <div className="modal-footer">
+            <button
+              className="action-button add-button"
+              onClick={() => setIsAdding(true)}
+            >
+              Add POC
+            </button>
+            <button
+              className="action-button close-button"
+              onClick={() => setShowPocPopup(false)}
+            >
+              Close
+            </button>
+          </div>
         </div>
       )}
       {showScrollTop && (

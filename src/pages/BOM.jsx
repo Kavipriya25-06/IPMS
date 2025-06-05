@@ -180,90 +180,92 @@ const BOM = () => {
         </div>
       )}
 
-      <table>
-        <thead>
-          <tr>
-            <th
-              onClick={() => handleSort("bom_id")}
-              style={{ textDecoration: "underline", cursor: "pointer" }}
-            >
-              BOM ID {renderSortArrow(sortConfig, "bom_id")}
-            </th>
-            <th
-              onClick={() => handleSort("bom_name")}
-              style={{ textDecoration: "underline", cursor: "pointer" }}
-            >
-              BOM Name {renderSortArrow(sortConfig, "bom_name")}
-            </th>
-            <th
-              onClick={() => handleSort("quantity")}
-              style={{ textDecoration: "underline", cursor: "pointer" }}
-            >
-              Number of Components {renderSortArrow(sortConfig, "quantity")}
-            </th>
-            <th>Created By </th>
-            <th
-              onClick={() => handleSort("created_date")}
-              style={{ textDecoration: "underline", cursor: "pointer" }}
-            >
-              Created Date {renderSortArrow(sortConfig, "created_date")}
-            </th>
-            <th>Last Modified By </th>
-            <th
-              onClick={() => handleSort("last_modified_date")}
-              style={{ textDecoration: "underline", cursor: "pointer" }}
-            >
-              Last Modified Date{" "}
-              {renderSortArrow(sortConfig, "last_modified_date")}
-            </th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sortData(boms, sortConfig, (item, key) => {
-            if (key === "quantity") return bomQuantities[item.bom_id] || 0;
-            if (key === "created_date" || key === "last_modified_date")
-              return new Date(item[key]);
-            return item[key];
-          }).map((bom) => (
-            <tr key={bom.bom_id}>
-              <td
-                onClick={() => handleBomClick(bom.bom_id)}
-                style={{
-                  cursor: "pointer",
-                  textDecoration: "underline",
-                }}
+      <div className="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th
+                onClick={() => handleSort("bom_id")}
+                style={{ textDecoration: "underline", cursor: "pointer" }}
               >
-                {bom.bom_id}
-              </td>
-              <td>{bom.bom_name}</td>
-              <td>{bomQuantities[bom.bom_id] || 0}</td>
-              <td>{bom.created_by}</td>
-              <td>{bom.created_date}</td>
-              <td>{bom.last_modified_by}</td>
-              <td>{bom.last_modified_date}</td>
-              <td>
-                <button
-                  onClick={() => handleDelete(bom.bom_id)}
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                    padding: "4px",
-                  }}
-                  title="Delete"
-                >
-                  <img
-                    src={Delete}
-                    alt="Delete"
-                    style={{ width: "20px", height: "20px" }}
-                  />
-                </button>
-              </td>
+                BOM ID {renderSortArrow(sortConfig, "bom_id")}
+              </th>
+              <th
+                onClick={() => handleSort("bom_name")}
+                style={{ textDecoration: "underline", cursor: "pointer" }}
+              >
+                BOM Name {renderSortArrow(sortConfig, "bom_name")}
+              </th>
+              <th
+                onClick={() => handleSort("quantity")}
+                style={{ textDecoration: "underline", cursor: "pointer" }}
+              >
+                Number of Components {renderSortArrow(sortConfig, "quantity")}
+              </th>
+              <th>Created By </th>
+              <th
+                onClick={() => handleSort("created_date")}
+                style={{ textDecoration: "underline", cursor: "pointer" }}
+              >
+                Created Date {renderSortArrow(sortConfig, "created_date")}
+              </th>
+              <th>Last Modified By </th>
+              <th
+                onClick={() => handleSort("last_modified_date")}
+                style={{ textDecoration: "underline", cursor: "pointer" }}
+              >
+                Last Modified Date{" "}
+                {renderSortArrow(sortConfig, "last_modified_date")}
+              </th>
+              <th>Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {sortData(boms, sortConfig, (item, key) => {
+              if (key === "quantity") return bomQuantities[item.bom_id] || 0;
+              if (key === "created_date" || key === "last_modified_date")
+                return new Date(item[key]);
+              return item[key];
+            }).map((bom) => (
+              <tr key={bom.bom_id}>
+                <td
+                  onClick={() => handleBomClick(bom.bom_id)}
+                  style={{
+                    cursor: "pointer",
+                    textDecoration: "underline",
+                  }}
+                >
+                  {bom.bom_id}
+                </td>
+                <td>{bom.bom_name}</td>
+                <td>{bomQuantities[bom.bom_id] || 0}</td>
+                <td>{bom.created_by}</td>
+                <td>{bom.created_date}</td>
+                <td>{bom.last_modified_by}</td>
+                <td>{bom.last_modified_date}</td>
+                <td>
+                  <button
+                    onClick={() => handleDelete(bom.bom_id)}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: "4px",
+                    }}
+                    title="Delete"
+                  >
+                    <img
+                      src={Delete}
+                      alt="Delete"
+                      style={{ width: "20px", height: "20px" }}
+                    />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

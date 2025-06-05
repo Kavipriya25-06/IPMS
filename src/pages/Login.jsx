@@ -22,34 +22,60 @@ const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await fetch(`${config.apiBaseURL}/register/`);
-      const users = await response.json();
-      const user = users.find((u) => u.email === email);
+const handleLogin = async (e) => {
+  e.preventDefault();
+  try {
+    const response = await fetch(`${config.apiBaseURL}/register/`);
+    const users = await response.json();
+    const user = users.find((u) => u.email === email);
 
-      if (!user) {
-        setError("Email not found.");
-        return;
-      }
-
-      if (!user.status) {
-        setError("Your account is inactive. Please contact admin.");
-        return;
-      }
-
-      const success = await login(email, password);
-      if (success) {
-        navigate("/"); // Redirect to homepage on successful login
-      } else {
-        setError("Invalid email or password");
-      }
-    } catch (err) {
-      console.error("Login error:", err);
-      setError("Something went wrong. Try again.");
+    if (!user) {
+      setError("Email not found.");
+      return;
     }
-  };
+
+    if (!user.status) {
+      setError("Your account is inactive. Please contact admin.");
+      return;
+    }
+
+    const success = await login(email, password);
+    if (success) {
+      localStorage.setItem("userRole", user.role);
+
+      // Define sidebar tiles here (or import from a shared config file)
+      const tiles = [
+        { label: "Components", path: "/components", roles: ["Admin", "Sub-Admin", "Procurement", "Inventory"] },
+        { label: "Inventory", path: "/inventory", roles: ["Admin", "Sub-Admin", "Inventory", "Finance"] },
+        { label: "Vendor", path: "/vendor", roles: ["Admin", "Sub-Admin", "Procurement"] },
+        { label: "Bom", path: "/bom", roles: ["Admin", "Sub-Admin", "Procurement"] },
+        { label: "Projects", path: "/projects", roles: ["Admin", "Sub-Admin", "Inventory", "User", "Procurement", "Finance"] },
+        { label: "Requests", path: "/requests", roles: ["Admin", "Sub-Admin", "Procurement", "User", "Inventory"] },
+        { label: "Cart", path: "/cart", roles: ["Admin", "Procurement"] },
+        { label: "PO List", path: "/po-list", roles: ["Admin", "Sub-Admin", "Procurement", "Finance"] },
+        { label: "Inward", path: "/inward", roles: ["Admin", "Sub-Admin", "Inventory"] },
+        { label: "Add Tags", path: "/addtags", roles: ["Admin", "Inventory", "Procurement"] },
+        { label: "MRF List", path: "/Mrf", roles: ["Admin", "Procurement", "Inventory", "User"] },
+        { label: "MRF Create", path: "/MrfCreate", roles: ["Admin", "Procurement", "Inventory", "User"] },
+        { label: "Roles", path: "/roles", roles: ["Admin"] },
+      ];
+
+      const firstAllowedTile = tiles.find((tile) => tile.roles.includes(user.role));
+      if (firstAllowedTile) {
+        navigate(firstAllowedTile.path); // ✅ Redirect to first allowed page
+      } else {
+        navigate("/"); // fallback
+      }
+    } else {
+      setError("Invalid email or password");
+    }
+  } catch (err) {
+    console.error("Login error:", err);
+    setError("Something went wrong. Try again.");
+  }
+};
+
+
   const handleForgotPassword = async () => {
     if (!email) {
       setError("Please enter your email.");

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
@@ -14,6 +14,7 @@ const POOrderList = ({ user }) => {
   const [statusPopup, setStatusPopup] = useState(null); // State for status popup
   const navigate = useNavigate(); // Navigation hook
   const [showModal, setShowModal] = useState(false);
+
   const [formData, setFormData] = useState({
     sender: "",
     sender_title: "",
@@ -28,6 +29,9 @@ const POOrderList = ({ user }) => {
 
   const [nameFilter, setNameFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
+  const statusDropdownRef = useRef(null);
+
   const [dateFilter, setDateFilter] = useState("");
 
   const [sortField, setSortField] = useState("");
@@ -43,6 +47,22 @@ const POOrderList = ({ user }) => {
   const isAdmin = user?.role === "Admin";
   const isProcurement = user?.role === "Procurement";
   const isFinance = user?.role === "Finance";
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        statusDropdownRef.current &&
+        !statusDropdownRef.current.contains(event.target)
+      ) {
+        setStatusDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   // Fetch Vendor Contact and Name
   const fetchVendorDetails = async (vendorId) => {
@@ -429,108 +449,138 @@ const POOrderList = ({ user }) => {
   return (
     <div>
       <h2>PO Order List</h2>
-      {poOrders.length === 0 ? (
-        <p>No Purchase Orders found.</p>
-      ) : (
-        <table>
-          <thead>
-            <tr>
-              <th
-                onClick={() => handleSort("id")}
-                style={{ cursor: "pointer", textDecoration: "underline" }}
-              >
-                PO ID{" "}
-                {sortField === "id"
-                  ? sortOrder === "asc"
-                    ? " 🔼"
-                    : " 🔽"
-                  : ""}
-              </th>
-              <th>
-                Vendor Name
-                <input
-                  type="text"
-                  placeholder="Filter Name"
-                  value={nameFilter}
-                  onChange={(e) => setNameFilter(e.target.value)}
-                  // style={{ width: "90%" }}
-                />
-              </th>
-              <th>
-                Status
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
+      <div className="table-container">
+        {poOrders.length === 0 ? (
+          <p>No Purchase Orders found.</p>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th
+                  onClick={() => handleSort("id")}
+                  style={{ cursor: "pointer", textDecoration: "underline" }}
                 >
-                  <option value="">All</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Ordered">Ordered</option>
-                  <option value="Shipped">Shipped</option>
-                  <option value="Received">Received</option>
-                  <option value="In Progress">In Progress</option>
-                </select>
-              </th>
-              <th
-                onClick={() => handleSort("total_cost")}
-                style={{ cursor: "pointer", textDecoration: "underline" }}
-              >
-                Total Cost{" "}
-                {sortField === "total_cost"
-                  ? sortOrder === "asc"
-                    ? " 🔼"
-                    : " 🔽"
-                  : ""}
-              </th>
-              <th>
-                Date
-                <input
-                  type="date"
-                  value={dateFilter}
-                  onChange={(e) => setDateFilter(e.target.value)}
-                  // style={{ width: "90%" }}
-                />
-              </th>
-              {(isAdmin || isProcurement) && <th>Actions</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {filteredPOOrders.map((order) => {
-              const { status } = getAggregatedStatus(order.id);
-              const finalPrice = finalCost(order.id);
-              return (
-                <tr key={order.id}>
-                  <td
-                    style={{ cursor: "pointer", textDecoration: "underline" }}
-                    onClick={() => navigate(`/po-details/${order.id}`)}
-                  >
-                    {order.id}
-                  </td>
-                  <td>{order.cart_details.vendor_name}</td>
-                  <td>{status}</td>
-                  <td style={{ textAlign: "right" }}>
-                    {" "}
-                    ₹
-                    {parseFloat(finalPrice).toLocaleString("en-IN", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </td>
-                  <td>{order.date}</td>
-                  {(isAdmin || isProcurement) && (
-                    <td>
-                      <button onClick={() => handleOpenModal(order)}>
-                        {" "}
-                        Send Email{" "}
-                      </button>
-                    </td>
-                  )}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      )}
+                  PO ID{" "}
+                  {sortField === "id"
+                    ? sortOrder === "asc"
+                      ? " 🔼"
+                      : " 🔽"
+                    : ""}
+                </th>
+                <th className="vendor-name-filters">
+                  Vendor Name
+                  <input
+                    type="text"
+                    placeholder="Filter Name"
+                    value={nameFilter}
+                    onChange={(e) => setNameFilter(e.target.value)}
+                  />
+                </th>
 
+                <th className="status-dropdown-wrapper" ref={statusDropdownRef}>
+                  <div
+                    className="status-dropdown"
+                    onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
+                  >
+                    {statusFilter || "Status"}
+                    <span className="status-dropdown-icon">▼</span>
+                  </div>
+
+                  {statusDropdownOpen && (
+                    <div className="status-dropdown-options">
+                      <div
+                        className="status-dropdown-option"
+                        onClick={() => {
+                          setStatusFilter("");
+                          setStatusDropdownOpen(false);
+                        }}
+                      >
+                        All
+                      </div>
+                      {[
+                        "Pending",
+                        "Ordered",
+                        "Shipped",
+                        "Received",
+                        "In Progress",
+                      ].map((status) => (
+                        <div
+                          key={status}
+                          className="status-dropdown-option"
+                          onClick={() => {
+                            setStatusFilter(status);
+                            setStatusDropdownOpen(false);
+                          }}
+                        >
+                          {status}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </th>
+
+                <th
+                  onClick={() => handleSort("total_cost")}
+                  style={{ cursor: "pointer", textDecoration: "underline" }}
+                >
+                  Total Cost{" "}
+                  {sortField === "total_cost"
+                    ? sortOrder === "asc"
+                      ? " 🔼"
+                      : " 🔽"
+                    : ""}
+                </th>
+<th className="date-filter-inline">
+  <span>Date</span>
+  <input
+    type="date"
+    value={dateFilter}
+    onChange={(e) => setDateFilter(e.target.value)}
+  />
+</th>
+
+
+                {(isAdmin || isProcurement) && <th>Actions</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {filteredPOOrders.map((order) => {
+                const { status } = getAggregatedStatus(order.id);
+                const finalPrice = finalCost(order.id);
+                return (
+                  <tr key={order.id}>
+                    <td
+                      style={{ cursor: "pointer", textDecoration: "underline" }}
+                      onClick={() => navigate(`/po-details/${order.id}`)}
+                    >
+                      {order.id}
+                    </td>
+                    <td>{order.cart_details.vendor_name}</td>
+                    <td>{status}</td>
+                    <td style={{ textAlign: "right" }}>
+                      {" "}
+                      ₹
+                      {parseFloat(finalPrice).toLocaleString("en-IN", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </td>
+                    <td>{order.date}</td>
+                    {(isAdmin || isProcurement) && (
+                     <td>
+  <button className="send-email-button" onClick={() => handleOpenModal(order)}>
+    Send Email
+  </button>
+</td>
+
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
       {/* Email Modal */}
       {showModal && (
         <div className="popup">

@@ -459,9 +459,78 @@ tbody tr:hover {
 }
 
 .form-buttons button:last-child:hover {
-  background-color: rgb(189, 187, 187);
+  background-color: #bdbbbb;
   color: white;
 }
+
+.actions-button {
+  margin-top: 2px;
+  display: flex;
+  gap: 5px;
+  justify-content: flex-end; /* Align to right */
+}
+
+.edit-btn{
+    padding: 6px 10px;
+  border-radius: 5px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background-color: #f58720;
+  color: white;
+}
+
+.edit-btn:hover{
+    background-color: #f1ba86;
+  color: white;
+}
+
+.btn-save{
+    padding: 3px 10px;
+  border-radius: 5px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background-color: #f58720;
+  color: white;
+}
+
+.btn-edit:hover{
+    background-color: #f1ba86;
+  color: white;
+}
+
+
+.cancel-btn{
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background-color: gray;
+  color: white;
+}
+
+.cancel-btn:hover{
+    background-color: #bdbbbb;
+  color: white;
+}
+
+.btn-cancel{
+  padding:  8px 10px;
+  border-radius: 5px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background-color: gray;
+  color: white;
+}
+
+.btn-cancel:hover{
+    background-color: #bdbbbb;
+  color: white;
+}
+
 
 /* Table Inside Modal */
 .modal table,
@@ -713,10 +782,10 @@ tbody tr:hover {
   color: white;
 }
 
-.cancel-button {
+/* .cancel-button {
   background-color: #f44336;
   color: white;
-}
+} */
 
 /* Sticky footer inside popup */
 .modal-footer {
@@ -741,7 +810,7 @@ tbody tr:hover {
 }
 
 .add-button {
-  background-color: #f58720;
+  background-color: #f58720 !important;
   color: white;
 }
 
@@ -752,7 +821,7 @@ tbody tr:hover {
 
 .close-button {
   background-color: gray;
-  color: white;
+  color: white !important;
   font-weight: 100;
 }
 
@@ -780,19 +849,18 @@ tbody tr:hover {
   background-color: gray;
   color: white;
   border: none;
-  border-radius: 10px;
-  padding: 5px;
+  border-radius: 5px;
+  padding: 6px;
   cursor: pointer;
   margin-right: 10px;
-  color: #ee6e3f;
 }
 
 .delete-button:hover {
   background-color: rgb(176, 174, 174);
   color: white;
   border: none;
-  border-radius: 10px;
-  padding: 5px;
+  border-radius: 5px;
+  padding: 6px;
   cursor: pointer;
 }
 
@@ -980,8 +1048,6 @@ table td {
 }
 
 .search-bar-container {
-  top: 150px; /* distance from top */
-  right: 140px; /* distance from right */
   display: flex;
   align-items: center;
   background-color: white;
@@ -1074,10 +1140,8 @@ table td {
   cursor: pointer;
 }
 
-
 .add-tag-popup button:hover {
   background: #f58720;
-
 }
 
 .popup {
@@ -1149,9 +1213,6 @@ table td {
   color: white;
 }
 
-
-
-
 /* .add-tag-button {
   flex-shrink: 0;
   background-color: #e2e2e2;
@@ -1184,16 +1245,11 @@ table td {
 
 .tags-wrapper {
   display: flex;
-  align-items: center; /* vertically center tags and button */
-  gap: 6px; /* small horizontal gap between tags-list and button */
-  flex-wrap: wrap; /* allow tags to wrap to next line if needed */
-}
-
-.tags-list {
-  display: flex;
+  align-items: center;
   flex-wrap: wrap;
-  gap: 4px; /* smaller gap between each tag */
-  max-width: 100%; /* avoid overflow */
+  gap: 5px;
+  min-width: 200px; /* start with a base size */
+  max-width: 100%;
 }
 
 /* .header {
@@ -1207,11 +1263,40 @@ table td {
 
 .header-controls {
   display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
+  flex-wrap: wrap; /* Allow wrapping on smaller screens */
   align-items: center;
-  justify-content: space-between;
-  row-gap: 10px;
+  gap: 15px;
+  padding: 10px 0;
+}
+
+.header-controls > * {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Optional spacing for better visual separation */
+.date-filter label,
+.status-filter label {
+  margin-right: 5px;
+}
+
+.search-bar-container {
+  position: relative;
+  
+}
+
+.search-bar {
+  padding: 6px 30px 6px 10px;
+}
+
+.search-icon {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #888;
+  pointer-events: none;
 }
 
 .generate-report-button,
@@ -1270,7 +1355,7 @@ table td {
   font-weight: bold;
 }
 
-.add-tag input{
+.add-tag input {
   padding: 10px;
 }
 .add-tag-button {
@@ -1412,7 +1497,7 @@ table td {
 .modal-content {
   background: none;
   padding: 1px;
-  max-width: 500px;
+  max-width: 700px;
   margin: 4px auto;
   border-radius: 12px;
   display: flex;
@@ -1452,6 +1537,48 @@ table td {
   color: white;
 }
 
+.modal-contents {
+  background: none;
+  padding: 1px;
+  max-width: 400px;
+  margin: 4px auto;
+  border-radius: 12px;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-contents h4 {
+  margin-top: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+}
+
+.modal-contents input {
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  width:100%;
+  box-sizing: border-box;
+  margin-top: 15px;
+}
+
+.modal-contents button {
+  padding: 10px 14px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.modal-contents button:first-of-type {
+  background-color: #f58720;
+  color: white;
+}
+
 .modal-buttons {
   display: flex;
   justify-content: flex-end;
@@ -1473,6 +1600,16 @@ table td {
 }
 
 .modal-content button:last-of-type {
+  background-color: #6c757d;
+  color: white;
+}
+
+.modal-contents button:first-of-type:hover {
+  background-color: #f6c190;
+  color: white;
+}
+
+.modal-contents button:last-of-type {
   background-color: #6c757d;
   color: white;
 }
@@ -1588,7 +1725,6 @@ table td {
   font-weight: 500;
 }
 
-
 .add-project-form {
   display: flex;
   flex-direction: column;
@@ -1625,21 +1761,787 @@ table td {
   cursor: pointer;
 }
 
-.cancel-button {
+/* .cancel-button {
   background-color: #f44336;
   color: white;
   border: none;
   padding: 8px 16px;
   border-radius: 4px;
   cursor: pointer;
-}
+} */
 
 .add-button:hover {
   background-color: #45a049;
 }
 
-.cancel-button:hover {
+/* .cancel-button:hover {
   background-color: #d32f2f;
+} */
+
+/* Sidebar container */
+.sidebar {
+  position: fixed; /* Fix sidebar position */
+  top: 90px; /* Leave 20px space from top */
+  left: 20px; /* Leave 20px space from left */
+  bottom: 10px; /* Leave 20px space from bottom */
+  width: 200px !important; /* Fixed width */
+  background-color: rgb(244, 243, 243) !important;
+  color: black;
+  padding: 20px;
+  border-radius: 8px; /* Rounded corners (optional) */
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3); /* Optional shadow */
+  overflow-y: auto; /* Scroll if content is long */
 }
+
+/* Sidebar content section */
+.sidebar-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Sidebar title */
+.team-lead {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  text-align: center;
+  color: #08171e;
+}
+
+/* Each tile/button */
+.dashboard-tile {
+  padding: 10px 15px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+  background-color: rgb(225, 225, 225);
+}
+
+.dashboard-tile:hover {
+  background-color: #f5b578;
+}
+
+.active-tile {
+  background-color: #f58720; /* blue */
+  color: white;
+}
+
+/* Hamburger button (optional if using responsive toggle) */
+.hamburger-button {
+  display: flex; /* changed from 'none' */
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin: 10px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  padding: 2px;
+  border-radius: 4px;
+  margin-top: -2px;
+}
+
+.hamburger-button .bar {
+  width: 15px;
+  height: 3px;
+  background-color: black;
+  margin: 1.4px 0;
+  transition: 0.4s;
+}
+
+.hamburger-button.change .bar:nth-child(1) {
+  transform: rotate(45deg) translate(3px, 5px);
+}
+
+.hamburger-button.change .bar:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger-button.change .bar:nth-child(3) {
+  transform: rotate(-45deg) translate(3px, -5px);
+}
+
+.sidebar.closed {
+  width: 10px !important;
+}
+
+.hamburger-button.unchanged {
+  margin-top: -2px;
+
+  margin-left: -4px;
+}
+
+.change .bar:nth-child(1) {
+  transform: rotate(-45deg) translate(-5px, 6px);
+}
+
+.change .bar:nth-child(2) {
+  opacity: 0;
+}
+
+.change .bar:nth-child(3) {
+  transform: rotate(45deg) translate(-5px, -6px);
+}
+
+/* Layout wrapper */
+.layout-container {
+  display: flex;
+}
+
+/* Main content beside sidebar */
+main {
+  margin-left: 240px;
+  padding: 20px;
+  width: calc(100% - 240px);
+}
+
+/* Responsive behavior */
+/* @media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+  }
+
+  .layout-container {
+    flex-direction: column;
+  }
+
+  main {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .hamburger-button {
+    display: flex;
+  }
+} */
+
+.layout-container {
+  display: flex;
+  height: calc(100vh - 70px); /* Adjust depending on header height */
+  padding: 20px;
+  box-sizing: border-box;
+  margin-top: 10px; /* Space between header and layout */
+}
+
+.main-content {
+  transition: margin-left 0.3s ease, width 0.3s ease;
+  /* height: 100vh; */
+  /* overflow-y: auto; */
+  box-sizing: border-box;
+  padding: 20px;
+}
+
+/* When sidebar is open, main content shifts right */
+.main-content.sidebar-open {
+  margin-left: 220px; /* sidebar width */
+  width: calc(100% - 180px); /* subtract the exact sidebar width */
+  height: 100vh; /* make sure main content fills viewport height */
+  box-sizing: border-box; /* so padding doesn't break layout */
+}
+
+/* When sidebar is closed, main content fills entire width */
+.main-content.sidebar-closed {
+  margin-left: 40px;
+  width: 100%;
+}
+
+.vendor-name-filters {
+  padding: 8px 12px;
+  white-space: nowrap;
+  vertical-align: middle;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.vendor-name-filters input {
+  margin-left: 8px;
+  padding: 4px 8px;
+  font-size: 13px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 140px; /* adjust as needed */
+}
+
+.status-dropdown-wrapper {
+  position: relative;
+  min-width: 100px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.status-dropdown {
+  display: flex;
+  align-items: center;
+  gap: 4px; /* Reduce gap between text and icon */
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.status-dropdown-options {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 999;
+  background-color: rgb(196, 196, 196);
+  border: 1px solid #ccc;
+  color: black;
+  border-radius: 4px;
+  width: 100%;
+  max-height: 400px;
+  overflow-y: auto;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  margin-top: 5px;
+}
+
+.status-dropdown-option {
+  padding: 6px 8px;
+  cursor: pointer;
+}
+
+.status-dropdown-option:hover {
+  background-color: white;
+}
+
+.status-dropdown-icon{
+  color: black;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.date-filter-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* Adjust gap as needed */
+  padding: 4px 8px;
+  white-space: nowrap;
+}
+
+.date-filter-inline input[type="date"] {
+  padding: 4px 4px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.send-email-button {
+  padding: 6px 12px;
+  background-color: #f58720;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.send-email-button:hover {
+  background-color: #f5b578;
+}
+
+.sku-cell {
+  padding: 8px 12px;
+  text-align: center;
+}
+
+.sku-number {
+  font-weight: 500;
+  color: #333;
+}
+
+.add-sku-button {
+  background-color: gray;
+  color: white;
+  padding: 4px 10px;
+  font-size: 14px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.add-sku-button:hover {
+  background-color: rgb(187, 186, 186);
+}
+
+.action-buttons-cell {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  padding: 8px 12px;
+}
+
+.action-buttons-cell button {
+  padding: 6px 12px;
+  font-size: 14px;
+  border-radius: 4px;
+  border: 1.5px solid gray;
+  background-color: gray;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.action-buttons-cell button:hover:not(:disabled) {
+  background-color: gray;
+  border-color: gray q;
+}
+
+.action-buttons-cell button:disabled {
+  background-color: #ccc;
+  border-color: #ccc;
+  cursor: not-allowed;
+  color: #666;
+}
+
+.user-roles-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  margin-top: 20px;
+}
+
+.user-roles-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.add-user-button {
+  background-color: #f58720;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.add-user-button:hover {
+  background-color: #f1ba86;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.checkbox-group {
+  flex-direction: row;
+  align-items: center;
+  gap: 15px;
+}
+
+.form-label {
+  font-size: 14px;
+  margin-bottom: 4px;
+  color: #333;
+}
+
+.form-input {
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.button-group-bottom {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.submit-button,
+.cancel-button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.submit-button {
+  background-color: #f58720;
+  color: white;
+}
+
+.submit-button:hover {
+  background-color: #f1ba86;
+}
+
+.cancel-button {
+  background-color: gray;
+  color: white;
+}
+
+.cancel-button:hover {
+  background-color: #b1b0b0;
+}
+
+.remarks-edit-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.remarks-input {
+  padding: 4px 8px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 200px;
+}
+
+.remarks-btn {
+  padding: 4px 10px;
+  font-size: 13px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.save-btn {
+  background-color: #f58720;
+  color: white;
+}
+
+.save-btn:hover {
+  background-color: #f1ba86;
+  color: white;
+}
+
+.cancel-btn {
+  background-color: gray;
+  color: white;
+}
+
+.cancel-btn:hover {
+  background-color: #bcbbbb;
+  color: white;
+}
+
+.remarks-display {
+  color: #007bff;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.custom-form-wrapper {
+  padding: 20px;
+  max-width: 450px;
+  background:none !important;
+  border-radius: 10px;
+  /* box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); */
+}
+
+.custom-form-field {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+  
+}
+
+.custom-form-label {
+  width: 60px;
+  font-weight: 600;
+  color: #444;
+}
+
+.custom-form-input {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  transition: border-color 0.2s;
+}
+
+.custom-form-input:focus {
+  border-color: #f58720;
+  outline: none;
+}
+
+.request-selector-label {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.request-selector-dropdown {
+  padding: 8px 10px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  transition: border-color 0.2s;
+  margin-left: 10px;
+}
+
+.request-selector-dropdown:focus {
+  border-color: #f58720;
+  outline: none;
+}
+
+.project-name-display {
+  font-size: 16px;
+  color: #444;
+  margin-top: 10px;
+}
+
+.button-wrapper {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.price-entry-button {
+  padding: 10px;
+  background-color: grey;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+.price-entry-button:hover {
+  background-color: #a8a7a7;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 768px) {
+  /* Responsive navbar (stacked or hamburger) */
+  nav {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  nav ul {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  nav ul li {
+    width: 100%;
+  }
+
+  nav ul li a {
+    width: 100%;
+    display: block;
+    text-align: left;
+    padding: 12px;
+  }
+
+/* Sidebar - closed (compact button size) */
+.sidebar {
+  position: fixed;
+  top: 80px;
+  left: 10px;
+  width: 42px !important;
+  height: 40px;
+  background: transparent;
+  padding: 0;
+  z-index: 1000;
+  transition: all 0.3s ease-in-out;
+  overflow: visible;
+  border-radius: 5px !important;
+  gap:10px;
+}
+
+/* Sidebar - open (expanded) */
+.sidebar.open {
+  top: 80px;
+  left: 0;
+  width: 250px !important;
+  height: 100vh;
+  background: #fff;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+  padding: 10px;
+  transform: translateX(0);
+  overflow-y: auto;
+  border-radius: 0;
+}
+
+.sidebar.closed {
+    width: 40px !important;
+}
+
+/* Sidebar content should be hidden when closed */
+.sidebar-content {
+    display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sidebar.open .sidebar-content {
+  margin-top: 40px;
+    display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Hamburger Button */
+.hamburger-menu {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 1100;
+}
+
+.hamburger-button {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 30px;
+  height: 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.hamburger-button .bar {
+  height: 4px;
+  background-color: #333;
+  transition: all 0.3s ease;
+  width: 18px;
+}
+
+/* X-style toggle */
+.hamburger-button.change .bar:nth-child(1) {
+  transform: rotate(45deg) translate(7px, 5px);
+}
+.hamburger-button.change .bar:nth-child(2) {
+  opacity: 0;
+}
+.hamburger-button.change .bar:nth-child(3) {
+  transform: rotate(-45deg) translate(7px, -5px);
+}
+
+
+  /* Hide main content margin (because sidebar overlays) */
+  .main-content,
+  main {
+    margin-left: 0 !important;
+    width: 100% !important;
+    padding: 10px;
+    margin-top: 90px;
+  }
+
+  .layout-container {
+    flex-direction: column;
+    padding: 10px;
+  }
+
+  /* Make tables scrollable on small screens */
+  .table-container,
+  .table-scroll-wrapper,
+  .table-scroll-horizontal {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table {
+    font-size: 13px;
+    min-width: 600px;
+  }
+
+  /* Responsive form fields */
+  .form-grid {
+    display: block;
+  }
+
+  .form-grid label,
+  .form-grid input,
+  .form-grid select {
+    width: 100%;
+  }
+
+  /* Responsive popup */
+  .popup {
+    width: 95% !important;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  /* Responsive modal */
+  .modal,
+  .vm-modal,
+  .modal-content,
+  .modal-contents {
+    width: 95% !important;
+    max-width: 95% !important;
+    margin: 10px auto;
+  }
+
+  /* Buttons & Inputs in small view */
+  button,
+  input,
+  select {
+    font-size: 14px;
+  }
+
+  .button-wrapper {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+  }
+
+  /* Adjust dropdowns */
+  .category-dropdown-options,
+  .component-type-dropdown-options,
+  .tags-dropdown-options {
+    max-width: 90vw;
+    left: 0;
+    right: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-controls {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .header h2 {
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+
+  .search-bar {
+    width: 100%;
+  }
+
+  .status-filter select,
+  .date-filter input {
+    width: 100%;
+  }
+
+  .header-controls > * {
+    width: 50%;
+    justify-content: flex-start;
+  }
+
+  .generate-report-button{
+    width: 27%;
+  }
+}
+
+
+
+
+
+
+
+
+
 
 

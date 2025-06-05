@@ -33,19 +33,15 @@ const Inward = () => {
 
   const [filteredData, setFilteredData] = useState([]);
 
-
   // // Filters
   // const [poIdFilter, setPoIdFilter] = useState("");
   // const [vendorNameFilter, setVendorNameFilter] = useState("");
   // const [dateFilter, setDateFilter] = useState("");
 
-
-
   // Filters
   const [poIdFilter, setPoIdFilter] = useState("");
   const [vendorNameFilter, setVendorNameFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
-
 
   // Utility function to safely access nested fields
   const getNestedValue = (obj, keyPath, defaultValue = "Not Available") => {
@@ -354,7 +350,6 @@ const Inward = () => {
       const qualityCheck = item.quality_check || "Not Available"; // Default to "Not Available" if no quality check
       const qty = 1; // Default quantity to 1 as specified
 
-
       // Find the matching PO Master entry for the component ID
       const poMasterEntry = poMasterData.find(
         (entry) => entry.cart_details.component_id === componentId
@@ -409,7 +404,6 @@ const Inward = () => {
         body: JSON.stringify(postData),
       });
 
-
       // Check for successful response
       if (!response.ok) {
         const errorDetails = await response.json();
@@ -421,7 +415,6 @@ const Inward = () => {
       // If successful, show an alert and refresh inward data
       showSuccessToast("Successfully moved to inventory.");
       setShowMessageBox(false);
-
     } catch (error) {
       // Handle any error that occurs during the fetch
       console.error("Error moving to inventory:", error);
@@ -649,7 +642,6 @@ const Inward = () => {
 
   ///////////
 
-
   // // Filtering logic
   // useEffect(() => {
   //   let data = [...inwardData];
@@ -712,7 +704,6 @@ const Inward = () => {
     setFilteredData(data);
   }, [poIdFilter, vendorNameFilter, dateFilter, inwardData]);
 
-
   ////////////////////
 
   useEffect(() => {
@@ -733,12 +724,13 @@ const Inward = () => {
         />
       )}
 
-      <table>
-        <thead>
-          <tr>
-            <th>
-              PO_ID
-              {/* <br />
+      <div className="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>
+                PO_ID
+                {/* <br />
               <input
                 type="text"
                 placeholder="Filter"
@@ -746,12 +738,12 @@ const Inward = () => {
                 onChange={(e) => setPoIdFilter(e.target.value)}
                 style={{ width: "80px" }}
               /> */}
-            </th>
-            <th>Component ID</th>
-            <th>Component Specification</th>
-            <th>
-              Vendor Name
-              {/* <br />
+              </th>
+              <th>Component ID</th>
+              <th>Component Specification</th>
+              <th>
+                Vendor Name
+                {/* <br />
               <input
                 type="text"
                 placeholder="Filter"
@@ -759,11 +751,11 @@ const Inward = () => {
                 onChange={(e) => setVendorNameFilter(e.target.value)}
                 style={{ width: "150px" }}
               /> */}
-            </th>
-            <th>Serial Number</th>
-            <th>
-              Date
-              {/* <br />
+              </th>
+              <th>Serial Number</th>
+              <th>
+                Date
+                {/* <br />
               <input
                 type="date"
                 placeholder="DD/MM/YYYY"
@@ -771,59 +763,68 @@ const Inward = () => {
                 onChange={(e) => setDateFilter(e.target.value)}
                 style={{ width: "100px" }}
               /> */}
-            </th>
-            <th>QC</th>
-            <th>SKU Number</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredData.map((item, index) => (
-            <tr key={index}>
-              <td>{getNestedValue(item, "po_master.PO_id")}</td>
-              <td>{getNestedValue(item, "po_master.cart.component_id")}</td>
-              <td>
-                {getNestedValue(item, "po_master.cart.component_specification")}
-              </td>
-              <td>{getNestedValue(item, "po_master.cart.vendor_name")}</td>
-              <td>{item.serial_number || "Not Available"}</td>
-              <td>
-                {new Date(item.date).toLocaleDateString() || "Not Available"}
-              </td>
-              <td>{item.quality_check || "Not Available"}</td>
-              <td>
-                {/* Show SKU number or Add SKU button based on presence of SKU number */}
-                {item.sku_number ? (
-                  <span>{item.sku_number}</span>
-                ) : (
-                  <button onClick={() => handleSkuNumberClick(item)}>
-                    Add SKU
-                  </button>
-                )}
-              </td>
-              <td>
-                <button
-                  onClick={() => handleQCClick(item)}
-                  // onClick ={() => handleAutoPassQC(item)}
-                  disabled={
-                    item.quality_check === "Pass" ||
-                    item.quality_check === "Fail"
-                  }
-                >
-                  QC
-                </button>
-                <button
-                  onClick={() => handleMoveToInventory(item)}
-                  // onClick={() => handleAutoMoveToInventory(item)}
-                  disabled={item.mode_to_inventory === false} // Disable button if mode_to_inventory is false
-                >
-                  Move to Inventory
-                </button>
-              </td>
+              </th>
+              <th>QC</th>
+              <th>SKU Number</th>
+              <th>Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {filteredData.map((item, index) => (
+              <tr key={index}>
+                <td>{getNestedValue(item, "po_master.PO_id")}</td>
+                <td>{getNestedValue(item, "po_master.cart.component_id")}</td>
+                <td className="specification-cell">
+                  {getNestedValue(
+                    item,
+                    "po_master.cart.component_specification"
+                  )}
+                </td>
+                <td className="specification-cell">
+                  {getNestedValue(item, "po_master.cart.vendor_name")}
+                </td>
+                <td>{item.serial_number || "Not Available"}</td>
+                <td>
+                  {new Date(item.date).toLocaleDateString() || "Not Available"}
+                </td>
+                <td>{item.quality_check || "Not Available"}</td>
+                <td className="sku-cell">
+                  {item.sku_number ? (
+                    <span className="sku-number">{item.sku_number}</span>
+                  ) : (
+                    <button
+                      className="add-sku-button"
+                      onClick={() => handleSkuNumberClick(item)}
+                    >
+                      Add SKU
+                    </button>
+                  )}
+                </td>
+
+                <td className="action-buttons-cell">
+                  <button
+                    className="qc-button"
+                    onClick={() => handleQCClick(item)}
+                    disabled={
+                      item.quality_check === "Pass" ||
+                      item.quality_check === "Fail"
+                    }
+                  >
+                    QC
+                  </button>
+                  <button
+                    className="move-inventory-button"
+                    onClick={() => handleMoveToInventory(item)}
+                    disabled={!item.mode_to_inventory}
+                  >
+                    Move to Inventory
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {showQCPopup && selectedItem && (
         <div className="popup">
@@ -1884,4 +1885,3 @@ export default Inward;
 // };
 
 // export default Inward;
-

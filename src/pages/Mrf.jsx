@@ -242,59 +242,63 @@ const Mrf = () => {
           border: "none",
           cursor: "pointer",
           marginBottom: "20px",
+          borderRadius: "5px",
+          fontSize: "15px",
         }}
       >
         Create Material Request Form
       </button>
-      <table>
-        <thead>
-          <tr>
-            <th>MRF ID</th>
-            <th>Name</th>
-            <th>
-              Create Date
-              <input
-                type="date"
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-              />
-            </th>
-            <th>Request ID</th>
-            <th>Project name</th>
-            <th>
-              Approval Status
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="">All</option>
-                <option value="Approved">Approved</option>
-                <option value="Pending">Pending</option>
-              </select>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredData.map((item) => (
-            <tr key={item.MRF_id}>
-              <td
-                onClick={() => navigate(`/MrfRequest/${item.MRF_id}`)}
-                style={{
-                  cursor: "pointer",
-                  textDecoration: "underline",
-                }}
-              >
-                {item.MRF_id}
-              </td>
-              <td>{item.name}</td>
-              <td>{item.create_date}</td>
-              <td>{item.Request_id_assign}</td>
-              <td>{getProjectName(item.Request_id_assign)}</td>
-              <td>{item.approval ? "Approved" : "Pending"}</td>
+      <div className="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>MRF ID</th>
+              <th>Name</th>
+              <th>
+                Create Date
+                <input
+                  type="date"
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                />
+              </th>
+              <th>Request ID</th>
+              <th>Project name</th>
+              <th>
+                Approval Status
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                  <option value="">All</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Pending">Pending</option>
+                </select>
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {filteredData.map((item) => (
+              <tr key={item.MRF_id}>
+                <td
+                  onClick={() => navigate(`/MrfRequest/${item.MRF_id}`)}
+                  style={{
+                    cursor: "pointer",
+                    textDecoration: "underline",
+                  }}
+                >
+                  {item.MRF_id}
+                </td>
+                <td>{item.name}</td>
+                <td>{item.create_date}</td>
+                <td>{item.Request_id_assign}</td>
+                <td>{getProjectName(item.Request_id_assign)}</td>
+                <td>{item.approval ? "Approved" : "Pending"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

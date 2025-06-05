@@ -398,6 +398,7 @@ const assignSerial = async (serialNumber, MRFListId) => {
               padding: "5px 10px",
               backgroundColor: "green",
               color: "white",
+              borderRadius: "5px",
             }}
           >
             Approve MRF
@@ -405,6 +406,7 @@ const assignSerial = async (serialNumber, MRFListId) => {
         )}
       </div>
 
+       <div className="table-container"> 
       <table>
         <thead>
           <tr>
@@ -448,6 +450,7 @@ const assignSerial = async (serialNumber, MRFListId) => {
                         backgroundColor: "#b8730b",
                         color: "white",
                         border: "none",
+                        borderRadius: "5px",
                       }}
                     >
                       Returned
@@ -458,10 +461,11 @@ const assignSerial = async (serialNumber, MRFListId) => {
                       disabled={!approvalStatus}
                       style={{
                         padding: "5px 10px",
-                        backgroundColor: approvalStatus ? "green" : "grey",
+                        backgroundColor: approvalStatus ? "gray" : "grey",
                         color: approvalStatus ? "white" : "black",
                         border: "none",
                         cursor: "pointer",
+                        borderRadius: "5px",
                       }}
                     >
                       Assign
@@ -475,6 +479,7 @@ const assignSerial = async (serialNumber, MRFListId) => {
                           backgroundColor: "grey",
                           color: "white",
                           border: "none",
+                          borderRadius: "5px",
                         }}
                       >
                         Assigned
@@ -490,6 +495,7 @@ const assignSerial = async (serialNumber, MRFListId) => {
                           border: "none",
                           cursor: "pointer",
                           marginLeft: "5px",
+                          borderRadius: "5px",
                         }}
                       >
                         Return
@@ -503,6 +509,7 @@ const assignSerial = async (serialNumber, MRFListId) => {
           )}
         </tbody>
       </table>
+      </div>
       {showPopup && (
         <div className="popup">
           <h3>Return Details</h3>

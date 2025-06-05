@@ -333,11 +333,13 @@ const MRFCreate = () => {
         }}
       >
         <div>
-          <label>Products for Request ID:</label>
+          <label className="request-selector-label">
+            Products for Request ID:
+          </label>
           <select
             value={selectedRequest}
             onChange={handleRequestChange}
-            style={{ marginLeft: "10px", padding: "5px" }}
+            className="request-selector-dropdown"
           >
             <option value="">-- Select Request --</option>
             {requestList.map((request) => (
@@ -346,31 +348,34 @@ const MRFCreate = () => {
               </option>
             ))}
           </select>
-          <h3>Project Name: {projectName || ""}</h3>
+          <h3 className="project-name-display">
+            Project Name: {projectName || ""}
+          </h3>
         </div>
-        <div>
-          <div style={{ marginLeft: "10px", padding: "5px" }}>
-            <label>Name:</label>
+
+        <div className="custom-form-wrapper">
+          <div className="custom-form-field">
+            <label className="custom-form-label">Name:</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              style={{ marginLeft: "10px", padding: "5px" }}
+              className="custom-form-input"
             />
           </div>
-          <div style={{ marginLeft: "10px", padding: "5px" }}>
-            <label>Date:</label>
+          <div className="custom-form-field">
+            <label className="custom-form-label">Date:</label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              style={{ marginLeft: "10px", padding: "5px" }}
+              className="custom-form-input"
             />
           </div>
         </div>
       </div>
 
-      <div style={{ marginTop: "20px" }}>
+      <div className="table-container" style={{ marginTop: "20px" }}>
         <table border="1" cellPadding="5" cellSpacing="0" width="100%">
           <thead>
             <tr style={{ backgroundColor: "#f2f2f2" }}>
@@ -500,6 +505,7 @@ const MRFCreate = () => {
                     color: "white",
                     border: "none",
                     cursor: "pointer",
+                    borderRadius: "5px",
                   }}
                 >
                   Add
@@ -522,6 +528,7 @@ const MRFCreate = () => {
             cursor: "pointer",
             alignSelf: "end",
             justifyContent: "end",
+            borderRadius: "5px",
           }}
         >
           Create MRF

@@ -27,7 +27,6 @@ const POOrderMaster = ({ user }) => {
   const [selectedStatus, setSelectedStatus] = useState(null);
   const [inwardLoadingIds, setInwardLoadingIds] = useState([]);
 
-
   // The user object is now passed as a prop
   const isAdmin = user?.role === "Admin";
   const isProcurement = user?.role === "Procurement";
@@ -453,10 +452,11 @@ const POOrderMaster = ({ user }) => {
     } catch (error) {
       console.error("Error in handleInward function:", error);
       alert("An error occurred while performing the inward operation.");
-    }finally {
+    } finally {
       setTimeout(() => {
         setInwardLoadingIds((prev) => prev.filter((id) => id !== componentKey));
-      }, 1000); }
+      }, 1000);
+    }
   };
 
   useEffect(() => {
@@ -542,93 +542,98 @@ const POOrderMaster = ({ user }) => {
           <h3>PO Number: {poId}</h3>
           <h3>Vendor Name: {vendorName}</h3>
           <h3>GSTIN: {vendor_gstn}</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Component ID</th>
-                <th>Category</th>
-                <th>Type</th>
-                <th>Specification</th>
-                <th>UOM</th>
-                <th>Quantity</th>
-                <th>Unit Price</th>
-                <th>GST</th>
-                <th>Total Cost</th>
-                {(isAdmin || isProcurement) && <th>Actions</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {poDetails.map((po, index) => (
-                <tr key={index}>
-                  <td>{po.cart_details.component_id}</td>
-                  <td>{po.cart_details.category}</td>
-                  <td>{po.cart_details.component_type}</td>
-                  <td>{po.cart_details.component_specification}</td>
-                  <td>{po.cart_details.unit_of_measurement}</td>
-                  <td>{po.cart_details.quantity}</td>
-                  <td style={{ textAlign: "right" }}>
-                    ₹
-                    {parseFloat(po.cart_details.unit_price).toLocaleString(
-                      "en-IN",
-                      {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      }
-                    )}
-                  </td>
-                  <td style={{ textAlign: "right" }}>
-                    {parseFloat(po.cart_details.GST).toLocaleString("en-IN", {
-                      // minimumFractionDigits: 2,
-                      // maximumFractionDigits: 2
-                    })}
-                    %
-                  </td>
-                  <td style={{ textAlign: "right" }}>
-                    ₹
-                    {parseFloat(po.cart_details.total_cost).toLocaleString(
-                      "en-IN",
-                      {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      }
-                    )}
-                  </td>
-                  {(isAdmin || isProcurement) && (
-                    <td>
-                     <button
-                        onClick={() => handleInward(po.cart_details)}
-                        disabled={
-                          inwardLoadingIds.includes(po.cart_details.component_id) || // actively processing
-                          orderStatus.received_status !== "Received" ||              // not yet received
-                          !po.inward_status                                           // already inwarded
-                        }
-                      >
-                        {inwardLoadingIds.includes(po.cart_details.component_id)
-                          ? "Processing..."
-                          : "Inward"}
-                      </button>
-
-                    </td>
-                  )}
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Component ID</th>
+                  <th>Category</th>
+                  <th>Type</th>
+                  <th>Specification</th>
+                  <th>UOM</th>
+                  <th>Quantity</th>
+                  <th>Unit Price</th>
+                  <th>GST</th>
+                  <th>Total Cost</th>
+                  {(isAdmin || isProcurement) && <th>Actions</th>}
                 </tr>
-              ))}
+              </thead>
+              <tbody>
+                {poDetails.map((po, index) => (
+                  <tr key={index}>
+                    <td>{po.cart_details.component_id}</td>
+                    <td>{po.cart_details.category}</td>
+                    <td>{po.cart_details.component_type}</td>
+                    <td>{po.cart_details.component_specification}</td>
+                    <td>{po.cart_details.unit_of_measurement}</td>
+                    <td>{po.cart_details.quantity}</td>
+                    <td style={{ textAlign: "right" }}>
+                      ₹
+                      {parseFloat(po.cart_details.unit_price).toLocaleString(
+                        "en-IN",
+                        {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        }
+                      )}
+                    </td>
+                    <td style={{ textAlign: "right" }}>
+                      {parseFloat(po.cart_details.GST).toLocaleString("en-IN", {
+                        // minimumFractionDigits: 2,
+                        // maximumFractionDigits: 2
+                      })}
+                      %
+                    </td>
+                    <td style={{ textAlign: "right" }}>
+                      ₹
+                      {parseFloat(po.cart_details.total_cost).toLocaleString(
+                        "en-IN",
+                        {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        }
+                      )}
+                    </td>
+                    {(isAdmin || isProcurement) && (
+                      <td>
+                        <button
+                          onClick={() => handleInward(po.cart_details)}
+                          disabled={
+                            inwardLoadingIds.includes(
+                              po.cart_details.component_id
+                            ) || // actively processing
+                            orderStatus.received_status !== "Received" || // not yet received
+                            !po.inward_status // already inwarded
+                          }
+                        >
+                          {inwardLoadingIds.includes(
+                            po.cart_details.component_id
+                          )
+                            ? "Processing..."
+                            : "Inward"}
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                ))}
 
-              {/* Totals Row */}
-              <tr style={{ fontWeight: "bold" }}>
-                <td colSpan="5">Totals</td>
-                <td>{totalquantity}</td>
-                <td></td>
-                <td></td>
-                <td style={{ textAlign: "right" }}>
-                  ₹
-                  {parseFloat(totalcost).toLocaleString("en-IN", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                {/* Totals Row */}
+                <tr style={{ fontWeight: "bold" }}>
+                  <td colSpan="5">Totals</td>
+                  <td>{totalquantity}</td>
+                  <td></td>
+                  <td></td>
+                  <td style={{ textAlign: "right" }}>
+                    ₹
+                    {parseFloat(totalcost).toLocaleString("en-IN", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
           {/* Order Status Buttons */}
           {(isAdmin || isProcurement) && (

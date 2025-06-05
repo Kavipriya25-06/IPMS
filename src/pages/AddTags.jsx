@@ -201,15 +201,16 @@ const AddTags = () => {
         <button
           onClick={handleAddTagClick}
           style={{
-            marginTop: "10px",
+            marginTop: "15px",
             marginBottom: "10px",
-            padding: "8px 12px",
+            padding: "8px",
             background: "#fc9d03",
             color: "#fff",
             border: "none",
             borderRadius: "10px",
             cursor: "pointer",
             alignItems: "end",
+            fontSize: "14px",
           }}
         >
           Add Tag to Selected Components
@@ -245,7 +246,9 @@ const AddTags = () => {
                     />
                   </td>
                   <td>{component.component_type}</td>
-                  <td>{component.component_specification}</td>
+                  <td className="specification-cell">
+                    {component.component_specification}
+                  </td>
                   <td>{component.unit_of_measurement}</td>
                   <td>{component.category}</td>
                   <td>{component.component_id}</td>
@@ -333,33 +336,37 @@ const AddTags = () => {
               boxSizing: "border-box",
             }}
           />
-          <button
-            onClick={handleAddTag}
-            style={{
-              padding: "8px 12px",
-              background: "#4caf50",
-              color: "#fff",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-              marginRight: "10px",
-            }}
-          >
-            Add Tag
-          </button>
-          <button
-            onClick={() => setShowPopup(false)}
-            style={{
-              padding: "8px 12px",
-              background: "#f44336",
-              color: "#fff",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
-          >
-            Cancel
-          </button>
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <button
+              onClick={handleAddTag}
+              style={{
+                padding: "8px 12px",
+                background: "#f58720",
+                color: "#fff",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                marginRight: "10px",
+                justifyContent: "end",
+              }}
+            >
+              Add Tag
+            </button>
+            <button
+              onClick={() => setShowPopup(false)}
+              style={{
+                padding: "8px 12px",
+                background: "gray",
+                color: "#fff",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                alignItems: "flexend",
+              }}
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       )}
 

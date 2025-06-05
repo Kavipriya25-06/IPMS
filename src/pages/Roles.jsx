@@ -151,7 +151,13 @@ const Roles = () => {
 
   return (
     <div>
-      <h2>User Roles</h2>
+      <div className="user-roles-header">
+        <h2 className="user-roles-title">User Roles</h2>
+        <button className="add-user-button" onClick={() => setShowPopup(true)}>
+          Add User
+        </button>
+      </div>
+      <div className="table-container">
       <table>
         <thead>
           <tr>
@@ -188,6 +194,7 @@ const Roles = () => {
                     color: "white",
                     border: "none",
                     cursor: "pointer",
+                    borderRadius: "5px",
                   }}
                 >
                   {user.status ? "Active" : "Inactive"}
@@ -197,19 +204,21 @@ const Roles = () => {
           ))}
         </tbody>
       </table>
-      <button onClick={() => setShowPopup(true)}>Add User</button>
+      </div>
       {showPopup && (
         <div className="popup">
-          <h3>Add New User</h3>
+          <h3 className="popup-title">Add New User</h3>
           <form
+            className="popup-form"
             onSubmit={(e) => {
               e.preventDefault();
               handleAddUser();
             }}
           >
-            <div>
-              <label>Email:</label>
+            <div className="form-group">
+              <label className="form-label">Email:</label>
               <input
+                className="form-input"
                 type="email"
                 value={newUser.email}
                 onChange={(e) =>
@@ -218,10 +227,11 @@ const Roles = () => {
                 required
               />
             </div>
-            <div>
-              <label>Password:</label>
+            <div className="form-group">
+              <label className="form-label">Password:</label>
               <input
-                type={showPassword ? "text" : "password"} // toggle password visibility
+                className="form-input"
+                type={showPassword ? "text" : "password"}
                 value={newUser.password}
                 onChange={(e) =>
                   setNewUser({ ...newUser, password: e.target.value })
@@ -229,17 +239,18 @@ const Roles = () => {
                 required
               />
             </div>
-            <div>
-              <input
-                type="checkbox"
-                checked={showPassword}
-                onChange={() => setShowPassword((prev) => !prev)}
-              />
-              <label>Show Password</label>
-            </div>
-            <div>
-              <label>Role:</label>
+            {/* <div className="form-group checkbox-group">
+        <input
+          type="checkbox"
+          checked={showPassword}
+          onChange={() => setShowPassword((prev) => !prev)}
+        />
+        <label className="form-label">Show Password</label>
+      </div> */}
+            <div className="form-group">
+              <label className="form-label">Role:</label>
               <select
+                className="form-input"
                 value={newUser.role}
                 onChange={(e) =>
                   setNewUser({ ...newUser, role: e.target.value })
@@ -252,13 +263,22 @@ const Roles = () => {
                 ))}
               </select>
             </div>
-            <button type="submit">Add User</button>
-            <button type="button" onClick={() => setShowPopup(false)}>
-              Cancel
-            </button>
+            <div className="button-group-bottom">
+              <button className="submit-button" type="submit">
+                Add User
+              </button>
+              <button
+                className="cancel-button"
+                type="button"
+                onClick={() => setShowPopup(false)}
+              >
+                Cancel
+              </button>
+            </div>
           </form>
         </div>
       )}
+
       {confirmation.show && (
         <div className="popup">
           <h3>Confirmation</h3>

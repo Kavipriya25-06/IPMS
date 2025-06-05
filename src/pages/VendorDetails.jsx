@@ -1001,114 +1001,127 @@ const VendorDetails = () => {
       {/* Price History Modal */}
       {showPriceHistory && (
         <div className="popup">
-          <span className="close-button" onClick={handleClosePriceHistory}>
+          <span className="x-button" onClick={handleClosePriceHistory}>
             &times;
           </span>
           <h3>Price History</h3>
-          <button onClick={() => setShowAddPriceEntryForm(true)}>
-            Add Price Entry
-          </button>
+          <div className="button-wrapper">
+            <button
+              onClick={() => setShowAddPriceEntryForm(true)}
+              className="price-entry-button"
+            >
+              Add Price Entry
+            </button>
+          </div>
 
-          <table>
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Price</th>
-                <th>Tax %</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {priceHistory.map((entry, index) => (
-                <tr key={index}>
-                  <td>
-                    {isEditingPriceEntry === index ? (
-                      <input
-                        type="date"
-                        value={editPriceEntry.date}
-                        onChange={(e) =>
-                          setEditPriceEntry({
-                            ...editPriceEntry,
-                            date: e.target.value,
-                          })
-                        }
-                      />
-                    ) : (
-                      new Date(entry.current_time).toLocaleDateString()
-                    )}
-                  </td>
-                  <td style={{ textAlign: "right" }}>
-                    {isEditingPriceEntry === index ? (
-                      <input
-                        type="number"
-                        value={editPriceEntry.price}
-                        onChange={(e) =>
-                          setEditPriceEntry({
-                            ...editPriceEntry,
-                            price: e.target.value,
-                          })
-                        }
-                      />
-                    ) : (
-                      `₹${parseFloat(entry.price).toLocaleString("en-IN", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}`
-                    )}
-                  </td>
-                  <td style={{ textAlign: "right" }}>
-                    {isEditingPriceEntry === index ? (
-                      <input
-                        type="number"
-                        value={editPriceEntry.tax}
-                        onChange={(e) =>
-                          setEditPriceEntry({
-                            ...editPriceEntry,
-                            tax: e.target.value,
-                          })
-                        }
-                      />
-                    ) : (
-                      `${parseFloat(entry.tax).toLocaleString("en-IN", {
-                        // minimumFractionDigits: 2,
-                        // maximumFractionDigits: 2
-                      })}%`
-                    )}
-                  </td>
-                  <td>
-                    {isEditingPriceEntry === index ? (
-                      <>
-                        <button onClick={() => handleSavePriceEntry(index)}>
-                          Save
-                        </button>
-                        <button onClick={() => setIsEditingPriceEntry(null)}>
-                          Cancel
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => handleEditPriceEntry(index, entry)}
-                        >
-                          Edit
-                        </button>
-                        <button onClick={() => handleDeletePriceEntry(index)}>
-                          Delete
-                        </button>
-                      </>
-                    )}
-                  </td>
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Price</th>
+                  <th>Tax %</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {priceHistory.map((entry, index) => (
+                  <tr key={index}>
+                    <td>
+                      {isEditingPriceEntry === index ? (
+                        <input
+                          type="date"
+                          value={editPriceEntry.date}
+                          onChange={(e) =>
+                            setEditPriceEntry({
+                              ...editPriceEntry,
+                              date: e.target.value,
+                            })
+                          }
+                        />
+                      ) : (
+                        new Date(entry.current_time).toLocaleDateString()
+                      )}
+                    </td>
+                    <td style={{ textAlign: "right"}}>
+                      {isEditingPriceEntry === index ? (
+                        <input
+                          type="number"
+                          value={editPriceEntry.price}
+                          onChange={(e) =>
+                            setEditPriceEntry({
+                              ...editPriceEntry,
+                              price: e.target.value,
+                            })
+                          }
+                          style={{ width: "100px" }}
+                        />
+                      ) : (
+                        `₹${parseFloat(entry.price).toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}`
+                      )}
+                    </td>
+                    <td style={{ textAlign: "right" }}>
+                      {isEditingPriceEntry === index ? (
+                        <input
+                          type="number"
+                          value={editPriceEntry.tax}
+                          onChange={(e) =>
+                            setEditPriceEntry({
+                              ...editPriceEntry,
+                              tax: e.target.value,
+                            })
+                          }
+                          style={{ width: "100px" }}
+                        />
+                      ) : (
+                        `${parseFloat(entry.tax).toLocaleString("en-IN", {
+                          // minimumFractionDigits: 2,
+                          // maximumFractionDigits: 2
+                        })}%`
+                      )}
+                    </td>
+                    <td>
+                      {isEditingPriceEntry === index ? (
+                        <div className="actions-button">
+                          <button className="edit-btn" onClick={() => handleSavePriceEntry(index)}>
+                            Save
+                          </button>
+                          <button className="cancel-btn" onClick={() => setIsEditingPriceEntry(null)}>
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="actions-button">
+                          <button
+                            className="edit-btn"
+                            onClick={() => handleEditPriceEntry(index, entry)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="cancel-btn"
+                            onClick={() => handleDeletePriceEntry(index)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {/* Add Price Entry Modal */}
       {showAddPriceEntryForm && (
         <div className="popup">
-          <h3>Add New Price Entry</h3>
+          <h3 style={{margin:"10px"}}>Add New Price Entry</h3>
           <input
             type="date"
             value={newPriceEntry.date}
@@ -1132,10 +1145,12 @@ const VendorDetails = () => {
               setNewPriceEntry({ ...newPriceEntry, tax: e.target.value })
             }
           />
-          <button onClick={handleAddPriceEntry}>Add</button>
-          <button onClick={() => setShowAddPriceEntryForm(false)}>
+          <div className="actions-button">
+          <button className="btn-save" onClick={handleAddPriceEntry}>Add</button>
+          <button className="btn-cancel" onClick={() => setShowAddPriceEntryForm(false)}>
             Cancel
           </button>
+          </div>
         </div>
       )}
 
@@ -1287,22 +1302,20 @@ const VendorDetails = () => {
                   </td>
 
                   <td>
-                    <div style={{ display: "flex",
-                       gap: "10px",}}>
-                   <button
-  onClick={() => handleEditClickVendorMaster(index)}
-  className="edit-button"
->
-  Edit
-</button>
+                    <div style={{ display: "flex", gap: "10px" }}>
+                      <button
+                        onClick={() => handleEditClickVendorMaster(index)}
+                        className="edit-button"
+                      >
+                        Edit
+                      </button>
 
-
-                    <button
-                      onClick={() => handleAddComponent(product)}
-                      disabled={isAddedToComp}
-                    >
-                      {isAddedToComp ? "Already Added" : "Add to Comp"}
-                    </button>
+                      <button
+                        onClick={() => handleAddComponent(product)}
+                        disabled={isAddedToComp}
+                      >
+                        {isAddedToComp ? "Already Added" : "Add to Comp"}
+                      </button>
                     </div>
                   </td>
                   <td>
@@ -1328,9 +1341,10 @@ const VendorDetails = () => {
                   </td>
                   <td>
                     {product.isEditingRemarks ? (
-                      <>
+                      <div className="remarks-edit-container">
                         <input
                           type="text"
+                          className="remarks-input"
                           value={product.editableRemarks || ""}
                           onChange={(e) => {
                             const updated = [...selectedVendorData];
@@ -1339,26 +1353,30 @@ const VendorDetails = () => {
                           }}
                           placeholder="Enter remarks"
                         />
-                        <button onClick={() => saveRemarks(index)}>Save</button>
                         <button
+                          className="remarks-btn save-btn"
+                          onClick={() => saveRemarks(index)}
+                        >
+                          Save
+                        </button>
+                        <button
+                          className="remarks-btn cancel-btn"
                           onClick={() =>
                             cancelEditField(index, "isEditingRemarks")
                           }
                         >
                           Cancel
                         </button>
-                      </>
+                      </div>
                     ) : (
-                      <>
-                        <span
-                          onClick={() =>
-                            enableEditField(index, "isEditingRemarks")
-                          }
-                          style={{ cursor: "pointer", color: "#007bff" }}
-                        >
-                          {product.remarks || "Click to add remarks"}
-                        </span>
-                      </>
+                      <span
+                        className="remarks-display"
+                        onClick={() =>
+                          enableEditField(index, "isEditingRemarks")
+                        }
+                      >
+                        {product.remarks || "Click to add remarks"}
+                      </span>
                     )}
                   </td>
                 </tr>
