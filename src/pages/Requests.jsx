@@ -146,8 +146,25 @@ const Requests = () => {
           justifyContent: "space-between",
         }}>
       <h2>Request List</h2>
+       <button
+                style={{
+                  cursor: "pointer",
+                  marginLeft: "auto",
+                  marginRight: 20,
+                  background: "transparent",
+                  border: "none",
+                }}
+        title="New Request"
+        onClick={handleNewRequest}
+              >
+                 <img
+          src={Add}
+          alt="New Request"
+          style={{ width: "20px", height: "20px" }}
+        />
+              </button>
 
-      <button
+      {/* <button
         onClick={handleNewRequest}
         style={{
           marginTop: "10px",
@@ -163,7 +180,7 @@ const Requests = () => {
           alt="New Request"
           style={{ width: "20px", height: "20px" }}
         />
-      </button>
+      </button> */}
       </div>
 
       <table>

@@ -448,7 +448,9 @@ const POOrderList = ({ user }) => {
 
   return (
     <div>
-      <h2>PO Order List</h2>
+      <div className="header">
+        <h2>PO Order List</h2>
+      </div>
       <div className="table-container">
         {poOrders.length === 0 ? (
           <p>No Purchase Orders found.</p>
@@ -530,15 +532,14 @@ const POOrderList = ({ user }) => {
                       : " 🔽"
                     : ""}
                 </th>
-<th className="date-filter-inline">
-  <span>Date</span>
-  <input
-    type="date"
-    value={dateFilter}
-    onChange={(e) => setDateFilter(e.target.value)}
-  />
-</th>
-
+                <th className="date-filter-inline">
+                  <span>Date</span>
+                  <input
+                    type="date"
+                    value={dateFilter}
+                    onChange={(e) => setDateFilter(e.target.value)}
+                  />
+                </th>
 
                 {(isAdmin || isProcurement) && <th>Actions</th>}
               </tr>
@@ -550,7 +551,10 @@ const POOrderList = ({ user }) => {
                 return (
                   <tr key={order.id}>
                     <td
-                      style={{ cursor: "pointer", textDecoration: "underline" }}
+                      style={{
+                        cursor: "pointer",
+                        textDecoration: "underline",
+                      }}
                       onClick={() => navigate(`/po-details/${order.id}`)}
                     >
                       {order.id}
@@ -567,12 +571,14 @@ const POOrderList = ({ user }) => {
                     </td>
                     <td>{order.date}</td>
                     {(isAdmin || isProcurement) && (
-                     <td>
-  <button className="send-email-button" onClick={() => handleOpenModal(order)}>
-    Send Email
-  </button>
-</td>
-
+                      <td>
+                        <button
+                          className="send-email-button"
+                          onClick={() => handleOpenModal(order)}
+                        >
+                          Send Email
+                        </button>
+                      </td>
                     )}
                   </tr>
                 );

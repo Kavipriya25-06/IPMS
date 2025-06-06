@@ -569,6 +569,18 @@ const Vendors = () => {
         >
           <img src={Add} alt="" style={{ width: "20px", height: "20px" }} />
         </button>
+        <div className="search-bar-container">
+          <input
+            type="text"
+            className="search-bar"
+            placeholder="Search by Vendor Name or Component Type"
+            value={searchQuery}
+            onChange={(e) => handleSearch(e.target.value)}
+          />
+          <span className="search-icon">
+            <i className="fa fa-search" aria-hidden="true"></i>
+          </span>
+        </div>
 
         {/* Modal for Adding New Vendor */}
         <Modal isOpen={isAddingVendor} onClose={() => setIsAddingVendor(false)}>
@@ -692,20 +704,7 @@ const Vendors = () => {
           </div>
         </Modal>
 
-        <div>
-          <div className="search-bar-container">
-            <input
-              type="text"
-              className="search-bar"
-              placeholder="Search by Vendor Name or Component Type"
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-            />
-            <span className="search-icon">
-              <i className="fa fa-search" aria-hidden="true"></i>
-            </span>
-          </div>
-        </div>
+        <div></div>
       </div>
 
       <div className="table-container">
@@ -800,14 +799,14 @@ const Vendors = () => {
                     {isEditingVendor === vendor.vendor_id ? (
                       <>
                         <button
-                          className="vendor-button save-button"
+                          className="edit-button"
                           onClick={() => handleSaveVendorName(vendor.vendor_id)}
                         >
                           Save
                         </button>
                         <button
                           onClick={handleCancelEdit}
-                          className="vendor-button cancel-button"
+                          className="cancel-button"
                         >
                           Cancel
                         </button>
@@ -815,7 +814,7 @@ const Vendors = () => {
                     ) : (
                       <button
                         onClick={() => handleEditVendorName(vendor)}
-                        className="vendor-button edit-button"
+                        className="vendor-button"
                         aria-label="Edit vendor"
                         style={{ border: "none", cursor: "pointer" }}
                       >

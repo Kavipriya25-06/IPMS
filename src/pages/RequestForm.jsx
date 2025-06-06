@@ -519,7 +519,11 @@ const RequestForm = () => {
           />
         )}
 
-        <h1 style={{ marginBottom: "20px" }}>Create a Request</h1>
+        <h1
+          style={{ marginBottom: "20px", marginTop: "20px", fontSize: "24px" }}
+        >
+          Create a Request
+        </h1>
         <div
           style={{
             display: "flex",
@@ -527,11 +531,11 @@ const RequestForm = () => {
             alignItems: "flex-start",
             padding: "20px",
             borderRadius: "5px",
-            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+            boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
             width: "300px",
           }}
         >
-          <div style={{ marginBottom: "15px", width: "100%" }}>
+          <div style={{ marginBottom: "15px", width: "95%" }}>
             <label style={{ display: "block", marginBottom: "5px" }}>
               Requester Name:
             </label>
@@ -549,7 +553,7 @@ const RequestForm = () => {
               }}
             />
           </div>
-          <div style={{ marginBottom: "15px", width: "100%" }}>
+          <div style={{ marginBottom: "15px", width: "95%" }}>
             <label style={{ display: "block", marginBottom: "5px" }}>
               Date:
             </label>
@@ -608,6 +612,21 @@ const RequestForm = () => {
                 </option>
               ))}
             </select>
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <button
+                style={{
+                  padding: "10px",
+                  borderRadius: "5px",
+                  border: "1px solid #ccc",
+                  cursor: "pointer",
+                  marginTop: "20px",
+                  backgroundColor: "#f58720",
+                  color: "#fff",
+                }}
+              >
+                Submit Request
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -616,79 +635,92 @@ const RequestForm = () => {
         <div>
           <h3>Selected BOM: {selectedBom.bom_name}</h3>
           <h4>Components:</h4>
-          <table>
-            <thead>
-              <tr>
-                <th>Component Type</th>
-                <th>Specification</th>
-                <th>Unit</th>
-                <th>Quantity</th>
-                <th>Vendor Name</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {selectedComponents.map((component, index) => (
-                <tr key={index}>
-                  <td>
-                    {component.component ? (
-                      component.component.component_type
-                    ) : (
-                      <select
-                        onChange={(e) =>
-                          handleComponentSelect(index, e.target.value)
-                        }
-                      >
-                        <option value="">Select Component</option>
-                        {availableComponents.map((comp) => (
-                          <option
-                            key={comp.component_id}
-                            value={comp.component_id}
-                          >
-                            {`${comp.component_type} - ${comp.component_specification}`}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </td>
-                  <td>
-                    {component.component
-                      ? component.component.component_specification
-                      : "-"}
-                  </td>
-                  <td>
-                    {component.component
-                      ? component.component.unit_of_measurement
-                      : "-"}
-                  </td>
-
-                  <td>
-                    <input
-                      type="number"
-                      min="1"
-                      value={component.quantity}
-                      onChange={(e) =>
-                        handleQuantityChange(index, e.target.value)
-                      }
-                    />
-                  </td>
-                  <td>{component.vendor.vendor_name}</td>
-                  <td>
-                    <button onClick={() => handleDeleteComponent(index)}>
-                      Delete
-                    </button>
-                  </td>
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Component Type</th>
+                  <th>Specification</th>
+                  <th>Unit</th>
+                  <th>Quantity</th>
+                  <th>Vendor Name</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {selectedComponents.map((component, index) => (
+                  <tr key={index}>
+                    <td className="specification-cells">
+                      {component.component ? (
+                        component.component.component_type
+                      ) : (
+                        <select
+                          onChange={(e) =>
+                            handleComponentSelect(index, e.target.value)
+                          }
+                        >
+                          <option value="">Select Component</option>
+                          {availableComponents.map((comp) => (
+                            <option
+                              key={comp.component_id}
+                              value={comp.component_id}
+                            >
+                              {`${comp.component_type} - ${comp.component_specification}`}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </td>
+                    <td
+                      className="specification-cell"
+                      title={
+                        component.component?.component_specification || "-"
+                      }
+                    >
+                      {component.component
+                        ? component.component.component_specification
+                        : "-"}
+                    </td>
+                    <td>
+                      {component.component
+                        ? component.component.unit_of_measurement
+                        : "-"}
+                    </td>
+
+                    <td className="quantity-cell">
+                      <input
+                        type="number"
+                        min="1"
+                        value={component.quantity}
+                        onChange={(e) =>
+                          handleQuantityChange(index, e.target.value)
+                        }
+                      />
+                    </td>
+                    <td>{component.vendor.vendor_name}</td>
+                    <td>
+                      <button
+                        className="cancel-button"
+                        onClick={() => handleDeleteComponent(index)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           <button
             onClick={handleAddComponent}
             style={{
-              padding: "10px 20px",
+              padding: "10px 15px",
               borderRadius: "5px",
               border: "1px solid #ccc",
               cursor: "pointer",
+              marginTop: "20px",
+              backgroundColor: "#f58720",
+              color: "#fff",
             }}
           >
             Add Component
@@ -696,17 +728,6 @@ const RequestForm = () => {
         </div>
       )}
 
-      <button
-        onClick={handleSubmit}
-        style={{
-          padding: "10px 20px",
-          borderRadius: "5px",
-          border: "1px solid #ccc",
-          cursor: "pointer",
-        }}
-      >
-        Submit Request
-      </button>
       {/* <button
         onClick={() => navigate("/requests")}
         style={{

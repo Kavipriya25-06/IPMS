@@ -612,8 +612,8 @@ const Inventory = () => {
               <option value="Repair">Repair</option>
             </select>
           </div>
-
-          <div className="search-bar-container">
+        </div>
+         <div className="search-bar-container">
             <input
               type="text"
               className="search-bar"
@@ -625,7 +625,6 @@ const Inventory = () => {
               <i className="fa fa-search" aria-hidden="true"></i>
             </span>
           </div>
-        </div>
       </div>
 
       <div className="table-scroll-horizontal">

@@ -385,14 +385,33 @@ const ProjectList = () => {
 
   return (
     <div>
-      <div className="header"
+      <div
+        className="header"
         style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-        }}>
-      <h2>Project List</h2>
-      <button
+        }}
+      >
+        <h2>Project List</h2>
+        <button
+          style={{
+            cursor: "pointer",
+            marginLeft: "auto",
+            marginRight: 20,
+            background: "transparent",
+            border: "none",
+          }}
+          title={showAddForm ? "Cancel" : "Add Project"}
+          onClick={() => setShowAddForm(!showAddForm)}
+        >
+          <img
+            src={showAddForm ? CancelIcon : AddIcon}
+            alt={showAddForm ? "Cancel" : "Add Project"}
+            style={{ width: "20px", height: "20px" }}
+          />{" "}
+        </button>
+        {/* <button
         onClick={() => setShowAddForm(!showAddForm)}
         style={{
           background: "transparent",
@@ -408,62 +427,66 @@ const ProjectList = () => {
           alt={showAddForm ? "Cancel" : "Add Project"}
           style={{ width: "20px", height: "20px" }}
         />
-      </button>
+      </button> */}
       </div>
 
-{showAddForm && (
-  <div className="add-project-container">
+      {showAddForm && (
+        <div className="add-project-container">
+          {/* Add Project Form */}
+          <form onSubmit={handleAddProject} className="add-project-form">
+            <select
+              name="project_type"
+              value={newProject.project_type}
+              onChange={handleInputChange}
+              required
+            >
+              <option value="">Select Project Type</option>
+              <option value="R&D">R&D</option>
+              <option value="OPS">OPS</option>
+              <option value="SER">SER</option>
+              <option value="MISC">MISC</option>
+              <option value="U/D">U/D</option>
+            </select>
 
-    {/* Add Project Form */}
-    <form onSubmit={handleAddProject} className="add-project-form">
-  <select
-    name="project_type"
-    value={newProject.project_type}
-    onChange={handleInputChange}
-    required
-  >
-    <option value="">Select Project Type</option>
-    <option value="R&D">R&D</option>
-    <option value="OPS">OPS</option>
-    <option value="SER">SER</option>
-    <option value="MISC">MISC</option>
-    <option value="U/D">U/D</option>
-  </select>
+            <input
+              type="text"
+              name="project_name"
+              value={newProject.project_name}
+              onChange={handleInputChange}
+              required
+              placeholder="Project Name"
+            />
+            <input
+              type="text"
+              name="description"
+              value={newProject.description}
+              onChange={handleInputChange}
+              required
+              placeholder="Description"
+            />
+            <input
+              type="date"
+              name="start_date"
+              value={newProject.start_date}
+              onChange={handleInputChange}
+              required
+            />
 
-  <input
-    type="text"
-    name="project_name"
-    value={newProject.project_name}
-    onChange={handleInputChange}
-    required
-    placeholder="Project Name"
-  />
-  <input
-    type="text"
-    name="description"
-    value={newProject.description}
-    onChange={handleInputChange}
-    required
-    placeholder="Description"
-  />
-  <input
-    type="date"
-    name="start_date"
-    value={newProject.start_date}
-    onChange={handleInputChange}
-    required
-  />
-
-  <div className="form-buttons">
-    <button type="submit" className="add-button">Add Project</button>
-    <button type="button" className="cancel-button" onClick={() => setShowAddForm(false)}>Cancel</button>
-  </div>
-</form>
-
-  </div>
-)}
-
-
+            <div className="form-buttons">
+              <button type="submit" className="add-button">
+                Add Project
+              </button>
+              <button
+                type="button"
+                className="cancel-button"
+                onClick={() => setShowAddForm(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       <table
         style={{

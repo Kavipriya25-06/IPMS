@@ -714,7 +714,9 @@ const Inward = () => {
 
   return (
     <div>
-      <h2>Inward</h2>
+      <div className="header">
+        <h2>Inward</h2>
+      </div>
 
       {/* Render CustomMessagebox when showMessageBox is true */}
       {showMessageBox && (
@@ -774,13 +776,13 @@ const Inward = () => {
               <tr key={index}>
                 <td>{getNestedValue(item, "po_master.PO_id")}</td>
                 <td>{getNestedValue(item, "po_master.cart.component_id")}</td>
-                <td className="specification-cell">
+                <td className="specification-cell" title={getNestedValue(item, "po_master.cart.component_specification") || "-"}>
                   {getNestedValue(
                     item,
                     "po_master.cart.component_specification"
                   )}
                 </td>
-                <td className="specification-cell">
+                <td className="specification-cell"   title={getNestedValue(item, "po_master.cart.vendor_name") || "-"}>
                   {getNestedValue(item, "po_master.cart.vendor_name")}
                 </td>
                 <td>{item.serial_number || "Not Available"}</td>

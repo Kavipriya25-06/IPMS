@@ -43,7 +43,7 @@ const RequestDetails = ({ user }) => {
   // The user object is now passed as a prop
   const isAdmin = user?.role === "Admin";
   const isProcurement = user?.role === "Procurement";
-  const isInventory = user?.role === "Inventory"
+  const isInventory = user?.role === "Inventory";
 
   useEffect(() => {
     fetchRequestDetails();
@@ -67,10 +67,8 @@ const RequestDetails = ({ user }) => {
   //     setDetails(updatedDetails);
   //     console.log("Updated details", updatedDetails);
   //   }
-    
-  // }, [priceViewData]);
 
- 
+  // }, [priceViewData]);
 
   const fetchRequestDetails = async () => {
     try {
@@ -199,7 +197,6 @@ const RequestDetails = ({ user }) => {
       setShowMessageBox(true);
       return;
     }
-
 
     const requestmasterId = detail.id;
 
@@ -376,7 +373,9 @@ const RequestDetails = ({ user }) => {
       }
 
       //  Auto-refresh
-      if (typeof fetchRequestDetails === "function") {fetchRequestDetails(), fetchPriceViewData()}; 
+      if (typeof fetchRequestDetails === "function") {
+        fetchRequestDetails(), fetchPriceViewData();
+      }
       // if (typeof fetchPriceViewData === "function") fetchPriceViewData();
       // setDetails((prevDetails) =>
       //   prevDetails.map((detail) =>
@@ -391,7 +390,7 @@ const RequestDetails = ({ user }) => {
       if (typeof fetchCartItems === "function") fetchCartItems();
 
       showSuccessToast(`Successfully added ${enteredQuantity} to cart.`);
-      console.log("The details after adding to cart",details);
+      console.log("The details after adding to cart", details);
     } catch (error) {
       console.error("Error during order process:", error);
       showErrorToast("An error occurred while processing the order.");
@@ -1053,135 +1052,144 @@ const RequestDetails = ({ user }) => {
             )}
           </div>
 
-          <table>
-            <thead>
-              <tr>
-                <th>Status</th>
-                <th>Category</th>
-                <th>Component Type</th>
-                <th>Specification</th>
-                <th>Unit of Measurement</th>
-                <th>Vendor Name</th>
-                {(isAdmin || isProcurement) && <th>Price</th>}
-                {(isAdmin || isProcurement) && <th>Tax %</th>}
-                <th>Quantity</th>
-                <th>Available Quantity</th>
-                {/* <th>Approval</th> */}
-                {(isAdmin || isProcurement || isInventory) && <th>Actions</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {details
-                .filter((detail) => !detail.order_placed) // Exclude rows where order_placed is true
-                .map((detail) => {
-                  const availableQty =
-                    inventoryData[detail.component_id]?.qty || 0;
-                  const isAssigned =
-                    assignedComponents[detail.component_id] || detail.qty === 0;
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Status</th>
+                  <th>Category</th>
+                  <th>Component Type</th>
+                  <th>Specification</th>
+                  <th>Unit of Measurement</th>
+                  <th>Vendor Name</th>
+                  {(isAdmin || isProcurement) && <th>Price</th>}
+                  {(isAdmin || isProcurement) && <th>Tax %</th>}
+                  <th>Quantity</th>
+                  <th>Available Quantity</th>
+                  {/* <th>Approval</th> */}
+                  {(isAdmin || isProcurement || isInventory) && (
+                    <th>Actions</th>
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {details
+                  .filter((detail) => !detail.order_placed) // Exclude rows where order_placed is true
+                  .map((detail) => {
+                    const availableQty =
+                      inventoryData[detail.component_id]?.qty || 0;
+                    const isAssigned =
+                      assignedComponents[detail.component_id] ||
+                      detail.qty === 0;
 
-                  return (
-                    <tr key={`${detail.id}-${detail.component_id}`}>
-                      <td>
-                        {requestStatus.find(
-                          (status) => status.request_id === detail.id
-                        )?.po_status || ""}
-                      </td>
-                      <td>{detail.category}</td>
-                      <td>{detail.component_type}</td>
-                      <td>{detail.component_specification}</td>
-                      <td>{detail.unit_of_measurement}</td>
-                      <td>
-                        {detail.cart_assign ? (
-                          <span
-                            style={{
-                              color: "#555",
-                              fontWeight: "bold",
-                              fontStyle: "italic",
-                            }}
-                          >
-                            {detail.vendor_name ||
-                              vendorNames.find(
-                                (v) => v.vendor_id === detail.vendor_id
-                              )?.vendor_name ||
-                              "N/A"}
-                          </span>
-                        ) : detail.vendor_name ? (
-                          <span
-                            style={{
-                              cursor: "pointer",
-                              textDecoration: "underline",
-                            }}
-                            onClick={() =>
-                              handleVendorSelection(
-                                detail.component_type,
-                                detail.component_specification,
-                                detail.component_id
-                              )
-                            }
-                          >
-                            {detail.vendor_name}
-                          </span>
-                        ) : (
-                          <span
-                            style={{
-                              cursor: "pointer",
-                              textDecoration: "underline",
-                            }}
-                            onClick={() =>
-                              handleVendorSelection(
-                                detail.component_type,
-                                detail.component_specification,
-                                detail.component_id
-                              )
-                            }
-                          >
-                            {vendorNames.find(
-                              (vendor) => vendor.vendor_id === detail.vendor_id
-                            )?.vendor_name || ""}
-                          </span>
+                    return (
+                      <tr key={`${detail.id}-${detail.component_id}`}>
+                        <td>
+                          {requestStatus.find(
+                            (status) => status.request_id === detail.id
+                          )?.po_status || ""}
+                        </td>
+                        <td>{detail.category}</td>
+                        <td>{detail.component_type}</td>
+                        <td className="specification-cell">
+                          {detail.component_specification}
+                        </td>
+                        <td>{detail.unit_of_measurement}</td>
+                        <td className="specification-cell">
+                          {detail.cart_assign ? (
+                            <span
+                              style={{
+                                color: "#555",
+                                fontWeight: "bold",
+                                fontStyle: "italic",
+                              }}
+                            >
+                              {detail.vendor_name ||
+                                vendorNames.find(
+                                  (v) => v.vendor_id === detail.vendor_id
+                                )?.vendor_name ||
+                                "N/A"}
+                            </span>
+                          ) : detail.vendor_name ? (
+                            <span
+                              style={{
+                                cursor: "pointer",
+                                textDecoration: "underline",
+                              }}
+                              onClick={() =>
+                                handleVendorSelection(
+                                  detail.component_type,
+                                  detail.component_specification,
+                                  detail.component_id
+                                )
+                              }
+                            >
+                              {detail.vendor_name}
+                            </span>
+                          ) : (
+                            <span
+                              style={{
+                                cursor: "pointer",
+                                textDecoration: "underline",
+                              }}
+                              onClick={() =>
+                                handleVendorSelection(
+                                  detail.component_type,
+                                  detail.component_specification,
+                                  detail.component_id
+                                )
+                              }
+                            >
+                              {vendorNames.find(
+                                (vendor) =>
+                                  vendor.vendor_id === detail.vendor_id
+                              )?.vendor_name || ""}
+                            </span>
+                          )}
+                        </td>
+
+                        {(isAdmin || isProcurement) && (
+                          <td style={{ textAlign: "right" }}>
+                            ₹
+                            {parseFloat(
+                              detail.price !== undefined
+                                ? detail.price
+                                : priceViewData.find(
+                                    (vendor) =>
+                                      vendor.vendor_id === detail.vendor_id &&
+                                      vendor.component_type ===
+                                        detail.component_type &&
+                                      vendor.component_specification ===
+                                        detail.component_specification
+                                  )?.latest_price || 0
+                            ).toLocaleString("en-IN", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </td>
                         )}
-                      </td>
-
-                      {(isAdmin || isProcurement) && (
-                        <td style={{ textAlign: "right" }}>
-                          ₹
-                          {parseFloat(
-                            detail.price !== undefined
-                              ? detail.price
-                              : priceViewData.find(
-                                  (vendor) =>
-                                    vendor.vendor_id === detail.vendor_id &&
-                                    vendor.component_type ===
-                                      detail.component_type &&
-                                    vendor.component_specification ===
-                                      detail.component_specification
-                                )?.latest_price || 0
-                          ).toLocaleString("en-IN", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
+                        {(isAdmin || isProcurement) && (
+                          <td style={{ textAlign: "right" }}>
+                            {detail.tax !== undefined
+                              ? `${detail.tax}`
+                              : `${
+                                  priceViewData.find(
+                                    (vendor) =>
+                                      vendor.vendor_id === detail.vendor_id &&
+                                      vendor.component_type ===
+                                        detail.component_type &&
+                                      vendor.component_specification ===
+                                        detail.component_specification
+                                  )?.latest_tax || ""
+                                }`}
+                            %
+                          </td>
+                        )}
+                        <td>
+                          {detail.assign !== true ? `${detail.qty}` : `0`}
                         </td>
-                      )}
-                      {(isAdmin || isProcurement) && (
-                        <td style={{ textAlign: "right" }}>
-                          {detail.tax !== undefined
-                            ? `${detail.tax}`
-                            : `${
-                                priceViewData.find(
-                                  (vendor) =>
-                                    vendor.vendor_id === detail.vendor_id &&
-                                    vendor.component_type ===
-                                      detail.component_type &&
-                                    vendor.component_specification ===
-                                      detail.component_specification
-                                )?.latest_tax || ""
-                              }`}
-                          %
-                        </td>
-                      )}
-                      <td>{detail.assign !== true ? `${detail.qty}` : `0`}</td>
-                      <td>{availableQty}</td>
-                      {/* <td>
+                        <td>{availableQty}</td>
+                        {/* <td>
                       <button
                         onClick={() => handleApproval(detail.request_id, detail.id)} // Ensure `detail.id` is used if `id` is a property of `detail`
                         disabled={detail.approve} // Disable button if already approved
@@ -1194,122 +1202,94 @@ const RequestDetails = ({ user }) => {
                         {detail.approve ? "Approved" : "Approve"}
                       </button>
                     </td> */}
-                      {(isAdmin || isProcurement  || isInventory) && (
-                        <td>
-                          {detail.assign || detail.qty === 0 ? (
-                            <button
-                              style={{
-                                padding: "10px 20px",
-                                fontSize: "14px",
-                                borderRadius: "5px",
-                                border: "1px solid #ccc",
-                                cursor:
+                        {(isAdmin || isProcurement || isInventory) && (
+                          <td>
+                            {detail.assign || detail.qty === 0 ? (
+                              <button
+                                className={`action-button ${
                                   detail.assign && detail.approve
-                                    ? "pointer"
-                                    : "not-allowed",
-                                marginRight: "10px",
-                                width: "100px",
-                                height: "40px",
-                                textAlign: "center",
-                                transition: "background-color 0.3s ease",
-                              }}
-                              onClick={() =>
-                                detail.approve &&
-                                handleUnassign(
-                                  detail.component_id,
-                                  detail.qty,
-                                  detail.id
-                                )
-                              }
-                              disabled={!detail.assign || !detail.approve} // Disabled if not approved
-                            >
-                              Dereserve
-                            </button>
-                          ) : (
-                            <button
-                              style={{
-                                padding: "10px 20px",
-                                fontSize: "14px",
-                                borderRadius: "5px",
-                                border: "1px solid #ccc",
-                                cursor:
+                                    ? ""
+                                    : "disabled-button"
+                                }`}
+                                onClick={() =>
+                                  detail.approve &&
+                                  handleUnassign(
+                                    detail.component_id,
+                                    detail.qty,
+                                    detail.id
+                                  )
+                                }
+                                disabled={!detail.assign || !detail.approve}
+                              >
+                                Dereserve
+                              </button>
+                            ) : (
+                              <button
+                                className={`action-button ${
                                   availableQty < detail.qty ||
                                   detail.qty === 0 ||
                                   detail.assign ||
                                   !detail.approve
-                                    ? "not-allowed"
-                                    : "pointer",
-                                marginRight: "10px",
-                                width: "100px",
-                                height: "40px",
-                                textAlign: "center",
-                                transition: "background-color 0.3s ease",
-                              }}
-                              onClick={() =>
-                                detail.approve &&
-                                handleAssign(
-                                  detail.component_id,
-                                  detail.qty,
-                                  detail.id
-                                )
-                              }
-                              disabled={
-                                availableQty < detail.qty ||
-                                detail.qty === 0 ||
-                                detail.assign ||
-                                !detail.approve // Disabled if not approved
-                              }
-                            >
-                              Reserve
-                            </button>
-                          )}
-                          <button
-                            style={{
-                              padding: "10px 15px",
-                              fontSize: "14px",
-                              borderRadius: "5px",
-                              border: "1px solid #ccc",
-                              cursor:
+                                    ? "disabled-button"
+                                    : ""
+                                }`}
+                                onClick={() =>
+                                  detail.approve &&
+                                  handleAssign(
+                                    detail.component_id,
+                                    detail.qty,
+                                    detail.id
+                                  )
+                                }
+                                disabled={
+                                  availableQty < detail.qty ||
+                                  detail.qty === 0 ||
+                                  detail.assign ||
+                                  !detail.approve
+                                }
+                              >
+                                Reserve
+                              </button>
+                            )}
+
+                            <button
+                              className={`cart-button ${
                                 detail.cart_assign || !detail.approve
-                                  ? "not-allowed"
-                                  : "pointer",
-                              backgroundColor: detail.cart_assign
-                                ? "#f0f0f0"
-                                : detail.approve
-                                ? "#fff"
-                                : "#ddd",
-                              color: detail.cart_assign ? "#888" : "#000",
-                              transition: "background-color 0.3s ease",
-                            }}
-                            onClick={() =>
-                              detail.approve && handleOrder(detail)
-                            }
-                            disabled={detail.cart_assign || !detail.approve} // Disabled if not approved or already in cart
-                          >
-                            {detail.cart_assign
-                              ? "Added to Cart"
-                              : "Add to Cart"}
-                          </button>
-                        </td>
-                      )}
-                    </tr>
-                  );
-                })}
-            {["admin", "sub-admin", "procurement", "finance"].includes(user?.role?.toLowerCase().trim()) && (
-              <tr style={{ fontWeight: "bold" }}>
-                <td colSpan="6">Total Cost (Including Tax):</td>
-                <td style={{ textAlign: "right" }}>
-                  ₹
-                  {parseFloat(calculateTotal()).toLocaleString("en-IN", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
+                                  ? "disabled-button"
+                                  : ""
+                              }`}
+                              onClick={() =>
+                                detail.approve && handleOrder(detail)
+                              }
+                              disabled={detail.cart_assign || !detail.approve}
+                            >
+                              {detail.cart_assign
+                                ? "Added to Cart"
+                                : "Add to Cart"}
+                            </button>
+                          </td>
+                        )}
+                      </tr>
+                    );
                   })}
-                </td>
-                <td colSpan="4"></td>
-              </tr>
-            )}
-            </tbody>
-          </table>
+                {["admin", "sub-admin", "procurement", "finance"].includes(
+                  user?.role?.toLowerCase().trim()
+                ) && (
+                  <tr style={{ fontWeight: "bold" }}>
+                    <td colSpan="6">Total Cost (Including Tax):</td>
+                    <td style={{ textAlign: "right" }}>
+                      ₹
+                      {parseFloat(calculateTotal()).toLocaleString("en-IN", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </td>
+                    <td colSpan="4"></td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
 
           {showPricePopup && pricePopupData && (
             <div className="popup">
@@ -1445,32 +1425,47 @@ const RequestDetails = ({ user }) => {
 
           {showSerialPopup && (
             <div className="popup">
-              <div className="modal-content">
-                <h3>Select Serial Numbers</h3>
-                <ul>
+              <div className="serial-modal">
+                <div className="modal-header">
+                  <h3 className="modal-title">Select Serial Numbers</h3>
+                  <button
+                    className="x-button"
+                    onClick={() => setShowSerialPopup(false)}
+                  >
+                    &times;
+                  </button>
+                </div>
+
+                <ul className="serial-list">
                   {serialNumbers.map((serial, index) => (
                     <li key={index}>
                       <button
+                        className={`serial-button ${
+                          selectedSerialNumbers.includes(serial)
+                            ? "selected"
+                            : ""
+                        }`}
                         onClick={() => handleSerialSelection(serial)}
-                        style={{
-                          color: selectedSerialNumbers.includes(serial)
-                            ? "blue"
-                            : "black",
-                          cursor: "pointer",
-                        }}
                       >
                         {serial}
                       </button>
                     </li>
                   ))}
                 </ul>
-                <button
-                  onClick={handleConfirmAssignment}
-                  disabled={selectedSerialNumbers.length !== requiredQty}
-                >
-                  Confirm Assignment
-                </button>
-                <button onClick={() => setShowSerialPopup(false)}>Close</button>
+
+                <div className="modal-actions">
+                  <button
+                    className={`confirm-button ${
+                      selectedSerialNumbers.length === requiredQty
+                        ? ""
+                        : "disabled"
+                    }`}
+                    onClick={handleConfirmAssignment}
+                    disabled={selectedSerialNumbers.length !== requiredQty}
+                  >
+                    Confirm Assignment
+                  </button>
+                </div>
               </div>
             </div>
           )}
