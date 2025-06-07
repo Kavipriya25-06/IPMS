@@ -14,6 +14,7 @@ const POOrderList = ({ user }) => {
   const [statusPopup, setStatusPopup] = useState(null); // State for status popup
   const navigate = useNavigate(); // Navigation hook
   const [showModal, setShowModal] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
 
   const [formData, setFormData] = useState({
     sender: "",
@@ -43,10 +44,30 @@ const POOrderList = ({ user }) => {
     fetchOrderStatuses();
   }, []);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   // The user object is now passed as a prop
   const isAdmin = user?.role === "Admin";
   const isProcurement = user?.role === "Procurement";
   const isFinance = user?.role === "Finance";
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth", // Smooth scroll effect
+    });
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -591,7 +612,7 @@ const POOrderList = ({ user }) => {
       {showModal && (
         <div className="popup">
           <h3>Send Email for PO ID: {currentPO?.id}</h3>
-          <form>
+          <form style={{ marginTop: "5px" }}>
             {/* <div>
               <label>Sender:</label>
               <input
@@ -620,6 +641,7 @@ const POOrderList = ({ user }) => {
                 display: "flex",
                 justifyContent: "space-between",
               }}
+              className="form-row"
             >
               <label>Recipient:</label>
               <input
@@ -638,6 +660,7 @@ const POOrderList = ({ user }) => {
                 display: "flex",
                 justifyContent: "space-between",
               }}
+              className="form-row"
             >
               <label>CC:</label>
               <input
@@ -655,6 +678,7 @@ const POOrderList = ({ user }) => {
                 display: "flex",
                 justifyContent: "space-between",
               }}
+              className="form-row"
             >
               <label>BCC:</label>
               <input
@@ -672,6 +696,7 @@ const POOrderList = ({ user }) => {
                 display: "flex",
                 justifyContent: "space-between",
               }}
+              className="form-row"
             >
               <label>Body:</label>
               <textarea
@@ -681,12 +706,22 @@ const POOrderList = ({ user }) => {
               />
             </div>
 
-            <button type="button" onClick={handleSendEmail}>
-              Send Email
-            </button>
-            <button type="button" onClick={() => setShowModal(false)}>
-              Cancel
-            </button>
+            <div className="actions-button" style={{ marginTop: "20px" }}>
+              <button
+                className="edit-button"
+                type="button"
+                onClick={handleSendEmail}
+              >
+                Send Email
+              </button>
+              <button
+                className="cancel-button"
+                type="button"
+                onClick={() => setShowModal(false)}
+              >
+                Cancel
+              </button>
+            </div>
           </form>
         </div>
       )}
@@ -713,6 +748,26 @@ const POOrderList = ({ user }) => {
           )}
           <button onClick={handleClosePopup}>Close</button>
         </div>
+      )}
+      {showScrollTop && (
+        <button
+          style={{
+            position: "fixed",
+            bottom: "20px",
+            right: "20px",
+            padding: "10px 15px",
+            fontSize: "18px",
+            backgroundColor: "#f57c00",
+            color: "white",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer",
+            zIndex: 1000,
+          }}
+          onClick={scrollToTop}
+        >
+          ↑
+        </button>
       )}
     </div>
   );

@@ -13,6 +13,7 @@ const Requests = () => {
 
   const [sortField, setSortField] = useState("");
   const [sortOrder, setSortOrder] = useState("asc");
+  const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
 
   useEffect(() => {
     fetch(`${config.apiBaseURL}/request_list/`)
@@ -22,6 +23,26 @@ const Requests = () => {
     fetchRequestDetails();
     fetchRequestStatus();
   }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth", // Smooth scroll effect
+    });
+  };
 
   const handleRequestClick = (requestId) => {
     navigate(`/requests/${requestId}`); // Navigate to request details
@@ -139,32 +160,34 @@ const Requests = () => {
 
   return (
     <div>
-      <div className="header"
+      <div
+        className="header"
         style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-        }}>
-      <h2>Request List</h2>
-       <button
-                style={{
-                  cursor: "pointer",
-                  marginLeft: "auto",
-                  marginRight: 20,
-                  background: "transparent",
-                  border: "none",
-                }}
-        title="New Request"
-        onClick={handleNewRequest}
-              >
-                 <img
-          src={Add}
-          alt="New Request"
-          style={{ width: "20px", height: "20px" }}
-        />
-              </button>
+        }}
+      >
+        <h2>Request List</h2>
+        <button
+          style={{
+            cursor: "pointer",
+            marginLeft: "auto",
+            marginRight: 20,
+            background: "transparent",
+            border: "none",
+          }}
+          title="New Request"
+          onClick={handleNewRequest}
+        >
+          <img
+            src={Add}
+            alt="New Request"
+            style={{ width: "20px", height: "20px" }}
+          />
+        </button>
 
-      {/* <button
+        {/* <button
         onClick={handleNewRequest}
         style={{
           marginTop: "10px",
@@ -272,6 +295,26 @@ const Requests = () => {
             </tbody>
           </table>
         </div>
+      )}
+       {showScrollTop && (
+        <button
+          style={{
+            position: "fixed",
+            bottom: "20px",
+            right: "20px",
+            padding: "10px 15px",
+            fontSize: "18px",
+            backgroundColor: "#f57c00",
+            color: "white",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer",
+            zIndex: 1000,
+          }}
+          onClick={scrollToTop}
+        >
+          ↑
+        </button>
       )}
     </div>
   );

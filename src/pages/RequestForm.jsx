@@ -614,14 +614,13 @@ const RequestForm = () => {
             </select>
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
               <button
+              className="edit-btn"
                 style={{
-                  padding: "10px",
                   borderRadius: "5px",
                   border: "1px solid #ccc",
                   cursor: "pointer",
                   marginTop: "20px",
-                  backgroundColor: "#f58720",
-                  color: "#fff",
+                  
                 }}
               >
                 Submit Request
@@ -713,14 +712,12 @@ const RequestForm = () => {
           </div>
           <button
             onClick={handleAddComponent}
+            className="edit-button"
             style={{
               padding: "10px 15px",
               borderRadius: "5px",
-              border: "1px solid #ccc",
               cursor: "pointer",
               marginTop: "20px",
-              backgroundColor: "#f58720",
-              color: "#fff",
             }}
           >
             Add Component

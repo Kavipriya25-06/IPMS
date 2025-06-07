@@ -32,6 +32,7 @@ const Inward = () => {
   }); // State for new question
 
   const [filteredData, setFilteredData] = useState([]);
+  const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
 
   // // Filters
   // const [poIdFilter, setPoIdFilter] = useState("");
@@ -712,6 +713,26 @@ const Inward = () => {
     fetchpodetails();
   }, []);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth", // Smooth scroll effect
+    });
+  };
+
   return (
     <div>
       <div className="header">
@@ -776,13 +797,26 @@ const Inward = () => {
               <tr key={index}>
                 <td>{getNestedValue(item, "po_master.PO_id")}</td>
                 <td>{getNestedValue(item, "po_master.cart.component_id")}</td>
-                <td className="specification-cell" title={getNestedValue(item, "po_master.cart.component_specification") || "-"}>
+                <td
+                  className="specification-cell"
+                  title={
+                    getNestedValue(
+                      item,
+                      "po_master.cart.component_specification"
+                    ) || "-"
+                  }
+                >
                   {getNestedValue(
                     item,
                     "po_master.cart.component_specification"
                   )}
                 </td>
-                <td className="specification-cell"   title={getNestedValue(item, "po_master.cart.vendor_name") || "-"}>
+                <td
+                  className="specification-cell"
+                  title={
+                    getNestedValue(item, "po_master.cart.vendor_name") || "-"
+                  }
+                >
                   {getNestedValue(item, "po_master.cart.vendor_name")}
                 </td>
                 <td>{item.serial_number || "Not Available"}</td>
@@ -902,6 +936,26 @@ const Inward = () => {
       )}
 
       <ToastContainerComponent />
+      {showScrollTop && (
+        <button
+          style={{
+            position: "fixed",
+            bottom: "20px",
+            right: "20px",
+            padding: "10px 15px",
+            fontSize: "18px",
+            backgroundColor: "#f57c00",
+            color: "white",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer",
+            zIndex: 1000,
+          }}
+          onClick={scrollToTop}
+        >
+          ↑
+        </button>
+      )}
     </div>
   );
 };

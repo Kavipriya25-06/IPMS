@@ -318,10 +318,32 @@ const ProjectList = () => {
   const navigate = useNavigate();
   const [sortField, setSortField] = useState("");
   const [sortOrder, setSortOrder] = useState("asc");
+    const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
+  
 
   useEffect(() => {
     fetchProjects();
   }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth", // Smooth scroll effect
+    });
+  };
 
   const fetchProjects = async () => {
     try {
@@ -571,6 +593,26 @@ const ProjectList = () => {
           )}
         </tbody>
       </table>
+      {showScrollTop && (
+        <button
+          style={{
+            position: "fixed",
+            bottom: "20px",
+            right: "20px",
+            padding: "10px 15px",
+            fontSize: "18px",
+            backgroundColor: "#f57c00",
+            color: "white",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer",
+            zIndex: 1000,
+          }}
+          onClick={scrollToTop}
+        >
+          ↑
+        </button>
+      )}
     </div>
   );
 };

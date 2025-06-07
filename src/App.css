@@ -76,12 +76,19 @@ nav ul li.disabled a:hover {
 
 /* Container for the entire login box */
 .login-container {
+  position: fixed;            /* Make it fixed to the viewport */
+  top: 30px;
+  left: 0;
+  width: 100vw;               /* Full viewport width */
+  height: 100vh;              /* Full viewport height */
   display: flex;
   justify-content: center;
   align-items: center;
-  height: max-content;
   background-color: #f4f4f4;
+  z-index: 999;               /* Ensure it's on top */
 }
+
+
 
 /* Logo container on the left */
 .logo-container {
@@ -103,6 +110,19 @@ nav ul li.disabled a:hover {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   text-align: center;
 }
+
+@keyframes floatAround {
+  0%   { transform: translate(10px, -20px); }
+  25%  { transform: translate(15px, -10px); }
+  50%  { transform: translate(0, -200px); }
+  75%  { transform: translate(-15px, -100px); }
+  100% { transform: translate(100px, -10px); }
+}
+
+.animate-float {
+  animation: floatAround 4s ease-in-out infinite;
+}
+
 
 /* Form group styling */
 .form-group {
@@ -422,20 +442,14 @@ tbody tr:hover {
   color: #444;
 }
 
-.form-grid input {
-  padding: 6px 10px;
-  border-radius: 4px;
-  border: 1px solid #aaa;
-  font-size: 14px;
-  width: 90%;
-}
-
+.form-grid input,
 .form-grid select {
   padding: 6px 10px;
   border-radius: 4px;
   border: 1px solid #aaa;
   font-size: 14px;
-  width: 93.5%;
+  width: 100%; /* Full width of the grid column */
+  box-sizing: border-box; /* Includes padding and border in width */
 }
 
 .vendor-loading {
@@ -456,6 +470,7 @@ tbody tr:hover {
   font-weight: 500;
   cursor: pointer;
   border: none;
+  margin-top: 20px;
 }
 
 .form-buttons button:first-child {
@@ -543,6 +558,34 @@ tbody tr:hover {
 .btn-cancel:hover {
   background-color: #bdbbbb;
   color: white;
+}
+
+
+ .form-row {
+  display: flex;
+  flex-direction: column;
+}
+
+ .form-row label {
+  font-weight: 500;
+  color: #444;
+  margin-bottom: 6px;
+}
+
+.form-row textarea{
+    min-height: 80px;
+  resize: vertical;
+
+}
+
+ .form-row input,
+ .form-row textarea {
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Table Inside Modal */
@@ -1397,7 +1440,7 @@ table td {
   justify-content: space-between;
   padding: 0px 0px;
   background-color: #ffffff;
-  border-bottom: 1px solid #ddd;
+  /* border-bottom: 1px solid #ddd; */
 }
 
 .addingtags {
@@ -2578,12 +2621,12 @@ main {
   }
 
   /* Responsive form fields */
-  .form-grid {
-    display: block;
+  .form-grid{
+    /* display: block; */
   }
 
+
   .form-grid label,
-  .form-grid input,
   .form-grid select {
     width: 100%;
   }

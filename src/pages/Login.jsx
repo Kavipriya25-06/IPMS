@@ -141,6 +141,14 @@ const handleLogin = async (e) => {
     <div className="login-container">
       <div className="logo-container">
         <img src="/aero.png" alt="Company Logo" />
+      <img
+  style={{ marginTop: "-130px", display: "block", marginLeft: "auto", marginRight: "auto" }}
+  className="animate-float"
+  src="https://sp-ao.shortpixel.ai/client/to_webp,q_lossy,ret_img/https://iotechworld.com/wp-content/uploads/2023/03/agribot.webp"
+  alt="Company Logo"
+/>
+
+
       </div>
       <div className="login-box">
         <h2>Login</h2>
@@ -164,32 +172,35 @@ const handleLogin = async (e) => {
               required
               disabled={showResetPassword}
             />
-          </div>
-
-          {!showResetPassword ? (
-            <>
-              <button type="submit" className="login-button">
-                Login
-              </button>
-              <button
+            <button
                 type="button"
                 onClick={handleForgotPassword}
                 style={{
-                  marginLeft: "10px",
                   backgroundColor: "transparent",
                   color: "#007bff",
                   border: "none",
-                  padding: "8px 12px",
+                  padding: "10px",
                   fontSize: "14px",
                   cursor: "pointer",
                   textDecoration: "underline",
                   transition: "color 0.2s ease-in-out",
+                  display: "flex",
+                  justifyContent: "flex-end",
                 }}
                 onMouseOver={(e) => (e.target.style.color = "#0056b3")}
                 onMouseOut={(e) => (e.target.style.color = "#007bff")}
               >
                 Forgot password?
               </button>
+          </div>
+          
+
+          {!showResetPassword ? (
+            <>
+              <button type="submit" className="login-button">
+                Login
+              </button>
+              
             </>
           ) : (
             <>
