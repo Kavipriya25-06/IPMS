@@ -305,6 +305,8 @@ import { useNavigate } from "react-router-dom";
 import config from "../Config"; // API Configuration
 import AddIcon from "../assets/Add.png";
 import CancelIcon from "../assets/cancel.png";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const ProjectList = () => {
   const [projects, setProjects] = useState([]);
@@ -318,8 +320,7 @@ const ProjectList = () => {
   const navigate = useNavigate();
   const [sortField, setSortField] = useState("");
   const [sortOrder, setSortOrder] = useState("asc");
-    const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
-  
+  const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
 
   useEffect(() => {
     fetchProjects();
@@ -486,14 +487,45 @@ const ProjectList = () => {
               required
               placeholder="Description"
             />
-            <input
-              type="date"
-              name="start_date"
-              value={newProject.start_date}
-              onChange={handleInputChange}
-              required
-            />
+            <div className="date-input-container">
+              <DatePicker
+                selected={
+                  newProject.start_date
+                    ? typeof newProject.start_date === "string"
+                      ? parseISO(newProject.start_date)
+                      : newProject.start_date
+                    : null
+                }
+                onChange={(date) =>
+                  handleInputChange({
+                    target: { name: "start_date", value: date },
+                  })
+                }
+                dateFormat="dd-MMM-yyyy"
+                placeholderText="dd-mm-yyyy"
+                className="input1"
+                showMonthDropdown
+                showYearDropdown
+                dropdownMode="select"
+                popperModifiers={[
+                  {
+                    name: "preventOverflow",
+                    options: {
+                      mainAxis: false, // allow dropdown to overflow if needed
+                    },
+                  },
+                  {
+                    name: "offset",
+                    options: {
+                      offset: [0, 8], // horizontal offset, vertical offset
+                    },
+                  },
+                ]}
+                required
+              />
+                            <i className="fas fa-calendar-alt calendar-icon"></i>{" "}
 
+              </div>
             <div className="form-buttons">
               <button type="submit" className="add-button">
                 Add Project
@@ -510,89 +542,94 @@ const ProjectList = () => {
         </div>
       )}
 
-      <table
-        style={{
-          width: "100%",
-          borderCollapse: "collapse",
-          border: "1px solid #ddd",
-        }}
-      >
-        <thead>
-          <tr style={{ backgroundColor: "#f4f4f4" }}>
-            <th
-              onClick={() => handleSort("project_id")}
-              style={{
-                textDecoration: "underline",
-                cursor: "pointer",
-                padding: "10px",
-              }}
-            >
-              Project ID{" "}
-              {sortField === "project_id"
-                ? sortOrder === "asc"
-                  ? " 🔼"
-                  : " 🔽"
-                : ""}
-            </th>
-            <th style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>
-              Project Name
-            </th>
-            <th style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>
-              Description
-            </th>
-            <th
-              onClick={() => handleSort("start_date")}
-              style={{
-                textDecoration: "underline",
-                cursor: "pointer",
-                padding: "10px",
-              }}
-            >
-              Start Date{" "}
-              {sortField === "start_date"
-                ? sortOrder === "asc"
-                  ? " 🔼"
-                  : " 🔽"
-                : ""}
-            </th>
-            <th style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>
-              Project Type
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {projects.length > 0 ? (
-            projects.map((project) => (
-              <tr
-                key={project.project_id}
-                style={{ borderBottom: "1px solid #ddd" }}
+      <div className="table-container">
+        <table
+          style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            border: "1px solid #ddd",
+          }}
+        >
+          <thead>
+            <tr style={{ backgroundColor: "#f4f4f4" }}>
+              <th
+                onClick={() => handleSort("project_id")}
+                style={{
+                  textDecoration: "underline",
+                  cursor: "pointer",
+                  padding: "10px",
+                }}
               >
-                <td
-                  onClick={() => navigate(`/projects/${project.project_id}`)}
-                  style={{
-                    cursor: "pointer",
-                    color: "black",
-                    textDecoration: "underline",
-                    padding: "10px",
-                  }}
-                >
-                  {project.project_id}
-                </td>
-                <td style={{ padding: "10px" }}>{project.project_name}</td>
-                <td style={{ padding: "10px" }}>{project.description}</td>
-                <td style={{ padding: "10px" }}>{project.start_date}</td>
-                <td style={{ padding: "10px" }}>{project.project_type}</td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="4" style={{ padding: "10px", textAlign: "center" }}>
-                No projects available
-              </td>
+                Project ID{" "}
+                {sortField === "project_id"
+                  ? sortOrder === "asc"
+                    ? " 🔼"
+                    : " 🔽"
+                  : ""}
+              </th>
+              <th style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>
+                Project Name
+              </th>
+              <th style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>
+                Description
+              </th>
+              <th
+                onClick={() => handleSort("start_date")}
+                style={{
+                  textDecoration: "underline",
+                  cursor: "pointer",
+                  padding: "10px",
+                }}
+              >
+                Start Date{" "}
+                {sortField === "start_date"
+                  ? sortOrder === "asc"
+                    ? " 🔼"
+                    : " 🔽"
+                  : ""}
+              </th>
+              <th style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>
+                Project Type
+              </th>
             </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {projects.length > 0 ? (
+              projects.map((project) => (
+                <tr
+                  key={project.project_id}
+                  style={{ borderBottom: "1px solid #ddd" }}
+                >
+                  <td
+                    onClick={() => navigate(`/projects/${project.project_id}`)}
+                    style={{
+                      cursor: "pointer",
+                      color: "black",
+                      textDecoration: "underline",
+                      padding: "10px",
+                    }}
+                  >
+                    {project.project_id}
+                  </td>
+                  <td style={{ padding: "10px" }}>{project.project_name}</td>
+                  <td style={{ padding: "10px" }}>{project.description}</td>
+                  <td style={{ padding: "10px" }}>{project.start_date}</td>
+                  <td style={{ padding: "10px" }}>{project.project_type}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td
+                  colSpan="4"
+                  style={{ padding: "10px", textAlign: "center" }}
+                >
+                  No projects available
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
       {showScrollTop && (
         <button
           style={{

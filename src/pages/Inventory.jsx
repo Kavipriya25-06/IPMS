@@ -10,6 +10,8 @@ import {
   showWarningToast,
   ToastContainerComponent,
 } from "./Toastify.jsx"; // Import Toastify utilities
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const Inventory = () => {
   const [inventoryData, setInventoryData] = useState([]);
@@ -579,17 +581,35 @@ const Inventory = () => {
 
           <div className="date-filter">
             <label>From:</label>
-            <input
-              type="date"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-            />
+            <div className="date-input-container">
+               <DatePicker
+        selected={fromDate}
+        onChange={(date) => setFromDate(date)}
+        dateFormat="dd-MMM-yyyy"
+        placeholderText="Select from date"
+        className="input1"
+        showMonthDropdown
+        showYearDropdown
+        dropdownMode="select"
+      />
+              <i className="fas fa-calendar-alt calendar-icon"></i>{" "}
+              {/* Font Awesome Calendar Icon */}
+            </div>
             <label>To:</label>
-            <input
-              type="date"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-            />
+             <div className="date-input-container">
+               <DatePicker
+        selected={toDate}
+        onChange={(date) => setFromDate(date)}
+        dateFormat="dd-MMM-yyyy"
+        placeholderText="Select from date"
+        className="input1"
+        showMonthDropdown
+        showYearDropdown
+        dropdownMode="select"
+      />
+              <i className="fas fa-calendar-alt calendar-icon"></i>{" "}
+              {/* Font Awesome Calendar Icon */}
+            </div>
             <button className="filter-button" onClick={filterByDate}>
               Filter
             </button>
@@ -626,6 +646,7 @@ const Inventory = () => {
             </span>
           </div>
       </div>
+      
 
       <div className="table-scroll-horizontal">
         <table className="inventory-table">
