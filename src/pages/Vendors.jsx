@@ -569,18 +569,6 @@ const Vendors = () => {
         >
           <img src={Add} alt="" style={{ width: "20px", height: "20px" }} />
         </button>
-        <div className="search-bar-container">
-          <input
-            type="text"
-            className="search-bar"
-            placeholder="Search by Vendor Name or Component Type"
-            value={searchQuery}
-            onChange={(e) => handleSearch(e.target.value)}
-          />
-          <span className="search-icon">
-            <i className="fa fa-search" aria-hidden="true"></i>
-          </span>
-        </div>
 
         {/* Modal for Adding New Vendor */}
         <Modal isOpen={isAddingVendor} onClose={() => setIsAddingVendor(false)}>
@@ -705,6 +693,20 @@ const Vendors = () => {
         </Modal>
 
         <div></div>
+      </div>
+      <div className="center-wrapper">
+        <div className="search-bar-container">
+          <input
+            type="text"
+            className="search-bar"
+            placeholder="Search by Vendor Name or Component Type"
+            value={searchQuery}
+            onChange={(e) => handleSearch(e.target.value)}
+          />
+          <span className="search-icon">
+            <i className="fa fa-search" aria-hidden="true"></i>
+          </span>
+        </div>
       </div>
 
       <div className="table-container">

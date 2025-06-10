@@ -10,9 +10,8 @@ export default function Sidebar() {
   // Load role from localStorage (or replace with your actual role-fetching logic)
   useEffect(() => {
     const role = localStorage.getItem("userRole"); // Default to 'User'
-      console.log("Normalized role:", role);
+    console.log("Normalized role:", role);
     setCurrentUserRole(role);
-    
   }, []);
 
   const toggleMenu = () => setIsMenuOpen((prev) => !prev);
@@ -27,29 +26,72 @@ export default function Sidebar() {
   };
 
   const tiles = [
-    { label: "Components", path: "/components", roles: ["Admin", "Sub-Admin", "Procurement", "Inventory"] },
-    { label: "Inventory", path: "/inventory", roles: ["Admin", "Sub-Admin", "Inventory", "Finance"] },
-    { label: "Vendor", path: "/vendor", roles: ["Admin", "Sub-Admin", "Procurement"] },
-    { label: "Bom", path: "/bom", roles: ["Admin", "Sub-Admin", "Procurement"] },
-    { label: "Projects", path: "/projects", roles: ["Admin", "Sub-Admin", "Inventory", "User", "Procurement", "Finance"] },
-    { label: "Requests", path: "/requests", roles: ["Admin", "Sub-Admin", "Procurement", "User", "Inventory"] },
+    {
+      label: "Components",
+      path: "/components",
+      roles: ["Admin", "Sub-Admin", "Procurement", "Inventory"],
+    },
+    {
+      label: "Inventory",
+      path: "/inventory",
+      roles: ["Admin", "Sub-Admin", "Inventory", "Finance"],
+    },
+    {
+      label: "Vendor",
+      path: "/vendor",
+      roles: ["Admin", "Sub-Admin", "Procurement"],
+    },
+    {
+      label: "Bom",
+      path: "/bom",
+      roles: ["Admin", "Sub-Admin", "Procurement"],
+    },
+    {
+      label: "Projects",
+      path: "/projects",
+      roles: [
+        "Admin",
+        "Sub-Admin",
+        "Inventory",
+        "User",
+        "Procurement",
+        "Finance",
+      ],
+    },
+    {
+      label: "Requests",
+      path: "/requests",
+      roles: ["Admin", "Sub-Admin", "Procurement", "User", "Inventory"],
+    },
     // { label: "Cart", path: "/cart", roles: ["Admin", "Procurement"] },
-    { label: "PO List", path: "/po-list", roles: ["Admin", "Sub-Admin", "Procurement", "Finance"] },
-    { label: "Inward", path: "/inward", roles: ["Admin", "Sub-Admin", "Inventory"] },
+    {
+      label: "PO List",
+      path: "/po-list",
+      roles: ["Admin", "Sub-Admin", "Procurement", "Finance"],
+    },
+    {
+      label: "Inward",
+      path: "/inward",
+      roles: ["Admin", "Sub-Admin", "Inventory"],
+    },
     // { label: "Add Tags", path: "/addtags", roles: ["Admin", "Inventory", "Procurement"] },
     // { label: "MRF List", path: "/Mrf", roles: ["Admin", "Procurement", "Inventory", "User"] },
     // { label: "MRF Request", path: "/MrfRequest", roles: ["Admin", "Procurement", "Inventory", "User"] },
     // { label: "Roles", path: "/roles", roles: ["Admin"] },
   ];
 
+  const topLevelPaths = tiles.map((tile) => tile.path);
   const currentTab = location.pathname;
+  const showSidebar = topLevelPaths.includes(currentTab);
 
   return (
     <div className="layout-container">
       <aside className={`sidebar ${isMenuOpen ? "open" : "closed"}`}>
         <div className="hamburger-menu">
           <button
-            className={`hamburger-button ${isMenuOpen ? "change" : "unchanged"}`}
+            className={`hamburger-button ${
+              isMenuOpen ? "change" : "unchanged"
+            }`}
             onClick={toggleMenu}
             aria-expanded={isMenuOpen}
             aria-label="Toggle Menu"
@@ -67,7 +109,9 @@ export default function Sidebar() {
               .map((tile, idx) => (
                 <div
                   key={idx}
-                  className={`dashboard-tile ${currentTab === tile.path ? "active-tile" : ""}`}
+                  className={`dashboard-tile ${
+                    currentTab === tile.path ? "active-tile" : ""
+                  }`}
                   onClick={() => handleTileClick(tile.path)}
                 >
                   {tile.label}
@@ -77,7 +121,22 @@ export default function Sidebar() {
         )}
       </aside>
 
-      <main className={`main-content ${isMenuOpen ? "sidebar-open" : "sidebar-closed"}`}>
+      {/* <main
+        className={`main-content ${
+          showSidebar
+            ? isMenuOpen
+              ? "sidebar-open"
+              : "sidebar-closed"
+            : "full-width"
+        }`}
+      >
+        <Outlet />
+      </main> */}
+      <main
+        className={`main-content ${
+          isMenuOpen ? "sidebar-open" : "sidebar-closed"
+        }`}
+      >
         <Outlet />
       </main>
     </div>

@@ -76,19 +76,17 @@ nav ul li.disabled a:hover {
 
 /* Container for the entire login box */
 .login-container {
-  position: fixed;            /* Make it fixed to the viewport */
+  position: fixed; /* Make it fixed to the viewport */
   top: 30px;
   left: 0;
-  width: 100vw;               /* Full viewport width */
-  height: 100vh;              /* Full viewport height */
+  width: 100vw; /* Full viewport width */
+  height: 100vh; /* Full viewport height */
   display: flex;
   justify-content: center;
   align-items: center;
   background-color: #f4f4f4;
-  z-index: 999;               /* Ensure it's on top */
+  z-index: 999; /* Ensure it's on top */
 }
-
-
 
 /* Logo container on the left */
 .logo-container {
@@ -112,17 +110,26 @@ nav ul li.disabled a:hover {
 }
 
 @keyframes floatAround {
-  0%   { transform: translate(10px, -20px); }
-  25%  { transform: translate(15px, -10px); }
-  50%  { transform: translate(0, -200px); }
-  75%  { transform: translate(-15px, -100px); }
-  100% { transform: translate(100px, -10px); }
+  0% {
+    transform: translate(10px, -20px);
+  }
+  25% {
+    transform: translate(15px, -10px);
+  }
+  50% {
+    transform: translate(0, -200px);
+  }
+  75% {
+    transform: translate(-15px, -100px);
+  }
+  100% {
+    transform: translate(100px, -10px);
+  }
 }
 
 .animate-float {
   animation: floatAround 4s ease-in-out infinite;
 }
-
 
 /* Form group styling */
 .form-group {
@@ -209,8 +216,6 @@ table {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-
 
 .specification-cells select {
   max-width: 200px; /* adjust as needed */
@@ -560,26 +565,24 @@ tbody tr:hover {
   color: white;
 }
 
-
- .form-row {
+.form-row {
   display: flex;
   flex-direction: column;
 }
 
- .form-row label {
+.form-row label {
   font-weight: 500;
   color: #444;
   margin-bottom: 6px;
 }
 
-.form-row textarea{
-    min-height: 80px;
+.form-row textarea {
+  min-height: 80px;
   resize: vertical;
-
 }
 
- .form-row input,
- .form-row textarea {
+.form-row input,
+.form-row textarea {
   padding: 8px 10px;
   border: 1px solid #ccc;
   border-radius: 4px;
@@ -942,7 +945,7 @@ table td {
   cursor: pointer;
   margin-left: auto;
   margin-right: 20px;
-  padding: 8px 16px;
+  padding: 4px 5px 0px;
   background-color: rgb(206, 206, 206); /* Green background */
   color: black;
   border: none;
@@ -1103,6 +1106,15 @@ table td {
   background-color: #f0f0f0;
 }
 
+.center-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10px;
+  margin-top: -55px;
+  width: 100%;
+  max-width: 800px;
+}
+
 .search-bar-container {
   display: flex;
   align-items: center;
@@ -1110,7 +1122,7 @@ table td {
   padding: 5px 10px;
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-  z-index: 1000; /* make sure it's on top */
+  width: 40%;
 }
 
 .search-bar {
@@ -1118,6 +1130,7 @@ table td {
   outline: none;
   padding: 6px 8px;
   font-size: 14px;
+  width: 100%;
 }
 
 .search-icon {
@@ -1372,8 +1385,7 @@ table td {
 }
 
 .date-filter,
-.status-filter,
-.search-bar-container {
+.status-filter {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1798,7 +1810,7 @@ table td {
 .add-project-form input,
 .add-project-form select,
 .add-project-form .input1 {
-  width: 100%;  /* Use 100% width for all inputs including DatePicker */
+  width: 100%; /* Use 100% width for all inputs including DatePicker */
   padding: 10px;
   border-radius: 4px;
   border: 1px solid #ccc;
@@ -1808,11 +1820,11 @@ table td {
 
 .date-input-container {
   position: relative;
-  width: 100%;  /* Container takes full available width */
+  width: 100%; /* Container takes full available width */
 }
 
 .date-input-container .input1 {
-  padding-right:5px; /* Space for the calendar icon */
+  padding-right: 5px; /* Space for the calendar icon */
 }
 
 /* Calendar icon positioning */
@@ -2030,6 +2042,11 @@ main {
   transition: all 0.1s ease-out;
 }
 
+.main-content.full-width {
+  width: 100%;
+  margin-left: 0;
+}
+
 .vendor-name-filters {
   padding: 8px 12px;
   white-space: nowrap;
@@ -2231,6 +2248,32 @@ main {
   border: 1px solid #ccc;
   border-radius: 6px;
   font-size: 14px;
+}
+
+.button-group {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px; /* space between buttons */
+  margin-top: 20px; /* optional spacing from content above */
+  margin-bottom: 10px;
+  padding: 0%;
+}
+
+.add-comp {
+  background-color: rgb(180, 180, 180);
+  border: none;
+  border-radius: 5px;
+  padding: 7px 15px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.add-comp:hover {
+  background-color: gray;
+}
+
+.create-tag-button img {
+  width: 20px;
 }
 
 .button-group-bottom {
@@ -2533,10 +2576,24 @@ main {
   pointer-events: none;
 }
 
+/* @media (max-width: 820px) {
+    .sidebar {
+    position: fixed;
+    top: 80px;
+    left: 10px;
+    width: 42px !important;
+    height: 36% !important;
+    background: transparent;
+    padding: 0;
+    z-index: 1000;
+    transition: all 0.3s ease-in-out;
+    overflow: visible;
+    border-radius: 5px !important;
+    gap: 10px;
+  }
+} */
 
-
-
-@media (max-width: 1024px) {
+@media (max-width: 1488px) {
   /* Responsive navbar (stacked or hamburger) */
   nav {
     flex-direction: column;
@@ -2580,7 +2637,7 @@ main {
     top: 80px;
     left: 13px;
     width: 200px !important;
-    height: 35vh;
+    height: 32vh;
     background: #fff;
     box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
     padding: 10px;
@@ -2606,6 +2663,7 @@ main {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    height: 40vh;
     transition: all 0.2s ease-in-out;
   }
 
@@ -2676,10 +2734,9 @@ main {
   }
 
   /* Responsive form fields */
-  .form-grid{
+  .form-grid {
     /* display: block; */
   }
-
 
   .form-grid label,
   .form-grid select {
@@ -2762,7 +2819,7 @@ main {
   }
 } */
 
-@media (max-width: 1024px) {
+@media (max-width: 1488px) {
   .header {
     padding: 10px;
     padding-top: 0%;
@@ -2773,9 +2830,9 @@ main {
     margin-top: -70px;
   }
 
-   .header-controls {
-    flex-direction: column;   /* ✅ Keep them side by side */
-    flex-wrap: wrap;       /* ✅ Allow wrapping if screen is too small */
+  .header-controls {
+    flex-direction: column; /* ✅ Keep them side by side */
+    flex-wrap: wrap; /* ✅ Allow wrapping if screen is too small */
     justify-content: center;
     gap: 20px;
   }
@@ -2788,12 +2845,19 @@ main {
     gap: 8px;
   }
 
-  
+  .center-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px;
+    margin-top: -15px;
+    width: 100%;
+    max-width: 1000px;
+  }
+
   .date-filter,
   .status-filter {
-    flex: 1 1 100%;  /* Optional: make controls full width when wrapped */
+    flex: 1 1 100%; /* Optional: make controls full width when wrapped */
     text-align: center;
-    
   }
 
   .date-filter label {
@@ -2801,7 +2865,6 @@ main {
     margin-right: -20px;
   }
 
- 
   .status-filter label {
     margin-bottom: 4px;
   }
@@ -2810,21 +2873,19 @@ main {
     width: 120%;
   }
 
-  .date-filter input{
+  .date-filter input {
     width: 80%;
   }
 
-  .date-filter .calendar-icon{
+  .date-filter .calendar-icon {
     right: 40px;
   }
 
-  .status-filter select{
+  .status-filter select {
     width: 50%;
   }
 
-
-  .generate-report-button
-  .filter-button,
+  .generate-report-button .filter-button,
   .clear-button {
     width: 20%;
   }
@@ -2839,9 +2900,339 @@ main {
     width: 100%;
   }
 
-  .calendar-icon{
+  .calendar-icon {
     right: 20px;
   }
+}
 
-  
+/* ProductDetailPage.css */
+
+.product-detail-container {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  background-color: white;
+}
+
+.product-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 20px;
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 18px rgba(0, 0, 0, 0.1);
+}
+
+.product-left {
+  flex: 1 1 40%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.product-images {
+  display: flex;
+  flex-direction: column;
+  gap: 50px;
+}
+
+.main-image img {
+  width: 100%;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.thumbnails-wrapper {
+  display: flex;
+  justify-content: center;
+  overflow-x: auto;
+  padding: 10px 0;
+}
+
+.thumbnails {
+  display: flex;
+  gap: 40px;
+}
+
+.thumbnails img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 15px;
+}
+
+.btn {
+  flex: 1;
+  padding: 12px;
+  font-size: 16px;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.btn-add {
+  background-color: #f0c14b;
+  color: #111;
+}
+
+.btn-add:hover {
+  background-color: #ddb347;
+}
+
+.btn-buy {
+  background-color: #ff9900;
+  color: #fff;
+}
+
+.btn-buy:hover {
+  background-color: #e68a00;
+}
+
+.product-right {
+  flex: 1 1 55%;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.product-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.back-link {
+  text-decoration: none;
+  color: #007185;
+}
+
+.share {
+  cursor: pointer;
+  color: #555;
+}
+
+.product-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #222;
+}
+
+.price-details {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.actual-price {
+  font-size: 24px;
+  font-weight: bold;
+  color: #b12704;
+}
+
+.discounted-price {
+  text-decoration: line-through;
+  color: #565959;
+}
+
+.discount {
+  color: #007600;
+  font-weight: bold;
+}
+
+.highlights-container {
+  display: flex;
+  gap: 10px; /* adjust spacing between highlights */
+
+  flex-direction: column;
+}
+
+.highlights {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* space between h3 and p */
+}
+
+.highlights:not(:last-child) {
+  margin-bottom: -30px; /* if you prefer using margin */
+}
+
+.description,
+.specifications {
+  background: #f3f3f3;
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.description h3,
+.specifications h3 {
+  margin-bottom: 10px;
+  color: #333;
+}
+
+ul {
+  list-style-type: disc;
+  padding-left: 20px;
+}
+
+.specifications ul {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@media (max-width: 1488px) {
+  .product-row {
+    flex-direction: column;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .product-title {
+    font-size: 18px;
+  }
+
+  .actual-price {
+    font-size: 20px;
+  }
+}
+
+.main-image {
+  position: relative;
+  width: 95%;
+  height: auto;
+  border: 1px solid #ddd;
+  overflow: visible;
+  padding: 10px;
+}
+
+.main-img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.zoom-lens {
+  position: absolute;
+  width: 25vw; /* Relative to viewport width */
+  height: 25vw;
+  max-width: 200px;
+  max-height: 200px;
+  min-width: 120px;
+  min-height: 120px;
+  pointer-events: none;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  background-repeat: no-repeat;
+  background-position: center;
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+  z-index: 9999; /* << Increase this */
+  transition: opacity 0.2s ease;
+}
+
+@media (max-width: 768px) {
+  .zoom-lens {
+    display: none;
+  }
+
+  .main-image {
+    cursor: default;
+  }
+}
+
+/* .add-comp {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+} */
+
+.modal-overlays {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modals {
+  background-color: white;
+  padding: 30px;
+  padding-top: 10px;
+  border-radius: 12px;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.modals h2 {
+  text-align: center;
+}
+
+.modals input,
+.modals textarea {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  margin-left: -10px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.forms-group {
+  display: flex;
+  align-items: center;
+  gap: 0px; /* spacing between label and input */
+  margin-bottom: 10px;
+}
+
+.forms-group label {
+  min-width: 110px; /* adjust based on label length */
+  margin-top: 2%;
+}
+
+.forms-group input {
+  background-color: #e4e4e4;
+}
+
+.modals select {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  margin-left: -10px;
+  background-color: #e4e4e4;
 }

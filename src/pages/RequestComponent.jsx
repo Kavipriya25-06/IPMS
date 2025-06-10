@@ -26,7 +26,7 @@ const debounce = (func, delay) => {
   };
 };
 
-const Component = () => {
+const RequestComponent = () => {
   const [components, setComponents] = useState([]);
   const [tags, setTags] = useState([]);
   const [availableTags, setAvailableTags] = useState([]); // List of attributes for tags
@@ -472,6 +472,7 @@ const Component = () => {
       }
     };
 
+    //new files are added
     const aValue = getValue(a, sortField);
     const bValue = getValue(b, sortField);
 
@@ -480,24 +481,141 @@ const Component = () => {
     return 0;
   });
 
-      const navigate = useNavigate();
+  const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState({
+    componentName: "",
+    quantity: "",
+    description: "",
+  });
 
-  const handleAddComponentClick = (id) => {
-    navigate(`/addcomponents/${id}`);
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log("Submitted:", formData);
+    setShowModal(false); // Close modal on submit
+  };
+
+  const modalRef = useRef(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (modalRef.current && !modalRef.current.contains(event.target)) {
+        setShowModal(false);
+      }
+    };
+
+    if (showModal) {
+      document.addEventListener("mousedown", handleOutsideClick);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+    };
+  }, [showModal]);
 
   return (
     <div>
       <div className="header">
-        <h2>Component List</h2>
-        <div className="button-group">
+        <h2>New Component</h2>
+        {/* <div className="button-group">
           <button className="create-tag-button" onClick={handleTagIconClick}>
             <img src="src/assets/tags.png" alt="icon" />
           </button>
-          <button className="add-comp" onClick={handleAddComponentClick}>
-            Add Component
-            
+        </div> */}
+        <div className="button-group">
+          {/* <button className="create-tag-button" onClick={handleTagIconClick}>
+            <img src="src/assets/tags.png" alt="icon" />
+          </button> */}
+          <button className="add-comp" onClick={() => setShowModal(true)}>
+            Request Component
           </button>
+          {showModal && (
+            <div className="modal-overlays">
+              <div className="modals" ref={modalRef}>
+                <h2>Request Component</h2>
+                <p>Name:Gk</p>
+                <p>Date:5.5.25</p>
+                <form onSubmit={handleSubmit}>
+                  <div className="forms-group">
+                    <label htmlFor="">Category</label>
+                    <select
+                      name="componentName"
+                      value={formData.componentName}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="" disabled>
+                        Select Category
+                      </option>
+                      <option value="Camera">Camera</option>
+                      <option value="Lens">Lens</option>
+                      <option value="Tripod">Tripod</option>
+                      <option value="Lighting">Lighting</option>
+                    </select>
+                  </div>
+                  <div className="forms-group">
+                    <label htmlFor="">Component</label>
+                    <select
+                      name="componentName"
+                      value={formData.componentName}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="" disabled>
+                        Select Category
+                      </option>
+                      <option value="Camera">Camera</option>
+                      <option value="Lens">Lens</option>
+                      <option value="Tripod">Tripod</option>
+                      <option value="Lighting">Lighting</option>
+                    </select>
+                  </div>
+                  <div className="forms-group">
+                    <label htmlFor="">Specification</label>
+                    <input
+                      type="text"
+                      name="componentName"
+                      placeholder=""
+                      value={formData.componentName}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                  <div className="forms-group">
+                    <label htmlFor="">Product Link</label>
+                    <input
+                      type="text"
+                      name="componentName"
+                      placeholder=""
+                      value={formData.componentName}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                  <div className="forms-group">
+                    <label htmlFor="">UOM</label>
+                    <input
+                      type="text"
+                      name="componentName"
+                      placeholder=""
+                      value={formData.componentName}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                  <div className="popup-actions">
+                    <button type="submit">Submit</button>
+                    <button type="button" onClick={() => setShowModal(false)}>
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* <img
@@ -911,4 +1029,4 @@ const Component = () => {
   );
 };
 
-export default Component;
+export default RequestComponent;

@@ -9,6 +9,7 @@ import {
   NavLink,
 } from "react-router-dom";
 import Components from "./pages/Components";
+import ComponentsDetails from "./pages/ComponentDetailsPage";
 import Inventory from "./pages/Inventory";
 import Vendors from "./pages/Vendors";
 import BOMDisplay from "./pages/BOM";
@@ -39,6 +40,7 @@ import MRFIcon from "./pages/MRFIcon";
 import IPMSLogo from "./assets/IPMS.png";
 import ResetPassword from "./pages/ResetPassword";
 import SideBar from "./pages/sidebar";
+import RequestComponent from "./pages/RequestComponent";
 
 // import { useAuth } from "./AuthContext";
 // import PODetails from "./pages/PODetails";
@@ -246,6 +248,36 @@ function App() {
                   ]}
                 >
                   <Components />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="components/:componentId"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[
+                    "Admin",
+                    "Sub-Admin",
+                    "Procurement",
+                    "Inventory",
+                  ]}
+                >
+                  <ComponentsDetails />
+                </ProtectedRoute>
+              }
+            />
+             <Route
+              path="addcomponents/:componentId"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[
+                    "Admin",
+                    "Sub-Admin",
+                    "Procurement",
+                    "Inventory",
+                  ]}
+                >
+                  <RequestComponent />
                 </ProtectedRoute>
               }
             />

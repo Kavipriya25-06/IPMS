@@ -6,7 +6,6 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import tagIcon from "../assets/Tag_icon.png";
 import config from "../Config"; // Import config for API endpoints
 import "../App.css";
-import { Link, useNavigate } from "react-router-dom";
 
 import {
   showSuccessToast,
@@ -26,7 +25,7 @@ const debounce = (func, delay) => {
   };
 };
 
-const Component = () => {
+const ComponentDetailsPage = () => {
   const [components, setComponents] = useState([]);
   const [tags, setTags] = useState([]);
   const [availableTags, setAvailableTags] = useState([]); // List of attributes for tags
@@ -480,435 +479,175 @@ const Component = () => {
     return 0;
   });
 
-      const navigate = useNavigate();
+  const imageList = [
+    "https://gppro.in/wp-content/uploads/2022/10/Nikon-Z6-Mirrorless-Camera-with-24-70mm-Lens-3.jpg",
+    "https://in.canon/media/image/2018/09/05/77740ca8ea0548dca1c5eb62b9ac3b2f_EOS+R+Body+Top.png",
+    "https://rukminim2.flixcart.com/image/850/1000/jr0y9ow0/dslr-camera/z/m/b/na-eos-r-canon-original-imafcwzc79pzxeye.jpeg?q=20&crop=false",
+    "https://tiimg.tistatic.com/fp/1/006/416/canon-eos-r-mirrorless-digital-camera-body-with-accessories--543.jpg",
+  ];
 
-  const handleAddComponentClick = (id) => {
-    navigate(`/addcomponents/${id}`);
+  const [mainImage, setMainImage] = useState(imageList[0]);
+  const [lensVisible, setLensVisible] = useState(false);
+  const [lensStyle, setLensStyle] = useState({});
+  const imgRef = useRef();
+
+  const handleMouseMove = (e) => {
+    const rect = imgRef.current.getBoundingClientRect();
+    const lensSize = Math.min(window.innerWidth * 0.25, 250); // max 250px
+
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const backgroundX = (x / rect.width) * 100;
+    const backgroundY = (y / rect.height) * 100;
+
+    setLensStyle({
+      top: `${y - lensSize / 2}px`,
+      left: `${x - lensSize / 2}px`,
+      width: `${lensSize}px`,
+      height: `${lensSize}px`,
+      backgroundImage: `url(${mainImage})`,
+      backgroundSize: "300% 300%",
+      backgroundPosition: `${backgroundX}% ${backgroundY}%`,
+    });
   };
 
   return (
-    <div>
-      <div className="header">
-        <h2>Component List</h2>
-        <div className="button-group">
-          <button className="create-tag-button" onClick={handleTagIconClick}>
-            <img src="src/assets/tags.png" alt="icon" />
-          </button>
-          <button className="add-comp" onClick={handleAddComponentClick}>
-            Add Component
-            
-          </button>
-        </div>
-
-        {/* <img
-          src={tagIcon}
-          alt="Tag Icon"
-          title="Add tags"
-          style={{
-            width: "39px",
-            height: "39px",
-            cursor: "pointer",
-            marginLeft: "auto",
-          }}
-          onClick={handleTagIconClick}
-        /> */}
-      </div>
-      <div class="center-wrapper">
-        <div className="search-bar-container">
-          <input
-            type="text"
-            className="search-bar"
-            placeholder="Search by Spec..."
-            value={selectedSpecification}
-            onChange={(e) => setSelectedSpecification(e.target.value)}
-          />
-          <span className="search-icon">
-            <i className="fa fa-search" aria-hidden="true"></i>
-          </span>
-        </div>
-      </div>
-      <div>
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th
-                  style={{ textDecoration: "underline", cursor: "pointer" }}
-                  onClick={() => handleSort("component_id")}
-                >
-                  Component ID{" "}
-                  {sortField === "component_id"
-                    ? sortOrder === "asc"
-                      ? "🔼"
-                      : "🔽"
-                    : ""}
-                </th>
-
-                <th className="category-dropdown-wrapper" ref={dropdownRef}>
-                  <div
-                    className="category-dropdown"
-                    onClick={() => setDropdownOpen(!dropdownOpen)}
-                  >
-                    {selectedCategory || "Category"}
-                  </div>
-
-                  {dropdownOpen && (
-                    <div className="category-dropdown-options">
-                      <div
-                        className="category-dropdown-option"
-                        onClick={() => {
-                          setSelectedCategory("");
-                          setDropdownOpen(false);
-                        }}
-                      >
-                        All
-                      </div>
-                      {getFilteredCategories().map((category) => (
-                        <div
-                          key={category}
-                          className="category-dropdown-option"
-                          onClick={() => {
-                            setSelectedCategory(category);
-                            setDropdownOpen(false);
-                          }}
-                        >
-                          {category}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </th>
-
-                <th
-                  className="component-type-dropdown-wrapper"
-                  ref={componentTypeDropdownRef}
-                >
-                  <div
-                    className="component-type-dropdown"
-                    onClick={() =>
-                      setComponentTypeDropdownOpen(!componentTypeDropdownOpen)
-                    }
-                  >
-                    {selectedComponentType || "Component Type"}
-                  </div>
-
-                  {componentTypeDropdownOpen && (
-                    <div className="component-type-dropdown-options">
-                      <div
-                        className="component-type-dropdown-option"
-                        onClick={() => {
-                          setSelectedComponentType("");
-                          setComponentTypeDropdownOpen(false);
-                        }}
-                      >
-                        All
-                      </div>
-                      {getFilteredComponentTypes().map((type) => (
-                        <div
-                          key={type}
-                          className="component-type-dropdown-option"
-                          onClick={() => {
-                            setSelectedComponentType(type);
-                            setComponentTypeDropdownOpen(false);
-                          }}
-                        >
-                          {type}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </th>
-
-                <th
-                  style={{ textDecoration: "underline", cursor: "pointer" }}
-                  onClick={() => handleSort("component_specification")}
-                >
-                  Specification{" "}
-                  {sortField === "component_specification"
-                    ? sortOrder === "asc"
-                      ? "🔼"
-                      : "🔽"
-                    : ""}
-                </th>
-                <th>Tally Reference</th>
-                <th>UOM</th>
-
-                <th
-                  className="tags-dropdown-wrapper"
-                  style={{ position: "relative" }}
-                >
-                  <div
-                    className="tags-dropdown"
-                    onClick={() => setTagsDropdownOpen(!tagsDropdownOpen)}
-                    style={{ cursor: "pointer", userSelect: "none" }}
-                  >
-                    {tagsChoices || "Tags"}
-                  </div>
-
-                  {tagsDropdownOpen && (
-                    <div className="tags-dropdown-options">
-                      <div
-                        className="tags-dropdown-option"
-                        onClick={() => {
-                          setTagsChoices("");
-                          setTagsDropdownOpen(false);
-                        }}
-                      >
-                        All
-                      </div>
-                      {getFilteredTags().map((tag) => (
-                        <div
-                          key={tag}
-                          className="tags-dropdown-option"
-                          onClick={() => {
-                            setTagsChoices(tag);
-                            setTagsDropdownOpen(false);
-                          }}
-                        >
-                          {tag}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedComponents.length > 0 ? (
-                sortedComponents.map((item, index) => {
-                  const component = item.component_id || {};
-                  return (
-                    <tr key={index}>
-                      <td>
-                        <Link
-                          to={`/components/${component.component_id}`}
-                          style={{ textDecoration: "line", color: "inherit" }}
-                        >
-                          {component.component_id}
-                        </Link>
-                      </td>
-                      <td>{component.category}</td>
-                      <td>{component.component_type}</td>
-                      <td
-                        className="specification-cell"
-                        title={component.component_specification || ""}
-                      >
-                        {component.component_specification}
-                      </td>
-                      <td>
-                        {editTallyRefId === component.component_id ? (
-                          <>
-                            <div className="tally-edit-container">
-                              <input
-                                type="text"
-                                value={editedTallyRef}
-                                onChange={(e) =>
-                                  setEditedTallyRef(e.target.value)
-                                }
-                                className="tally-input"
-                              />
-                              <div className="tally-actions">
-                                <button
-                                  className="tally-button save-button"
-                                  onClick={() =>
-                                    handleSaveTallyReference(
-                                      component.component_id
-                                    )
-                                  }
-                                >
-                                  Save
-                                </button>
-                                <button
-                                  className="tally-button cancel-button"
-                                  onClick={() => setEditTallyRefId(null)}
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-                            </div>
-                          </>
-                        ) : (
-                          <span
-                            style={{ cursor: "pointer", color: "#007bff" }}
-                            title="Click to edit"
-                            onClick={() => {
-                              setEditTallyRefId(component.component_id);
-                              setEditedTallyRef(
-                                component.tally_reference || ""
-                              );
-                            }}
-                          >
-                            {component.tally_reference || "Click to add"}
-                          </span>
-                        )}
-                      </td>
-                      <td>{component.unit_of_measurement}</td>
-
-                      <td>
-                        <div className="tags-wrapper">
-                          <div className="tags-list">
-                            {getTagsForComponent(component.component_id).map(
-                              (tag) => (
-                                <span key={tag.id} className="tag">
-                                  {tag.tags}
-                                  <button
-                                    onClick={() =>
-                                      deleteTag(tag.id, component.component_id)
-                                    }
-                                  >
-                                    ×
-                                  </button>
-                                </span>
-                              )
-                            )}
-                          </div>
-                          <button
-                            className="add-tag-button"
-                            onClick={() =>
-                              handleAddTagClick(component.component_id)
-                            }
-                          >
-                            +
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan="8" style={{ textAlign: "center" }}>
-                    No components found for the given search.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      {loading && <p>Loading...</p>}
-      {!hasMore && <p>No more data available</p>}
-
-      {showScrollTop && (
-        <button
-          style={{
-            position: "fixed",
-            bottom: "20px",
-            right: "20px",
-            padding: "10px 15px",
-            fontSize: "18px",
-            backgroundColor: "#f57c00",
-            color: "white",
-            border: "none",
-            borderRadius: "5px",
-            cursor: "pointer",
-            zIndex: 1000,
-          }}
-          onClick={scrollToTop}
-        >
-          ↑
-        </button>
-      )}
-
-      {/* Pop-up for entering a tag */}
-      {showPopup && (
-        <div
-          style={{
-            position: "fixed",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            background: "#fff",
-            padding: "20px",
-            borderRadius: "8px",
-            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-            zIndex: 1000,
-          }}
-          className="add-tag-popup"
-        >
-          <h3>Enter a Tag</h3>
-          <input
-            type="text"
-            value={newTagName}
-            onChange={(e) => setNewTagName(e.target.value)}
-            placeholder="Enter tag name"
-          />
-          <div className="popup-actions">
-            <button
-              onClick={async () => {
-                if (!newTagName.trim()) {
-                  alert("Please enter a valid tag name.");
-                  return;
-                }
-
-                // Check if the tag already exists in availableTags
-                const existingTag = availableTags.find(
-                  (tag) =>
-                    tag.tags.toLowerCase() === newTagName.trim().toLowerCase()
-                );
-
-                if (existingTag) {
-                  alert(`The tag "${newTagName}" already exists.`);
-                  setNewTagName(""); // Clear the input field
-                  return;
-                }
-
-                const payload = {
-                  tags: newTagName,
-                };
-
-                try {
-                  const response = await fetch(
-                    `${config.apiBaseURL}/create_tag/`,
-                    {
-                      method: "POST",
-                      headers: {
-                        "Content-Type": "application/json",
-                      },
-                      body: JSON.stringify(payload),
-                    }
-                  );
-
-                  if (response.ok) {
-                    showSuccessToast("Tag created successfully!");
-                    const newTag = await response.json();
-                    setAvailableTags([...availableTags, newTag]); // Add the newly created tag to availableTags
-                    setNewTagName(""); // Clear the input field
-                  } else {
-                    console.error("Failed to create tag:", response.statusText);
-                    alert("Failed to create tag.");
-                  }
-                } catch (error) {
-                  console.error("Error creating tag:", error);
-                  alert("An error occurred while creating the tag.");
-                }
-              }}
+    <div className="product-detail-container">
+      <div className="product-row">
+        <div className="product-left">
+          <div className="product-images">
+            <div
+              className="main-image"
+              onMouseMove={handleMouseMove}
+              onMouseEnter={() => setLensVisible(true)}
+              onMouseLeave={() => setLensVisible(false)}
             >
-              Create
-            </button>
+              <img
+                ref={imgRef}
+                src={mainImage}
+                alt="Main Camera"
+                className="main-img"
+              />
+              {lensVisible && <div className="zoom-lens" style={lensStyle} />}
+            </div>
+            <div className="thumbnails-wrapper">
+              <div className="thumbnails">
+                {imageList.map((src, index) => (
+                  <img
+                    key={index}
+                    src={src}
+                    alt={`Thumbnail ${index + 1}`}
+                    className={mainImage === src ? "active-thumbnail" : ""}
+                    onClick={() => setMainImage(src)}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="action-buttons">
+            <button className="btn btn-add">Add to Cart</button>
+            <button className="btn btn-buy">Buy Now</button>
           </div>
         </div>
-      )}
+        <div className="product-right">
+          <div className="product-header">
+            <a href="/components" className="back-link">
+              ← Back
+            </a>
+            <span className="share">🔗 Share</span>
+          </div>
+          <h2 className="product-title">
+            Canon EOS R Mirrorless Camera Body with Single Lens: RF24-105 mm
+            f/4L IS USM Lens (Black)
+          </h2>
+          {/* <div className="price-details">
+            <span className="actual-price">₹2,28,525</span>
+            <span className="discounted-price">₹2,56,995</span>
+            <span className="discount">11% off</span>
+          </div> */}
+          <div className="highlights-container">
+            <div className="highlights">
+              <h3>Categories:</h3>
+              <p>Accessories</p>
+            </div>
+            <div className="highlights">
+              <h3>Components:</h3>
+              <p>Carry Case</p>
+            </div>
+          </div>
 
-      {/* Overlay for closing the pop-up */}
-      {showPopup && (
-        <div
-          onClick={handlePopupClose}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            background: "rgba(0, 0, 0, 0.3)",
-            zIndex: 999,
-          }}
-        />
-      )}
-
-      <ToastContainerComponent />
+          <div className="description">
+            <h3>Description</h3>
+            <p>
+              The Canon EOS R camera is a delight for photographers. It comes
+              with an RF mount for lens compatibility, a Multi-function Bar, and
+              a customizable touchscreen LCD.
+            </p>
+          </div>
+          <div className="specifications">
+            <h3>Specifications</h3>
+            <ul>
+              <li>
+                <strong>Brand:</strong> Canon
+              </li>
+              <li>
+                <strong>Model Number:</strong> EOS R
+              </li>
+              <li>
+                <strong>Type:</strong> Mirrorless
+              </li>
+              <li>
+                <strong>Effective Pixels:</strong> 30.3 MP
+              </li>
+              <li>
+                <strong>WiFi:</strong> Yes
+              </li>
+              <li>
+                <strong>Lens Mount:</strong> Canon EF Mount
+              </li>
+              <li>
+                <strong>Image Sensor Size:</strong> 36 x 24 mm
+              </li>
+              <li>
+                <strong>Shutter Speed:</strong> 1/8000 - 30 sec
+              </li>
+              <li>
+                <strong>Display Type:</strong> TFT, 3.15 inch
+              </li>
+              <li>
+                <strong>Compatible Card:</strong> SD Card
+              </li>
+              <li>
+                <strong>Battery Type:</strong> Lithium
+              </li>
+              <li>
+                <strong>Weight:</strong> 0.66 kg
+              </li>
+            </ul>
+          </div>
+          <div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Vendor Name</th>
+                  <th>Price</th>
+                  <th>Tax%</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>gk</td>
+                  <td>1000</td>
+                  <td>11%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
 
-export default Component;
+export default ComponentDetailsPage;
