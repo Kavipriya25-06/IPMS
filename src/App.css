@@ -530,6 +530,47 @@ tbody tr:hover {
   color: white;
 }
 
+.btn-save:hover {
+  background-color: #f1ba86;
+  color: white;
+}
+
+.action-btn {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+}
+
+/* .btn-add {
+  padding: 3px 10px;
+  border-radius: 5px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background-color: #f58720;
+  color: white;
+}
+
+.btn-add:hover {
+  background-color: #f1ba86;
+  color: white;
+} */
+
+.btn-reject {
+  padding: 3px 10px;
+  border-radius: 5px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background-color: gray;
+  color: white;
+}
+
+.btn-reject:hover {
+  background-color: #f1ba86;
+  color: white;
+}
+
 .btn-edit:hover {
   background-color: #f1ba86;
   color: white;
@@ -2593,7 +2634,7 @@ main {
   }
 } */
 
-@media (max-width: 1488px) {
+@media (max-width: 1024px) {
   /* Responsive navbar (stacked or hamburger) */
   nav {
     flex-direction: column;
@@ -2663,7 +2704,7 @@ main {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    height: 40vh;
+    /* height: 40vh; */
     transition: all 0.2s ease-in-out;
   }
 
@@ -2734,9 +2775,9 @@ main {
   }
 
   /* Responsive form fields */
-  .form-grid {
-    /* display: block; */
-  }
+  /* .form-grid {
+    display: block;
+  } */
 
   .form-grid label,
   .form-grid select {
@@ -2819,7 +2860,7 @@ main {
   }
 } */
 
-@media (max-width: 1488px) {
+@media (max-width: 1024px) {
   .header {
     padding: 10px;
     padding-top: 0%;
@@ -2929,6 +2970,7 @@ main {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  max-width: 500px;
 }
 
 .product-images {
@@ -3091,7 +3133,7 @@ ul {
   gap: 10px;
 }
 
-@media (max-width: 1488px) {
+@media (max-width: 1024px) {
   .product-row {
     flex-direction: column;
   }
@@ -3166,6 +3208,78 @@ ul {
   border-radius: 6px;
   cursor: pointer;
 } */
+
+.react-datepicker__month-dropdown-container select,
+.react-datepicker__year-dropdown-container select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  border: none;
+  padding-right: 20px !important;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 5px !important;
+  padding-top: 5px !important;
+  padding-bottom: 5px !important;
+  padding: 10px;
+  border-radius: 5px;
+  background-color: #f1f1f1 !important;
+  border: 1px solid #ccc !important;
+  font-size: 13px;
+  color: rgb(101, 101, 101);
+}
+
+/* Container to hold custom arrow */
+.react-datepicker__month-dropdown-container,
+.react-datepicker__year-dropdown-container {
+  position: relative;
+  display: inline-block;
+  margin: 0 5px;
+}
+
+/* Custom arrow */
+.react-datepicker__month-dropdown-container::after,
+.react-datepicker__year-dropdown-container::after {
+  content: "▼";
+  font-size: 10px;
+  color: #555;
+  position: absolute;
+  right: 2px;
+  top: 56%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+/* Dropdown options list */
+.react-datepicker__month-dropdown,
+.react-datepicker__year-dropdown {
+  background-color: #fff;
+  border: 1px solid #ccc;
+  max-height: 150px;
+  overflow-y: auto;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+}
+
+/* Dropdown option styling */
+.react-datepicker__month-option,
+.react-datepicker__year-option {
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.react-datepicker__month-option:hover,
+.react-datepicker__year-option:hover {
+  background-color: #f0f0f0;
+}
+
+.react-datepicker__month-option--selected,
+.react-datepicker__year-option--selected {
+  background-color: #007bff;
+  color: #fff;
+  font-weight: bold;
+}
 
 .modal-overlays {
   position: fixed;

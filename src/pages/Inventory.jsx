@@ -582,31 +582,31 @@ const Inventory = () => {
           <div className="date-filter">
             <label>From:</label>
             <div className="date-input-container">
-               <DatePicker
-        selected={fromDate}
-        onChange={(date) => setFromDate(date)}
-        dateFormat="dd-MMM-yyyy"
-        placeholderText="Select from date"
-        className="input1"
-        showMonthDropdown
-        showYearDropdown
-        dropdownMode="select"
-      />
+              <DatePicker
+                selected={fromDate}
+                onChange={(date) => setFromDate(date)}
+                dateFormat="dd-MMM-yyyy"
+                placeholderText="dd-mm-yyyy"
+                className="input1"
+                showMonthDropdown
+                showYearDropdown
+                dropdownMode="select"
+              />
               <i className="fas fa-calendar-alt calendar-icon"></i>{" "}
               {/* Font Awesome Calendar Icon */}
             </div>
             <label>To:</label>
-             <div className="date-input-container">
-               <DatePicker
-        selected={toDate}
-        onChange={(date) => setFromDate(date)}
-        dateFormat="dd-MMM-yyyy"
-        placeholderText="Select from date"
-        className="input1"
-        showMonthDropdown
-        showYearDropdown
-        dropdownMode="select"
-      />
+            <div className="date-input-container">
+              <DatePicker
+                selected={toDate}
+                onChange={(date) => setToDate(date)}
+                dateFormat="dd-MMM-yyyy"
+                placeholderText="dd-mm-yyyy"
+                className="input1"
+                showMonthDropdown
+                showYearDropdown
+                dropdownMode="select"
+              />
               <i className="fas fa-calendar-alt calendar-icon"></i>{" "}
               {/* Font Awesome Calendar Icon */}
             </div>
@@ -633,22 +633,21 @@ const Inventory = () => {
             </select>
           </div>
         </div>
-         <div className="search-bar-container">
-            <input
-              type="text"
-              className="search-bar"
-              placeholder="Search by tag..."
-              value={selectedTag}
-              onChange={(e) => setSelectedTag(e.target.value)}
-            />
-            <span className="search-icon">
-              <i className="fa fa-search" aria-hidden="true"></i>
-            </span>
-          </div>
+        <div className="search-bar-container">
+          <input
+            type="text"
+            className="search-bar"
+            placeholder="Search by tag..."
+            value={selectedTag}
+            onChange={(e) => setSelectedTag(e.target.value)}
+          />
+          <span className="search-icon">
+            <i className="fa fa-search" aria-hidden="true"></i>
+          </span>
+        </div>
       </div>
-      
 
-      <div className="table-scroll-horizontal">
+      <div className="table-container">
         <table className="inventory-table">
           <thead>
             <tr>

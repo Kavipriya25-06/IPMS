@@ -7,6 +7,7 @@ import tagIcon from "../assets/Tag_icon.png";
 import config from "../Config"; // Import config for API endpoints
 import "../App.css";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../AuthContext.jsx";
 
 import {
   showSuccessToast,
@@ -15,6 +16,7 @@ import {
   showWarningToast,
   ToastContainerComponent,
 } from "./Toastify.jsx"; // Import Toastify utilities
+import { th } from "date-fns/locale";
 
 const debounce = (func, delay) => {
   let timer;
@@ -51,6 +53,8 @@ const RequestComponent = () => {
   const isInitialMount = useRef(true); // Track if it's the first render
   const [editTallyRefId, setEditTallyRefId] = useState(null); // which row is editing
   const [editedTallyRef, setEditedTallyRef] = useState(""); // input value
+  const { user, logout } = useAuth(); // correctly accessing the context
+  // console.log("User", user.role);
 
   const [sortField, setSortField] = useState();
   const [sortOrder, setSortOrder] = useState("asc");
@@ -650,17 +654,11 @@ const RequestComponent = () => {
           <table>
             <thead>
               <tr>
-                <th
-                  style={{ textDecoration: "underline", cursor: "pointer" }}
-                  onClick={() => handleSort("component_id")}
-                >
-                  Component ID{" "}
-                  {sortField === "component_id"
-                    ? sortOrder === "asc"
-                      ? "🔼"
-                      : "🔽"
-                    : ""}
-                </th>
+                {(user.role === "Inventory" || user.role === "Procurement" || user.role === "Admin") && (
+                  <th>
+                    <>UserName</>
+                  </th>
+                )}
 
                 <th className="category-dropdown-wrapper" ref={dropdownRef}>
                   <div
@@ -748,10 +746,10 @@ const RequestComponent = () => {
                       : "🔽"
                     : ""}
                 </th>
-                <th>Tally Reference</th>
+                {/* <th>Tally Reference</th> */}
                 <th>UOM</th>
 
-                <th
+                {/* <th
                   className="tags-dropdown-wrapper"
                   style={{ position: "relative" }}
                 >
@@ -788,6 +786,33 @@ const RequestComponent = () => {
                       ))}
                     </div>
                   )}
+                </th> */}
+
+                <th>Product Link</th>
+                <th>Date</th>
+                {(user.role === "Inventory" || user.role === "Procurement") && (
+                  <th>
+                    {" "}
+                    <>Actions</>
+                  </th>
+                )}
+
+                {user.role === "User" && (
+                  <th>
+                    <>Status</>
+                  </th>
+                )}
+
+                <th
+                  style={{ textDecoration: "underline", cursor: "pointer" }}
+                  onClick={() => handleSort("component_id")}
+                >
+                  Component ID{" "}
+                  {sortField === "component_id"
+                    ? sortOrder === "asc"
+                      ? "🔼"
+                      : "🔽"
+                    : ""}
                 </th>
               </tr>
             </thead>
@@ -797,14 +822,10 @@ const RequestComponent = () => {
                   const component = item.component_id || {};
                   return (
                     <tr key={index}>
-                      <td>
-                        <Link
-                          to={`/components/${component.component_id}`}
-                          style={{ textDecoration: "line", color: "inherit" }}
-                        >
-                          {component.component_id}
-                        </Link>
-                      </td>
+                      {(user.role === "Inventory" ||
+                        user.role === "Procurement" ||
+                        user.role === "Admin") && <td>Raj</td>}
+
                       <td>{component.category}</td>
                       <td>{component.component_type}</td>
                       <td
@@ -813,7 +834,7 @@ const RequestComponent = () => {
                       >
                         {component.component_specification}
                       </td>
-                      <td>
+                      {/* <td>
                         {editTallyRefId === component.component_id ? (
                           <>
                             <div className="tally-edit-container">
@@ -859,10 +880,11 @@ const RequestComponent = () => {
                             {component.tally_reference || "Click to add"}
                           </span>
                         )}
-                      </td>
+                      </td> */}
+
                       <td>{component.unit_of_measurement}</td>
 
-                      <td>
+                      {/* <td>
                         <div className="tags-wrapper">
                           <div className="tags-list">
                             {getTagsForComponent(component.component_id).map(
@@ -889,6 +911,43 @@ const RequestComponent = () => {
                             +
                           </button>
                         </div>
+                      </td> */}
+
+                      <td>
+                        <a href="http://">Link</a>
+                      </td>
+                      <td>24.10.25</td>
+                      {(user.role === "Inventory" ||
+                        user.role === "Procurement" ||
+                        user.role === "User") && (
+                        <td className="action-btn">
+                          {user.role === "Inventory" && (
+                            <>
+                              <button className="btn-reject">Add</button>
+                              <button className="btn-reject">Reject</button>
+                            </>
+                          )}
+                          {user.role === "Procurement" && (
+                            <>
+                              <button className="btn-reject">
+                                Add to Vendor
+                              </button>
+                              <button className="btn-reject">
+                                Added to Vendor
+                              </button>
+                            </>
+                          )}
+                          {user.role === "User" && <>Pending</>}
+                        </td>
+                      )}
+
+                      <td>
+                        <Link
+                          to={`/components/${component.component_id}`}
+                          style={{ textDecoration: "line", color: "inherit" }}
+                        >
+                          {component.component_id}
+                        </Link>
                       </td>
                     </tr>
                   );
