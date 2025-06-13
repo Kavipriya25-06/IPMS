@@ -28,7 +28,6 @@ const RequestComponent = () => {
   const [showModal, setShowModal] = useState(false);
   const { user, logout } = useAuth();
   const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
-  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     name: "Dronix",
@@ -48,6 +47,7 @@ const RequestComponent = () => {
   const modalRef = useRef(null);
   const [addedComponentIds, setAddedComponentIds] = useState([]);
 
+
   // Fetch dropdown options
   useEffect(() => {
     fetch(`${config.apiBaseURL}/component_options/`)
@@ -63,16 +63,11 @@ const RequestComponent = () => {
 
   // Fetch submitted component requests
   useEffect(() => {
-    let url = `${config.apiBaseURL}/request_component/`;
-    if (user?.role === "Procurement") {
-      url += "?status=Added";
-    }
-
-    fetch(url)
+    fetch(`${config.apiBaseURL}/request_component/`)
       .then((res) => res.json())
       .then((data) => setComponentList(data))
       .catch((err) => console.error("Error fetching request data:", err));
-  }, [user]);
+  }, []);
 
   // useEffect(() => {
   //   const handleOutsideClick = (e) => {
@@ -140,79 +135,52 @@ const RequestComponent = () => {
     }
   };
 
-  const handleAddToComponentMaster = async (item) => {
-    const payload = {
-      component_type: item.component_type,
-      component_specification: item.component_specification,
-      unit_of_measurement: item.uom,
-      category: item.category,
-      tally_reference: "",
-    };
+const handleAddToComponentMaster = async (item) => {
+  const payload = {
+    component_type: item.component_type,
+    component_specification: item.component_specification,
+    unit_of_measurement: item.uom,
+    category: item.category,
+    tally_reference: "",
+  };
 
-    try {
-      const response = await fetch(`${config.apiBaseURL}/component/`, {
-        method: "POST",
+  try {
+    const response = await fetch(`${config.apiBaseURL}/component/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      showSuccessToast(`Added to Component Master: ${result.component_id}`);
+
+      // Now update request_component status to "Added"
+      await fetch(`${config.apiBaseURL}/request_component/${item.id}/`, {
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ status: "Added" }),
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        const generatedComponentId = result.component_id;
-
-        showSuccessToast(`Added to Component Master: ${generatedComponentId}`);
-
-        //  Update request_component with component_id
-        await fetch(`${config.apiBaseURL}/request_component/${item.id}/`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            status: "Added",
-            component_id: generatedComponentId, //  Save to request_component
-          }),
-        });
-
-        const updatedList = await fetch(
-          `${config.apiBaseURL}/request_component/`
-        ).then((res) => res.json());
-        setComponentList(updatedList);
-      } else {
-        const errorData = await response.json();
-        showErrorToast("Error adding to Component Master");
-        console.error("Response Error:", errorData);
-      }
-    } catch (error) {
-      showErrorToast("Network error while posting");
-      console.error("Add to Component Master error:", error);
-    }
-  };
-
-  const handleRejectRequest = async (item) => {
-    const componentId = prompt("Enter Component ID for rejection:");
-    if (!componentId) return;
-
-    try {
-      // Update status and component ID
-      await fetch(`${config.apiBaseURL}/request_component/${item.id}/`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "Rejected", component_id: componentId }),
-      });
-
-      showWarningToast(`Component ${componentId} rejected.`);
-      const updatedList = await fetch(
-        `${config.apiBaseURL}/request_component/`
-      ).then((res) => res.json());
+      // Refresh component list
+      const updatedList = await fetch(`${config.apiBaseURL}/request_component/`).then(res => res.json());
       setComponentList(updatedList);
-    } catch (error) {
-      showErrorToast("Failed to reject");
-      console.error("Reject error:", error);
+    } else {
+      const errorData = await response.json();
+      showErrorToast("Error adding to Component Master");
+      console.error("Response Error:", errorData);
     }
-  };
+  } catch (error) {
+    showErrorToast("Network error while posting");
+    console.error("Add to Component Master error:", error);
+  }
+};
+
+
 
   return (
     <div>
@@ -365,7 +333,9 @@ const RequestComponent = () => {
                 {/* <th>Tally Reference</th> */}
                 <th>UOM</th>
 
+               
                 <th>Date</th>
+                
 
                 {user.role === "User" && (
                   <th>
@@ -414,11 +384,7 @@ const RequestComponent = () => {
                     </td>
                     <td>{item.uom}</td>
                     <td>{item.request_date}</td>
-                    <td>
-                      {item.status === "Added" || item.status === "Rejected"
-                        ? item.component_id
-                        : ""}
-                    </td>
+                    <td>{item.id}</td>
                     {(user.role === "Inventory" ||
                       user.role === "Procurement" ||
                       user.role === "User") && (
@@ -426,27 +392,15 @@ const RequestComponent = () => {
                         {user.role === "Inventory" && (
                           <>
                             {item.status === "Added" ? (
-                              <button className="btn-added" disabled>
-                                Component Added
-                              </button>
+                              <button className="btn-added" disabled>Added</button>
                             ) : item.status === "Rejected" ? (
-                              <button className="btn-reject" disabled>
-                                Rejected
-                              </button>
+                              <button className="btn-reject" disabled>Rejected</button>
                             ) : (
                               <>
-                                <button
-                                  className="btn-approve"
-                                  onClick={() =>
-                                    handleAddToComponentMaster(item)
-                                  }
-                                >
+                                <button className="btn-approve" onClick={() => handleAddToComponentMaster(item)}>
                                   Add
                                 </button>
-                                <button
-                                  className="btn-reject"
-                                  onClick={() => handleRejectRequest(item)}
-                                >
+                                <button className="btn-reject" onClick={() => handleRejectRequest(item)}>
                                   Reject
                                 </button>
                               </>
@@ -455,15 +409,11 @@ const RequestComponent = () => {
                         )}
                         {user.role === "Procurement" && (
                           <>
-                            <button
-                              className="btn-reject"
-                              onClick={() =>
-                                navigate("/vendor", {
-                                  state: { component: item },
-                                })
-                              }
-                            >
+                            <button className="btn-reject">
                               Add to Vendor
+                            </button>
+                            <button className="btn-reject">
+                              Added to Vendor
                             </button>
                           </>
                         )}
@@ -474,6 +424,8 @@ const RequestComponent = () => {
                 ))
               )}
             </tbody>
+
+            
           </table>
         </div>
       </div>

@@ -568,6 +568,7 @@ tbody tr:hover {
 
 .btn-reject:hover {
   background-color: #c2c1c1;
+  /* background-color: #f1ba86; */
   color: white;
 }
 
