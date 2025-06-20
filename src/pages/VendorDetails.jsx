@@ -52,7 +52,7 @@ const VendorDetails = () => {
     product_id: "",
     product_description: "",
     unit_of_measurement: "",
-    component: "",
+    component_id: "",
     last_price: "",
     tax: "",
     img: null,
@@ -63,6 +63,14 @@ const VendorDetails = () => {
     vendor: vendorId,
     active: "",
   });
+  const [componentList, setComponentList] = useState([]);
+
+  useEffect(() => {
+    fetch(`${config.apiBaseURL}/component/`)
+      .then((res) => res.json())
+      .then((data) => setComponentList(data))
+      .catch((err) => console.error("Error fetching component list:", err));
+  }, []);
 
   useEffect(() => {
     const fetchVendorDetails = async () => {
@@ -300,32 +308,47 @@ const VendorDetails = () => {
     setShowEditProductForm(true);
   };
 
-  const saveImage = async (index) => {
+  const saveImages = async (index) => {
+    const product = selectedVendorData[index];
+    const componentId = product.component_id; // Ensure this exists in your data
+
     const formData = new FormData();
-    formData.append("img", selectedVendorData[index].img);
+    product.newImages.forEach((file) => {
+      formData.append("images", file); // Django expects key: 'images'
+    });
 
     try {
       const response = await fetch(
-        `${config.apiBaseURL}/vendor_master/${selectedVendorData[index].product_id}/`, // Use a specific endpoint for updating the image
+        `${config.apiBaseURL}/component_images/${componentId}/`,
         {
-          method: "PATCH",
+          method: "POST",
           body: formData,
         }
       );
 
       if (response.ok) {
-        const updatedProduct = await response.json();
+        const uploaded = await response.json();
+        const uploadedImagePaths = uploaded.map((item) => item.image);
+
         setSelectedVendorData((prevState) => {
-          const updatedProducts = [...prevState];
-          updatedProducts[index] = { ...updatedProduct, isEditingImage: false };
-          return updatedProducts;
-        }); // Update state with the new image
-        alert("Image updated successfully!");
+          const updated = [...prevState];
+          updated[index] = {
+            ...updated[index],
+            images: uploadedImagePaths, // Save new image URLs
+            newImages: [],
+            isEditingImage: false,
+          };
+          return updated;
+        });
+
+        alert("Images uploaded successfully!");
       } else {
-        console.error("Failed to update image:", response.statusText);
+        console.error("Upload failed:", response.statusText);
+        alert("Failed to upload images.");
       }
     } catch (error) {
-      console.error("Error updating image:", error);
+      console.error("Upload error:", error);
+      alert("Error uploading images.");
     }
   };
 
@@ -413,10 +436,13 @@ const VendorDetails = () => {
   };
 
   // Handler for updating the image
-  const handleImageChange = (index, file) => {
+  const handleImageChange = (index, files) => {
     setSelectedVendorData((prevState) => {
       const updatedProducts = [...prevState];
-      updatedProducts[index] = { ...updatedProducts[index], img: file };
+      updatedProducts[index] = {
+        ...updatedProducts[index],
+        newImages: files, // Store selected files temporarily
+      };
       return updatedProducts;
     });
   };
@@ -458,11 +484,13 @@ const VendorDetails = () => {
       "component_type",
       "component_specification",
       "unit_of_measurement",
+      "component_id",
     ];
 
     const emptyFields = requiredFields.filter(
       (field) => !newProduct[field] || newProduct[field].trim() === ""
     );
+    console.log("Empty fields", emptyFields);
 
     if (emptyFields.length > 0) {
       setMessageBoxContent(
@@ -471,6 +499,7 @@ const VendorDetails = () => {
           .join(", ")}`
       );
       setShowMessageBox(true);
+      console.log("please fill details");
       return; // Stop execution if validation fails
     }
 
@@ -494,6 +523,25 @@ const VendorDetails = () => {
 
       if (response.ok) {
         const addedProduct = await response.json();
+
+        const componentId = addedProduct.component_id;
+
+        try {
+          await fetch(
+            `${config.apiBaseURL}/request_component/status/Added/${componentId}/`,
+            {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ vendor_added: true }),
+            }
+          );
+          console.log("vendor_added patched in request_component");
+        } catch (patchError) {
+          console.error("Failed to patch request_component:", patchError);
+        }
+
         setSelectedVendorData([...selectedVendorData, addedProduct]);
         setNewProduct({
           product_description: "",
@@ -507,6 +555,7 @@ const VendorDetails = () => {
           unit_of_measurement: "",
           vendor: vendorId,
           active: true,
+          component_id: "",
         });
         setShowAddProductForm(false);
 
@@ -547,44 +596,44 @@ const VendorDetails = () => {
   };
 
   // Handle Add button click
-  const handleAddComponent = async (product) => {
-    const payload = {
-      product_id: product.product_id,
-      component_type: product.component_type,
-      component_specification: product.component_specification,
-      unit_of_measurement: product.unit_of_measurement,
-      category: product.category,
-      vendor_id: vendorId,
-    };
+  // const handleAddComponent = async (product) => {
+  //   const payload = {
+  //     product_id: product.product_id,
+  //     component_type: product.component_type,
+  //     component_specification: product.component_specification,
+  //     unit_of_measurement: product.unit_of_measurement,
+  //     category: product.category,
+  //     vendor_id: vendorId,
+  //   };
 
-    try {
-      const response = await fetch(`${config.apiBaseURL}/component/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+  //   try {
+  //     const response = await fetch(`${config.apiBaseURL}/component/`, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify(payload),
+  //     });
 
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Component successfully added:", data);
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       console.log("Component successfully added:", data);
 
-        // Update the componentMasterData state with the new component_id
-        setComponentMasterData((prevData) => ({
-          ...prevData,
-          [product.product_id]: data.component_id, // Assume `data` contains the new component_id
-        }));
-        showSuccessToast("Component added successfully!");
-      } else {
-        console.error("Error adding component:", response.statusText);
-        alert("Failed to add component.");
-      }
-    } catch (error) {
-      console.error("Error adding component:", error);
-      alert("Error occurred while adding component.");
-    }
-  };
+  //       // Update the componentMasterData state with the new component_id
+  //       setComponentMasterData((prevData) => ({
+  //         ...prevData,
+  //         [product.product_id]: data.component_id, // Assume `data` contains the new component_id
+  //       }));
+  //       showSuccessToast("Component added successfully!");
+  //     } else {
+  //       console.error("Error adding component:", response.statusText);
+  //       alert("Failed to add component.");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error adding component:", error);
+  //     alert("Error occurred while adding component.");
+  //   }
+  // };
 
   const handleBackClick = () => {
     navigate("/vendor");
@@ -724,7 +773,6 @@ const VendorDetails = () => {
       <h4>
         Vendor Data for {getVendorName(vendorId)} - {vendorId}
       </h4>
-
       <div
         style={{
           display: "flex",
@@ -758,19 +806,39 @@ const VendorDetails = () => {
           onClick={() => setShowAddProductForm(!showAddProductForm)}
         />
       </div>
-
-      {/* Render CustomMessagebox when showMessageBox is true */}
-      {showMessageBox && (
-        <CustomMessagebox
-          message={messageBoxContent}
-          onClose={() => setShowMessageBox(false)}
-        />
-      )}
-
-      {/* Add Product Modal */}
+      {/* // Inside your JSX return block */}
       {showAddProductForm && (
         <div className="popup">
           <h3>Add New Product</h3>
+
+          {/* Component ID Dropdown */}
+          <select
+            value={newProduct.component}
+            onChange={(e) => {
+              const selectedComponentId = e.target.value;
+              const selectedComponent = componentList.find(
+                (comp) => comp.component_id === selectedComponentId
+              );
+
+              setNewProduct({
+                ...newProduct,
+                component_id: selectedComponentId,
+                category: selectedComponent?.category || "",
+                component_type: selectedComponent?.component_type || "",
+                component_specification:
+                  selectedComponent?.component_specification || "",
+                unit_of_measurement:
+                  selectedComponent?.unit_of_measurement || "",
+              });
+            }}
+          >
+            <option value="">Select Component ID</option>
+            {componentList.map((comp) => (
+              <option key={comp.component_id} value={comp.component_id}>
+                {comp.component_id}
+              </option>
+            ))}
+          </select>
 
           <input
             type="text"
@@ -792,47 +860,39 @@ const VendorDetails = () => {
             value={newProduct.tax}
             onChange={(e) => handleInputChange("tax", e.target.value)}
           />
-          <select
+
+          {/* Auto-filled category (readonly) */}
+          <input
+            type="text"
+            placeholder="Category"
             value={newProduct.category}
-            onChange={(e) => handleInputChange("category", e.target.value)}
-          >
-            <option value="">Select Category</option>
-            {choices.category_choices.map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-          <select
+            readOnly
+          />
+
+          {/* Auto-filled component type (readonly) */}
+          <input
+            type="text"
+            placeholder="Component Type"
             value={newProduct.component_type}
-            onChange={(e) =>
-              handleInputChange("component_type", e.target.value)
-            }
-          >
-            <option value="">Select Component Type</option>
-            {choices.component_type_list.map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
+            readOnly
+          />
+
+          {/* Auto-filled component specification (readonly) */}
           <input
             type="text"
             placeholder="Component Specification"
             value={newProduct.component_specification}
-            onChange={(e) =>
-              handleInputChange("component_specification", e.target.value)
-            }
+            readOnly
           />
+
           <input
             type="text"
             placeholder="Unit of Measurement"
             value={newProduct.unit_of_measurement}
-            onChange={(e) =>
-              handleInputChange("unit_of_measurement", e.target.value)
-            }
+            readOnly
           />
-          <input
+
+          {/* <input
             type="file"
             onChange={(e) => handleInputChange("img", e.target.files[0])}
           />
@@ -841,159 +901,11 @@ const VendorDetails = () => {
             onChange={(e) =>
               handleInputChange("attachments", e.target.files[0])
             }
-          />
+          /> */}
 
           <div className="popup-actions">
             <button onClick={handleAddNewProduct}>Save Product</button>
             <button onClick={() => setShowAddProductForm(false)}>Cancel</button>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Product Modal */}
-      {showEditProductForm && (
-        <div className="popup">
-          <h3>Edit Product</h3>
-          <input
-            type="text"
-            placeholder="Product Description"
-            value={editProduct.product_description || ""}
-            onChange={(e) =>
-              handleInputChange("product_description", e.target.value, true)
-            }
-          />
-          {/* <input
-            type="number"
-            placeholder="Last Price"
-            value={editProduct.last_price || ""}
-            onChange={(e) =>
-              handleInputChange("last_price", e.target.value, true)
-            }
-          />
-          <input
-            type="number"
-            placeholder="Tax"
-            value={editProduct.tax || ""}
-            onChange={(e) => handleInputChange("tax", e.target.value, true)}
-          /> */}
-          <select
-            value={editProduct.category || ""}
-            onChange={(e) =>
-              handleInputChange("category", e.target.value, true)
-            }
-          >
-            <option value="">Select Category</option>
-            {/* <option value="Airframe">Airframe</option>
-            <option value="Communication">Communication</option>
-            <option value="Electricals">Electricals</option>
-            <option value="Electronics">Electronics</option>
-            <option value="Payload">Payload</option> */}
-            {choices.category_choices.map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={editProduct.component_type || ""}
-            onChange={(e) =>
-              handleInputChange("component_type", e.target.value, true)
-            }
-          >
-            <option value="">Select Component Type</option>
-            {/* <option value="Controller">Controller</option>
-            <option value="Frame parts & Tank">Frame parts & Tank</option>
-            <option value="Battery">Battery</option>
-            <option value="Sensor">Sensor</option>
-            <option value="Motors ESC & Propeller Combo">
-              Motors ESC & Propeller Combo
-            </option>
-            <option value="Flight controller">Flight controller</option>
-            <option value="3D Printed parts">3D Printed parts</option>
-            <option value="Carrycase">Carrycase</option>
-            <option value="Battery Charger">Battery Charger</option>
-            <option value="GPS">GPS</option>
-            <option value="Aluminium Mount">Aluminium Mount</option>
-            <option value="CF Sheet">CF Sheet</option>
-            <option value="Sprayer System">Sprayer System</option>
-            <option value="BEC">BEC</option>
-            <option value="PDB">PDB</option>
-            <option value="Connectors">Connectors</option>
-            <option value="Cables">Cables</option>
-            <option value="Water Jet cutting">Water Jet cutting</option>
-            <option value="Consumables">Consumables</option> */}
-            {choices.component_type_list.map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-
-          <input
-            type="text"
-            placeholder="Component Specification"
-            value={editProduct.component_specification || ""}
-            onChange={(e) =>
-              handleInputChange("component_specification", e.target.value, true)
-            }
-          />
-          <input
-            type="text"
-            placeholder="Unit of Measurement"
-            value={editProduct.unit_of_measurement || ""}
-            onChange={(e) =>
-              handleInputChange("unit_of_measurement", e.target.value, true)
-            }
-          />
-          {/* <input
-            type="file"
-            onChange={(e) => handleInputChange("img", e.target.files[0], true)}
-          />
-          <input
-            type="file"
-            onChange={(e) =>
-              handleInputChange("attachments", e.target.files[0], true)
-            }
-          /> */}
-
-          {/* Show existing image preview */}
-          <div>
-            <p>Current Image:</p>
-            {editProduct.img ? (
-              <img
-                src={`${config.apiBaseURL}${editProduct.img}`}
-                alt="Product"
-                style={{ width: "100px", height: "100px" }}
-              />
-            ) : (
-              "No Image Available"
-            )}
-          </div>
-
-          {/* Show existing attachment preview */}
-          <div>
-            <p>Current Attachment:</p>
-            {editProduct.attachments ? (
-              <a
-                href={`${config.apiBaseURL}${editProduct.attachments}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                View Attachment
-              </a>
-            ) : (
-              "No Attachments Available"
-            )}
-          </div>
-
-          <div className="popup-actions">
-            <button className="" onClick={handleSaveEditProduct}>
-              Save Changes
-            </button>
-            <button onClick={() => setShowEditProductForm(false)}>
-              Cancel
-            </button>
           </div>
         </div>
       )}
@@ -1043,7 +955,7 @@ const VendorDetails = () => {
                         new Date(entry.current_time).toLocaleDateString()
                       )}
                     </td>
-                    <td style={{ textAlign: "right"}}>
+                    <td style={{ textAlign: "right" }}>
                       {isEditingPriceEntry === index ? (
                         <input
                           type="number"
@@ -1086,10 +998,16 @@ const VendorDetails = () => {
                     <td>
                       {isEditingPriceEntry === index ? (
                         <div className="actions-button">
-                          <button className="edit-btn" onClick={() => handleSavePriceEntry(index)}>
+                          <button
+                            className="edit-btn"
+                            onClick={() => handleSavePriceEntry(index)}
+                          >
                             Save
                           </button>
-                          <button className="cancel-btn" onClick={() => setIsEditingPriceEntry(null)}>
+                          <button
+                            className="cancel-btn"
+                            onClick={() => setIsEditingPriceEntry(null)}
+                          >
                             Cancel
                           </button>
                         </div>
@@ -1121,7 +1039,7 @@ const VendorDetails = () => {
       {/* Add Price Entry Modal */}
       {showAddPriceEntryForm && (
         <div className="popup">
-          <h3 style={{margin:"10px"}}>Add New Price Entry</h3>
+          <h3 style={{ margin: "10px" }}>Add New Price Entry</h3>
           <input
             type="date"
             value={newPriceEntry.date}
@@ -1146,10 +1064,15 @@ const VendorDetails = () => {
             }
           />
           <div className="actions-button">
-          <button className="btn-save" onClick={handleAddPriceEntry}>Add</button>
-          <button className="btn-cancel" onClick={() => setShowAddPriceEntryForm(false)}>
-            Cancel
-          </button>
+            <button className="btn-save" onClick={handleAddPriceEntry}>
+              Add
+            </button>
+            <button
+              className="btn-cancel"
+              onClick={() => setShowAddPriceEntryForm(false)}
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
@@ -1158,11 +1081,11 @@ const VendorDetails = () => {
         <table>
           <thead>
             <tr>
-              <th>Product ID</th>
+              {/* <th>Product ID</th> */}
+              <th>Component ID</th>
               <th>Product Description</th>
               <th>Component Type</th>
               <th>UOM</th>
-              <th>Component ID</th>
               <th>Last Price</th>
               <th>Tax %</th>
               <th>Image</th>
@@ -1178,11 +1101,11 @@ const VendorDetails = () => {
 
               return (
                 <tr key={product.product_id || index}>
-                  <td>{product.product_id}</td>
+                  {/* <td>{product.product_id}</td> */}
+                  <td>{product.component_id}</td>
                   <td>{product.product_description}</td>
                   <td>{product.component_type}</td>
                   <td>{product.unit_of_measurement}</td>
-                  <td>{getComponentId(product.product_id)}</td>
                   <td
                     onClick={() => handlePriceClick(product.product_id)}
                     style={{
@@ -1201,32 +1124,37 @@ const VendorDetails = () => {
                   {/* Image editing section */}
                   <td>
                     <div className="image-cell">
-                      {/* Top: Image or No Image */}
                       <div className="image-preview">
-                        {product.img ? (
-                          <img
-                            src={`${config.apiBaseURL}${product.img}`}
-                            alt="Product"
-                            className="product-thumbnail"
-                          />
+                        {product.images && product.images.length > 0 ? (
+                          product.images.map((imgPath, i) => (
+                            <img
+                              key={i}
+                              src={`${config.apiBaseURL}${imgPath}`}
+                              alt={`Product-${i}`}
+                              className="product-thumbnail"
+                            />
+                          ))
                         ) : (
-                          <span>No Image</span>
+                          <span>No Images</span>
                         )}
                       </div>
 
-                      {/* Bottom: Edit/Save/Cancel Buttons */}
                       <div className="image-edit">
                         {product.isEditingImage ? (
                           <>
                             <input
                               type="file"
                               accept="image/*"
+                              multiple
                               onChange={(e) =>
-                                handleImageChange(index, e.target.files[0])
+                                handleImageChange(
+                                  index,
+                                  Array.from(e.target.files)
+                                )
                               }
                             />
-                            <button onClick={() => saveImage(index)}>
-                              Save
+                            <button onClick={() => saveImages(index)}>
+                              Upload
                             </button>
                             <button
                               onClick={() =>
@@ -1242,7 +1170,7 @@ const VendorDetails = () => {
                               enableEditField(index, "isEditingImage")
                             }
                           >
-                            Edit Image
+                            Upload Images
                           </button>
                         )}
                       </div>
@@ -1310,12 +1238,12 @@ const VendorDetails = () => {
                         Edit
                       </button>
 
-                      <button
+                      {/* <button
                         onClick={() => handleAddComponent(product)}
                         disabled={isAddedToComp}
                       >
                         {isAddedToComp ? "Already Added" : "Add to Comp"}
-                      </button>
+                      </button> */}
                     </div>
                   </td>
                   <td>
@@ -1385,7 +1313,6 @@ const VendorDetails = () => {
           </tbody>
         </table>
       </div>
-
       <ToastContainerComponent />
     </div>
   );
@@ -1393,7 +1320,7 @@ const VendorDetails = () => {
 
 export default VendorDetails;
 
-//  <button onClick={handleNewRequest}style={{marginTop: "10px",background: "transparent",border: "none",cursor: "pointer",padding: "4px",}}
-//       title="New Request">
-//       <img src= {Add} alt="New Request"style={{ width: "20px", height: "20px" }}/>
-//       </button>
+// //  <button onClick={handleNewRequest}style={{marginTop: "10px",background: "transparent",border: "none",cursor: "pointer",padding: "4px",}}
+// //       title="New Request">
+// //       <img src= {Add} alt="New Request"style={{ width: "20px", height: "20px" }}/>
+// //       </button>

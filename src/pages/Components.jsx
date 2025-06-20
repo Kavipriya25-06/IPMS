@@ -483,7 +483,7 @@ const Component = () => {
       const navigate = useNavigate();
 
   const handleAddComponentClick = (id) => {
-    navigate(`/addcomponents/${id}`);
+    navigate(`addcomponents/`);
   };
 
   return (

@@ -266,8 +266,8 @@ function App() {
                 </ProtectedRoute>
               }
             />
-             <Route
-              path="addcomponents/:componentId"
+            <Route
+              path="components/addcomponents"
               element={
                 <ProtectedRoute
                   allowedRoles={[
