@@ -258,7 +258,6 @@
 
 // export default ComponentDetailsPage;
 // src\pages\Components.jsx
-
 import React, { useState, useEffect, useRef } from "react";
 import config from "../Config";
 import "../App.css";
@@ -280,14 +279,11 @@ const ComponentDetailsPage = () => {
   const imgRef = useRef();
   const { componentId } = useParams();
 
-  const [vendorDetail, setVendorDetail] = useState(null);
-  const [vendorList, setVendorList] = useState(null);
-
-  const [priceData, setPriceData] = useState(null);
+  const [vendorDetails, setVendorDetails] = useState([]);
+  const [priceDataMap, setPriceDataMap] = useState({});
 
   const handleMouseMove = (e) => {
     const rect = imgRef.current.getBoundingClientRect();
-    const lensSize = Math.min(window.innerWidth * 0.25, 550);
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     const cx = 4;
@@ -298,9 +294,9 @@ const ComponentDetailsPage = () => {
     setZoomResultStyle({
       position: "absolute",
       left: `${rect.right + 20}px`,
-      top: `20px`,
-      width: `80%`,
-      height: `100%`,
+      top: `${rect.top}px`,
+      width: `350px`,
+      height: `350px`,
       backgroundImage: `url(${mainImage})`,
       backgroundRepeat: "no-repeat",
       backgroundSize: `${rect.width * cx}px ${rect.height * cy}px`,
@@ -318,7 +314,7 @@ const ComponentDetailsPage = () => {
       return;
     }
 
-    const fetchProduct = async () => {
+    const fetchData = async () => {
       try {
         const res = await fetch(
           `${config.apiBaseURL}/vendor_master/?component_id=${componentId}`
@@ -326,80 +322,56 @@ const ComponentDetailsPage = () => {
         if (!res.ok) throw new Error("Failed to fetch vendor detail");
 
         const data = await res.json();
-        const matchingComponent = data.find(
+        const matchingComponents = data.filter(
           (item) => item.component_id === componentId
         );
+        if (matchingComponents.length === 0)
+          throw new Error("Component not found");
 
-        if (!matchingComponent) throw new Error("Component not found");
+        setVendorDetails(matchingComponents);
 
-        setVendorDetail(matchingComponent);
+        const priceRes = await fetch(
+          `${config.apiBaseURL}/price_tables/?component_id=${componentId}`
+        );
+        const priceJson = await priceRes.json();
 
-        try {
-          const priceRes = await fetch(
-            `${config.apiBaseURL}/price_tables/?component_id=${componentId}`
+        const priceMap = {};
+        matchingComponents.forEach((comp) => {
+          const prices = priceJson.filter(
+            (entry) => entry.product === comp.product_id
           );
-          if (!priceRes.ok) throw new Error("Failed to fetch price table");
+          if (prices.length > 0) {
+            priceMap[comp.product_id] = prices.sort(
+              (a, b) => new Date(b.current_time) - new Date(a.current_time)
+            )[0];
+          }
+        });
 
-          const priceJson = await priceRes.json();
-          const latestEntry = Array.isArray(priceJson)
-            ? priceJson
-                .filter(
-                  (entry) => entry.product === matchingComponent.product_id
-                )
-                .sort(
-                  (a, b) => new Date(b.current_time) - new Date(a.current_time)
-                )[0]
-            : null;
+        setPriceDataMap(priceMap);
 
-          setPriceData(latestEntry);
-        } catch (priceErr) {
-          console.error("Error fetching price table:", priceErr);
-        }
+        const imageRes = await fetch(
+          `${config.apiBaseURL}/component_images/by-component/${componentId}/`
+        );
+        const imageData = await imageRes.json();
+        const images =
+          Array.isArray(imageData) && imageData.length > 0
+            ? imageData.map((img) => `${config.apiBaseURL}${img.image}`)
+            : ["/placeholder.jpg"];
 
-        //  New: fetch images from /component_images/<component_id>/
-        try {
-          const imageRes = await fetch(
-            `${config.apiBaseURL}/component_images/by-component/${componentId}/`
-          );
-          const imageData = await imageRes.json();
-
-          const images =
-            Array.isArray(imageData) && imageData.length > 0
-              ? imageData.map((img) => `${config.apiBaseURL}${img.image}`)
-              : ["/placeholder.jpg"];
-
-          setImageList(images);
-          setMainImage(images[0]);
-        } catch (imgErr) {
-          console.error("Error fetching component images:", imgErr);
-          setImageList(["/placeholder.jpg"]);
-          setMainImage("/placeholder.jpg");
-        }
-      } catch (error) {
-        console.error("Error fetching vendor detail:", error);
-        showErrorToast("Failed to load vendor details");
+        setImageList(images);
+        setMainImage(images[0]);
+      } catch (err) {
+        console.error("Error fetching component detail:", err);
+        showErrorToast("Failed to load component details");
       }
     };
 
-    fetchProduct();
+    fetchData();
   }, [componentId]);
 
-  useEffect(() => {
-    if (vendorDetail?.vendor) {
-      fetch(`${config.apiBaseURL}/vendor_list/${vendorDetail.vendor}/`)
-        .then((res) => {
-          if (!res.ok) throw new Error("Failed to fetch vendor info");
-          return res.json();
-        })
-        .then((data) => setVendorList(data))
-        .catch((err) => {
-          console.error("Vendor list fetch failed:", err);
-          showWarningToast("Vendor info unavailable");
-        });
-    }
-  }, [vendorDetail]);
+  if (vendorDetails.length === 0) return <p>Loading...</p>;
 
-  if (!vendorDetail) return <p>Loading...</p>;
+  const firstVendor = vendorDetails[0];
 
   return (
     <div className="product-detail-container">
@@ -436,10 +408,6 @@ const ComponentDetailsPage = () => {
               </div>
             </div>
           </div>
-          {/* <div className="action-buttons">
-            <button className="btn btn-add">Add to Cart</button>
-            <button className="btn btn-buy">Buy Now</button>
-          </div> */}
         </div>
 
         <div className="product-right">
@@ -447,50 +415,48 @@ const ComponentDetailsPage = () => {
             <a href="/components" className="back-link">
               ← Back
             </a>
-            {/* <span className="share">🔗 Share</span> */}
           </div>
 
           <h2 className="product-title">
-            {vendorDetail.product_description || "No Description"}
+            {firstVendor.product_description || "No Description"}
           </h2>
 
           <div className="highlights-container">
             <div className="highlights">
               <h3>Category:</h3>
-              <p>{vendorDetail.category || "-"}</p>
+              <p>{firstVendor.category || "-"}</p>
             </div>
             <div className="highlights">
               <h3>Component Type:</h3>
-              <p>{vendorDetail.component_type || "-"}</p>
+              <p>{firstVendor.component_type || "-"}</p>
             </div>
             <div className="highlights">
               <h3>Specification:</h3>
-              <p>{vendorDetail.component_specification || "-"}</p>
+              <p>{firstVendor.component_specification || "-"}</p>
             </div>
             <div className="highlights">
               <h3>UOM:</h3>
-              <p>{vendorDetail.unit_of_measurement || "-"}</p>
+              <p>{firstVendor.unit_of_measurement || "-"}</p>
             </div>
           </div>
 
           <div className="description">
             <h3>Description</h3>
-            <p>{vendorDetail.product_description || "-"}</p>
+            <p>{firstVendor.product_description || "-"}</p>
           </div>
 
           <div className="specifications">
             <h3>Product Details</h3>
             <ul>
               <li>
-                <strong>Product ID:</strong> {vendorDetail.product_id || "-"}
+                <strong>Product ID:</strong> {firstVendor.product_id || "-"}
               </li>
               <li>
-                <strong>Component ID:</strong>{" "}
-                {vendorDetail.component_id || "-"}
+                <strong>Component ID:</strong> {firstVendor.component_id || "-"}
               </li>
               <li>
                 <strong>Status:</strong>{" "}
-                {vendorDetail.active ? "Active" : "Inactive"}
+                {firstVendor.active ? "Active" : "Inactive"}
               </li>
             </ul>
           </div>
@@ -507,25 +473,32 @@ const ComponentDetailsPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {vendorList ? (
-                  <tr>
-                    <td>{vendorDetail.vendor_name || "-"}</td>
-                    <td>{vendorDetail.last_price || "-"}</td>
+                {vendorDetails.map((vendor) => (
+                  <tr key={vendor.product_id}>
+                    <td>{vendor.vendor_name}</td>
                     <td>
-                      {vendorDetail.tax != null ? `${vendorDetail.tax}%` : "-"}
+                      {priceDataMap[vendor.product_id]?.price ??
+                        vendor.last_price ??
+                        "-"}
                     </td>
                     <td>
-                      {priceData?.current_time
-                        ? new Date(priceData.current_time).toLocaleDateString()
+                      {priceDataMap[vendor.product_id]?.tax ??
+                        vendor.tax ??
+                        "-"}
+                      %
+                    </td>
+                    <td>
+                      {priceDataMap[vendor.product_id]?.current_time
+                        ? new Date(
+                            priceDataMap[vendor.product_id].current_time
+                          ).toLocaleDateString()
                         : "-"}
                     </td>
-                    <td>{priceData?.delivery_days ?? "-"}</td>
+                    <td>
+                      {priceDataMap[vendor.product_id]?.delivery_days ?? "-"}
+                    </td>
                   </tr>
-                ) : (
-                  <tr>
-                    <td colSpan="3">Loading vendor info...</td>
-                  </tr>
-                )}
+                ))}
               </tbody>
             </table>
           </div>
