@@ -436,7 +436,7 @@ const RequestComponent = () => {
                             ) : (
                               <>
                                 <button
-                                  className="btn-approve"
+                                  className="btn-reject"
                                   onClick={() =>
                                     handleAddToComponentMaster(item)
                                   }

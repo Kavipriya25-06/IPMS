@@ -1028,7 +1028,7 @@ table td {
 .category-dropdown-options {
   position: absolute;
   top: 120%;
-  left: 10;
+  left: 10px;
   width: 150px;
   background-color: rgb(195, 194, 194);
   border: 1px solid #ccc;
@@ -1082,8 +1082,8 @@ table td {
 
 .component-type-dropdown-options {
   position: absolute;
-  top: 110%;
-  left: 10;
+  top: 100%;
+  left: 10px;
   background-color: rgb(195, 194, 194);
   border: 1px solid #ccc;
   color: black;

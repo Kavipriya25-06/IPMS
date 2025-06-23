@@ -892,7 +892,7 @@ const VendorDetails = () => {
             readOnly
           />
 
-          {/* <input
+          <input
             type="file"
             onChange={(e) => handleInputChange("img", e.target.files[0])}
           />
@@ -901,7 +901,7 @@ const VendorDetails = () => {
             onChange={(e) =>
               handleInputChange("attachments", e.target.files[0])
             }
-          /> */}
+          />
 
           <div className="popup-actions">
             <button onClick={handleAddNewProduct}>Save Product</button>
