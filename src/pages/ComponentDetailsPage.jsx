@@ -258,6 +258,7 @@
 
 // export default ComponentDetailsPage;
 // src\pages\Components.jsx
+
 import React, { useState, useEffect, useRef } from "react";
 import config from "../Config";
 import "../App.css";
@@ -284,6 +285,7 @@ const ComponentDetailsPage = () => {
 
   const handleMouseMove = (e) => {
     const rect = imgRef.current.getBoundingClientRect();
+
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     const cx = 4;
@@ -408,6 +410,7 @@ const ComponentDetailsPage = () => {
               </div>
             </div>
           </div>
+
         </div>
 
         <div className="product-right">
@@ -415,6 +418,7 @@ const ComponentDetailsPage = () => {
             <a href="/components" className="back-link">
               ← Back
             </a>
+            
           </div>
 
           <h2 className="product-title">
