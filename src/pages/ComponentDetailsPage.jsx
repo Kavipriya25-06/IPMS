@@ -283,6 +283,8 @@ const ComponentDetailsPage = () => {
   const [vendorDetail, setVendorDetail] = useState(null);
   const [vendorList, setVendorList] = useState(null);
 
+  const [priceData, setPriceData] = useState(null);
+
   const handleMouseMove = (e) => {
     const rect = imgRef.current.getBoundingClientRect();
     const lensSize = Math.min(window.innerWidth * 0.25, 550);
@@ -315,6 +317,7 @@ const ComponentDetailsPage = () => {
       showErrorToast("Invalid component ID");
       return;
     }
+
     const fetchProduct = async () => {
       try {
         const res = await fetch(
@@ -331,29 +334,53 @@ const ComponentDetailsPage = () => {
 
         setVendorDetail(matchingComponent);
 
-        const base = config.apiBaseURL;
-        let images = [];
-
-        if (
-          Array.isArray(matchingComponent.attachments) &&
-          matchingComponent.attachments.length > 0
-        ) {
-          images = matchingComponent.attachments.map(
-            (path) => `${base}${path}`
+        try {
+          const priceRes = await fetch(
+            `${config.apiBaseURL}/price_tables/?component_id=${componentId}`
           );
-        } else if (matchingComponent.img) {
-          images = [`${base}${matchingComponent.img}`];
-        } else {
-          images = ["/placeholder.jpg"];
+          if (!priceRes.ok) throw new Error("Failed to fetch price table");
+
+          const priceJson = await priceRes.json();
+          const latestEntry = Array.isArray(priceJson)
+            ? priceJson
+                .filter(
+                  (entry) => entry.product === matchingComponent.product_id
+                )
+                .sort(
+                  (a, b) => new Date(b.current_time) - new Date(a.current_time)
+                )[0]
+            : null;
+
+          setPriceData(latestEntry);
+        } catch (priceErr) {
+          console.error("Error fetching price table:", priceErr);
         }
 
-        setImageList(images);
-        setMainImage(images[0]);
+        //  New: fetch images from /component_images/<component_id>/
+        try {
+          const imageRes = await fetch(
+            `${config.apiBaseURL}/component_images/by-component/${componentId}/`
+          );
+          const imageData = await imageRes.json();
+
+          const images =
+            Array.isArray(imageData) && imageData.length > 0
+              ? imageData.map((img) => `${config.apiBaseURL}${img.image}`)
+              : ["/placeholder.jpg"];
+
+          setImageList(images);
+          setMainImage(images[0]);
+        } catch (imgErr) {
+          console.error("Error fetching component images:", imgErr);
+          setImageList(["/placeholder.jpg"]);
+          setMainImage("/placeholder.jpg");
+        }
       } catch (error) {
         console.error("Error fetching vendor detail:", error);
         showErrorToast("Failed to load vendor details");
       }
     };
+
     fetchProduct();
   }, [componentId]);
 
@@ -475,6 +502,8 @@ const ComponentDetailsPage = () => {
                   <th>Vendor Name</th>
                   <th>Price</th>
                   <th>Tax%</th>
+                  <th>Date</th>
+                  <th>Delivery Days</th>
                 </tr>
               </thead>
               <tbody>
@@ -485,6 +514,12 @@ const ComponentDetailsPage = () => {
                     <td>
                       {vendorDetail.tax != null ? `${vendorDetail.tax}%` : "-"}
                     </td>
+                    <td>
+                      {priceData?.current_time
+                        ? new Date(priceData.current_time).toLocaleDateString()
+                        : "-"}
+                    </td>
+                    <td>{priceData?.delivery_days ?? "-"}</td>
                   </tr>
                 ) : (
                   <tr>

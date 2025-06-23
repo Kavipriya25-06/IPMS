@@ -3,7 +3,7 @@
 // src/pages/VendorDetails.jsx
 
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import CustomMessagebox from "./CustomMessageBox.jsx";
 import config from "../Config"; // Import config for API endpoints
 import Add from "../assets/Add.png";
@@ -33,11 +33,13 @@ const VendorDetails = () => {
     date: "",
     price: "",
     tax: "",
+    delivery_days: "",
   });
   const [editPriceEntry, setEditPriceEntry] = useState({
     date: "",
     price: "",
     tax: "",
+    delivery_days: "",
   });
   const [isEditingPriceEntry, setIsEditingPriceEntry] = useState(null);
   const [showAddProductForm, setShowAddProductForm] = useState(false);
@@ -64,6 +66,24 @@ const VendorDetails = () => {
     active: "",
   });
   const [componentList, setComponentList] = useState([]);
+
+  const fetchImagesForComponent = async (componentId) => {
+    try {
+      const res = await fetch(
+        `${config.apiBaseURL}/component_images/by-component/${componentId}/`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        return data.map((item) => ({
+          id: item.id,
+          image: item.image,
+        }));
+      }
+    } catch (err) {
+      console.error("Error fetching images:", err);
+    }
+    return [];
+  };
 
   useEffect(() => {
     fetch(`${config.apiBaseURL}/component/`)
@@ -96,11 +116,17 @@ const VendorDetails = () => {
                 (a, b) => new Date(b.current_time) - new Date(a.current_time)
               );
 
+            const images = await fetchImagesForComponent(product.component_id);
+
             // Set the latest price in the product data
             return {
               ...product,
               last_price: productPrices[0]?.price || product.last_price,
               tax: productPrices[0]?.tax || product.tax,
+              delivery_days: productPrices[0]?.delivery_days || 0,
+              images,
+              newImages: [],
+              isEditingImage: false,
             };
           })
         );
@@ -198,6 +224,7 @@ const VendorDetails = () => {
       current_time: newPriceEntry.date,
       price: newPriceEntry.price,
       tax: newPriceEntry.tax,
+      delivery_days: newPriceEntry.delivery_days,
       product: currentProductId, // Replace with the actual product ID if needed
     };
 
@@ -210,7 +237,7 @@ const VendorDetails = () => {
       if (response.ok) {
         const addedEntry = await response.json();
         setPriceHistory([...priceHistory, addedEntry]);
-        setNewPriceEntry({ date: "", price: "", tax: "" });
+        setNewPriceEntry({ date: "", price: "", tax: "", delivery_days: "" });
         setShowAddPriceEntryForm(false);
       }
     } catch (error) {
@@ -224,6 +251,7 @@ const VendorDetails = () => {
       date: entry.current_time,
       price: entry.price,
       tax: entry.tax,
+      delivery_days: entry.delivery_days,
       product: currentProductId, // Replace with the actual product ID if needed
     });
   };
@@ -233,6 +261,7 @@ const VendorDetails = () => {
       current_time: editPriceEntry.date,
       price: editPriceEntry.price,
       tax: editPriceEntry.tax,
+      delivery_days: editPriceEntry.delivery_days,
       product: currentProductId, // Replace with the actual product ID if needed
     };
 
@@ -319,7 +348,7 @@ const VendorDetails = () => {
 
     try {
       const response = await fetch(
-        `${config.apiBaseURL}/component_images/${componentId}/`,
+        `${config.apiBaseURL}/component_images/by-component/${componentId}/`,
         {
           method: "POST",
           body: formData,
@@ -560,13 +589,14 @@ const VendorDetails = () => {
         setShowAddProductForm(false);
 
         // Extract price and tax from the added product
-        const { last_price, tax, product_id } = addedProduct;
+        const { last_price, tax, product_id, delivery_days } = addedProduct;
 
         // Second API call to update the price_tables with tax and price
         const priceTablePayload = {
           current_time: new Date().toISOString(), // Set the current date and time
           tax: tax,
           price: last_price,
+          delivery_days: delivery_days,
           product: product_id,
         };
 
@@ -691,7 +721,7 @@ const VendorDetails = () => {
       );
 
       if (response.ok) {
-        setVendorMasterData((prevData) =>
+        setSelectedVendorData((prevData) =>
           prevData.map((product) =>
             product.product_id === productId
               ? { ...product, active: updatedStatus }
@@ -765,6 +795,31 @@ const VendorDetails = () => {
     } catch (error) {
       console.error("Error updating remarks:", error);
       showErrorToast("Error occurred while updating remarks.");
+    }
+  };
+
+  const handleDeleteImage = async (productIndex, imageId) => {
+    try {
+      const response = await fetch(
+        `${config.apiBaseURL}/component_images/${imageId}/`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (response.ok) {
+        const updatedData = [...selectedVendorData];
+        updatedData[productIndex].images = updatedData[
+          productIndex
+        ].images.filter((img) => img.id !== imageId);
+        setSelectedVendorData(updatedData);
+        showSuccessToast("Image deleted successfully");
+      } else {
+        showErrorToast("Failed to delete image");
+      }
+    } catch (error) {
+      console.error("Error deleting image:", error);
+      showErrorToast("An error occurred");
     }
   };
 
@@ -933,6 +988,7 @@ const VendorDetails = () => {
                   <th>Date</th>
                   <th>Price</th>
                   <th>Tax %</th>
+                  <th>Delivery Days</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -993,6 +1049,25 @@ const VendorDetails = () => {
                           // minimumFractionDigits: 2,
                           // maximumFractionDigits: 2
                         })}%`
+                      )}
+                    </td>
+                    <td style={{ textAlign: "right" }}>
+                      {isEditingPriceEntry === index ? (
+                        <input
+                          type="number"
+                          value={editPriceEntry.delivery_days}
+                          onChange={(e) =>
+                            setEditPriceEntry({
+                              ...editPriceEntry,
+                              delivery_days: e.target.value,
+                            })
+                          }
+                          style={{ width: "100px" }}
+                        />
+                      ) : (
+                        `${parseFloat(entry.delivery_days).toLocaleString(
+                          "en-IN"
+                        )}`
                       )}
                     </td>
                     <td>
@@ -1063,6 +1138,17 @@ const VendorDetails = () => {
               setNewPriceEntry({ ...newPriceEntry, tax: e.target.value })
             }
           />
+          <input
+            type="number"
+            placeholder="Delivery Days"
+            value={newPriceEntry.delivery_days}
+            onChange={(e) =>
+              setNewPriceEntry({
+                ...newPriceEntry,
+                delivery_days: e.target.value,
+              })
+            }
+          />
           <div className="actions-button">
             <button className="btn-save" onClick={handleAddPriceEntry}>
               Add
@@ -1083,8 +1169,8 @@ const VendorDetails = () => {
             <tr>
               {/* <th>Product ID</th> */}
               <th>Component ID</th>
-              <th>Product Description</th>
               <th>Component Type</th>
+              <th>Specification</th>
               <th>UOM</th>
               <th>Last Price</th>
               <th>Tax %</th>
@@ -1102,9 +1188,17 @@ const VendorDetails = () => {
               return (
                 <tr key={product.product_id || index}>
                   {/* <td>{product.product_id}</td> */}
-                  <td>{product.component_id}</td>
-                  <td>{product.product_description}</td>
+                  <td>
+                    <Link
+                      to={`/components/${product.component_id}`}
+                      style={{ textDecoration: "line", color: "inherit" }}
+                    >
+                      {product.component_id}
+                    </Link>
+                  </td>
+                  {/* <td>{product.component_id}</td> */}
                   <td>{product.component_type}</td>
+                  <td>{product.component_specification}</td>
                   <td>{product.unit_of_measurement}</td>
                   <td
                     onClick={() => handlePriceClick(product.product_id)}
@@ -1124,22 +1218,67 @@ const VendorDetails = () => {
                   {/* Image editing section */}
                   <td>
                     <div className="image-cell">
-                      <div className="image-preview">
+                      <div
+                        className="image-preview"
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: "10px",
+                        }}
+                      >
                         {product.images && product.images.length > 0 ? (
-                          product.images.map((imgPath, i) => (
-                            <img
+                          product.images.map((imgObj, i) => (
+                            <div
                               key={i}
-                              src={`${config.apiBaseURL}${imgPath}`}
-                              alt={`Product-${i}`}
-                              className="product-thumbnail"
-                            />
+                              style={{
+                                position: "relative",
+                                width: "60px",
+                                height: "60px",
+                              }}
+                            >
+                              <img
+                                src={`${config.apiBaseURL}${imgObj.image}`}
+                                alt={`Product-${i}`}
+                                className="product-thumbnail"
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "cover",
+                                  border: "1px solid #ccc",
+                                  borderRadius: "4px",
+                                }}
+                              />
+                              <span
+                                onClick={() =>
+                                  handleDeleteImage(index, imgObj.id)
+                                } // 👈 Use imgObj.id
+                                style={{
+                                  position: "absolute",
+                                  top: "-6px",
+                                  right: "-6px",
+                                  backgroundColor: "#e68a00",
+                                  color: "white",
+                                  borderRadius: "50%",
+                                  width: "18px",
+                                  height: "18px",
+                                  fontSize: "12px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  cursor: "pointer",
+                                }}
+                                title="Delete Image"
+                              >
+                                ×
+                              </span>
+                            </div>
                           ))
                         ) : (
                           <span>No Images</span>
                         )}
                       </div>
 
-                      <div className="image-edit">
+                      <div className="image-edit" style={{ marginTop: "5px" }}>
                         {product.isEditingImage ? (
                           <>
                             <input
