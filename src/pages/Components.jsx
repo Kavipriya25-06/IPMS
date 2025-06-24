@@ -480,7 +480,7 @@ const Component = () => {
     return 0;
   });
 
-      const navigate = useNavigate();
+  const navigate = useNavigate();
 
   const handleAddComponentClick = (id) => {
     navigate(`addcomponents/`);
@@ -496,7 +496,6 @@ const Component = () => {
           </button>
           <button className="add-comp" onClick={handleAddComponentClick}>
             Add Component
-            
           </button>
         </div>
 
@@ -745,9 +744,10 @@ const Component = () => {
                       <td>{component.unit_of_measurement}</td>
 
                       <td>
-                        <div className="tags-wrapper">
-                          <div className="tags-list">
-                            {getTagsForComponent(component.component_id).map(
+                        <div>
+                          {getTagsForComponent(component.component_id).length >
+                          0 ? (
+                            getTagsForComponent(component.component_id).map(
                               (tag) => (
                                 <span key={tag.id} className="tag">
                                   {tag.tags}
@@ -760,10 +760,22 @@ const Component = () => {
                                   </button>
                                 </span>
                               )
-                            )}
-                          </div>
+                            )
+                          ) : (
+                            <span></span>
+                          )}
                           <button
-                            className="add-tag-button"
+                            style={{
+                              marginLeft: "8px",
+                              background: "e2dede",
+                              width: "24px",
+                              height: "24px",
+                              borderRadius: "50%",
+                              border: "none",
+                              cursor: "pointer",
+                              color: "blue",
+                              fontSize: "16px",
+                            }}
                             onClick={() =>
                               handleAddTagClick(component.component_id)
                             }
@@ -771,6 +783,26 @@ const Component = () => {
                             +
                           </button>
                         </div>
+                        {/* Add Tag Dropdown/Modal */}
+                        {selectedComponent === component.component_id && (
+                          <div style={{ marginTop: "8px" }}>
+                            <select
+                              value={newTag}
+                              onChange={(e) => setNewTag(e.target.value)}
+                            >
+                              <option value="">Select a tag</option>
+                              {availableTags.map((tag) => (
+                                <option key={tag.id} value={tag.tags}>
+                                  {tag.tags}
+                                </option>
+                              ))}
+                            </select>
+                            <button onClick={handleAddTag}>Add Tag</button>
+                            <button onClick={() => setSelectedComponent(null)}>
+                              Cancel
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   );
