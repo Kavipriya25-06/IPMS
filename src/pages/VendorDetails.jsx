@@ -236,6 +236,20 @@ const VendorDetails = () => {
       });
       if (response.ok) {
         const addedEntry = await response.json();
+        await fetchPriceHistory(currentProductId);
+
+        setSelectedVendorData((prevData) =>
+          prevData.map((product) =>
+            product.product_id === currentProductId
+              ? {
+                  ...product,
+                  last_price: addedEntry.price,
+                  tax: addedEntry.tax,
+                  delivery_days: addedEntry.delivery_days,
+                }
+              : product
+          )
+        );
         setPriceHistory([...priceHistory, addedEntry]);
         setNewPriceEntry({ date: "", price: "", tax: "", delivery_days: "" });
         setShowAddPriceEntryForm(false);
@@ -280,9 +294,25 @@ const VendorDetails = () => {
       console.log("the response ", response);
       if (response.ok) {
         const updatedEntry = await response.json();
+
+        // ✅ 1. Update priceHistory table
         const updatedHistory = [...priceHistory];
         updatedHistory[index] = updatedEntry;
         setPriceHistory(updatedHistory);
+
+        // ✅ 2. Update main product table
+        setSelectedVendorData((prevData) =>
+          prevData.map((product) =>
+            product.product_id === currentProductId
+              ? {
+                  ...product,
+                  last_price: updatedEntry.price,
+                  tax: updatedEntry.tax,
+                  delivery_days: updatedEntry.delivery_days,
+                }
+              : product
+          )
+        );
         setIsEditingPriceEntry(null);
       } else {
         console.error("Failed to update price entry:", response.statusText);
@@ -294,18 +324,49 @@ const VendorDetails = () => {
 
   const handleDeletePriceEntry = async (index) => {
     try {
+      const entryToDelete = priceHistory[index];
+
       const response = await fetch(
-        `${config.apiBaseURL}/price_tables/${priceHistory[index].id}/`,
+        `${config.apiBaseURL}/price_tables/${entryToDelete.id}/`,
         {
           method: "DELETE",
         }
       );
-      console.log("the delete response ", response);
+
       if (response.ok) {
-        setPriceHistory(priceHistory.filter((_, i) => i !== index));
+        // 1. Remove from priceHistory
+        const updatedHistory = priceHistory.filter((_, i) => i !== index);
+        setPriceHistory(updatedHistory);
+
+        // 2. Find latest remaining price entry
+        const latest =
+          updatedHistory.length > 0
+            ? updatedHistory.reduce((a, b) =>
+                new Date(a.current_time) > new Date(b.current_time) ? a : b
+              )
+            : null;
+
+        // 3. Update selectedVendorData (main table)
+        setSelectedVendorData((prevData) =>
+          prevData.map((product) =>
+            product.product_id === currentProductId
+              ? {
+                  ...product,
+                  last_price: latest?.price ?? "NaN",
+                  tax: latest?.tax ?? 0,
+                  delivery_days: latest?.delivery_days ?? 0,
+                }
+              : product
+          )
+        );
+      } else {
+        const errorText = await response.text();
+        console.error("Delete failed:", errorText);
+        alert("Failed to delete price entry");
       }
     } catch (error) {
       console.error("Error deleting price entry:", error);
+      alert("Error deleting price entry");
     }
   };
 

@@ -4,6 +4,8 @@ import config from "../Config"; // Import config for API endpoints
 import { sortData, toggleSortDirection, renderSortArrow } from "../Sort";
 import AddIcon from "../assets/Add.png";
 import Delete from "../assets/Delete.png";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const BOM = () => {
   const [boms, setBoms] = useState([]); // List of all BOMs
@@ -13,6 +15,43 @@ const BOM = () => {
     key: null,
     direction: "ascending",
   });
+
+  const handleToggleWbom = async (bom) => {
+    if (bom.wbom) {
+      toast.error("This is already marked as Final BOM and cannot be changed.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Are you sure you want to mark this as Final BOM?"
+    );
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(
+        `${config.apiBaseURL}/bom_list/${bom.bom_id}/`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ wbom: true }),
+        }
+      );
+
+      if (response.ok) {
+        // Update local state
+        setBoms((prev) =>
+          prev.map((b) => (b.bom_id === bom.bom_id ? { ...b, wbom: true } : b))
+        );
+      } else {
+        const error = await response.json();
+        alert("Error marking Final BOM: " + JSON.stringify(error));
+      }
+    } catch (error) {
+      console.error("Error updating WBOM:", error);
+    }
+  };
 
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -99,11 +138,15 @@ const BOM = () => {
 
   //Submit form
   const handleSubmit = async () => {
+    const payload = {
+      ...formData,
+      wbom: false, // ✅ explicitly set it
+    };
     try {
       const response = await fetch(`${config.apiBaseURL}/bom_list/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
@@ -294,28 +337,24 @@ const BOM = () => {
                 <td>{bom.last_modified_by}</td>
                 <td>{bom.last_modified_date}</td>
                 <td>
+                  <div className="action-buttons">
                   <button
-                    onClick={() => toggleWbom(bom)}
+                    onClick={() => handleToggleWbom(bom)}
                     style={{
-                      backgroundColor: bom.wbom ? "#4caf50" : "#e53935",
+                      backgroundColor: bom.wbom ? "#4CAF50" : "#f58720",
                       color: "white",
-                      border: "none",
-                      padding: "5px 10px",
-                      marginRight: "5px",
-                      cursor: "pointer",
+                      borderRadius:"5px",
+                      border:"none",
+                      cursor:"pointer"
                     }}
-                    title="Toggle WBOM"
+                    title={bom.wbom ? "Maeked as Final BOM" : "Mark as Final BOM"}
                   >
-                    WBOM
+                    {bom.wbom ? "FBOM" : "WBOM"}
                   </button>
+
                   <button
                     onClick={() => handleDelete(bom.bom_id)}
-                    style={{
-                      background: "transparent",
-                      border: "none",
-                      cursor: "pointer",
-                      padding: "4px",
-                    }}
+                    className="delete-button"
                     title="Delete"
                   >
                     {/* <img
@@ -323,8 +362,9 @@ const BOM = () => {
                       alt="Delete"
                       style={{ width: "20px", height: "20px" }}
                     /> */}
-                    <button>Delete</button>
+                    Delete
                   </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -351,6 +391,7 @@ const BOM = () => {
           ↑
         </button>
       )}
+      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 };
