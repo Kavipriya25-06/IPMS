@@ -147,6 +147,35 @@ const BOM = () => {
     }
   };
 
+  const toggleWbom = async (bom) => {
+    const updatedWbom = !bom.wbom;
+
+    try {
+      const response = await fetch(
+        `${config.apiBaseURL}/bom_list/${bom.bom_id}/`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ wbom: updatedWbom }),
+        }
+      );
+
+      if (response.ok) {
+        // Update local state
+        setBoms((prevBoms) =>
+          prevBoms.map((b) =>
+            b.bom_id === bom.bom_id ? { ...b, wbom: updatedWbom } : b
+          )
+        );
+      } else {
+        const error = await response.json();
+        alert("Error updating WBOM: " + JSON.stringify(error));
+      }
+    } catch (error) {
+      console.error("Error updating WBOM:", error);
+    }
+  };
+
   return (
     <div>
       <div
@@ -266,6 +295,20 @@ const BOM = () => {
                 <td>{bom.last_modified_date}</td>
                 <td>
                   <button
+                    onClick={() => toggleWbom(bom)}
+                    style={{
+                      backgroundColor: bom.wbom ? "#4caf50" : "#e53935",
+                      color: "white",
+                      border: "none",
+                      padding: "5px 10px",
+                      marginRight: "5px",
+                      cursor: "pointer",
+                    }}
+                    title="Toggle WBOM"
+                  >
+                    WBOM
+                  </button>
+                  <button
                     onClick={() => handleDelete(bom.bom_id)}
                     style={{
                       background: "transparent",
@@ -275,11 +318,12 @@ const BOM = () => {
                     }}
                     title="Delete"
                   >
-                    <img
+                    {/* <img
                       src={Delete}
                       alt="Delete"
                       style={{ width: "20px", height: "20px" }}
-                    />
+                    /> */}
+                    <button>Delete</button>
                   </button>
                 </td>
               </tr>

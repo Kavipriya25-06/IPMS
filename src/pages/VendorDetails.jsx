@@ -1105,60 +1105,94 @@ const VendorDetails = () => {
                     </td>
                   </tr>
                 ))}
+                {showAddPriceEntryForm && (
+                  <tr>
+                    <td>
+                      <input
+                        type="date"
+                        value={newPriceEntry.date}
+                        onChange={(e) =>
+                          setNewPriceEntry({
+                            ...newPriceEntry,
+                            date: e.target.value,
+                          })
+                        }
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        placeholder="Add Price"
+                        style={{
+                          width: "100px",
+                          padding: "8px",
+                          fontSize: "14px",
+                        }}
+                        value={newPriceEntry.price} //  Fix here
+                        onChange={(e) =>
+                          setNewPriceEntry({
+                            ...newPriceEntry,
+                            price: e.target.value, //  Fix here
+                          })
+                        }
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        placeholder="Add Tax%"
+                        style={{
+                          width: "100px",
+                          padding: "8px",
+                          fontSize: "14px",
+                        }}
+                        value={newPriceEntry.tax}
+                        onChange={(e) =>
+                          setNewPriceEntry({
+                            ...newPriceEntry,
+                            tax: e.target.value,
+                          })
+                        }
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        placeholder="Delivery Days"
+                        style={{
+                          width: "100px",
+                          padding: "8px",
+                          fontSize: "14px",
+                        }}
+                        value={newPriceEntry.delivery_days}
+                        onChange={(e) =>
+                          setNewPriceEntry({
+                            ...newPriceEntry,
+                            delivery_days: e.target.value,
+                          })
+                        }
+                      />
+                    </td>
+                    <td>
+                      <div className="actions-button">
+                        <button
+                          className="edit-btn"
+                          onClick={handleAddPriceEntry}
+                        >
+                          Save
+                        </button>
+                        <button
+                          className="cancel-btn"
+                          onClick={() => setIsAdding(false)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
-          </div>
-        </div>
-      )}
-
-      {/* Add Price Entry Modal */}
-      {showAddPriceEntryForm && (
-        <div className="popup">
-          <h3 style={{ margin: "10px" }}>Add New Price Entry</h3>
-          <input
-            type="date"
-            value={newPriceEntry.date}
-            onChange={(e) =>
-              setNewPriceEntry({ ...newPriceEntry, date: e.target.value })
-            }
-          />
-          <input
-            type="number"
-            placeholder="Price"
-            value={newPriceEntry.price}
-            onChange={(e) =>
-              setNewPriceEntry({ ...newPriceEntry, price: e.target.value })
-            }
-          />
-          <input
-            type="number"
-            placeholder="Tax %"
-            value={newPriceEntry.tax}
-            onChange={(e) =>
-              setNewPriceEntry({ ...newPriceEntry, tax: e.target.value })
-            }
-          />
-          <input
-            type="number"
-            placeholder="Delivery Days"
-            value={newPriceEntry.delivery_days}
-            onChange={(e) =>
-              setNewPriceEntry({
-                ...newPriceEntry,
-                delivery_days: e.target.value,
-              })
-            }
-          />
-          <div className="actions-button">
-            <button className="btn-save" onClick={handleAddPriceEntry}>
-              Add
-            </button>
-            <button
-              className="btn-cancel"
-              onClick={() => setShowAddPriceEntryForm(false)}
-            >
-              Cancel
-            </button>
           </div>
         </div>
       )}

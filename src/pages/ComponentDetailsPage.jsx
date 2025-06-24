@@ -410,7 +410,6 @@ const ComponentDetailsPage = () => {
               </div>
             </div>
           </div>
-
         </div>
 
         <div className="product-right">
@@ -418,7 +417,6 @@ const ComponentDetailsPage = () => {
             <a href="/components" className="back-link">
               ← Back
             </a>
-            
           </div>
 
           <h2 className="product-title">
@@ -452,9 +450,9 @@ const ComponentDetailsPage = () => {
           <div className="specifications">
             <h3>Product Details</h3>
             <ul>
-              <li>
+              {/* <li>
                 <strong>Product ID:</strong> {firstVendor.product_id || "-"}
-              </li>
+              </li> */}
               <li>
                 <strong>Component ID:</strong> {firstVendor.component_id || "-"}
               </li>
