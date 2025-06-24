@@ -507,8 +507,8 @@ const VendorDetails = () => {
     // Validation: Check if required fields are filled
     const requiredFields = [
       "product_description",
-      "last_price",
-      "tax",
+      // "last_price",
+      // "tax",
       "category",
       "component_type",
       "component_specification",
@@ -903,7 +903,7 @@ const VendorDetails = () => {
               handleInputChange("product_description", e.target.value)
             }
           />
-          <input
+          {/* <input
             type="number"
             placeholder="Price"
             value={newProduct.last_price}
@@ -914,7 +914,7 @@ const VendorDetails = () => {
             placeholder="Tax %"
             value={newProduct.tax}
             onChange={(e) => handleInputChange("tax", e.target.value)}
-          />
+          /> */}
 
           {/* Auto-filled category (readonly) */}
           <input
