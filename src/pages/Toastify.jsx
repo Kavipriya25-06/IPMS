@@ -45,6 +45,20 @@ export const showInfoToast = (message) => {
   });
 };
 
+export const showMessageToast = (message) => {
+  toast.info(message, {
+    position: "top-center",
+    autoClose: 3000,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+    progress: undefined,
+    theme: "colored",
+    style: { backgroundColor: "#fff", color: "gray" }, // Inline styles for red background
+  });
+};
+
 // Warning notification
 export const showWarningToast = (message) => {
   toast.warn(message, {

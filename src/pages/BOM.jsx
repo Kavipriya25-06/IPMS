@@ -4,8 +4,14 @@ import config from "../Config"; // Import config for API endpoints
 import { sortData, toggleSortDirection, renderSortArrow } from "../Sort";
 import AddIcon from "../assets/Add.png";
 import Delete from "../assets/Delete.png";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import {
+  showSuccessToast,
+  showErrorToast,
+  showInfoToast,
+  showWarningToast,
+  showMessageToast,
+  ToastContainerComponent,
+} from "./Toastify.jsx";
 
 const BOM = () => {
   const [boms, setBoms] = useState([]); // List of all BOMs
@@ -18,39 +24,98 @@ const BOM = () => {
 
   const handleToggleWbom = async (bom) => {
     if (bom.wbom) {
-      toast.error("This is already marked as Final BOM and cannot be changed.");
+      showErrorToast(
+        "This is already marked as Final BOM and cannot be changed."
+      );
       return;
     }
 
-    const confirmed = window.confirm(
-      "Are you sure you want to mark this as Final BOM?"
-    );
-    if (!confirmed) return;
+    showMessageToast(
+      ({ closeToast }) => (
+        <div style={{ fontSize: "14px" }}>
+          Are you sure you want to mark this as Final BOM?
+          <div
+            style={{
+              marginTop: "10px",
+              display: "flex",
+              gap: "10px",
+              justifyContent: "flex-end",
+            }}
+          >
+            <button
+              onClick={async () => {
+                closeToast();
+                try {
+                  const response = await fetch(
+                    `${config.apiBaseURL}/bom_list/${bom.bom_id}/`,
+                    {
+                      method: "PATCH",
+                      headers: {
+                        "Content-Type": "application/json",
+                      },
+                      body: JSON.stringify({ wbom: true }),
+                    }
+                  );
 
-    try {
-      const response = await fetch(
-        `${config.apiBaseURL}/bom_list/${bom.bom_id}/`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ wbom: true }),
-        }
-      );
-
-      if (response.ok) {
-        // Update local state
-        setBoms((prev) =>
-          prev.map((b) => (b.bom_id === bom.bom_id ? { ...b, wbom: true } : b))
-        );
-      } else {
-        const error = await response.json();
-        alert("Error marking Final BOM: " + JSON.stringify(error));
+                  if (response.ok) {
+                    setBoms((prev) =>
+                      prev.map((b) =>
+                        b.bom_id === bom.bom_id ? { ...b, wbom: true } : b
+                      )
+                    );
+                    showSuccessToast("Marked as Final BOM.");
+                  } else {
+                    const error = await response.json();
+                    showErrorToast(
+                      "Error marking Final BOM: " + JSON.stringify(error)
+                    );
+                  }
+                } catch (error) {
+                  console.error("Error updating WBOM:", error);
+                  showErrorToast("Failed to update Final BOM.");
+                }
+              }}
+              style={{
+                padding: "6px 12px",
+                backgroundColor: "#f58720",
+                color: "#fff",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+              }}
+            >
+              Yes
+            </button>
+            <button
+              // onClick={() => showWarningToast("Action cancelled.")}
+              style={{
+                padding: "6px 12px",
+                backgroundColor: "#6c757d",
+                color: "#fff",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+              }}
+            >
+              No
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        position: "top-center",
+        autoClose: false,
+        closeOnClick: false,
+        draggable: false,
+        closeButton: false,
+        style: {
+          backgroundColor: "#ffffff",
+          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+          borderRadius: "8px",
+          padding: "16px",
+        },
       }
-    } catch (error) {
-      console.error("Error updating WBOM:", error);
-    }
+    );
   };
 
   const [showForm, setShowForm] = useState(false);
@@ -165,31 +230,87 @@ const BOM = () => {
     }
   };
 
-  
+  const handleDelete = (bomId) => {
+    showMessageToast(
+      ({ closeToast }) => (
+        <div style={{ fontSize: "14px" }}>
+          Are you sure you want to delete <strong>BOM ID: {bomId}</strong>?
+          <div
+            style={{
+              marginTop: "10px",
+              display: "flex",
+              gap: "10px",
+              justifyContent: "flex-end",
+            }}
+          >
+            <button
+              onClick={async () => {
+                closeToast();
 
-  const handleDelete = async (bomId) => {
-    if (window.confirm(`Are you sure you want to delete BOM ID: ${bomId}?`)) {
-      try {
-        const response = await fetch(
-          `${config.apiBaseURL}/bom_list/${bomId}/`,
-          {
-            method: "DELETE",
-          }
-        );
+                try {
+                  const response = await fetch(
+                    `${config.apiBaseURL}/bom_list/${bomId}/`,
+                    {
+                      method: "DELETE",
+                    }
+                  );
 
-        if (response.ok) {
-          alert("BOM deleted successfully!");
-          // Refresh list after deletion
-          const refreshed = await fetch(`${config.apiBaseURL}/bom_list/`);
-          setBoms(await refreshed.json());
-        } else {
-          const error = await response.json();
-          alert("Error deleting BOM: " + JSON.stringify(error));
-        }
-      } catch (error) {
-        console.error("Error deleting BOM:", error);
+                  if (response.ok) {
+                    showSuccessToast("BOM deleted successfully!");
+                    // Refresh list
+                    const refreshed = await fetch(
+                      `${config.apiBaseURL}/bom_list/`
+                    );
+                    setBoms(await refreshed.json());
+                  } else {
+                    const error = await response.json();
+                    showErrorToast(
+                      "Error deleting BOM: " + JSON.stringify(error)
+                    );
+                  }
+                } catch (error) {
+                  console.error("Error deleting BOM:", error);
+                  showErrorToast("Failed to delete BOM.");
+                }
+              }}
+              style={{
+                padding: "6px 12px",
+                backgroundColor: "#f58720",
+                color: "#fff",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+              }}
+            >
+              Yes
+            </button>
+            <button
+              onClick={() => {
+                closeToast();
+                showWarningToast("Deletion cancelled.");
+              }}
+              style={{
+                padding: "6px 12px",
+                backgroundColor: "#6c757d",
+                color: "#fff",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+              }}
+            >
+              No
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        position: "top-center",
+        autoClose: false,
+        closeOnClick: false,
+        draggable: false,
+        closeButton: false,
       }
-    }
+    );
   };
 
   const toggleWbom = async (bom) => {
@@ -255,24 +376,29 @@ const BOM = () => {
 
       {showForm && (
         <div className="modal-overlay">
-          <div className="modal-content">
+          <div className="modal-contents">
             <h3>Add BOM</h3>
-            <input
-              type="text"
-              name="bom_name"
-              placeholder="BOM Name"
-              value={formData.bom_name}
-              onChange={handleInputChange}
-              required
-            />
-            <input
-              type="text"
-              name="created_by"
-              placeholder="Created By"
-              value={formData.created_by}
-              onChange={handleInputChange}
-              required
-            />
+            <div className="form-grid">
+              <label htmlFor="">BOM Name</label>
+              <input
+                type="text"
+                name="bom_name"
+                placeholder="BOM Name"
+                value={formData.bom_name}
+                onChange={handleInputChange}
+                required
+              />
+              <label htmlFor="">Created by</label>
+
+              <input
+                type="text"
+                name="created_by"
+                placeholder="Created By"
+                value={formData.created_by}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
             <div className="modal-actions">
               <button onClick={handleSubmit}>Submit</button>
               <button onClick={() => setShowForm(false)}>Cancel</button>
@@ -401,7 +527,7 @@ const BOM = () => {
           ↑
         </button>
       )}
-      <ToastContainer position="top-right" autoClose={3000} />
+      <ToastContainerComponent position="top-right" autoClose={3000} />
     </div>
   );
 };
