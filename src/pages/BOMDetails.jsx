@@ -488,6 +488,7 @@ const BOMDetails = () => {
   const [loadingComponents, setLoadingComponents] = useState(true);
   const [priceTables, setPriceTables] = useState([]);
   const [showLatestPrice, setShowLatestPrice] = useState(false);
+  const [vendorMasterData, setVendorMasterData] = useState([]);
 
   // Fetch BOM details and related components
   useEffect(() => {
@@ -523,6 +524,16 @@ const BOMDetails = () => {
         console.error("Error fetching vendors:", error);
       } finally {
         setLoadingVendors(false); // Set loading to false
+      }
+    };
+
+    const fetchVendorMaster = async () => {
+      try {
+        const response = await fetch(`${config.apiBaseURL}/vendor_master/`);
+        const data = await response.json();
+        setVendorMasterData(data);
+      } catch (error) {
+        console.error("Error fetching vendor master data:", error);
       }
     };
 
@@ -576,6 +587,7 @@ const BOMDetails = () => {
     fetchBomDetails();
     fetchBomComponents();
     fetchVendors();
+    fetchVendorMaster();
     fetchComponents();
     fetchAllData();
   }, [bomId]);
@@ -616,17 +628,19 @@ const BOMDetails = () => {
         return;
       }
 
-      // Step 1: Find the selected component to get product_id
-      const selectedComp = components.find(
-        (comp) => comp.component_id === newComponent.component
+      // Step 1: Get matching vendor_master entry for component and vendor
+      const matchedEntry = vendorMasterData.find(
+        (entry) =>
+          entry.component_id === newComponent.component &&
+          entry.vendor === newComponent.vendor
       );
 
-      if (!selectedComp) {
-        alert("Component not found.");
+      if (!matchedEntry) {
+        alert("No vendor entry found for the selected component.");
         return;
       }
 
-      const productId = selectedComp.product_id;
+      const productId = matchedEntry.product_id;
 
       // Step 2: Get latest price info for the product
       const matchingPrices = priceTables.filter(
@@ -641,10 +655,8 @@ const BOMDetails = () => {
         return;
       }
 
-      // Step 3: Format date as YYYY-MM-DD
       const latestDate = latestPriceEntry.current_time.split("T")[0];
 
-      // Step 4: Construct payload with date
       const payload = {
         bom: bomId,
         component: newComponent.component,
@@ -652,10 +664,8 @@ const BOMDetails = () => {
         quantity: newComponent.quantity,
         price: latestPriceEntry.price,
         tax: latestPriceEntry.tax,
-        date: latestDate, // <- Include date here
+        date: latestDate,
       };
-
-      console.log("Payload to POST:", payload);
 
       const response = await fetch(`${config.apiBaseURL}/bom_master/`, {
         method: "POST",
@@ -665,13 +675,9 @@ const BOMDetails = () => {
 
       if (response.ok) {
         showSuccessToast("Component added successfully!");
-
-        //  Refresh component list from backend
         const refreshed = await fetch(`${config.apiBaseURL}/bom_master/`);
         const updated = await refreshed.json();
-        const bomComponents = updated.filter((b) => b.bom === bomId);
-        setSelectedComponents(bomComponents);
-
+        setSelectedComponents(updated.filter((b) => b.bom === bomId));
         setShowAddComponentForm(false);
         setNewComponent({
           component: "",
@@ -682,7 +688,6 @@ const BOMDetails = () => {
         });
       } else {
         const error = await response.json();
-        console.error("Error from API:", error);
         alert(`Failed to add component: ${JSON.stringify(error)}`);
       }
     } catch (error) {
@@ -919,18 +924,25 @@ const BOMDetails = () => {
                 />
 
                 <label>Vendor</label>
-                {loadingVendors ? (
-                  <p className="vendor-loading">Loading vendor...</p>
-                ) : newComponent.vendor ? (
-                  <input
-                    type="text"
-                    disabled
-                    value={
-                      vendors.find((v) => v.vendor_id === newComponent.vendor)
-                        ?.vendor_name || "Vendor Not Found"
-                    }
-                  />
-                ) : null}
+                <select
+                  value={newComponent.vendor}
+                  onChange={(e) =>
+                    setNewComponent({ ...newComponent, vendor: e.target.value })
+                  }
+                >
+                  <option value="">Select Vendor</option>
+                  {vendorMasterData
+                    .filter(
+                      (v) =>
+                        v.component_type === newComponent.componentType &&
+                        v.component_id === newComponent.component
+                    )
+                    .map((v) => (
+                      <option key={v.product_id} value={v.vendor}>
+                        {v.vendor_name}
+                      </option>
+                    ))}
+                </select>
               </div>
 
               <div className="form-buttons">
@@ -985,7 +997,7 @@ const BOMDetails = () => {
                     Latest Price
                   </th>{" "}
                   {/* New column */}
-                  <th style={{ backgroundColor: "#82817f" }}>
+                  <th style={{ backgroundColor: "#82817f" }}> 
                     Latest Date
                   </th>{" "}
                   {/* New column */}
@@ -1077,10 +1089,7 @@ const BOMDetails = () => {
         </>
       )}
 
-      <button
-        onClick={() => navigate("/bom")}
-        className="back-button"
-      >
+      <button onClick={() => navigate("/bom")} className="back-button">
         Back to BOM List
       </button>
 
