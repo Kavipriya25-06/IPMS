@@ -620,7 +620,7 @@ const BOMDetails = () => {
     return {
       price: parseFloat(latest.price),
       tax: `${latest.tax}%`,
-      date: new Date(latest.current_time).toLocaleDateString("en-IN"),
+      date: format(parseISO(latest.current_time), "dd-MM-yyyy"),
     };
   };
 

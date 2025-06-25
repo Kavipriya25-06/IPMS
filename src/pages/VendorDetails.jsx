@@ -1271,7 +1271,7 @@ const VendorDetails = () => {
               <th>Tax %</th>
               <th>Image</th>
               <th>Attachments</th>
-              <th>Actions</th>
+              {/* <th>Actions</th> */}
               <th>Status</th>
               <th>Remarks</th>
             </tr>
@@ -1463,7 +1463,7 @@ const VendorDetails = () => {
                     </div>
                   </td>
 
-                  <td>
+                  {/* <td>
                     <div style={{ display: "flex", gap: "10px" }}>
                       <button
                         onClick={() => handleEditClickVendorMaster(index)}
@@ -1472,14 +1472,14 @@ const VendorDetails = () => {
                         Edit
                       </button>
 
-                      {/* <button
+                      <button
                         onClick={() => handleAddComponent(product)}
                         disabled={isAddedToComp}
                       >
                         {isAddedToComp ? "Already Added" : "Add to Comp"}
-                      </button> */}
+                      </button>
                     </div>
-                  </td>
+                  </td> */}
                   <td>
                     <button
                       onClick={() =>
@@ -1495,7 +1495,7 @@ const VendorDetails = () => {
                         padding: "5px 10px",
                         border: "none",
                         cursor: "pointer",
-                        borderRadius: "10px",
+                        borderRadius: "5px",
                       }}
                     >
                       {product.active ? "Active" : "Inactive"}

@@ -1832,7 +1832,11 @@ table td {
 }
 
 .date-input-container .input1 {
-  padding-right: 100px; /* Space for the calendar icon */
+  padding-right: 120px; /* Space for the calendar icon */
+}
+
+.react-datepicker {
+  margin-top: 35px; /* 👈 Push it slightly down */
 }
 
 /* Calendar icon positioning */

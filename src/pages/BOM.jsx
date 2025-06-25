@@ -31,92 +31,39 @@ const BOM = () => {
       return;
     }
 
-    showMessageToast(
-      ({ closeToast }) => (
-        <div style={{ fontSize: "14px" }}>
-          Are you sure you want to mark this as Final BOM?
-          <div
-            style={{
-              marginTop: "10px",
-              display: "flex",
-              gap: "10px",
-              justifyContent: "flex-end",
-            }}
-          >
-            <button
-              onClick={async () => {
-                closeToast();
-                try {
-                  const response = await fetch(
-                    `${config.apiBaseURL}/bom_list/${bom.bom_id}/`,
-                    {
-                      method: "PATCH",
-                      headers: {
-                        "Content-Type": "application/json",
-                      },
-                      body: JSON.stringify({ wbom: true }),
-                    }
-                  );
+    showMessageToast({
+      message: "Are you sure you want to mark this as Final BOM?",
+      onConfirm: async () => {
+        try {
+          const response = await fetch(
+            `${config.apiBaseURL}/bom_list/${bom.bom_id}/`,
+            {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ wbom: true }),
+            }
+          );
 
-                  if (response.ok) {
-                    setBoms((prev) =>
-                      prev.map((b) =>
-                        b.bom_id === bom.bom_id ? { ...b, wbom: true } : b
-                      )
-                    );
-                    showSuccessToast("Marked as Final BOM.");
-                  } else {
-                    const error = await response.json();
-                    showErrorToast(
-                      "Error marking Final BOM: " + JSON.stringify(error)
-                    );
-                  }
-                } catch (error) {
-                  console.error("Error updating WBOM:", error);
-                  showErrorToast("Failed to update Final BOM.");
-                }
-              }}
-              style={{
-                padding: "6px 12px",
-                backgroundColor: "#f58720",
-                color: "#fff",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-              }}
-            >
-              Yes
-            </button>
-            <button
-              // onClick={() => showWarningToast("Action cancelled.")}
-              style={{
-                padding: "6px 12px",
-                backgroundColor: "#6c757d",
-                color: "#fff",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-              }}
-            >
-              No
-            </button>
-          </div>
-        </div>
-      ),
-      {
-        position: "top-center",
-        autoClose: false,
-        closeOnClick: false,
-        draggable: false,
-        closeButton: false,
-        style: {
-          backgroundColor: "#ffffff",
-          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
-          borderRadius: "8px",
-          padding: "16px",
-        },
-      }
-    );
+          if (response.ok) {
+            setBoms((prev) =>
+              prev.map((b) =>
+                b.bom_id === bom.bom_id ? { ...b, wbom: true } : b
+              )
+            );
+            showSuccessToast("Marked as Final BOM.");
+          } else {
+            const error = await response.json();
+            showErrorToast("Error marking Final BOM: " + JSON.stringify(error));
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          showErrorToast("Failed to update Final BOM.");
+        }
+      },
+      onCancel: () => {
+        showWarningToast("Action cancelled.");
+      },
+    });
   };
 
   const [showForm, setShowForm] = useState(false);
@@ -232,86 +179,38 @@ const BOM = () => {
   };
 
   const handleDelete = (bomId) => {
-    showMessageToast(
-      ({ closeToast }) => (
-        <div style={{ fontSize: "14px" }}>
+    showMessageToast({
+      message: (
+        <>
           Are you sure you want to delete <strong>BOM ID: {bomId}</strong>?
-          <div
-            style={{
-              marginTop: "10px",
-              display: "flex",
-              gap: "10px",
-              justifyContent: "flex-end",
-            }}
-          >
-            <button
-              onClick={async () => {
-                closeToast();
-
-                try {
-                  const response = await fetch(
-                    `${config.apiBaseURL}/bom_list/${bomId}/`,
-                    {
-                      method: "DELETE",
-                    }
-                  );
-
-                  if (response.ok) {
-                    showSuccessToast("BOM deleted successfully!");
-                    // Refresh list
-                    const refreshed = await fetch(
-                      `${config.apiBaseURL}/bom_list/`
-                    );
-                    setBoms(await refreshed.json());
-                  } else {
-                    const error = await response.json();
-                    showErrorToast(
-                      "Error deleting BOM: " + JSON.stringify(error)
-                    );
-                  }
-                } catch (error) {
-                  console.error("Error deleting BOM:", error);
-                  showErrorToast("Failed to delete BOM.");
-                }
-              }}
-              style={{
-                padding: "6px 12px",
-                backgroundColor: "#f58720",
-                color: "#fff",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-              }}
-            >
-              Yes
-            </button>
-            <button
-              onClick={() => {
-                closeToast();
-                showWarningToast("Deletion cancelled.");
-              }}
-              style={{
-                padding: "6px 12px",
-                backgroundColor: "#6c757d",
-                color: "#fff",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-              }}
-            >
-              No
-            </button>
-          </div>
-        </div>
+        </>
       ),
-      {
-        position: "top-center",
-        autoClose: false,
-        closeOnClick: false,
-        draggable: false,
-        closeButton: false,
-      }
-    );
+      onConfirm: async () => {
+        try {
+          const response = await fetch(
+            `${config.apiBaseURL}/bom_list/${bomId}/`,
+            {
+              method: "DELETE",
+            }
+          );
+
+          if (response.ok) {
+            showSuccessToast("BOM deleted successfully!");
+            const refreshed = await fetch(`${config.apiBaseURL}/bom_list/`);
+            setBoms(await refreshed.json());
+          } else {
+            const error = await response.json();
+            showErrorToast("Error deleting BOM: " + JSON.stringify(error));
+          }
+        } catch (error) {
+          console.error("Error deleting BOM:", error);
+          showErrorToast("Failed to delete BOM.");
+        }
+      },
+      onCancel: () => {
+        showWarningToast("Deletion cancelled.");
+      },
+    });
   };
 
   const toggleWbom = async (bom) => {

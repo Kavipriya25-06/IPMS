@@ -45,18 +45,68 @@ export const showInfoToast = (message) => {
   });
 };
 
-export const showMessageToast = (message) => {
-  toast.info(message, {
-    position: "top-center",
-    autoClose: 3000,
-    hideProgressBar: false,
-    closeOnClick: true,
-    pauseOnHover: true,
-    draggable: true,
-    progress: undefined,
-    theme: "colored",
-    style: { backgroundColor: "#fff", color: "gray" }, // Inline styles for red background
-  });
+//Message with YES or NO buttons
+export const showMessageToast = ({ message, onConfirm, onCancel }) => {
+  toast.info(
+    ({ closeToast }) => (
+      <div style={{ fontSize: "14px" }}>
+        {message}
+        <div
+          style={{
+            marginTop: "10px",
+            display: "flex",
+            gap: "10px",
+            justifyContent: "flex-end",
+          }}
+        >
+          <button
+            onClick={async () => {
+              closeToast();
+              onConfirm && (await onConfirm());
+            }}
+            style={{
+              padding: "6px 12px",
+              backgroundColor: "#f58720",
+              color: "#fff",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+          >
+            Yes
+          </button>
+          <button
+            onClick={() => {
+              closeToast();
+            }}
+            style={{
+              padding: "6px 12px",
+              backgroundColor: "#6c757d",
+              color: "#fff",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+          >
+            No
+          </button>
+        </div>
+      </div>
+    ),
+    {
+      position: "top-center",
+      autoClose: false,
+      closeOnClick: false,
+      draggable: false,
+      closeButton: false,
+      style: {
+        backgroundColor: "#ffffff",
+        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+        borderRadius: "8px",
+        padding: "16px",
+      },
+    }
+  );
 };
 
 // Warning notification
