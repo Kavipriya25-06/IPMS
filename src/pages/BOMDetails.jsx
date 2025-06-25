@@ -880,7 +880,7 @@ const BOMDetails = () => {
                     ))}
                   </select>
 
-                  <label>Component Specification</label>
+                  <label>Specification</label>
                   <select
                     value={newComponent.component}
                     onChange={async (e) => {

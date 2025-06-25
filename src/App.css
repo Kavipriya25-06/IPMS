@@ -201,7 +201,6 @@ table {
   padding: 8px 12px;
   border: 1px solid #ccc;
   text-align: left;
-  
 }
 
 .table-scroll-wrapper {
@@ -209,7 +208,6 @@ table {
   overflow-y: auto;
   position: relative;
   border: 1px solid #ddd;
-  
 }
 
 .specification-cell {
@@ -387,7 +385,6 @@ tbody tr:hover {
   background-color: #f5b578;
 }
 
-
 .back-button {
   margin-top: 20px;
   padding: 10px;
@@ -415,6 +412,7 @@ tbody tr:hover {
   font-weight: 500;
   color: #444;
   margin-bottom: 4px;
+  text-align: left;
 }
 
 .form-grid input,
@@ -1009,7 +1007,6 @@ table td {
   overflow-y: auto;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
-
 
 .category-dropdown-option {
   padding: 6px 12px;
@@ -1660,6 +1657,11 @@ table td {
   color: white;
 }
 
+.modal-contents button:last-of-type {
+  background-color: gray;
+  color: white;
+}
+
 .modal-buttons {
   display: flex;
   justify-content: flex-end;
@@ -1681,7 +1683,12 @@ table td {
 }
 
 .modal-content button:last-of-type {
-  background-color: #6c757d;
+  background-color: gray;
+  color: white;
+}
+
+.modal-content button:last-of-type:hover {
+  background-color: #abaaaa;
   color: white;
 }
 
@@ -1690,8 +1697,8 @@ table td {
   color: white;
 }
 
-.modal-contents button:last-of-type {
-  background-color: #6c757d;
+.modal-contents button:last-of-type:hover {
+  background-color: #abaaaa;
   color: white;
 }
 
@@ -2770,7 +2777,7 @@ main {
   .modal-content,
   .modal-contents {
     width: 95% !important;
-    max-width: 95% !important;
+    /* max-width: 95% !important; */
     margin: 10px auto;
   }
 
@@ -2796,6 +2803,8 @@ main {
     right: 0;
   }
 }
+
+
 
 /* @media (max-width: 768px) {
     .header {
@@ -3038,7 +3047,6 @@ main {
   font-weight: 600;
 }
 
-
 .share {
   cursor: pointer;
   color: #555;
@@ -3163,7 +3171,6 @@ ul {
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
   z-index: 9999;
 }
-
 
 @media (max-width: 768px) {
   .zoom-lens {
@@ -3341,15 +3348,25 @@ ul {
 
 .modal-content {
   background: #fff;
+  padding: 25px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+
+.modal-overlay .modal-contents {
+  background: #fff;
   padding: 15px;
   border-radius: 10px;
   width: 90%;
   max-width: 400px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
   text-align: center;
 }
 
-.modal-content h3{
+.modal-content h3 {
   font-size: 20px;
 }
 .modal-content input {
@@ -3359,8 +3376,3 @@ ul {
   border: 1px solid #ccc;
   border-radius: 5px;
 }
-
-
-
-
-

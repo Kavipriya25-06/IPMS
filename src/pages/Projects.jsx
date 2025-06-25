@@ -307,6 +307,8 @@ import AddIcon from "../assets/Add.png";
 import CancelIcon from "../assets/cancel.png";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { format, parseISO } from "date-fns";
+
 
 const ProjectList = () => {
   const [projects, setProjects] = useState([]);
@@ -489,43 +491,46 @@ const ProjectList = () => {
             />
             <div className="date-input-container">
               <DatePicker
-                selected={
-                  newProject.start_date
-                    ? typeof newProject.start_date === "string"
-                      ? parseISO(newProject.start_date)
-                      : newProject.start_date
-                    : null
-                }
-                onChange={(date) =>
-                  handleInputChange({
-                    target: { name: "start_date", value: date },
-                  })
-                }
-                dateFormat="dd-MMM-yyyy"
-                placeholderText="dd-mm-yyyy"
-                className="input1"
-                showMonthDropdown
-                showYearDropdown
-                dropdownMode="select"
-                popperModifiers={[
-                  {
-                    name: "preventOverflow",
-                    options: {
-                      mainAxis: false, // allow dropdown to overflow if needed
-                    },
-                  },
-                  {
-                    name: "offset",
-                    options: {
-                      offset: [0, 8], // horizontal offset, vertical offset
-                    },
-                  },
-                ]}
-                required
-              />
-                            <i className="fas fa-calendar-alt calendar-icon"></i>{" "}
+  selected={
+    newProject.start_date
+      ? typeof newProject.start_date === "string"
+        ? parseISO(newProject.start_date)
+        : newProject.start_date
+      : null
+  }
+  onChange={(date) =>
+    handleInputChange({
+      target: {
+        name: "start_date",
+        value: date ? format(date, "yyyy-MM-dd") : "",
+      },
+    })
+  }
+  dateFormat="dd-MMM-yyyy"
+  placeholderText="dd-mm-yyyy"
+  className="input1"
+  showMonthDropdown
+  showYearDropdown
+  dropdownMode="select"
+  popperModifiers={[
+    {
+      name: "preventOverflow",
+      options: {
+        mainAxis: false,
+      },
+    },
+    {
+      name: "offset",
+      options: {
+        offset: [0, 8],
+      },
+    },
+  ]}
+  required
+/>
 
-              </div>
+              <i className="fas fa-calendar-alt calendar-icon"></i>{" "}
+            </div>
             <div className="form-buttons">
               <button type="submit" className="add-button">
                 Add Project
