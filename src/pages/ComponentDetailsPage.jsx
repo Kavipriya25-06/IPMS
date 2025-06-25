@@ -263,6 +263,7 @@ import React, { useState, useEffect, useRef } from "react";
 import config from "../Config";
 import "../App.css";
 import { useParams } from "react-router-dom";
+import { format, parseISO } from "date-fns";
 
 import {
   showSuccessToast,
@@ -491,11 +492,15 @@ const ComponentDetailsPage = () => {
                     </td>
                     <td>
                       {priceDataMap[vendor.product_id]?.current_time
-                        ? new Date(
-                            priceDataMap[vendor.product_id].current_time
-                          ).toLocaleDateString()
+                        ? format(
+                            parseISO(
+                              priceDataMap[vendor.product_id].current_time
+                            ),
+                            "dd-MM-yyyy"
+                          )
                         : "-"}
                     </td>
+
                     <td>
                       {priceDataMap[vendor.product_id]?.delivery_days ?? "-"}
                     </td>

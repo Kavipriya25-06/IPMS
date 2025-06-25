@@ -1610,7 +1610,7 @@ table td {
   margin-top: 8px;
 }
 
-.modal-content button:first-of-type {
+.modal-actions button:first-of-type {
   background-color: #f58720;
   color: white;
 }
@@ -1652,12 +1652,12 @@ table td {
   margin-top: 8px;
 }
 
-.modal-contents button:first-of-type {
+.modal-actions button:first-of-type {
   background-color: #f58720;
   color: white;
 }
 
-.modal-contents button:last-of-type {
+.modal-actions button:last-of-type {
   background-color: gray;
   color: white;
 }
@@ -1677,27 +1677,27 @@ table td {
   cursor: pointer;
 }
 
-.modal-content button:first-of-type:hover {
+.modal-actions button:first-of-type:hover {
   background-color: #f6c190;
   color: white;
 }
 
-.modal-content button:last-of-type {
+.modal-actions button:last-of-type {
   background-color: gray;
   color: white;
 }
 
-.modal-content button:last-of-type:hover {
+.modal-actions button:last-of-type:hover {
   background-color: #abaaaa;
   color: white;
 }
 
-.modal-contents button:first-of-type:hover {
+.modal-actions button:first-of-type:hover {
   background-color: #f6c190;
   color: white;
 }
 
-.modal-contents button:last-of-type:hover {
+.modal-actions button:last-of-type:hover {
   background-color: #abaaaa;
   color: white;
 }
@@ -1813,19 +1813,7 @@ table td {
   font-weight: 500;
 }
 
-.add-project-form {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 20px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  max-width: 400px;
-  background: #f9f9f9;
-  margin-top: 20px;
-  margin-bottom: 20px;
-  width: 100%; /* Let it be fully responsive */
-}
+
 
 .add-project-form input,
 .add-project-form select,
@@ -1844,7 +1832,7 @@ table td {
 }
 
 .date-input-container .input1 {
-  padding-right: 5px; /* Space for the calendar icon */
+  padding-right: 100px; /* Space for the calendar icon */
 }
 
 /* Calendar icon positioning */

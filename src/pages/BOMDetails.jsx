@@ -459,6 +459,7 @@ import config from "../Config"; // Import config for API endpoints
 import DeleteIcon from "../assets/Delete.png"; //
 import AddIcon from "../assets/Add.png";
 import Back from "../assets/Back.png";
+import { format, parseISO } from "date-fns";
 
 import {
   showSuccessToast,
@@ -1050,24 +1051,16 @@ const BOMDetails = () => {
             }}
           >
             <button
-              onClick={() => {
-                if (!selectedBom.wbom) setShowLatestPrice(true);
-              }}
+              onClick={() => setShowLatestPrice(true)}
               style={{
                 padding: "6px 12px",
                 backgroundColor: "#82817f",
                 color: "#fff",
                 border: "none",
                 borderRadius: "4px",
-                cursor: selectedBom.wbom ? "not-allowed" : "pointer",
-                opacity: selectedBom.wbom ? 0.5 : 1,
+                cursor: "pointer",
               }}
-              title={
-                selectedBom.wbom
-                  ? "Cannot show latest price in Final BOM"
-                  : "Show Latest Price Info"
-              }
-              disabled={selectedBom.wbom}
+              title="Show Latest Price Info"
             >
               Show Latest Price Info
             </button>
@@ -1118,7 +1111,11 @@ const BOMDetails = () => {
                       <td className="specification-cell">
                         {component.vendor.vendor_name}
                       </td>
-                      <td>{component.date}</td>
+                      <td>
+                        {component.date
+                          ? format(parseISO(component.date), "dd-MM-yyyy")
+                          : "-"}
+                      </td>
                       <td style={{ textAlign: "right" }}>
                         ₹
                         {parseFloat(component.price || 0).toLocaleString(

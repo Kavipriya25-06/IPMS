@@ -12,6 +12,7 @@ import {
   showMessageToast,
   ToastContainerComponent,
 } from "./Toastify.jsx";
+import { format, parseISO } from "date-fns";
 
 const BOM = () => {
   const [boms, setBoms] = useState([]); // List of all BOMs
@@ -467,9 +468,17 @@ const BOM = () => {
                 <td>{bom.bom_name}</td>
                 <td>{bomQuantities[bom.bom_id] || 0}</td>
                 <td>{bom.created_by}</td>
-                <td>{bom.created_date}</td>
+                <td>
+                  {bom.created_date
+                    ? format(parseISO(bom.created_date), "dd-MM-yyyy")
+                    : "-"}
+                </td>
                 <td>{bom.last_modified_by}</td>
-                <td>{bom.last_modified_date}</td>
+                <td>
+                  {bom.last_modified_date
+                    ? format(parseISO(bom.last_modified_date), "dd-MM-yyyy")
+                    : "-"}
+                </td>
                 <td>
                   <div className="action-buttons">
                     <button

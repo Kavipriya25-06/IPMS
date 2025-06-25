@@ -309,7 +309,6 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { format, parseISO } from "date-fns";
 
-
 const ProjectList = () => {
   const [projects, setProjects] = useState([]);
   const [newProject, setNewProject] = useState({
@@ -456,94 +455,81 @@ const ProjectList = () => {
       </div>
 
       {showAddForm && (
-        <div className="add-project-container">
-          {/* Add Project Form */}
-          <form onSubmit={handleAddProject} className="add-project-form">
-            <select
-              name="project_type"
-              value={newProject.project_type}
-              onChange={handleInputChange}
-              required
-            >
-              <option value="">Select Project Type</option>
-              <option value="R&D">R&D</option>
-              <option value="OPS">OPS</option>
-              <option value="SER">SER</option>
-              <option value="MISC">MISC</option>
-              <option value="U/D">U/D</option>
-            </select>
-
-            <input
-              type="text"
-              name="project_name"
-              value={newProject.project_name}
-              onChange={handleInputChange}
-              required
-              placeholder="Project Name"
-            />
-            <input
-              type="text"
-              name="description"
-              value={newProject.description}
-              onChange={handleInputChange}
-              required
-              placeholder="Description"
-            />
-            <div className="date-input-container">
-              <DatePicker
-  selected={
-    newProject.start_date
-      ? typeof newProject.start_date === "string"
-        ? parseISO(newProject.start_date)
-        : newProject.start_date
-      : null
-  }
-  onChange={(date) =>
-    handleInputChange({
-      target: {
-        name: "start_date",
-        value: date ? format(date, "yyyy-MM-dd") : "",
-      },
-    })
-  }
-  dateFormat="dd-MMM-yyyy"
-  placeholderText="dd-mm-yyyy"
-  className="input1"
-  showMonthDropdown
-  showYearDropdown
-  dropdownMode="select"
-  popperModifiers={[
-    {
-      name: "preventOverflow",
-      options: {
-        mainAxis: false,
-      },
-    },
-    {
-      name: "offset",
-      options: {
-        offset: [0, 8],
-      },
-    },
-  ]}
-  required
-/>
-
-              <i className="fas fa-calendar-alt calendar-icon"></i>{" "}
-            </div>
-            <div className="form-buttons">
-              <button type="submit" className="add-button">
-                Add Project
-              </button>
-              <button
-                type="button"
-                className="cancel-button"
-                onClick={() => setShowAddForm(false)}
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h4>Add New Project</h4>
+            {/* Add Project Form */}
+            <div className="form-grid">
+              <label htmlFor="">Project Type</label>
+              <select
+                name="project_type"
+                value={newProject.project_type}
+                onChange={handleInputChange}
+                required
               >
-                Cancel
-              </button>
+                <option value="">Select Project Type</option>
+                <option value="R&D">R&D</option>
+                <option value="OPS">OPS</option>
+                <option value="SER">SER</option>
+                <option value="MISC">MISC</option>
+                <option value="U/D">U/D</option>
+              </select>
+
+              <label htmlFor="">Project Name</label>
+
+              <input
+                type="text"
+                name="project_name"
+                value={newProject.project_name}
+                onChange={handleInputChange}
+                required
+                placeholder="Project Name"
+              />
+              <label htmlFor="">Description</label>
+
+              <input
+                type="text"
+                name="description"
+                value={newProject.description}
+                onChange={handleInputChange}
+                required
+                placeholder="Description"
+              />
+              <label htmlFor="">Select Date</label>
+
+              <div className="date-input-container">
+                <DatePicker
+                  selected={
+                    newProject.start_date
+                      ? typeof newProject.start_date === "string"
+                        ? parseISO(newProject.start_date)
+                        : newProject.start_date
+                      : null
+                  }
+                  onChange={(date) =>
+                    handleInputChange({
+                      target: {
+                        name: "start_date",
+                        value: date ? format(date, "yyyy-MM-dd") : "",
+                      },
+                    })
+                  }
+                  dateFormat="dd-MMM-yyyy"
+                  placeholderText="dd-mm-yyyy"
+                  className="input1"
+                  showMonthDropdown
+                  showYearDropdown
+                  dropdownMode="select"
+                  required
+                />
+                <i className="fas fa-calendar-alt calendar-icon"></i>{" "}
+              </div>
             </div>
-          </form>
+            <div className="modal-actions">
+              <button onClick={handleAddProject}>Create</button>
+              <button onClick={() => setShowAddForm(false)}>Cancel</button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -618,7 +604,11 @@ const ProjectList = () => {
                   </td>
                   <td style={{ padding: "10px" }}>{project.project_name}</td>
                   <td style={{ padding: "10px" }}>{project.description}</td>
-                  <td style={{ padding: "10px" }}>{project.start_date}</td>
+                  <td style={{ padding: "10px" }}>
+                    {project.start_date
+                      ? format(parseISO(project.start_date), "dd-MM-yyyy")
+                      : "--"}
+                  </td>
                   <td style={{ padding: "10px" }}>{project.project_type}</td>
                 </tr>
               ))
