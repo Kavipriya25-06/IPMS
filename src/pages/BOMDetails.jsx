@@ -592,18 +592,34 @@ const BOMDetails = () => {
     fetchAllData();
   }, [bomId]);
 
-  const getLatestPriceInfo = (productId) => {
-    const entries = priceTables.filter((e) => e.product === productId);
-    if (entries.length === 0) return { price: "-", tax: "-", date: "-" };
+  const getLatestPriceInfo = (componentObj, vendorObj) => {
+    if (!componentObj || !vendorObj) return { price: "-", tax: "-", date: "-" };
 
-    const latest = entries.sort(
+    const { component_id } = componentObj;
+    const { vendor_id } = vendorObj;
+
+    // Find matching vendor master entry to get the product_id
+    const vendorEntry = vendorMasterData.find(
+      (entry) =>
+        entry.component_id === component_id && entry.vendor === vendor_id
+    );
+
+    if (!vendorEntry) return { price: "-", tax: "-", date: "-" };
+
+    const productId = vendorEntry.product_id;
+
+    // Now find matching price table entry
+    const prices = priceTables.filter((entry) => entry.product === productId);
+    if (prices.length === 0) return { price: "-", tax: "-", date: "-" };
+
+    const latest = prices.sort(
       (a, b) => new Date(b.current_time) - new Date(a.current_time)
     )[0];
 
     return {
-      price: latest.price,
+      price: parseFloat(latest.price),
       tax: `${latest.tax}%`,
-      date: new Date(latest.current_time).toLocaleDateString("en-IN"), // Format date nicely
+      date: new Date(latest.current_time).toLocaleDateString("en-IN"),
     };
   };
 
@@ -1104,8 +1120,10 @@ const BOMDetails = () => {
               <tbody>
                 {selectedComponents.map((component, index) => {
                   const { price, tax, date } = getLatestPriceInfo(
-                    component.component.product_id
+                    component.component,
+                    component.vendor
                   );
+
                   return (
                     <tr key={index}>
                       <td>{component.component.category}</td>
