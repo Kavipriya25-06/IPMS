@@ -110,8 +110,8 @@ const BOM = () => {
   };
 
   // Function to handle a click on a BOM ID
-  const handleBomClick = (bomId) => {
-    navigate(`/bom/${bomId}`); // Navigate to BOM details page for the selected BOM
+  const handleBomClick = (bomId, isWbom) => {
+    navigate(`/bom/${bomId}?readonly=${isWbom}`); // Navigate to BOM details page for the selected BOM
   };
 
   const handleSort = (key) => {
@@ -164,6 +164,8 @@ const BOM = () => {
       console.error("Error submitting BOM:", error);
     }
   };
+
+  
 
   const handleDelete = async (bomId) => {
     if (window.confirm(`Are you sure you want to delete BOM ID: ${bomId}?`)) {
@@ -252,24 +254,30 @@ const BOM = () => {
       </div>
 
       {showForm && (
-        <div className="bom-form">
-          <input
-            type="text"
-            name="bom_name"
-            placeholder="BOM Name"
-            value={formData.bom_name}
-            onChange={handleInputChange}
-            required
-          />
-          <input
-            type="text"
-            name="created_by"
-            placeholder="Created By"
-            value={formData.created_by}
-            onChange={handleInputChange}
-            required
-          />
-          <button onClick={handleSubmit}>Submit</button>
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>Add BOM</h3>
+            <input
+              type="text"
+              name="bom_name"
+              placeholder="BOM Name"
+              value={formData.bom_name}
+              onChange={handleInputChange}
+              required
+            />
+            <input
+              type="text"
+              name="created_by"
+              placeholder="Created By"
+              value={formData.created_by}
+              onChange={handleInputChange}
+              required
+            />
+            <div className="modal-actions">
+              <button onClick={handleSubmit}>Submit</button>
+              <button onClick={() => setShowForm(false)}>Cancel</button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -322,7 +330,7 @@ const BOM = () => {
             }).map((bom) => (
               <tr key={bom.bom_id}>
                 <td
-                  onClick={() => handleBomClick(bom.bom_id)}
+                  onClick={() => handleBomClick(bom.bom_id, bom.wbom)}
                   style={{
                     cursor: "pointer",
                     textDecoration: "underline",
@@ -338,32 +346,34 @@ const BOM = () => {
                 <td>{bom.last_modified_date}</td>
                 <td>
                   <div className="action-buttons">
-                  <button
-                    onClick={() => handleToggleWbom(bom)}
-                    style={{
-                      backgroundColor: bom.wbom ? "#4CAF50" : "#f58720",
-                      color: "white",
-                      borderRadius:"5px",
-                      border:"none",
-                      cursor:"pointer"
-                    }}
-                    title={bom.wbom ? "Maeked as Final BOM" : "Mark as Final BOM"}
-                  >
-                    {bom.wbom ? "FBOM" : "WBOM"}
-                  </button>
+                    <button
+                      onClick={() => handleToggleWbom(bom)}
+                      style={{
+                        backgroundColor: bom.wbom ? "#4CAF50" : "#f58720",
+                        color: "white",
+                        borderRadius: "5px",
+                        border: "none",
+                        cursor: "pointer",
+                      }}
+                      title={
+                        bom.wbom ? "Maeked as Final BOM" : "Mark as Final BOM"
+                      }
+                    >
+                      {bom.wbom ? "FBOM" : "WBOM"}
+                    </button>
 
-                  <button
-                    onClick={() => handleDelete(bom.bom_id)}
-                    className="delete-button"
-                    title="Delete"
-                  >
-                    {/* <img
+                    <button
+                      onClick={() => handleDelete(bom.bom_id)}
+                      className="delete-button"
+                      title="Delete"
+                    >
+                      {/* <img
                       src={Delete}
                       alt="Delete"
                       style={{ width: "20px", height: "20px" }}
                     /> */}
-                    Delete
-                  </button>
+                      Delete
+                    </button>
                   </div>
                 </td>
               </tr>

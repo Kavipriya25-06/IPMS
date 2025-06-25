@@ -724,16 +724,27 @@ const BOMDetails = () => {
       showErrorToast("An error occurred while deleting.");
     }
   };
-
   const calculateTotalPrice = () => {
-    return selectedComponents.reduce((total, component) => {
+    let baseTotal = 0;
+    let totalTaxAmount = 0;
+
+    selectedComponents.forEach((component) => {
       const unitPrice = parseFloat(component.price || 0);
       const quantity = parseFloat(component.quantity || 0);
       const taxRate = parseFloat(component.tax || 0);
 
-      const priceWithTax = unitPrice + (unitPrice * taxRate) / 100;
-      return total + priceWithTax * quantity;
-    }, 0);
+      const base = unitPrice * quantity;
+      const taxAmount = (base * taxRate) / 100;
+
+      baseTotal += base;
+      totalTaxAmount += taxAmount;
+    });
+
+    return {
+      baseTotal,
+      totalTaxAmount,
+      grandTotal: baseTotal + totalTaxAmount,
+    };
   };
 
   ///
@@ -768,6 +779,12 @@ const BOMDetails = () => {
             <strong>BOM ID:</strong> {selectedBom.bom_id}
           </p>
 
+          {selectedBom.wbom && (
+            <p style={{ color: "gray", marginTop: "10px" }}>
+              This is a Final BOM. Components cannot be added or removed.
+            </p>
+          )}
+
           <div
             style={{
               display: "flex",
@@ -794,14 +811,22 @@ const BOMDetails = () => {
             </button>
 
             <button
-              onClick={() => setShowAddComponentForm(true)}
+              onClick={() => {
+                if (!selectedBom.wbom) setShowAddComponentForm(true);
+              }}
               style={{
                 background: "transparent",
                 border: "none",
-                cursor: "pointer",
+                cursor: selectedBom.wbom ? "not-allowed" : "pointer",
                 padding: "4px",
+                opacity: selectedBom.wbom ? 0.5 : 1,
               }}
-              title="Add Component"
+              title={
+                selectedBom.wbom
+                  ? "Cannot add component in Final BOM"
+                  : "Add Component"
+              }
+              disabled={selectedBom.wbom}
             >
               <img
                 src={AddIcon}
@@ -811,145 +836,208 @@ const BOMDetails = () => {
             </button>
           </div>
 
-          {showAddComponentForm && (
-            <div className="add-component-form">
-              <h4>Add New Component</h4>
-              <div className="form-grid">
-                <label>Component Type</label>
-                <select
-                  value={newComponent.componentType || ""}
-                  onChange={(e) => {
-                    const selectedType = e.target.value;
-                    setNewComponent({
-                      ...newComponent,
-                      componentType: selectedType,
-                      component: "",
-                      vendor: "",
-                    });
-                  }}
-                >
-                  <option value="">Select Component Type</option>
-                  {Array.from(
-                    new Set(components.map((c) => c.component_type))
-                  ).map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
+          {!selectedBom.wbom && showAddComponentForm && (
+            <div className="modal-overlay">
+              <div className="modal-content">
+                <h4>Add New Component</h4>
+                <div className="form-grid">
+                  <label>Component Type</label>
+                  <select
+                    value={newComponent.componentType || ""}
+                    onChange={(e) => {
+                      const selectedType = e.target.value;
+                      setNewComponent({
+                        ...newComponent,
+                        componentType: selectedType,
+                        component: "",
+                        vendor: "",
+                      });
+                    }}
+                  >
+                    <option value="">Select Component Type</option>
+                    {Array.from(
+                      new Set(components.map((c) => c.component_type))
+                    ).map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </select>
 
-                <label>Component Specification</label>
-                <select
-                  value={newComponent.component}
-                  onChange={async (e) => {
-                    const componentId = e.target.value;
-                    const selectedComp = components.find(
-                      (comp) => comp.component_id === componentId
-                    );
+                  <label>Component Specification</label>
+                  <select
+                    value={newComponent.component}
+                    onChange={async (e) => {
+                      const componentId = e.target.value;
+                      const selectedComp = components.find(
+                        (comp) => comp.component_id === componentId
+                      );
 
-                    setNewComponent((prev) => ({
-                      ...prev,
-                      component: componentId,
-                      vendor: "",
-                      price: "",
-                      tax: "",
-                    }));
+                      setNewComponent((prev) => ({
+                        ...prev,
+                        component: componentId,
+                        vendor: "",
+                        price: "",
+                        tax: "",
+                      }));
 
-                    if (selectedComp) {
-                      try {
-                        setLoadingVendors(true);
-                        const response = await fetch(
-                          `${config.apiBaseURL}/vendor_list/`
+                      if (selectedComp) {
+                        try {
+                          setLoadingVendors(true);
+                          const response = await fetch(
+                            `${config.apiBaseURL}/vendor_list/`
+                          );
+                          const allVendors = await response.json();
+                          const matchedVendor = allVendors.find(
+                            (vendor) =>
+                              vendor.vendor_id === selectedComp.vendor_id
+                          );
+
+                          const productId = selectedComp.product_id;
+                          const matchingPrices = priceTables.filter(
+                            (p) => p.product === productId
+                          );
+                          const latestPriceEntry = matchingPrices.sort(
+                            (a, b) =>
+                              new Date(b.current_time) -
+                              new Date(a.current_time)
+                          )[0];
+
+                          setNewComponent((prev) => ({
+                            ...prev,
+                            vendor: matchedVendor?.vendor_id || "",
+                            price: latestPriceEntry?.price || "",
+                            tax: latestPriceEntry?.tax?.toString() || "",
+                          }));
+
+                          if (matchedVendor) setVendors([matchedVendor]);
+                          else setVendors([]);
+                        } catch (error) {
+                          console.error(
+                            "Error processing vendor/price info:",
+                            error
+                          );
+                          setVendors([]);
+                        } finally {
+                          setLoadingVendors(false);
+                        }
+                      }
+                    }}
+                  >
+                    <option value="">Select Specification</option>
+                    {components
+                      .filter(
+                        (comp) =>
+                          comp.component_type === newComponent.componentType
+                      )
+                      .map((comp) => (
+                        <option
+                          key={comp.component_id}
+                          value={comp.component_id}
+                        >
+                          {comp.component_specification}
+                        </option>
+                      ))}
+                  </select>
+
+                  <label>Quantity</label>
+                  <input
+                    type="number"
+                    placeholder="Quantity"
+                    value={newComponent.quantity}
+                    onChange={(e) =>
+                      setNewComponent({
+                        ...newComponent,
+                        quantity: e.target.value,
+                      })
+                    }
+                  />
+
+                  <label>Vendor</label>
+                  <select
+                    value={newComponent.vendor}
+                    onChange={(e) => {
+                      const vendorId = e.target.value;
+                      const componentId = newComponent.component;
+
+                      setNewComponent((prev) => ({
+                        ...prev,
+                        vendor: vendorId,
+                        price: "",
+                        tax: "",
+                      }));
+
+                      if (componentId && vendorId) {
+                        // Step 1: Get product_id from vendorMasterData
+                        const matchedEntry = vendorMasterData.find(
+                          (entry) =>
+                            entry.component_id === componentId &&
+                            entry.vendor === vendorId
                         );
-                        const allVendors = await response.json();
-                        const matchedVendor = allVendors.find(
-                          (vendor) =>
-                            vendor.vendor_id === selectedComp.vendor_id
-                        );
 
-                        const productId = selectedComp.product_id;
-                        const matchingPrices = priceTables.filter(
-                          (p) => p.product === productId
-                        );
-                        const latestPriceEntry = matchingPrices.sort(
-                          (a, b) =>
-                            new Date(b.current_time) - new Date(a.current_time)
-                        )[0];
+                        if (!matchedEntry) {
+                          showWarningToast(
+                            "No matching vendor entry found for this component."
+                          );
+                          return;
+                        }
+
+                        const productId = matchedEntry.product_id;
+
+                        // Step 2: Find latest price from priceTables using productId
+                        const matchingPrices = priceTables
+                          .filter((p) => p.product === productId)
+                          .sort(
+                            (a, b) =>
+                              new Date(b.current_time) -
+                              new Date(a.current_time)
+                          );
+
+                        const latest = matchingPrices[0];
+
+                        if (!latest) {
+                          showWarningToast(
+                            "No price found for this vendor-product match."
+                          );
+                          return;
+                        }
 
                         setNewComponent((prev) => ({
                           ...prev,
-                          vendor: matchedVendor?.vendor_id || "",
-                          price: latestPriceEntry?.price || "",
-                          tax: latestPriceEntry?.tax?.toString() || "",
+                          price: latest.price,
+                          tax: latest.tax?.toString(),
                         }));
-
-                        if (matchedVendor) setVendors([matchedVendor]);
-                        else setVendors([]);
-                      } catch (error) {
-                        console.error(
-                          "Error processing vendor/price info:",
-                          error
-                        );
-                        setVendors([]);
-                      } finally {
-                        setLoadingVendors(false);
                       }
-                    }
-                  }}
-                >
-                  <option value="">Select Specification</option>
-                  {components
-                    .filter(
-                      (comp) =>
-                        comp.component_type === newComponent.componentType
-                    )
-                    .map((comp) => (
-                      <option key={comp.component_id} value={comp.component_id}>
-                        {comp.component_specification}
-                      </option>
-                    ))}
-                </select>
+                    }}
+                  >
+                    <option value="">Select Vendor</option>
+                    {vendorMasterData
+                      .filter(
+                        (v) =>
+                          v.component_type === newComponent.componentType &&
+                          v.component_id === newComponent.component
+                      )
+                      .map((v) => (
+                        <option key={v.product_id} value={v.vendor}>
+                          {v.vendor_name}
+                        </option>
+                      ))}
+                  </select>
+                  <label>Price</label>
+                  <input
+                    type="text"
+                    value={newComponent.price}
+                    readOnly
+                    placeholder="Auto-filled based on vendor"
+                  />
+                </div>
 
-                <label>Quantity</label>
-                <input
-                  type="number"
-                  placeholder="Quantity"
-                  value={newComponent.quantity}
-                  onChange={(e) =>
-                    setNewComponent({
-                      ...newComponent,
-                      quantity: e.target.value,
-                    })
-                  }
-                />
-
-                <label>Vendor</label>
-                <select
-                  value={newComponent.vendor}
-                  onChange={(e) =>
-                    setNewComponent({ ...newComponent, vendor: e.target.value })
-                  }
-                >
-                  <option value="">Select Vendor</option>
-                  {vendorMasterData
-                    .filter(
-                      (v) =>
-                        v.component_type === newComponent.componentType &&
-                        v.component_id === newComponent.component
-                    )
-                    .map((v) => (
-                      <option key={v.product_id} value={v.vendor}>
-                        {v.vendor_name}
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              <div className="form-buttons">
-                <button onClick={handleAddComponent}>Submit</button>
-                <button onClick={() => setShowAddComponentForm(false)}>
-                  Cancel
-                </button>
+                <div className="modal-actions">
+                  <button onClick={handleAddComponent}>Submit</button>
+                  <button onClick={() => setShowAddComponentForm(false)}>
+                    Cancel
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -962,15 +1050,24 @@ const BOMDetails = () => {
             }}
           >
             <button
-              onClick={() => setShowLatestPrice(true)}
+              onClick={() => {
+                if (!selectedBom.wbom) setShowLatestPrice(true);
+              }}
               style={{
                 padding: "6px 12px",
                 backgroundColor: "#82817f",
                 color: "#fff",
                 border: "none",
                 borderRadius: "4px",
-                cursor: "pointer",
+                cursor: selectedBom.wbom ? "not-allowed" : "pointer",
+                opacity: selectedBom.wbom ? 0.5 : 1,
               }}
+              title={
+                selectedBom.wbom
+                  ? "Cannot show latest price in Final BOM"
+                  : "Show Latest Price Info"
+              }
+              disabled={selectedBom.wbom}
             >
               Show Latest Price Info
             </button>
@@ -997,7 +1094,7 @@ const BOMDetails = () => {
                     Latest Price
                   </th>{" "}
                   {/* New column */}
-                  <th style={{ backgroundColor: "#82817f" }}> 
+                  <th style={{ backgroundColor: "#82817f" }}>
                     Latest Date
                   </th>{" "}
                   {/* New column */}
@@ -1048,10 +1145,22 @@ const BOMDetails = () => {
                             border: "none",
                             background: "transparent",
                             padding: "5px",
-                            cursor: "pointer",
+                            cursor: selectedBom.wbom
+                              ? "not-allowed"
+                              : "pointer",
+                            opacity: selectedBom.wbom ? 0.5 : 1,
                           }}
-                          onClick={() => handleDeleteComponent(component.id)}
-                          title="Delete"
+                          onClick={() => {
+                            if (!selectedBom.wbom) {
+                              handleDeleteComponent(component.id);
+                            }
+                          }}
+                          title={
+                            selectedBom.wbom
+                              ? "Cannot delete component in Final BOM"
+                              : "Delete Component"
+                          }
+                          disabled={selectedBom.wbom}
                         >
                           <img
                             src={DeleteIcon}
@@ -1065,24 +1174,68 @@ const BOMDetails = () => {
                 })}
               </tbody>
               <tfoot>
-                <tr>
-                  <td
-                    colSpan="7"
-                    style={{ textAlign: "right", fontWeight: "bold" }}
-                  >
-                    Total Price (incl. Tax):
-                  </td>
-                  <td
-                    colSpan="2"
-                    style={{ textAlign: "right", fontWeight: "bold" }}
-                  >
-                    ₹
-                    {calculateTotalPrice().toLocaleString("en-IN", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </td>
-                </tr>
+                {(() => {
+                  const { baseTotal, totalTaxAmount, grandTotal } =
+                    calculateTotalPrice();
+                  return (
+                    <>
+                      <tr>
+                        <td
+                          colSpan="7"
+                          style={{ textAlign: "right", fontWeight: "bold" }}
+                        >
+                          Total Base Price:
+                        </td>
+                        <td
+                          colSpan="2"
+                          style={{ textAlign: "right", fontWeight: "bold" }}
+                        >
+                          ₹
+                          {baseTotal.toLocaleString("en-IN", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td
+                          colSpan="7"
+                          style={{ textAlign: "right", fontWeight: "bold" }}
+                        >
+                          Total Tax (GST):
+                        </td>
+                        <td
+                          colSpan="2"
+                          style={{ textAlign: "right", fontWeight: "bold" }}
+                        >
+                          ₹
+                          {totalTaxAmount.toLocaleString("en-IN", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td
+                          colSpan="7"
+                          style={{ textAlign: "right", fontWeight: "bold" }}
+                        >
+                          Grand Total (Price + GST):
+                        </td>
+                        <td
+                          colSpan="2"
+                          style={{ textAlign: "right", fontWeight: "bold" }}
+                        >
+                          ₹
+                          {grandTotal.toLocaleString("en-IN", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </td>
+                      </tr>
+                    </>
+                  );
+                })()}
               </tfoot>
             </table>
           </div>
