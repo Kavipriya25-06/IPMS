@@ -1030,7 +1030,7 @@ const RequestDetails = ({ user }) => {
                 onClick={() => handleApproval()}
                 disabled={details.every((detail) => detail.approve)}
                 style={{
-                  padding: "10px 20px",
+                  padding: "10px",
                   backgroundColor: details.every((detail) => detail.approve)
                     ? "#ddd"
                     : "#4caf50",

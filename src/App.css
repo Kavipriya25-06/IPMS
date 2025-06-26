@@ -3407,3 +3407,29 @@ ul {
   border: 1px solid #ccc;
   border-radius: 5px;
 }
+
+.report-select{
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  background-color: rgb(201, 201, 201);
+  border-radius: 5px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.report-select:hover {
+  background-color: #bab6b6;
+}
+
+.generate-report-btn{
+  padding: 10px 15px;
+  border-radius: 5px;
+  border: none;
+  background-color: #f58720;
+  cursor: pointer;
+}
+
+.generate-report-btn:hover {
+  background-color: #f7ba81;
+  color: black;
+}
