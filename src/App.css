@@ -709,18 +709,41 @@ tbody tr:hover {
 
 /* Table styles inside the popup */
 .popup table {
-  width: 100%; /* Full width inside the popup */
-  border-collapse: collapse; /* Remove gaps between table cells */
+  width: 100%;
+  border-collapse: separate; /* IMPORTANT: enable radius */
+  border-spacing: 0; /* remove space between cells */
   margin-top: 10px;
-  font-size: 14px; /* Slightly smaller font for better readability */
+  font-size: 14px;
+  border-radius: 5px;
+  overflow: hidden; /* clip inner corners */
 }
 
-.popup table th,
+/* Table headers */
+.popup table th {
+  text-align: left;
+  padding: 10px;
+  font-weight: 600;
+}
+
+/* Table data cells */
 .popup table td {
-  text-align: left; /* Align text to the left */
-  padding: 10px; /* Add padding to table cells */
-  border: 1px solid #ddd; /* Light border for table cells */
-  word-break: break-word; /* Prevent text from overflowing */
+  text-align: left;
+  padding: 10px;
+  word-break: break-word;
+}
+
+/* Apply border-radius to corners */
+.popup table thead tr th:first-child {
+  border-top-left-radius: 5px;
+}
+.popup table thead tr th:last-child {
+  border-top-right-radius: 5px;
+}
+.popup table tbody tr:last-child td:first-child {
+  border-bottom-left-radius: 5px;
+}
+.popup table tbody tr:last-child td:last-child {
+  border-bottom-right-radius: 5px;
 }
 
 /* Overlay styles */
@@ -765,6 +788,26 @@ tbody tr:hover {
   top: -5px;
   right: -5px;
 } */
+
+.price-button-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
+.show-latest-price-btn {
+  padding: 6px 12px;
+  background-color: #82817f;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.show-latest-price-btn:hover {
+  background-color: #a7a6a6; /* darker shade on hover */
+}
 
 .tag {
   display: inline-flex;
@@ -1813,8 +1856,6 @@ table td {
   font-weight: 500;
 }
 
-
-
 .add-project-form input,
 .add-project-form select,
 .add-project-form .input1 {
@@ -2795,8 +2836,6 @@ main {
     right: 0;
   }
 }
-
-
 
 /* @media (max-width: 768px) {
     .header {

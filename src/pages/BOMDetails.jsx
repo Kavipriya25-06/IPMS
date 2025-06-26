@@ -1059,23 +1059,10 @@ const BOMDetails = () => {
             </div>
           )}
 
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              marginBottom: "10px",
-            }}
-          >
+          <div className="price-button-wrapper">
             <button
               onClick={() => setShowLatestPrice(true)}
-              style={{
-                padding: "6px 12px",
-                backgroundColor: "#82817f",
-                color: "#fff",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-              }}
+              className="show-latest-price-btn"
               title="Show Latest Price Info"
             >
               Show Latest Price Info

@@ -370,7 +370,7 @@ const RequestDetails = ({ user }) => {
             body: JSON.stringify(patchPayload),
           }
         );
-      }
+      } ``
 
       //  Auto-refresh
       if (typeof fetchRequestDetails === "function") {
