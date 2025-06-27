@@ -207,7 +207,7 @@ const Requests = () => {
       </button> */}
       </div>
 
-      <div className="table-container">
+      <div className="table-container" style={{ marginTop:"-15px" }}>
         <table>
           <thead>
             <tr>

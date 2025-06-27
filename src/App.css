@@ -1037,17 +1037,13 @@ table td {
 }
 
 .category-dropdown-options {
-  position: absolute;
-  top: 120%;
-  left: 10px;
-  width: 150px;
   background-color: rgb(195, 194, 194);
   border: 1px solid #ccc;
   color: black;
   border-radius: 4px;
-  z-index: 1000;
   max-height: 300px;
-  overflow-y: auto;
+  margin-top: 6px;
+  margin-left: 10px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
@@ -1092,20 +1088,15 @@ table td {
 }
 
 .component-type-dropdown-options {
-  position: absolute;
-  top: 100%;
-  left: 10px;
   background-color: rgb(195, 194, 194);
   border: 1px solid #ccc;
   color: black;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   margin-top: 4px;
   border-radius: 4px;
-  z-index: 10;
   min-width: 150px;
   max-height: 300px; /* Fixed max height */
-  overflow-y: auto; /* Scroll vertically when content overflows */
-  overflow-x: hidden;
+  margin-left: 20px;
 }
 
 .component-type-dropdown-option {
@@ -1164,6 +1155,15 @@ table td {
   justify-content: center;
   margin-bottom: 10px;
   margin-top: -55px;
+  width: 100%;
+  max-width: 700px;
+  margin-left: 200px;
+}
+
+.right-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
   width: 100%;
   max-width: 800px;
 }
@@ -3408,7 +3408,7 @@ ul {
   border-radius: 5px;
 }
 
-.report-select{
+.report-select {
   padding: 8px 10px;
   border: 1px solid #ccc;
   background-color: rgb(201, 201, 201);
@@ -3421,7 +3421,7 @@ ul {
   background-color: #bab6b6;
 }
 
-.generate-report-btn{
+.generate-report-btn {
   padding: 10px 15px;
   border-radius: 5px;
   border: none;
@@ -3433,3 +3433,49 @@ ul {
   background-color: #f7ba81;
   color: black;
 }
+
+.tab-selector {
+  display: flex;
+  justify-content: center; /* Center horizontally */
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap; /* Wrap buttons on smaller screens */
+}
+
+.tab-btn {
+  padding: 8px 30px;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.tab-btn:hover {
+  background-color: #e0e0e0;
+  color: #000;
+}
+
+.tab-btn.active {
+  background-color: #f58720;
+  color: #fff;
+  font-weight: bold;
+}
+
+.place-order-btn {
+  padding: 8px 20px;
+  background-color: #f58720;
+  border: none;
+  border-radius: 5px;
+  margin-top: 10px;
+  color: white;
+  cursor: pointer;
+}
+
+.place-order-btn:hover {
+  background-color: #f1ba86;
+  color: white;
+}
+

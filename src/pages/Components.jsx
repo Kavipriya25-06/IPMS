@@ -486,6 +486,31 @@ const Component = () => {
     navigate(`addcomponents/`);
   };
 
+  const [dropdownCoords, setDropdownCoords] = useState({ top: 0, left: 0 });
+  useEffect(() => {
+    if (dropdownOpen && dropdownRef.current) {
+      const rect = dropdownRef.current.getBoundingClientRect();
+      setDropdownCoords({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+      });
+    }
+  }, [dropdownOpen]);
+
+  const [componentdropdownCoords, setCompoentDropdownCoords] = useState({
+    top: 0,
+    left: 0,
+  });
+  useEffect(() => {
+    if (componentTypeDropdownOpen && componentTypeDropdownRef.current) {
+      const rect = componentTypeDropdownRef.current.getBoundingClientRect();
+      setCompoentDropdownCoords({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+      });
+    }
+  }, [componentTypeDropdownOpen]);
+
   return (
     <div>
       <div className="header">
@@ -552,7 +577,16 @@ const Component = () => {
                   </div>
 
                   {dropdownOpen && (
-                    <div className="category-dropdown-options">
+                    <div
+                      className="category-dropdown-options"
+                      style={{
+                        position: "fixed",
+                        top: dropdownCoords.top,
+                        left: dropdownCoords.left,
+                        zIndex: 9999,
+                        width: "150px",
+                      }}
+                    >
                       <div
                         className="category-dropdown-option"
                         onClick={() => {
@@ -592,7 +626,13 @@ const Component = () => {
                   </div>
 
                   {componentTypeDropdownOpen && (
-                    <div className="component-type-dropdown-options">
+                    <div className="component-type-dropdown-options"  style={{
+                        position: "fixed",
+                        top: componentdropdownCoords.top,
+                        left: componentdropdownCoords.left,
+                        zIndex: 9999,
+                        width: "150px",
+                      }} >
                       <div
                         className="component-type-dropdown-option"
                         onClick={() => {
