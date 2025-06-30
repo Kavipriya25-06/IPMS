@@ -372,12 +372,12 @@ const handleOrder = async (detail) => {
             showErrorToast("Failed to add to cart.");
             return;
           }
-<<<<<<< HEAD
-        );
-      }
-      ``;
-=======
->>>>>>> 51e9f20ca36afde5da76e6dd49c870cfb3d9b9c6
+// <<<<<<< HEAD
+//         );
+//       }
+//       ``;
+// =======
+// >>>>>>> 51e9f20ca36afde5da76e6dd49c870cfb3d9b9c6
 
           const remainingQty = detail.qty - enteredQuantity;
 
