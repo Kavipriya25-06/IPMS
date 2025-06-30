@@ -3,7 +3,10 @@ import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import config from "../Config"; // Import config for API endpoints
-
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { FaCalendarAlt } from "react-icons/fa";
+import { format } from "date-fns";
 
 const POOrderList = ({ user }) => {
   const [poOrders, setPOOrders] = useState([]); // State to store PO orders
@@ -16,6 +19,7 @@ const POOrderList = ({ user }) => {
   const navigate = useNavigate(); // Navigation hook
   const [showModal, setShowModal] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
+  const datePickerRef = React.useRef(null);
 
   const [formData, setFormData] = useState({
     sender: "",
@@ -409,6 +413,9 @@ const POOrderList = ({ user }) => {
     }
   };
 
+  const formatDate = (date) =>
+    date ? new Date(date).toLocaleDateString("en-CA") : "";
+
   const filteredPOOrders = poOrders
     .filter((order) => {
       const { status } = getAggregatedStatus(order.id);
@@ -416,7 +423,10 @@ const POOrderList = ({ user }) => {
         .toLowerCase()
         .includes(nameFilter.toLowerCase());
       const matchesStatus = statusFilter ? status === statusFilter : true;
-      const matchesDate = dateFilter ? order.date === dateFilter : true;
+      const matchesDate = dateFilter
+        ? new Date(order.date).toLocaleDateString("en-CA") ===
+          formatDate(dateFilter)
+        : true;
       return matchesName && matchesStatus && matchesDate;
     })
     .sort((a, b) => {
@@ -483,22 +493,21 @@ const POOrderList = ({ user }) => {
     <div>
       <div className="header">
         <h2>PO Order List</h2>
-       
       </div>
-       <div class="center-wrapper">
-          <div className="search-bar-container">
-            <input
-              type="text"
-              placeholder="Filter by Name"
-              value={nameFilter}
-              onChange={(e) => setNameFilter(e.target.value)}
-              className="search-bar"
-            />
-            <span className="search-icon">
-              <i className="fa fa-search" aria-hidden="true"></i>
-            </span>
-          </div>
+      <div class="center-wrapper">
+        <div className="search-bar-container">
+          <input
+            type="text"
+            placeholder="Filter by Name"
+            value={nameFilter}
+            onChange={(e) => setNameFilter(e.target.value)}
+            className="search-bar"
+          />
+          <span className="search-icon">
+            <i className="fa fa-search" aria-hidden="true"></i>
+          </span>
         </div>
+      </div>
       <div className="table-container">
         {poOrders.length === 0 ? (
           <p>No Purchase Orders found.</p>
@@ -581,12 +590,35 @@ const POOrderList = ({ user }) => {
                       : " 🔽"
                     : ""}
                 </th>
-                <th className="date-filter-inline">
+                <th
+                  className="date-filter-inline"
+                  style={{ width: "100%", height: "26px" }}
+                >
                   <span>Date</span>
-                  <input
-                    type="date"
-                    value={dateFilter}
-                    onChange={(e) => setDateFilter(e.target.value)}
+                  <DatePicker
+                    selected={dateFilter}
+                    onChange={(date) => {
+                      setDateFilter(date);
+                      // 🔽 You can call your filter function here
+                      // handleFilter(date);
+                    }}
+                    ref={datePickerRef}
+                    dateFormat="yyyy-MM-dd"
+                    customInput={<div />} // No default input field
+                    popperPlacement="bottom-end"
+                  />
+
+                  {/* Icon Trigger */}
+                  <FaCalendarAlt
+                    style={{
+                      fontSize: "13px",
+                      cursor: "pointer",
+                      color: "#333",
+                      position: "absolute",
+                      right: "22%",
+                      transform: "translateY(5%)",
+                    }}
+                    onClick={() => datePickerRef.current.setOpen(true)}
                   />
                 </th>
 
@@ -618,7 +650,7 @@ const POOrderList = ({ user }) => {
                         maximumFractionDigits: 2,
                       })}
                     </td>
-                    <td>{order.date}</td>
+                    <td>{format(new Date(order.date), "dd-MM-yyyy")}</td>
                     {(isAdmin || isProcurement) && (
                       <td>
                         <button

@@ -4,6 +4,8 @@ import config from "../Config"; // Import config for API endpoints
 import "../App.css";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext.jsx";
+import { format, parseISO } from "date-fns";
+
 
 import {
   showSuccessToast,
@@ -413,7 +415,7 @@ const RequestComponent = () => {
                       </a>
                     </td>
                     <td>{item.uom}</td>
-                    <td>{item.request_date}</td>
+<td>{format(parseISO(item.request_date), "dd-MM-yyyy")}</td>
                     <td>
                       {item.status === "Added" || item.status === "Rejected"
                         ? item.component_id

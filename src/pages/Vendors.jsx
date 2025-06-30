@@ -614,7 +614,7 @@ const Vendors = () => {
           isOpen={isAddingSubVendor}
           onClose={() => setIsAddingSubVendor(false)}
         >
-          <div className="modal-content">
+          <div className="modal-contents">
             <h4>Add Point of Contact for Vendor: {newVendorId}</h4>
             <input
               type="text"
