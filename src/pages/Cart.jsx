@@ -2,12 +2,14 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import CustomMessagebox from "./CustomMessageBox.jsx";
 import config from "../Config"; // Import config for API endpoints
+import { parseISO, format } from "date-fns";
 
 import {
   showSuccessToast,
   showErrorToast,
   showInfoToast,
   showWarningToast,
+  showMessageToast,
   ToastContainerComponent,
 } from "./Toastify.jsx"; // Import Toastify utilities
 
@@ -107,7 +109,7 @@ const Cart = ({ user }) => {
       const cartId = getFirstItemId(group);
 
       if (!cartId) {
-        alert("Unable to find a valid cart_id for the group.");
+        showWarningToast("Unable to find a valid cart_id for the group.");
         return;
       }
 
@@ -130,7 +132,7 @@ const Cart = ({ user }) => {
       if (!poListResponse.ok) {
         const error = await poListResponse.json();
         console.error("Error posting to PO_list:", error);
-        alert(`Failed to create PO_list: ${JSON.stringify(error)}`);
+      showErrorToast(`Failed to create PO_list: ${JSON.stringify(error)}`);
         return;
       }
 
@@ -166,7 +168,7 @@ const Cart = ({ user }) => {
       const failedResponses = poMasterResponses.filter((res) => !res.ok);
       if (failedResponses.length > 0) {
         console.error("Some items failed to post to PO_master.");
-        alert("Failed to post some items to PO_master.");
+        showErrorToast("Failed to post some items to PO_master.");
       } else {
         console.log("All items posted to PO_master successfully.");
       }
@@ -194,7 +196,7 @@ const Cart = ({ user }) => {
       const failedPatches = patchResponses.filter((res) => !res.ok);
       if (failedPatches.length > 0) {
         console.error("Some items failed to update in the cart API.");
-        alert("Failed to update some items in the cart.");
+        showErrorToast("Failed to update some items in the cart.");
       } else {
         console.log("All items updated in the cart API successfully.");
       }
@@ -232,54 +234,58 @@ const Cart = ({ user }) => {
       showSuccessToast("Order placed successfully!");
     } catch (error) {
       console.error("Error placing order:", error);
-      alert("An error occurred while placing the order.");
+      showErrorToast("An error occurred while placing the order.");
     }
   };
 
-  const handleRemoveFromCart = async (item) => {
-    const confirmed = window.confirm(
-      `Remove ${item.component_type} - ${item.component_specification} from cart?`
-    );
-    if (!confirmed) return;
+const handleRemoveFromCart = (item) => {
+  showMessageToast({
+    message: `Remove ${item.component_type} - ${item.component_specification} from cart?`,
+    onConfirm: async () => {
+      try {
+        // Step 1: DELETE from cart
+        const deleteRes = await fetch(`${config.apiBaseURL}/cart/${item.id}/`, {
+          method: "DELETE",
+        });
 
-    try {
-      //  Step 1: DELETE from cart
-      const deleteRes = await fetch(`${config.apiBaseURL}/cart/${item.id}/`, {
-        method: "DELETE",
-      });
-
-      if (!deleteRes.ok) {
-        showErrorToast("Failed to delete item from cart.");
-        return;
-      }
-
-      // Step 2: PATCH request_master to set cart_assign = false
-      const requestFormatted = item.request_list_id; // e.g., "R_00001"
-      const requestMasterId = item.request_id; // e.g., 3
-
-      if (requestFormatted && requestMasterId) {
-        const patchRes = await fetch(
-          `${config.apiBaseURL}/request_master/${requestFormatted}/${requestMasterId}/`,
-          {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ cart_assign: false }),
-          }
-        );
-
-        if (!patchRes.ok) {
-          const error = await patchRes.json();
-          console.warn("Failed to patch request_master:", error);
+        if (!deleteRes.ok) {
+          showErrorToast("Failed to delete item from cart.");
+          return;
         }
-      }
 
-      showSuccessToast("Removed from cart successfully.");
-      fetchCartItems(); //  Refresh cart UI
-    } catch (error) {
-      console.error("Error removing from cart:", error);
-      showErrorToast("Error removing item from cart.");
-    }
-  };
+        // Step 2: PATCH request_master to set cart_assign = false
+        const requestFormatted = item.request_list_id;
+        const requestMasterId = item.request_id;
+
+        if (requestFormatted && requestMasterId) {
+          const patchRes = await fetch(
+            `${config.apiBaseURL}/request_master/${requestFormatted}/${requestMasterId}/`,
+            {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ cart_assign: false }),
+            }
+          );
+
+          if (!patchRes.ok) {
+            const error = await patchRes.json();
+            console.warn("Failed to patch request_master:", error);
+          }
+        }
+
+        showSuccessToast("Removed from cart successfully.");
+        fetchCartItems(); // Refresh UI
+      } catch (error) {
+        console.error("Error removing from cart:", error);
+        showErrorToast("Error removing item from cart.");
+      }
+    },
+    onCancel: () => {
+      showWarningToast("Action cancelled.");
+    },
+  });
+};
+
 
   return (
     <div>
@@ -326,7 +332,7 @@ const Cart = ({ user }) => {
                   ) // Filter out dates where all items are `order_placed`
                   .map(([date, requestsGroupedByStatus]) => (
                     <div key={date}>
-                      <h5>Date: {date}</h5>
+                      <h5>Date: {format(parseISO(date), "dd-MM-yyyy")}</h5>
                       {Object.entries(requestsGroupedByStatus || {})
                         .filter(([_, requests]) =>
                           requests.some((item) => !item.order_placed)
@@ -337,82 +343,85 @@ const Cart = ({ user }) => {
                             requests.filter((item) => !item.order_placed)
                               .length > 0 && (
                               <div key={orderPlaced}>
-                                <table>
-                                  <thead>
-                                    <tr>
-                                      <th>Component ID</th>
-                                      <th>Component Type</th>
-                                      <th>Specification</th>
-                                      <th>Quantity</th>
-                                      <th>Category</th>
-                                      <th>Unit of Measurement</th>
-                                      <th>Unit Price</th>
-                                      <th>GST %</th>
-                                      <th>Total Cost</th>
-                                      <th>Actions</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {requests
-                                      .filter((item) => !item.order_placed)
-                                      .map((item) => (
-                                        <tr key={item.id}>
-                                          <td>{item.component_id}</td>
-                                          <td>{item.component_type}</td>
-                                          <td>
-                                            {item.component_specification}
-                                          </td>
-                                          <td>{item.quantity}</td>
-                                          <td>{item.category}</td>
-                                          <td>{item.unit_of_measurement}</td>
-                                          <td style={{ textAlign: "right" }}>
-                                            ₹
-                                            {parseFloat(
-                                              item.unit_price
-                                            ).toLocaleString("en-IN", {
-                                              minimumFractionDigits: 2,
-                                              maximumFractionDigits: 2,
-                                            })}
-                                          </td>
-                                          <td style={{ textAlign: "right" }}>
-                                            {item.GST}%
-                                          </td>
-                                          <td style={{ textAlign: "right" }}>
-                                            ₹
-                                            {parseFloat(
-                                              item.total_cost
-                                            ).toLocaleString("en-IN", {
-                                              minimumFractionDigits: 2,
-                                              maximumFractionDigits: 2,
-                                            })}
-                                          </td>
+                                <div className="table-container">
+                                  <table>
+                                    <thead>
+                                      <tr>
+                                        <th>Component ID</th>
+                                        <th>Component Type</th>
+                                        <th>Specification</th>
+                                        <th>Quantity</th>
+                                        <th>Category</th>
+                                        <th>Unit of Measurement</th>
+                                        <th>Unit Price</th>
+                                        <th>GST %</th>
+                                        <th>Total Cost</th>
+                                        <th>Actions</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {requests
+                                        .filter((item) => !item.order_placed)
+                                        .map((item) => (
+                                          <tr key={item.id}>
+                                            <td>{item.component_id}</td>
+                                            <td>{item.component_type}</td>
+                                            <td>
+                                              {item.component_specification}
+                                            </td>
+                                            <td>{item.quantity}</td>
+                                            <td>{item.category}</td>
+                                            <td>{item.unit_of_measurement}</td>
+                                            <td style={{ textAlign: "right" }}>
+                                              ₹
+                                              {parseFloat(
+                                                item.unit_price
+                                              ).toLocaleString("en-IN", {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2,
+                                              })}
+                                            </td>
+                                            <td style={{ textAlign: "right" }}>
+                                              {item.GST}%
+                                            </td>
+                                            <td style={{ textAlign: "right" }}>
+                                              ₹
+                                              {parseFloat(
+                                                item.total_cost
+                                              ).toLocaleString("en-IN", {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2,
+                                              })}
+                                            </td>
 
-                                          <td>
-                                            <button
-                                              onClick={() =>
-                                                handleRemoveFromCart(item)
-                                              }
-                                              style={{
-                                                backgroundColor: "#ff4d4f",
-                                                color: "white",
-                                                border: "none",
-                                                padding: "5px 10px",
-                                                cursor: "pointer",
-                                                borderRadius: "5px",
-                                              }}
-                                            >
-                                              Remove
-                                            </button>
-                                          </td>
-                                        </tr>
-                                      ))}
-                                  </tbody>
-                                </table>
+                                            <td>
+                                              <button
+                                                onClick={() =>
+                                                  handleRemoveFromCart(item)
+                                                }
+                                                style={{
+                                                  backgroundColor: "#b0aeae",
+                                                  color: "black",
+                                                  border: "none",
+                                                  padding: "5px 15px",
+                                                  cursor: "pointer",
+                                                  borderRadius: "5px",
+                                                }}
+                                              >
+                                                Remove
+                                              </button>
+                                            </td>
+                                          </tr>
+                                        ))}
+                                    </tbody>
+                                  </table>
+                                </div>
                                 <button
                                   onClick={() => handlePlaceOrder(group, date)}
                                   disabled={requests.every(
                                     (item) => item.order_placed
                                   )}
+                                  className="place-order-btn"
                                 >
                                   Place Order
                                 </button>

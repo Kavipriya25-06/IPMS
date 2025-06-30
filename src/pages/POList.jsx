@@ -4,6 +4,7 @@ import jsPDF from "jspdf";
 import "jspdf-autotable";
 import config from "../Config"; // Import config for API endpoints
 
+
 const POOrderList = ({ user }) => {
   const [poOrders, setPOOrders] = useState([]); // State to store PO orders
   const [poMaster, setPOMaster] = useState([]); // State to store PO master data
@@ -467,11 +468,37 @@ const POOrderList = ({ user }) => {
     }
   }, [currentPO]); // Dependency array includes currentPO
 
+  const [dropdownCoords, setDropdownCoords] = useState({ top: 0, left: 0 });
+  useEffect(() => {
+    if (statusDropdownOpen && statusDropdownRef.current) {
+      const rect = statusDropdownRef.current.getBoundingClientRect();
+      setDropdownCoords({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+      });
+    }
+  }, [statusDropdownOpen]);
+
   return (
     <div>
       <div className="header">
         <h2>PO Order List</h2>
+       
       </div>
+       <div class="center-wrapper">
+          <div className="search-bar-container">
+            <input
+              type="text"
+              placeholder="Filter by Name"
+              value={nameFilter}
+              onChange={(e) => setNameFilter(e.target.value)}
+              className="search-bar"
+            />
+            <span className="search-icon">
+              <i className="fa fa-search" aria-hidden="true"></i>
+            </span>
+          </div>
+        </div>
       <div className="table-container">
         {poOrders.length === 0 ? (
           <p>No Purchase Orders found.</p>
@@ -490,15 +517,7 @@ const POOrderList = ({ user }) => {
                       : " 🔽"
                     : ""}
                 </th>
-                <th className="vendor-name-filters">
-                  Vendor Name
-                  <input
-                    type="text"
-                    placeholder="Filter Name"
-                    value={nameFilter}
-                    onChange={(e) => setNameFilter(e.target.value)}
-                  />
-                </th>
+                <th className="vendor-name-filters">Vendor Name</th>
 
                 <th className="status-dropdown-wrapper" ref={statusDropdownRef}>
                   <div
@@ -510,7 +529,16 @@ const POOrderList = ({ user }) => {
                   </div>
 
                   {statusDropdownOpen && (
-                    <div className="status-dropdown-options">
+                    <div
+                      className="status-dropdown-options"
+                      style={{
+                        position: "fixed",
+                        top: dropdownCoords.top,
+                        left: dropdownCoords.left,
+                        zIndex: 9999,
+                        width: "150px",
+                      }}
+                    >
                       <div
                         className="status-dropdown-option"
                         onClick={() => {

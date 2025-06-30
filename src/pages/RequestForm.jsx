@@ -447,6 +447,8 @@ const RequestForm = () => {
     }
   };
 
+  const formattedDate = format(new Date(), "dd-MM-yyyy");
+
   return (
     <div>
       {/* Render Popup when showPopup is true */}
@@ -570,42 +572,16 @@ const RequestForm = () => {
             style={{ marginBottom: "15px", width: "100%" }}
           >
             <label style={{ display: "block", marginBottom: "5px" }}>
-              Select Date:
+              Date:
             </label>
-            <DatePicker
-              selected={
-                date ? (typeof date === "string" ? parseISO(date) : date) : null
-              }
-              onChange={(dateObj) => setDate(dateObj)}
-              dateFormat="dd-MM-yyyy"
-              placeholderText="Select a date"
+            <input
+              type="text"
+              value={formattedDate}
+              readOnly
               className="input1"
-              wrapperClassName="date-picker-wrapper"
-              showMonthDropdown
-              showYearDropdown
-              showPopperArrow={false}
-              dropdownMode="select"
-              popperPlacement="bottom-start"
-              popperModifiers={[
-                {
-                  name: "preventOverflow",
-                  options: {
-                    boundary: "viewport",
-                  },
-                },
-                {
-                  name: "flip",
-                  options: {
-                    fallbackPlacements: [],
-                  },
-                },
-              ]}
             />
-            <i
-              className="fas fa-calendar-alt calendar-icon"
-              style={{ marginTop: "12px" }}
-            ></i>{" "}
           </div>
+
           {/* <div style={{ marginBottom: "15px", width: "95%" }}>
             <label style={{ display: "block", marginBottom: "5px" }}>
               Date:

@@ -41,6 +41,7 @@ import IPMSLogo from "./assets/IPMS.png";
 import ResetPassword from "./pages/ResetPassword";
 import SideBar from "./pages/sidebar";
 import RequestComponent from "./pages/RequestComponent";
+import Outward from "./pages/Outward";
 
 // import { useAuth } from "./AuthContext";
 // import PODetails from "./pages/PODetails";
@@ -410,6 +411,16 @@ function App() {
                   allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
                 >
                   <Inward />
+                </ProtectedRoute>
+              }
+            />
+             <Route
+              path="outward"
+              element={
+                <ProtectedRoute
+                  allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
+                >
+                  <Outward />
                 </ProtectedRoute>
               }
             />
