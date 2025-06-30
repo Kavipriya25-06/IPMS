@@ -370,7 +370,8 @@ const RequestDetails = ({ user }) => {
             body: JSON.stringify(patchPayload),
           }
         );
-      } ``
+      }
+      ``;
 
       //  Auto-refresh
       if (typeof fetchRequestDetails === "function") {
@@ -885,34 +886,40 @@ const RequestDetails = ({ user }) => {
     };
   };
 
-  const { totalquantity, totalcost } = computeTotals();
+  // const { totalquantity, totalcost } = computeTotals();
+
   // console.log("Total cost and quantity", totalcost, totalquantity);
 
-  const calculateTotal = () => {
-    return details
-      .reduce((total, detail) => {
-        const price =
-          parseFloat(detail.price || 0) ||
-          parseFloat(
-            priceViewData.find(
-              (vendor) => vendor.vendor_id === detail.vendor_id
-            )?.latest_price || 0
-          );
-        const quantity = parseFloat(detail.qty || 0);
-        const tax =
-          parseFloat(detail.tax || 0) ||
-          parseFloat(
-            priceViewData.find(
-              (vendor) => vendor.vendor_id === detail.vendor_id
-            )?.latest_tax || 0
-          );
+  const calculateCostBreakdown = () => {
+    let baseTotal = 0;
+    let taxTotal = 0;
 
-        // Calculate the total cost for this item (including tax)
-        const itemTotal = price * quantity * (1 + tax / 100);
-        return total + itemTotal;
-      }, 0)
-      .toFixed(2); // Return the total with two decimal places
+    details.forEach((detail) => {
+      const matchedPrice = priceViewData.find(
+        (vendor) => vendor.vendor_id === detail.vendor_id
+      );
+
+      const price = parseFloat(detail.price || matchedPrice?.latest_price || 0);
+      const quantity = parseFloat(detail.qty || 0);
+      const taxPercent = parseFloat(
+        detail.tax || matchedPrice?.latest_tax || 0
+      );
+
+      const itemBase = price * quantity;
+      const itemTax = itemBase * (taxPercent / 100);
+
+      baseTotal += itemBase;
+      taxTotal += itemTax;
+    });
+
+    return {
+      baseTotal: baseTotal.toFixed(2),
+      taxTotal: taxTotal.toFixed(2),
+      grandTotal: (baseTotal + taxTotal).toFixed(2),
+    };
   };
+
+  const { baseTotal, taxTotal, grandTotal } = calculateCostBreakdown();
 
   // const handleApproval = async () => {
   //   try {
@@ -1275,17 +1282,41 @@ const RequestDetails = ({ user }) => {
                 {["admin", "sub-admin", "procurement", "finance"].includes(
                   user?.role?.toLowerCase().trim()
                 ) && (
-                  <tr style={{ fontWeight: "bold" }}>
-                    <td colSpan="6">Total Cost (Including Tax):</td>
-                    <td style={{ textAlign: "right" }}>
-                      ₹
-                      {parseFloat(calculateTotal()).toLocaleString("en-IN", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </td>
-                    <td colSpan="4"></td>
-                  </tr>
+                  <>
+                    <tr style={{ fontWeight: "bold" }}>
+                      <td colSpan="6">Total Base Price:</td>
+                      <td style={{ textAlign: "right" }}>
+                        ₹
+                        {parseFloat(baseTotal).toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </td>
+                      <td colSpan="4"></td>
+                    </tr>
+                    <tr style={{ fontWeight: "bold" }}>
+                      <td colSpan="6">Total Tax (GST):</td>
+                      <td style={{ textAlign: "right" }}>
+                        ₹
+                        {parseFloat(taxTotal).toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </td>
+                      <td colSpan="4"></td>
+                    </tr>
+                    <tr style={{ fontWeight: "bold" }}>
+                      <td colSpan="6">Grand Total (Price + GST):</td>
+                      <td style={{ textAlign: "right" }}>
+                        ₹
+                        {parseFloat(grandTotal).toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </td>
+                      <td colSpan="4"></td>
+                    </tr>
+                  </>
                 )}
               </tbody>
             </table>
