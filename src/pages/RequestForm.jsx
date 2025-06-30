@@ -148,41 +148,46 @@ const RequestForm = () => {
       (comp) => comp.component_id === componentId
     );
 
+    console.log("Selected component:", selectedComponent);
+
     if (!selectedComponent) {
       showErrorToast("Invalid component selected.");
-      return;
-    }
-
-    // Check if the component is already in the table
-    const isComponentAlreadySelected = selectedComponents.some(
-      (comp, i) =>
-        comp.component?.component_id === selectedComponent.component_id &&
-        i !== index
-    );
-
-    if (isComponentAlreadySelected) {
-      showWarningToast("This component is already in the table.");
       return;
     }
 
     const updatedComponents = [...selectedComponents];
     updatedComponents[index].component = selectedComponent;
 
-    // Step 1: Find vendor_id from vendor_master using component_id
-    const vendorData = vendorMaster.find(
-      (vendor) => vendor.product_id === selectedComponent.product_id
+    // Match vendors from vendor_master
+    const vendorMatches = vendorMaster.filter(
+      (vendorEntry) => vendorEntry.component_id === componentId
     );
 
-    // Step 2: Use vendor_id to find vendor_name from vendor_list
-    if (vendorData) {
-      const vendor = vendorList.find((v) => v.vendor_id === vendorData.vendor);
+    console.log("Vendor matches found:", vendorMatches);
+
+    const vendorOptions = vendorMatches
+      .map((vm) => {
+        const vendorDetails = vendorList.find((v) => v.vendor_id === vm.vendor);
+        console.log("Vendor detail for vm.vendor", vm.vendor, vendorDetails);
+        return vendorDetails;
+      })
+      .filter(Boolean);
+
+    console.log("Vendor options resolved:", vendorOptions);
+
+    updatedComponents[index].vendorOptions = vendorOptions;
+
+    // Auto-select first vendor if available
+    if (vendorOptions.length > 0) {
       updatedComponents[index].vendor = {
-        vendor_name: vendor ? vendor.vendor_name : "N/A",
-        vendor_id: vendor ? vendor.vendor_id : "",
-        product_id: vendor ? vendor.product_id : "",
+        vendor_id: vendorOptions[0].vendor_id,
+        vendor_name: vendorOptions[0].vendor_name,
       };
     } else {
-      updatedComponents[index].vendor = { vendor_name: "N/A" };
+      updatedComponents[index].vendor = {
+        vendor_id: "",
+        vendor_name: "N/A",
+      };
     }
 
     setSelectedComponents(updatedComponents);
@@ -725,7 +730,34 @@ const RequestForm = () => {
                         }
                       />
                     </td>
-                    <td>{component.vendor.vendor_name}</td>
+                    <td>
+                      {component.vendorOptions &&
+                      component.vendorOptions.length > 0 ? (
+                        <select
+                          value={component.vendor?.vendor_id || ""}
+                          onChange={(e) => {
+                            const updated = [...selectedComponents];
+                            const vendor = component.vendorOptions.find(
+                              (v) => v.vendor_id === e.target.value
+                            );
+                            updated[index].vendor = {
+                              vendor_name: vendor.vendor_name,
+                              vendor_id: vendor.vendor_id,
+                            };
+                            setSelectedComponents(updated);
+                          }}
+                        >
+                          <option value="">Select Vendor</option>
+                          {component.vendorOptions.map((v) => (
+                            <option key={v.vendor_id} value={v.vendor_id}>
+                              {v.vendor_name}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        component.vendor?.vendor_name || "N/A"
+                      )}
+                    </td>
                     <td>
                       <button
                         className="cancel-button"
