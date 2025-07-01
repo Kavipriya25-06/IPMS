@@ -20,6 +20,8 @@ const Outward = () => {
   const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
   const [showEventForm, setShowEventForm] = useState(false);
   const [showServiceForm, setShowServiceForm] = useState(false);
+  const [showSalesForm, setShowSalesForm] = useState(false);
+
   const [showPopup, setShowPopup] = useState(false);
   const [currentTime, setCurrentTime] = useState("");
   const [selectedDate, setSelectedDate] = useState(null);
@@ -67,6 +69,10 @@ const Outward = () => {
 
   const handleAddServiceClick = () => {
     navigate("/outward/add-service-list");
+  };
+
+    const handleAddSalesClick = () => {
+    navigate("/outward/add-sales-list");
   };
 
   const handleReportChange = (e) => {
@@ -122,7 +128,7 @@ const Outward = () => {
   const tableDataByType = {
     Defects: [
       {
-        Date: "2024-07-01",
+        Date: "01-07-2024",
         Time: "10:00 AM",
         "Invoice Number": "INV-D001",
         Vendor: "Vendor A",
@@ -133,7 +139,7 @@ const Outward = () => {
         Remarks: "Defective item",
       },
       {
-        Date: "2024-07-02",
+        Date: "02-07-2024",
         Time: "11:30 AM",
         "Invoice Number": "INV-D002",
         Vendor: "Vendor B",
@@ -147,7 +153,7 @@ const Outward = () => {
 
     Sales: [
       {
-        Date: "2024-07-03",
+        Date: "03-07-2024",
         Time: "12:00 PM",
         "Invoice Number": "INV-S001",
         Description: "Camera Lens",
@@ -156,7 +162,7 @@ const Outward = () => {
         Remarks: "Delivered on time",
       },
       {
-        Date: "2024-07-04",
+        Date: "04-07-2024",
         Time: "02:00 PM",
         "Invoice Number": "INV-S002",
         Description: "Tripod",
@@ -168,7 +174,7 @@ const Outward = () => {
 
     Manufacture: [
       {
-        "Out Date": "2024-07-01",
+        "Out Date": "01-07-2024",
         Time: "09:00 AM",
         "Gate Pass": "GP001",
         "Component Spec": "Metal Frame",
@@ -180,7 +186,7 @@ const Outward = () => {
         Remarks: "Urgent",
       },
       {
-        "Out Date": "2024-07-05",
+        "Out Date": "05-07-2024",
         Time: "03:00 PM",
         "Gate Pass": "GP002",
         "Component Spec": "Plastic Body",
@@ -195,7 +201,7 @@ const Outward = () => {
 
     Event: [
       {
-        "Out Date": "2024-07-01",
+        "Out Date": "01-07-2024",
         Time: "08:00 AM",
         "Invoice Number": "EVT001",
         "Event Name": "Product Launch",
@@ -206,7 +212,7 @@ const Outward = () => {
         Remarks: "Successful",
       },
       {
-        "Out Date": "2024-07-06",
+        "Out Date": "06-07-2024",
         Time: "10:30 AM",
         "Invoice Number": "EVT002",
         "Event Name": "Tech Fair",
@@ -242,7 +248,12 @@ const Outward = () => {
         <div className="table-action-buttons">
           <button className="generate-report-btn">Generate Report</button>
           {reportType === "Sales" && (
-            <button className="add-sales-btn">Add Sales List</button>
+            <button
+              className="add-sales-btn"
+              onClick={() => setShowSalesForm(true)}
+            >
+              Add Sales List
+            </button>
           )}
           {reportType === "Manufacture" && (
             <button
@@ -314,6 +325,22 @@ const Outward = () => {
                     );
                   }
 
+                    if (header === "Description") {
+                    return (
+                      <td
+                        key={colIndex}
+                        onClick={handleAddSalesClick}
+                        style={{
+                          color: "#1976d2",
+                          cursor: "pointer",
+                          textDecoration: "underline",
+                        }}
+                      >
+                        {value}
+                      </td>
+                    );
+                  }
+
                   // Default rendering
                   return <td key={colIndex}>{value}</td>;
                 })}
@@ -322,6 +349,111 @@ const Outward = () => {
           </tbody>
         </table>
       </div>
+
+       {showSalesForm && (
+        <div
+          className="modal-overlay"
+          onClick={() => setShowSalesForm(false)}
+        >
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Add Sales List</h2>
+
+            {/* Your form fields go here */}
+            <div className="form-grid">
+              <label htmlFor="">Out Date</label>
+
+              <div className="date-input-container">
+                <DatePicker
+                  selected={new Date()} //
+                  dateFormat="dd-MM-yyyy"
+                  placeholderText="dd-mm-yyyy"
+                  className="input1"
+                  showMonthDropdown
+                  showYearDropdown
+                  dropdownMode="select"
+                  readOnly
+                />
+                <i className="fas fa-calendar-alt calendar-icon"></i>{" "}
+              </div>
+              <label htmlFor="">Time</label>
+
+              <input
+                type="text"
+                name="Time"
+                value={currentTime}
+                readOnly
+                placeholder="Time"
+              />
+              <label htmlFor="">Invoice/Gate Pass</label>
+
+              <input
+                type="text"
+                name="gate pass"
+                // value={newProject.description}
+                // onChange={handleInputChange}
+                required
+                placeholder="gate pass"
+              />
+              <label htmlFor="">Component Name</label>
+              <select name="project_type" required>
+                <option value="">Select Component</option>
+                <option value="R&D">R&D</option>
+                <option value="OPS">OPS</option>
+                <option value="SER">SER</option>
+                <option value="MISC">MISC</option>
+                <option value="U/D">U/D</option>
+              </select>
+
+              <label htmlFor="">BOM</label>
+              <select name="project_type" required>
+                <option value="">Select BOM</option>
+                <option value="R&D">R&D</option>
+                <option value="OPS">OPS</option>
+                <option value="SER">SER</option>
+                <option value="MISC">MISC</option>
+                <option value="U/D">U/D</option>
+              </select>
+
+              <label htmlFor="">Client</label>
+              <select name="project_type" required>
+                <option value="">Select your client</option>
+                <option value="R&D">R&D</option>
+                <option value="OPS">OPS</option>
+                <option value="SER">SER</option>
+                <option value="MISC">MISC</option>
+                <option value="U/D">U/D</option>
+              </select>
+
+              <label htmlFor="">Type Of Outward</label>
+              <select name="project_type" required>
+                <option value="">Select Type</option>
+                <option value="R&D">R&D</option>
+                <option value="OPS">OPS</option>
+                <option value="SER">SER</option>
+                <option value="MISC">MISC</option>
+                <option value="U/D">U/D</option>
+              </select>
+
+              <label htmlFor="">Remarks</label>
+
+              <input
+                type="text"
+                name="remarks"
+                // value={newProject.description}
+                // onChange={handleInputChange}
+                required
+                placeholder="remarks"
+              />
+            </div>
+            <div className="modal-actions">
+              <button>Create</button>
+              <button onClick={() => setShowSalesForm(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
       {showEventForm && (
         <div
           className="modal-overlay"
@@ -338,7 +470,7 @@ const Outward = () => {
               <div className="date-input-container">
                 <DatePicker
                   selected={new Date()}
-                  dateFormat="dd-MMM-yyyy"
+                  dateFormat="dd-MM-yyyy"
                   placeholderText="dd-mm-yyyy"
                   className="input1"
                   showMonthDropdown
@@ -378,7 +510,7 @@ const Outward = () => {
                 <DatePicker
                   selected={selectedDate}
                   onChange={(date) => setSelectedDate(date)}
-                  dateFormat="dd-MMM-yyyy"
+                  dateFormat="dd-MM-yyyy"
                   placeholderText="dd-mm-yyyy"
                   className="input1"
                   showMonthDropdown
@@ -421,7 +553,7 @@ const Outward = () => {
               <div className="date-input-container">
                 <DatePicker
                   selected={new Date()} //
-                  dateFormat="dd-MMM-yyyy"
+                  dateFormat="dd-MM-yyyy"
                   placeholderText="dd-mm-yyyy"
                   className="input1"
                   showMonthDropdown
@@ -518,7 +650,7 @@ const Outward = () => {
                 <DatePicker
                   selected={selectedDate}
                   onChange={(date) => setSelectedDate(date)}
-                  dateFormat="dd-MMM-yyyy"
+                  dateFormat="dd-MM-yyyy"
                   placeholderText="dd-mm-yyyy"
                   className="input1"
                   showMonthDropdown

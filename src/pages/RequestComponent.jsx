@@ -6,7 +6,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext.jsx";
 import { format, parseISO } from "date-fns";
 
-
 import {
   showSuccessToast,
   showErrorToast,
@@ -48,6 +47,8 @@ const RequestComponent = () => {
   const [componentList, setComponentList] = useState([]); //  State for table data
   const modalRef = useRef(null);
   const [addedComponentIds, setAddedComponentIds] = useState([]);
+  const [searchSpec, setSearchSpec] = useState("");
+
   const navigate = useNavigate();
 
   // Fetch dropdown options
@@ -90,6 +91,12 @@ const RequestComponent = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
+  const filteredComponents = componentList.filter((item) =>
+    item.component_specification
+      .toLowerCase()
+      .includes(searchSpec.toLowerCase())
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -336,8 +343,8 @@ const RequestComponent = () => {
             type="text"
             className="search-bar"
             placeholder="Search by Spec..."
-            // value={selectedSpecification}
-            // onChange={(e) => setSelectedSpecification(e.target.value)}
+            value={searchSpec}
+            onChange={(e) => setSearchSpec(e.target.value)}
           />
           <span className="search-icon">
             <i className="fa fa-search" aria-hidden="true"></i>
@@ -392,16 +399,16 @@ const RequestComponent = () => {
             </thead>
 
             <tbody>
-              {componentList.length === 0 ? (
+              {filteredComponents.length === 0 ? (
                 <tr>
                   <td colSpan="9">No data available</td>
                 </tr>
               ) : (
-                componentList.map((item) => (
+                filteredComponents.map((item) => (
                   <tr key={item.id}>
                     {(user.role === "Inventory" ||
                       user.role === "Procurement" ||
-                      user.role === "Admin") && <td>{item.name}</td>}{" "}
+                      user.role === "Admin") && <td>{item.name}</td>}
                     <td>{item.category}</td>
                     <td>{item.component_type}</td>
                     <td>{item.component_specification}</td>
@@ -415,7 +422,7 @@ const RequestComponent = () => {
                       </a>
                     </td>
                     <td>{item.uom}</td>
-<td>{format(parseISO(item.request_date), "dd-MM-yyyy")}</td>
+                    <td>{format(parseISO(item.request_date), "dd-MM-yyyy")}</td>
                     <td>
                       {item.status === "Added" || item.status === "Rejected"
                         ? item.component_id
@@ -475,7 +482,6 @@ const RequestComponent = () => {
                             )}
                           </>
                         )}
-
                         {user.role === "User" && <>Pending</>}
                       </td>
                     )}

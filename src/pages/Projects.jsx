@@ -514,7 +514,7 @@ const ProjectList = () => {
                       },
                     })
                   }
-                  dateFormat="dd-MMM-yyyy"
+                  dateFormat="dd-MM-yyyy"
                   placeholderText="dd-mm-yyyy"
                   className="input1"
                   showMonthDropdown

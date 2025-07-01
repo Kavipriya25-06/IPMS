@@ -153,7 +153,8 @@ const BOM = () => {
   const handleSubmit = async () => {
     const payload = {
       ...formData,
-      wbom: false, // ✅ explicitly set it
+      wbom: false,
+      number_of_components: 0,
     };
     try {
       const response = await fetch(`${config.apiBaseURL}/bom_list/`, {
@@ -307,8 +308,7 @@ const BOM = () => {
         </div>
       )}
 
-      <div className="table-container"
-      style={{ marginTop:"-15px" }}>
+      <div className="table-container" style={{ marginTop: "-15px" }}>
         <table>
           <thead>
             <tr>

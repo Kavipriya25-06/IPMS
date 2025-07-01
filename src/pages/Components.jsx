@@ -57,6 +57,7 @@ const Component = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [componentTypeDropdownOpen, setComponentTypeDropdownOpen] =
     React.useState(false);
+  const [tagTypeDropdownOpen, setTagTypeDropdownOpen] = React.useState(false);
 
   // Function to get unique component types based on the selected component type
   const getFilteredComponentTypes = () => {
@@ -148,6 +149,25 @@ const Component = () => {
         !componentTypeDropdownRef.current.contains(event.target)
       ) {
         setComponentTypeDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, []);
+
+  const tagTypeDropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        tagTypeDropdownRef.current &&
+        !tagTypeDropdownRef.current.contains(event.target)
+      ) {
+        setTagTypeDropdownOpen(false);
       }
     };
 
@@ -511,6 +531,20 @@ const Component = () => {
     }
   }, [componentTypeDropdownOpen]);
 
+  const [tagdropdownCoords, setTagDropdownCoords] = useState({
+    top: 0,
+    left: 0,
+  });
+  useEffect(() => {
+    if (tagTypeDropdownOpen && tagTypeDropdownRef.current) {
+      const rect = tagTypeDropdownRef.current.getBoundingClientRect();
+      setTagDropdownCoords({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+      });
+    }
+  }, [tagTypeDropdownOpen]);
+
   return (
     <div>
       <div className="header">
@@ -678,22 +712,32 @@ const Component = () => {
                 <th
                   className="tags-dropdown-wrapper"
                   style={{ position: "relative" }}
+                  ref={tagTypeDropdownRef}
                 >
                   <div
                     className="tags-dropdown"
-                    onClick={() => setTagsDropdownOpen(!tagsDropdownOpen)}
+                    onClick={() => setTagTypeDropdownOpen(!tagTypeDropdownOpen)}
                     style={{ cursor: "pointer", userSelect: "none" }}
                   >
                     {tagsChoices || "Tags"}
                   </div>
 
-                  {tagsDropdownOpen && (
-                    <div className="tags-dropdown-options">
+                  {tagTypeDropdownOpen && (
+                    <div
+                      className="tags-dropdown-options"
+                      style={{
+                        position: "fixed",
+                        top: tagdropdownCoords.top,
+                        left: tagdropdownCoords.left,
+                        zIndex: 9999,
+                        width: "150px",
+                      }}
+                    >
                       <div
                         className="tags-dropdown-option"
                         onClick={() => {
                           setTagsChoices("");
-                          setTagsDropdownOpen(false);
+                          setTagTypeDropdownOpen(false);
                         }}
                       >
                         All
@@ -704,7 +748,7 @@ const Component = () => {
                           className="tags-dropdown-option"
                           onClick={() => {
                             setTagsChoices(tag);
-                            setTagsDropdownOpen(false);
+                            setTagTypeDropdownOpen(false);
                           }}
                         >
                           {tag}

@@ -611,12 +611,9 @@ const POOrderList = ({ user }) => {
                   {/* Icon Trigger */}
                   <FaCalendarAlt
                     style={{
-                      fontSize: "13px",
+                      fontSize: "14px",
                       cursor: "pointer",
                       color: "#333",
-                      position: "absolute",
-                      right: "22%",
-                      transform: "translateY(5%)",
                     }}
                     onClick={() => datePickerRef.current.setOpen(true)}
                   />

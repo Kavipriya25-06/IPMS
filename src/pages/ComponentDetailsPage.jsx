@@ -464,7 +464,7 @@ const ComponentDetailsPage = () => {
             </ul>
           </div>
 
-          <div>
+          <div className="table-container">
             <table>
               <thead>
                 <tr>
@@ -478,7 +478,9 @@ const ComponentDetailsPage = () => {
               <tbody>
                 {vendorDetails.map((vendor) => (
                   <tr key={vendor.product_id}>
-                    <td>{vendor.vendor_name}</td>
+                    <td className="truncate-cell" title={vendor.vendor_name}>
+                      {vendor.vendor_name}
+                    </td>
                     <td>
                       {priceDataMap[vendor.product_id]?.price ??
                         vendor.last_price ??
