@@ -557,6 +557,23 @@ const POOrderMaster = ({ user }) => {
   //   };
   // };
 
+  let totalBasePrice = 0;
+  let totalGSTAmount = 0;
+
+  poDetails.forEach((po) => {
+    const unitPrice = parseFloat(po.cart_details.unit_price || 0);
+    const quantity = parseFloat(po.cart_details.quantity || 0);
+    const gstRate = parseFloat(po.cart_details.GST || 0);
+
+    const base = unitPrice * quantity;
+    const gstAmount = (base * gstRate) / 100;
+
+    totalBasePrice += base;
+    totalGSTAmount += gstAmount;
+  });
+
+  const grandTotal = totalBasePrice + totalGSTAmount;
+
   // Compute Total Price, GST, and Final Total
   const computeTotals = () => {
     const totals = poDetails.reduce(
@@ -762,14 +779,15 @@ const POOrderMaster = ({ user }) => {
                     </td>
                     <td style={{ textAlign: "right" }}>
                       ₹
-                      {parseFloat(po.cart_details.total_cost).toLocaleString(
-                        "en-IN",
-                        {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        }
-                      )}
+                      {(
+                        parseFloat(po.cart_details.unit_price || 0) *
+                        parseFloat(po.cart_details.quantity || 0)
+                      ).toLocaleString("en-IN", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
                     </td>
+
                     {/* {(isAdmin || isProcurement) && (
                       <td>
                         <button
@@ -795,13 +813,40 @@ const POOrderMaster = ({ user }) => {
 
                 {/* Totals Row */}
                 <tr style={{ fontWeight: "bold" }}>
-                  <td colSpan="5">Totals</td>
-                  <td>{totalquantity}</td>
-                  <td></td>
-                  <td></td>
+                  <td colSpan="8" style={{ textAlign: "right" }}>
+                    Total Base Price:
+                  </td>
                   <td style={{ textAlign: "right" }}>
                     ₹
-                    {parseFloat(totalcost).toLocaleString("en-IN", {
+                    {totalBasePrice.toLocaleString("en-IN", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </td>
+                </tr>
+
+                {/* Totals Row - GST */}
+                <tr style={{ fontWeight: "bold" }}>
+                  <td colSpan="8" style={{ textAlign: "right" }}>
+                    Total Tax (GST):
+                  </td>
+                  <td style={{ textAlign: "right" }}>
+                    ₹
+                    {totalGSTAmount.toLocaleString("en-IN", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </td>
+                </tr>
+
+                {/* Totals Row - Grand Total */}
+                <tr style={{ fontWeight: "bold" }}>
+                  <td colSpan="8" style={{ textAlign: "right" }}>
+                    Grand Total (Price + GST):
+                  </td>
+                  <td style={{ textAlign: "right" }}>
+                    ₹
+                    {grandTotal.toLocaleString("en-IN", {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}
