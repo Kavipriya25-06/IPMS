@@ -42,6 +42,9 @@ import ResetPassword from "./pages/ResetPassword";
 import SideBar from "./pages/sidebar";
 import RequestComponent from "./pages/RequestComponent";
 import Outward from "./pages/Outward";
+import OutwardEvent from "./pages/OutwardEvent";
+import OutwardManufacture from "./pages/OutwardManufacture";
+import OutwardSales from "./pages/OutwardSales";
 
 // import { useAuth } from "./AuthContext";
 // import PODetails from "./pages/PODetails";
@@ -421,6 +424,36 @@ function App() {
                   allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
                 >
                   <Outward />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="outward/add-sales-list"
+              element={
+                <ProtectedRoute
+                  allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
+                >
+                  <OutwardSales />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="outward/add-event-list"
+              element={
+                <ProtectedRoute
+                  allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
+                >
+                  <OutwardEvent />
+                </ProtectedRoute>
+              }
+            />
+             <Route
+              path="outward/add-service-list"
+              element={
+                <ProtectedRoute
+                  allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
+                >
+                  <OutwardManufacture />
                 </ProtectedRoute>
               }
             />

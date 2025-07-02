@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from "react";
 import config from "../Config"; // Import config for API endpoints
+import {
+  showSuccessToast,
+  showErrorToast,
+  showInfoToast,
+  showWarningToast,
+  showMessageToast,
+  ToastContainerComponent,
+} from "./Toastify.jsx";
 
 const Roles = () => {
   const [users, setUsers] = useState([]);
@@ -42,7 +50,46 @@ const Roles = () => {
 
   // Handle role change confirmation
   const handleRoleChangeConfirmation = (userId, newRole, email) => {
-    setConfirmation({ show: true, userId, newRole, email });
+    showMessageToast({
+      message: (
+        <>
+          Are you sure you want to assign <strong>{email}</strong> to the role
+          of <strong>{newRole}</strong>?
+        </>
+      ),
+      onConfirm: async () => {
+        try {
+          // Update local state immediately (optimistic update)
+          const updatedUsers = users.map((user) =>
+            user.id === userId ? { ...user, role: newRole } : user
+          );
+          setUsers(updatedUsers);
+
+          // Make API request to update role
+          const response = await fetch(
+            `${config.apiBaseURL}/register/${userId}/`,
+            {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ role: newRole }),
+            }
+          );
+
+          if (response.ok) {
+            showSuccessToast("Role updated successfully.");
+          } else {
+            const error = await response.json();
+            showErrorToast("Failed to update role: " + JSON.stringify(error));
+          }
+        } catch (error) {
+          console.error("Error updating role:", error);
+          showErrorToast("Failed to update role.");
+        }
+      },
+      onCancel: () => {
+        showWarningToast("Role update cancelled.");
+      },
+    });
   };
 
   // Handle confirmed role change
@@ -158,88 +205,96 @@ const Roles = () => {
         </button>
       </div>
       <div className="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Email</th>
-            {roles.map((role) => (
-              <th key={role}>{role}</th>
-            ))}
-            <th>Active status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((user) => (
-            <tr key={user.id}>
-              <td>{user.email}</td>
+        <table>
+          <thead>
+            <tr>
+              <th>Email</th>
               {roles.map((role) => (
-                <td key={role}>
-                  <input
-                    type="radio"
-                    name={`role-${user.id}`}
-                    value={role}
-                    checked={user.role === role}
-                    onChange={() =>
-                      handleRoleChangeConfirmation(user.id, role, user.email)
-                    }
-                  />
-                </td>
+                <th key={role}>{role}</th>
               ))}
-              <td>
-                <button
-                  onClick={() => toggleUserStatus(user.id, user.status)}
-                  style={{
-                    padding: "5px 10px",
-                    backgroundColor: user.status ? "green" : "gray",
-                    color: "white",
-                    border: "none",
-                    cursor: "pointer",
-                    borderRadius: "5px",
-                  }}
-                >
-                  {user.status ? "Active" : "Inactive"}
-                </button>
-              </td>
+              <th>Active status</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {users.map((user) => (
+              <tr key={user.id}>
+                <td>{user.email}</td>
+                {roles.map((role) => (
+                  <td key={role}>
+                    <input
+                      type="radio"
+                      name={`role-${user.id}`}
+                      value={role}
+                      checked={user.role === role}
+                      onChange={() => {
+                        setTimeout(() => {
+                          handleRoleChangeConfirmation(
+                            user.id,
+                            role,
+                            user.email
+                          );
+                        }, 0); // Defer execution until after input change
+                      }}
+                    />
+                  </td>
+                ))}
+
+                <td>
+                  <button
+                    onClick={() => toggleUserStatus(user.id, user.status)}
+                    style={{
+                      padding: "5px 10px",
+                      backgroundColor: user.status ? "green" : "gray",
+                      color: "white",
+                      border: "none",
+                      cursor: "pointer",
+                      borderRadius: "5px",
+                    }}
+                  >
+                    {user.status ? "Active" : "Inactive"}
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
       {showPopup && (
-        <div className="popup">
-          <h3 className="popup-title">Add New User</h3>
-          <form
-            className="popup-form"
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleAddUser();
-            }}
-          >
-            <div className="form-group">
-              <label className="form-label">Email:</label>
-              <input
-                className="form-input"
-                type="email"
-                value={newUser.email}
-                onChange={(e) =>
-                  setNewUser({ ...newUser, email: e.target.value })
-                }
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Password:</label>
-              <input
-                className="form-input"
-                type={showPassword ? "text" : "password"}
-                value={newUser.password}
-                onChange={(e) =>
-                  setNewUser({ ...newUser, password: e.target.value })
-                }
-                required
-              />
-            </div>
-            {/* <div className="form-group checkbox-group">
+        <div className="modal-overlay" onClick={() => setShowPopup(false)}>
+          <div className="popup">
+            <h3 className="popup-title">Add New User</h3>
+            <form
+              className="popup-form"
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleAddUser();
+              }}
+            >
+              <div className="form-group">
+                <label className="form-label">Email:</label>
+                <input
+                  className="form-input"
+                  type="email"
+                  value={newUser.email}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, email: e.target.value })
+                  }
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Password:</label>
+                <input
+                  className="form-input"
+                  type={showPassword ? "text" : "password"}
+                  value={newUser.password}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, password: e.target.value })
+                  }
+                  required
+                />
+              </div>
+              {/* <div className="form-group checkbox-group">
         <input
           type="checkbox"
           checked={showPassword}
@@ -247,39 +302,40 @@ const Roles = () => {
         />
         <label className="form-label">Show Password</label>
       </div> */}
-            <div className="form-group">
-              <label className="form-label">Role:</label>
-              <select
-                className="form-input"
-                value={newUser.role}
-                onChange={(e) =>
-                  setNewUser({ ...newUser, role: e.target.value })
-                }
-              >
-                {roles.map((role) => (
-                  <option key={role} value={role}>
-                    {role}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="button-group-bottom">
-              <button className="submit-button" type="submit">
-                Add User
-              </button>
-              <button
-                className="cancel-button"
-                type="button"
-                onClick={() => setShowPopup(false)}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
+              <div className="form-group">
+                <label className="form-label">Role:</label>
+                <select
+                  className="form-input"
+                  value={newUser.role}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, role: e.target.value })
+                  }
+                >
+                  {roles.map((role) => (
+                    <option key={role} value={role}>
+                      {role}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="button-group-bottom">
+                <button className="submit-button" type="submit">
+                  Add User
+                </button>
+                <button
+                  className="cancel-button"
+                  type="button"
+                  onClick={() => setShowPopup(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
-      {confirmation.show && (
+      {/* {confirmation.show && (
         <div className="popup">
           <h3>Confirmation</h3>
           <p>
@@ -287,10 +343,32 @@ const Roles = () => {
             <strong>{confirmation.email}</strong> to the role of{" "}
             <strong>{confirmation.newRole}</strong>?
           </p>
-          <button onClick={handleConfirmedRoleChange}>Yes</button>
-          <button onClick={handleCancelConfirmation}>No</button>
+          <div className="modal-actions">
+            <button
+              style={{
+                border: "none",
+                borderRadius: "5px",
+                padding: "5px 10px",
+              }}
+              onClick={handleConfirmedRoleChange}
+            >
+              Yes
+            </button>
+            <button
+              style={{
+                border: "none",
+                borderRadius: "5px",
+                padding: "5px 10px",
+              }}
+              onClick={handleCancelConfirmation}
+            >
+              No
+            </button>
+          </div>
         </div>
-      )}
+      )} */}
+
+      <ToastContainerComponent />
     </div>
   );
 };

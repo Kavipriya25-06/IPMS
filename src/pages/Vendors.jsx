@@ -4,6 +4,14 @@ import { useNavigate } from "react-router-dom";
 import config from "../Config"; // Import config for API endpoints
 import Add from "../assets/Add.png";
 import { PencilSquareIcon } from "@heroicons/react/24/solid";
+import {
+  showSuccessToast,
+  showErrorToast,
+  showInfoToast,
+  showWarningToast,
+  showMessageToast,
+  ToastContainerComponent,
+} from "./Toastify.jsx";
 
 // Popup Modal Component
 const Modal = ({ isOpen, onClose, children }) => {
@@ -29,6 +37,7 @@ const Vendors = () => {
   const [isAddingSubVendor, setIsAddingSubVendor] = useState(false);
   const [showPocPopup, setShowPocPopup] = useState(false);
   const [isEditing, setIsEditing] = useState(null);
+  const [showAddVendorPopup, setShowAddVendorPopup] = useState(false);
   const [isEditingVendor, setIsEditingVendor] = useState(null);
   const [editedVendorName, setEditedVendorName] = useState({
     vendor_name: "",
@@ -334,14 +343,20 @@ const Vendors = () => {
         const addedVendor = await response.json();
         setVendorData([...vendorData, addedVendor]);
         setNewVendorId(addedVendor.vendor_id); // Store the generated vendor_id
-        setIsAddingVendor(false);
-        setIsAddingSubVendor(true); // Show the form for adding sub-vendor
+        setShowAddVendorPopup(false);
+        // setIsAddingSubVendor(true); // Show the form for adding sub-vendor
         setNewVendor({ vendor_name: "" });
+            showSuccessToast("Vendor added successfully.");
+
       } else {
         console.error("Error adding vendor:", response.statusText);
+              showErrorToast("Failed to add vendor.");
+
       }
     } catch (error) {
       console.error("Error adding vendor:", error);
+          showErrorToast("Something went wrong.");
+
     }
   };
 
@@ -369,7 +384,10 @@ const Vendors = () => {
           // category: "",
         });
         setIsAddingSubVendor(false);
+
         fetchVendorData(); // Refresh the vendor list to show the new vendor and sub-vendor
+                            showSuccessToast("Vendor added successfully.");
+
       } else {
         console.error("Error adding sub-vendor:", response.statusText);
       }
@@ -569,52 +587,55 @@ const Vendors = () => {
             border: "none",
           }}
           title="Add Vendor"
-          onClick={() => setIsAddingVendor(true)}
+          onClick={() => setShowAddVendorPopup(true)}
         >
           <img src={Add} alt="" style={{ width: "20px", height: "20px" }} />
         </button>
 
         {/* Modal for Adding New Vendor */}
-        <Modal isOpen={isAddingVendor} onClose={() => setIsAddingVendor(false)}>
-          <div className="modal-contents">
-            <h4>Add New Vendor</h4>
-            <input
-              type="text"
-              placeholder="Vendor Name"
-              value={newVendor.vendor_name}
-              onChange={(e) =>
-                handleVendorInputChange("vendor_name", e.target.value)
-              }
-            />
-            <input
-              type="text"
-              placeholder="GSTN"
-              value={newVendor.gstn}
-              onChange={(e) => handleVendorInputChange("gstn", e.target.value)}
-            />
-            <div className="modal-buttons">
-              <button
-                className="modal-button save-button"
-                onClick={handleAddVendor}
-              >
-                Save Vendor
-              </button>
-              <button
-                className="modal-button cancel-button"
-                onClick={() => setIsAddingVendor(false)}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </Modal>
+     {showAddVendorPopup && (
+  <div className="modal-overlay" onClick={() => setShowAddVendorPopup(false)}>
+    <div
+      className="modal-contents"
+      onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside modal
+    >
+      <h4>Add New Vendor</h4>
+      <input
+        type="text"
+        placeholder="Vendor Name"
+        value={newVendor.vendor_name}
+        onChange={(e) =>
+          handleVendorInputChange("vendor_name", e.target.value)
+        }
+      />
+      <input
+        type="text"
+        placeholder="GSTN"
+        value={newVendor.gstn}
+        onChange={(e) => handleVendorInputChange("gstn", e.target.value)}
+      />
+      <div className="modal-buttons">
+        <button className="modal-button save-button" onClick={handleAddVendor}>
+          Save Vendor
+        </button>
+        <button
+          className="modal-button cancel-button"
+          onClick={() => setShowAddVendorPopup(false)}
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 
         {/* Modal for Adding New Sub-Vendor (POC) */}
         <Modal
           isOpen={isAddingSubVendor}
           onClose={() => setIsAddingSubVendor(false)}
         >
-          <div className="modal-content">
+          <div className="modal-contents">
             <h4>Add Point of Contact for Vendor: {newVendorId}</h4>
             <input
               type="text"
@@ -869,6 +890,7 @@ const Vendors = () => {
       </button> */}
 
       {showPocPopup && (
+        <div className="modal-overlay">
         <div className="popup">
           <span className="x-button" onClick={handleClosePriceHistory}>
             &times;
@@ -1192,6 +1214,7 @@ const Vendors = () => {
             </table>
           </div>
         </div>
+        </div>
       )}
       {showScrollTop && (
         <button
@@ -1213,6 +1236,7 @@ const Vendors = () => {
           ↑
         </button>
       )}
+      <ToastContainerComponent />
     </div>
   );
 };

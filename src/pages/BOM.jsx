@@ -154,6 +154,8 @@ const BOM = () => {
     const payload = {
       ...formData,
       wbom: false,
+      number_of_components: 0,
+
     };
     try {
       const response = await fetch(`${config.apiBaseURL}/bom_list/`, {
