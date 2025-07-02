@@ -65,6 +65,11 @@ const Outward = () => {
     showSuccessToast("Row added.");
   };
 
+  
+  const handleCancelRow = () => {
+    setNewRow(null); // Clear the new row, effectively cancelling
+  };
+
   return (
     <div>
       <div
@@ -126,7 +131,7 @@ const Outward = () => {
               <th>GST</th>
               <th>Grand Total</th>
               <th>Remarks</th>
-              <th>Actions</th>
+              {newRow && <th>Action</th>}
             </tr>
           </thead>
           <tbody>
@@ -138,9 +143,6 @@ const Outward = () => {
               <td>8%</td>
               <td>12300</td>
               <td>Good</td>
-              <td>
-                <button>Select</button>
-              </td>
             </tr>
 
             {newRow && (
@@ -178,7 +180,7 @@ const Outward = () => {
                       padding: "4px",
                       borderRadius: "4px",
                       border: "1.4px solid #ccc",
-                      width: "60%",
+                      width: "70%",
                     }}
                   />
                 </td>
@@ -194,7 +196,7 @@ const Outward = () => {
                       padding: "4px",
                       borderRadius: "4px",
                       border: "1.4px solid #ccc",
-                      width: "60%",
+                      width: "70%",
                     }}
                   />
                 </td>
@@ -246,8 +248,9 @@ const Outward = () => {
                     }}
                   />
                 </td>
-                <td>
+                 <td className="event-buttons">
                   <button onClick={handleSaveRow}>Save</button>
+                  <button onClick={handleCancelRow}>Cancel</button>
                 </td>
               </tr>
             )}

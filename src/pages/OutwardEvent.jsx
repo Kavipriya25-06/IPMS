@@ -11,9 +11,17 @@ import {
 } from "./Toastify.jsx";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import Add from "../assets/Add.png";
 
 const Outward = () => {
   const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
+  const [newRow, setNewRow] = useState(null);
+
+  const [componentOptions, setComponentOptions] = useState([
+    "Component A",
+    "Component B",
+    "Component C",
+  ]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -33,6 +41,31 @@ const Outward = () => {
       top: 0,
       behavior: "smooth", // Smooth scroll effect
     });
+  };
+
+  const handleAddRow = () => {
+    setNewRow({
+      component: "",
+      vendor: "",
+      serial: "",
+    });
+  };
+
+  const handleSaveRow = () => {
+    if (!newRow.component || !newRow.vendor || !newRow.serial) {
+      showErrorToast("Please fill all fields.");
+      return;
+    }
+
+    // Save logic goes here — API call or local state update
+    console.log("Saving row:", newRow);
+
+    setNewRow(null);
+    showSuccessToast("Row added.");
+  };
+
+  const handleCancelRow = () => {
+    setNewRow(null); // Clear the new row, effectively cancelling
   };
 
   return (
@@ -60,8 +93,29 @@ const Outward = () => {
             className="date-picker"
           />
         </div>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            margin: "10px 0",
+            gap: "20px",
+          }}
+        >
+          <button className="generate-report-btn">Generate Report</button>
 
-        <button className="generate-report-btn">Generate Report</button>
+          <button
+            style={{
+              cursor: "pointer",
+
+              background: "transparent",
+              border: "none",
+            }}
+            title="Add Vendor"
+            onClick={handleAddRow}
+          >
+            <img src={Add} alt="" style={{ width: "20px", height: "20px" }} />
+          </button>
+        </div>{" "}
       </div>
 
       <div className="table-container">
@@ -71,6 +125,7 @@ const Outward = () => {
               <th>S.No</th>
               <th>Component</th>
               <th>Quantity</th>
+              {newRow && <th>Action</th>}
             </tr>
           </thead>
           <tbody>
@@ -79,6 +134,47 @@ const Outward = () => {
               <td>Backend BOM List table changes</td>
               <td>12</td>
             </tr>
+            {newRow && (
+              <tr>
+                <td>2</td>
+                <td>
+                  <input
+                    type="text"
+                    value={newRow.vendor}
+                    onChange={(e) =>
+                      setNewRow({ ...newRow, vendor: e.target.value })
+                    }
+                    placeholder="Component Name"
+                    style={{
+                      padding: "4px",
+                      borderRadius: "4px",
+                      border: "1.4px solid #ccc",
+                      width: "60%",
+                    }}
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    value={newRow.vendor}
+                    onChange={(e) =>
+                      setNewRow({ ...newRow, vendor: e.target.value })
+                    }
+                    placeholder="Quantity"
+                    style={{
+                      padding: "4px",
+                      borderRadius: "4px",
+                      border: "1.4px solid #ccc",
+                      width: "60%",
+                    }}
+                  />
+                </td>
+                <td className="event-buttons">
+                  <button onClick={handleSaveRow}>Save</button>
+                  <button onClick={handleCancelRow}>Cancel</button>
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

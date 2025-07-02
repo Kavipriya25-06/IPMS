@@ -26,6 +26,7 @@ const Outward = () => {
   const [currentTime, setCurrentTime] = useState("");
   const [selectedDate, setSelectedDate] = useState(null);
   const [reportType, setReportType] = useState("Defects");
+  
 
   useEffect(() => {
     const handleScroll = () => {

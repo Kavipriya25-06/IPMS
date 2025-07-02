@@ -81,7 +81,13 @@ const Outward = () => {
               <td>Backend BOM List table changes</td>
               <td>kanna</td>
               <td>WERD203433</td>
-              <td><button>Select</button></td>
+              <td>
+                <button
+                 className="select-button"
+                >
+                  Select
+                </button>
+              </td>
             </tr>
           </tbody>
         </table>
