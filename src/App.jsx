@@ -45,6 +45,7 @@ import Outward from "./pages/Outward";
 import OutwardEvent from "./pages/OutwardEvent";
 import OutwardManufacture from "./pages/OutwardManufacture";
 import OutwardSales from "./pages/OutwardSales";
+import JobOrderSheet from "./pages/JobOrderSheet";
 
 // import { useAuth } from "./AuthContext";
 // import PODetails from "./pages/PODetails";
@@ -454,6 +455,16 @@ function App() {
                   allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
                 >
                   <OutwardManufacture />
+                </ProtectedRoute>
+              }
+            />
+             <Route
+              path="jobordersheet"
+              element={
+                <ProtectedRoute
+                  allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
+                >
+                  <JobOrderSheet />
                 </ProtectedRoute>
               }
             />
