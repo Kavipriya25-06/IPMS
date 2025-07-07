@@ -536,7 +536,10 @@ tbody tr:hover {
 
 .btn-reject:hover {
   background-color: #c2c1c1;
+<<<<<<< HEAD
+=======
   /* background-color: #f1ba86; */
+>>>>>>> 41adcc5ab071dc375e24158ac9bb11036f228f47
   color: white;
 }
 
@@ -3114,6 +3117,15 @@ main {
 .back-link {
   text-decoration: none;
   color: black;
+<<<<<<< HEAD
+=======
+}
+
+.back-link:hover {
+  text-decoration: none;
+  color: black;
+  font-weight: 600;
+>>>>>>> 41adcc5ab071dc375e24158ac9bb11036f228f47
 }
 
 .back-link:hover {
@@ -3121,6 +3133,7 @@ main {
   color: black;
   font-weight: 600;
 }
+
 
 .share {
   cursor: pointer;
@@ -3235,6 +3248,11 @@ ul {
   display: block;
 }
 
+<<<<<<< HEAD
+
+
+=======
+>>>>>>> 41adcc5ab071dc375e24158ac9bb11036f228f47
 .zoom-result {
   position: absolute;
   width: 200px;
@@ -3246,6 +3264,7 @@ ul {
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
   z-index: 9999;
 }
+
 
 @media (max-width: 768px) {
   .zoom-lens {
