@@ -592,6 +592,80 @@ const Inward = () => {
     }
   };
 
+  const handleMoveToOutward = async (item) => {
+    try {
+      const componentId = getNestedValue(item, "po_master.cart.component_id");
+      const componentSpecification = getNestedValue(
+        item,
+        "po_master.cart.component_specification"
+      );
+      const quantity = 1;
+      const typeOfOutward = "QC Failed";
+
+      // Basic validation
+      if (!componentId || !componentSpecification) {
+        alert("Missing component ID or specification. Cannot proceed.");
+        return;
+      }
+
+      const postData = {
+        component_id: componentId,
+        specification: componentSpecification,
+        quantity: quantity,
+        type_of_outward: typeOfOutward,
+      };
+
+      const response = await fetch(`${config.apiBaseURL}/outward/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(postData),
+      });
+
+      if (!response.ok) {
+        const errorDetails = await response.json();
+        console.error("Error posting to outward:", errorDetails);
+        alert("Failed to move to outward. Please check logs.");
+        return;
+      }
+
+      showSuccessToast("Successfully moved to Outward due to failed QC.");
+      setShowMessageBox(false);
+
+      // Optionally, update the inward entry to reflect the outward move
+      const updatePayload = {
+        mode_to_inventory: false,
+        quality_check: item.quality_check,
+        component_id: componentId,
+        po_master_id: item.po_master.id,
+        price: item.price,
+      };
+
+      const updateResponse = await fetch(
+        `${config.apiBaseURL}/inward/${item.inward_id}/`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updatePayload),
+        }
+      );
+
+      if (!updateResponse.ok) {
+        const updateError = await updateResponse.json();
+        console.error(
+          "Error updating inward status after outward:",
+          updateError
+        );
+        alert("Failed to update inward record.");
+        return;
+      }
+
+      fetchInwardData(); // Refresh the inward data
+    } catch (error) {
+      console.error("Error in handleMoveToOutward:", error);
+      alert("An unexpected error occurred while moving to outward.");
+    }
+  };
+
   /////////////////
 
   // Handle SKU Number click
@@ -848,13 +922,24 @@ const Inward = () => {
                   >
                     QC
                   </button>
-                  <button
-                    className="move-inventory-button"
-                    onClick={() => handleMoveToInventory(item)}
-                    disabled={!item.mode_to_inventory}
-                  >
-                    Move to Inventory
-                  </button>
+                  {item.quality_check === "Pass" && (
+                    <button
+                      className="move-inventory-button"
+                      onClick={() => handleMoveToInventory(item)}
+                      disabled={!item.mode_to_inventory}
+                    >
+                      Move to Inventory
+                    </button>
+                  )}
+                  {item.quality_check === "Fail" && (
+                    <button
+                      className="move-outward-button"
+                      onClick={() => handleMoveToOutward(item)}
+                      // disabled={!item.mode_to_inventory}
+                    >
+                      Move to Outward
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

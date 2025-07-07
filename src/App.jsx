@@ -41,6 +41,11 @@ import IPMSLogo from "./assets/IPMS.png";
 import ResetPassword from "./pages/ResetPassword";
 import SideBar from "./pages/sidebar";
 import RequestComponent from "./pages/RequestComponent";
+import Outward from "./pages/Outward";
+import OutwardEvent from "./pages/OutwardEvent";
+import OutwardManufacture from "./pages/OutwardManufacture";
+import OutwardSales from "./pages/OutwardSales";
+import JobOrderSheet from "./pages/JobOrderSheet";
 
 // import { useAuth } from "./AuthContext";
 // import PODetails from "./pages/PODetails";
@@ -266,8 +271,8 @@ function App() {
                 </ProtectedRoute>
               }
             />
-             <Route
-              path="addcomponents/:componentId"
+            <Route
+              path="components/addcomponents"
               element={
                 <ProtectedRoute
                   allowedRoles={[
@@ -410,6 +415,56 @@ function App() {
                   allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
                 >
                   <Inward />
+                </ProtectedRoute>
+              }
+            />
+             <Route
+              path="outward"
+              element={
+                <ProtectedRoute
+                  allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
+                >
+                  <Outward />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="outward/add-sales-list"
+              element={
+                <ProtectedRoute
+                  allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
+                >
+                  <OutwardSales />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="outward/add-event-list"
+              element={
+                <ProtectedRoute
+                  allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
+                >
+                  <OutwardEvent />
+                </ProtectedRoute>
+              }
+            />
+             <Route
+              path="outward/add-service-list"
+              element={
+                <ProtectedRoute
+                  allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
+                >
+                  <OutwardManufacture />
+                </ProtectedRoute>
+              }
+            />
+             <Route
+              path="jobordersheet"
+              element={
+                <ProtectedRoute
+                  allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
+                >
+                  <JobOrderSheet />
                 </ProtectedRoute>
               }
             />

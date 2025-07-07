@@ -8,6 +8,8 @@ import {
   showErrorToast,
   showInfoToast,
   showWarningToast,
+  showMessageToast,
+  showTextToast,
   ToastContainerComponent,
 } from "./Toastify.jsx"; // Import Toastify utilities
 
@@ -191,217 +193,231 @@ const RequestDetails = ({ user }) => {
     }
   };
 
-  const handleOrder = async (detail) => {
-    if (!detail.vendor_name) {
-      setMessageBoxContent("Please select a vendor for this component.");
-      setShowMessageBox(true);
-      return;
-    }
+const handleOrder = async (detail) => {
+  if (!detail.vendor_name) {
+    setMessageBoxContent("Please select a vendor for this component.");
+    setShowMessageBox(true);
+    return;
+  }
 
-    const requestmasterId = detail.id;
+  const selectedVendor = vendorNames.find(
+    (vendor) => vendor.vendor_name === detail.vendor_name
+  );
 
-    const selectedVendor = vendorNames.find(
-      (vendor) => vendor.vendor_name === detail.vendor_name
-    );
-    const vendor_id = selectedVendor ? selectedVendor.vendor_id : null;
-    const vendor_gstn = selectedVendor ? selectedVendor.gstn : null;
+  const vendor_id = selectedVendor?.vendor_id;
+  const vendor_gstn = selectedVendor?.gstn;
 
-    if (!vendor_id) {
-      alert("Invalid vendor selected.");
-      return;
-    }
+  if (!vendor_id) {
+    showErrorToast("Invalid vendor selected.");
+    return;
+  }
 
-    const inputQuantity = prompt(
-      `Enter the quantity (Max: ${detail.qty}):`,
-      detail.qty
-    );
+  const qtyRef = { current: detail.qty };
 
-    if (!inputQuantity || isNaN(inputQuantity) || inputQuantity <= 0) {
-      alert("Invalid quantity entered.");
-      return;
-    }
+  showTextToast({
+    message: ({ closeToast }) => (
+      <div>
+        <p>Enter the quantity (Max: {detail.qty}):</p>
+        <input
+          type="number"
+          min={1}
+          max={detail.qty}
+          defaultValue={detail.qty}
+          onChange={(e) => {
+            qtyRef.current = parseInt(e.target.value, 10);
+          }}
+          style={{
+            marginTop: "0px",
+            padding: "6px",
+            width: "100%",
+            border: "1px solid #ccc",
+            borderRadius: "4px",
+          }}
+        />
+      </div>
+    ),
+    confirmText: "Add to Cart",
+    cancelText: "Cancel",
+    onConfirm: async () => {
+      const enteredQuantity = qtyRef.current;
 
-    const enteredQuantity = parseInt(inputQuantity, 10);
+      if (!enteredQuantity || isNaN(enteredQuantity) || enteredQuantity <= 0) {
+        showErrorToast("Invalid quantity entered.");
+        return;
+      }
 
-    if (enteredQuantity > detail.qty) {
-      alert(`The entered quantity exceeds available quantity (${detail.qty}).`);
-      return;
-    }
+      if (enteredQuantity > detail.qty) {
+        showWarningToast(`The entered quantity exceeds available quantity (${detail.qty}).`);
+        return;
+      }
 
-    const price = detail.price;
-    const tax = detail.tax;
-    const gstAmount = (price * tax) / 100;
-    const totalCost =
-      Math.round((price + gstAmount) * enteredQuantity * 100) / 100;
+      const price = detail.price;
+      const tax = detail.tax;
+      const gstAmount = (price * tax) / 100;
+      const totalCost = Math.round((price + gstAmount) * enteredQuantity * 100) / 100;
 
-    try {
-      //  FULL QUANTITY FLOW (no split)
-      if (enteredQuantity === detail.qty) {
-        const orderData = {
-          component_id: detail.component_id,
-          component_type: detail.component_type,
-          component_specification: detail.component_specification,
-          quantity: enteredQuantity,
-          request_id: detail.id, // Use existing request_master ID
-          vendor_name: detail.vendor_name,
-          vendor_id: detail.vendor_id,
-          category: detail.category,
-          unit_of_measurement: detail.unit_of_measurement,
-          unit_price: detail.price,
-          GST: detail.tax,
-          total_cost: totalCost,
-          assign: true,
-          gstn: vendor_gstn,
-          request_list_id: detail.request_id,
-          parent_id: null, // No split, so no parent_id
-        };
+      try {
+        if (enteredQuantity === detail.qty) {
+          const orderData = {
+            component_id: detail.component_id,
+            component_type: detail.component_type,
+            component_specification: detail.component_specification,
+            quantity: enteredQuantity,
+            request_id: detail.id,
+            vendor_name: detail.vendor_name,
+            vendor_id,
+            category: detail.category,
+            unit_of_measurement: detail.unit_of_measurement,
+            unit_price: price,
+            GST: tax,
+            total_cost: totalCost,
+            assign: true,
+            gstn: vendor_gstn,
+            request_list_id: detail.request_id,
+            parent_id: null,
+          };
 
-        const cartResponse = await fetch(`${config.apiBaseURL}/cart/`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(orderData),
-        });
-
-        if (!cartResponse.ok) {
-          const error = await cartResponse.json();
-          console.error("Failed to add full to cart:", error);
-          showErrorToast("Failed to add to cart.");
-          return;
-        }
-
-        //  Patch original to mark as carted
-        await fetch(
-          `${config.apiBaseURL}/request_master/${detail.request_id}/${detail.id}/`,
-          {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              cart_assign: true,
-              assign: false,
-              status: "Assigned",
-              vendor: detail.vendor_id,
-            }),
-          }
-        );
-      } else {
-        //  SPLIT QUANTITY FLOW
-        const newRequestPayload = {
-          request: detail.request_id,
-          component: detail.component_id,
-          vendor: detail.vendor_id,
-          project_id: detail.project_id,
-          component_type: detail.component_type,
-          component_specification: detail.component_specification,
-          unit_of_measurement: detail.unit_of_measurement,
-          category: detail.category,
-          qty: enteredQuantity,
-          remaining_qty: 0,
-          approve: true,
-          assign: false,
-          cart_assign: true,
-          status: "Assigned",
-        };
-
-        const requestMasterResponse = await fetch(
-          `${config.apiBaseURL}/request_master/${detail.request_id}/`,
-          {
+          const cartResponse = await fetch(`${config.apiBaseURL}/cart/`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(newRequestPayload),
+            body: JSON.stringify(orderData),
+          });
+
+          if (!cartResponse.ok) {
+            const error = await cartResponse.json();
+            console.error("Failed to add full to cart:", error);
+            showErrorToast("Failed to add to cart.");
+            return;
           }
-        );
 
-        if (!requestMasterResponse.ok) {
-          const error = await requestMasterResponse.json();
-          console.error("Failed to POST to request_master:", error);
-          showErrorToast("Failed to create request_master entry.");
-          return;
-        }
+          await fetch(
+            `${config.apiBaseURL}/request_master/${detail.request_id}/${detail.id}/`,
+            {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                cart_assign: true,
+                assign: false,
+                status: "Assigned",
+                vendor: vendor_id,
+              }),
+            }
+          );
+        } else {
+          // SPLIT flow
+          const newRequestPayload = {
+            request: detail.request_id,
+            component: detail.component_id,
+            vendor: vendor_id,
+            project_id: detail.project_id,
+            component_type: detail.component_type,
+            component_specification: detail.component_specification,
+            unit_of_measurement: detail.unit_of_measurement,
+            category: detail.category,
+            qty: enteredQuantity,
+            remaining_qty: 0,
+            approve: true,
+            assign: false,
+            cart_assign: true,
+            status: "Assigned",
+          };
 
-        const requestMasterData = await requestMasterResponse.json();
-        const newRequestMasterId = requestMasterData.id;
+          const requestMasterResponse = await fetch(
+            `${config.apiBaseURL}/request_master/${detail.request_id}/`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(newRequestPayload),
+            }
+          );
 
-        const orderData = {
-          component_id: detail.component_id,
-          component_type: detail.component_type,
-          component_specification: detail.component_specification,
-          quantity: enteredQuantity,
-          request_id: newRequestMasterId,
-          vendor_name: detail.vendor_name,
-          vendor_id: detail.vendor_id,
-          category: detail.category,
-          unit_of_measurement: detail.unit_of_measurement,
-          unit_price: detail.price,
-          GST: detail.tax,
-          total_cost: totalCost,
-          assign: true,
-          gstn: vendor_gstn,
-          request_list_id: requestMasterData.request,
-          parent_id: detail.id,
-        };
+          if (!requestMasterResponse.ok) {
+            const error = await requestMasterResponse.json();
+            console.error("Failed to create request_master:", error);
+            showErrorToast("Failed to create request_master entry.");
+            return;
+          }
 
-        const cartResponse = await fetch(`${config.apiBaseURL}/cart/`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(orderData),
-        });
+          const requestMasterData = await requestMasterResponse.json();
+          const newRequestMasterId = requestMasterData.id;
 
-        if (!cartResponse.ok) {
-          const cartError = await cartResponse.json();
-          console.error("Failed to POST to cart:", cartError);
-          showErrorToast("Failed to add to cart.");
-          return;
-        }
+          const orderData = {
+            component_id: detail.component_id,
+            component_type: detail.component_type,
+            component_specification: detail.component_specification,
+            quantity: enteredQuantity,
+            request_id: newRequestMasterId,
+            vendor_name: detail.vendor_name,
+            vendor_id,
+            category: detail.category,
+            unit_of_measurement: detail.unit_of_measurement,
+            unit_price: price,
+            GST: tax,
+            total_cost: totalCost,
+            assign: true,
+            gstn: vendor_gstn,
+            request_list_id: requestMasterData.request,
+            parent_id: detail.id,
+          };
 
-        //  PATCH the original request_master to reduce qty
-        const remainingQty = detail.qty - enteredQuantity;
-        const patchPayload = {
-          qty: remainingQty,
-          status: remainingQty > 0 ? "pending" : "completed",
-          cart_assign: false,
-          assign: false,
-        };
-
-        await fetch(
-          `${config.apiBaseURL}/request_master/${detail.request_id}/${detail.id}/`,
-          {
-            method: "PATCH",
+          const cartResponse = await fetch(`${config.apiBaseURL}/cart/`, {
+            method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(patchPayload),
+            body: JSON.stringify(orderData),
+          });
+
+          if (!cartResponse.ok) {
+            const cartError = await cartResponse.json();
+            console.error("Failed to POST to cart:", cartError);
+            showErrorToast("Failed to add to cart.");
+            return;
           }
-        );
-      }
+// <<<<<<< HEAD
+//         );
+//       }
+//       ``;
+// =======
+// >>>>>>> 51e9f20ca36afde5da76e6dd49c870cfb3d9b9c6
 
-      //  Auto-refresh
-      if (typeof fetchRequestDetails === "function") {
-        fetchRequestDetails(), fetchPriceViewData();
-      }
-      // if (typeof fetchPriceViewData === "function") fetchPriceViewData();
-      // setDetails((prevDetails) =>
-      //   prevDetails.map((detail) =>
-      //     detail.id === requestmasterId
-      //       ? {
-      //           ...detail,
-      //           cart_assign: true,
-      //         }
-      //       : detail
-      //   )
-      // );
-      if (typeof fetchCartItems === "function") fetchCartItems();
+          const remainingQty = detail.qty - enteredQuantity;
 
-      showSuccessToast(`Successfully added ${enteredQuantity} to cart.`);
-      console.log("The details after adding to cart", details);
-    } catch (error) {
-      console.error("Error during order process:", error);
-      showErrorToast("An error occurred while processing the order.");
-    }
-  };
+          await fetch(
+            `${config.apiBaseURL}/request_master/${detail.request_id}/${detail.id}/`,
+            {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                qty: remainingQty,
+                status: remainingQty > 0 ? "pending" : "completed",
+                cart_assign: false,
+                assign: false,
+              }),
+            }
+          );
+        }
+
+        if (typeof fetchRequestDetails === "function") fetchRequestDetails();
+        if (typeof fetchPriceViewData === "function") fetchPriceViewData();
+        if (typeof fetchCartItems === "function") fetchCartItems();
+
+        showSuccessToast(`Successfully added ${enteredQuantity} to cart.`);
+      } catch (error) {
+        console.error("Error during order process:", error);
+        showErrorToast("An error occurred while processing the order.");
+      }
+    },
+    onCancel: () => {
+      showWarningToast("Order cancelled.");
+    },
+  });
+};
+
 
   const handleAssign = async (componentId, qty, requestDetailId) => {
     const componentData = inventoryData[componentId];
 
     if (!componentData) {
-      alert("Component data not found in inventory.");
+      showInfoToast("Component data not found in inventory.");
       return;
     }
 
@@ -418,12 +434,12 @@ const RequestDetails = ({ user }) => {
         setSelectedRequestDetailId(requestDetailId);
         setShowSerialPopup(true);
       } else {
-        alert(
+        showWarningToast(
           "Insufficient available serial numbers in inventory for this component."
         );
       }
     } else {
-      alert("Insufficient quantity in inventory.");
+      showInfoToast("Insufficient quantity in inventory.");
     }
   };
 
@@ -436,7 +452,7 @@ const RequestDetails = ({ user }) => {
       const componentData = inventoryData[componentId];
 
       if (!componentData) {
-        alert("Component data not found in inventory.");
+        showInfoToast("Component data not found in inventory.");
         return;
       }
 
@@ -481,7 +497,7 @@ const RequestDetails = ({ user }) => {
           console.error(
             `Error unassigning serial number: ${serial.serialNumber}`
           );
-          alert(
+          showErrorToast(
             `Could not unassign the serial number ${serial.serialNumber}. Please try again.`
           );
           return;
@@ -495,7 +511,7 @@ const RequestDetails = ({ user }) => {
       );
 
       if (!selectedDetail || !selectedDetail.id) {
-        alert(
+        showErrorToast(
           "Error: Unable to find the request ID for the selected component."
         );
         return;
@@ -511,7 +527,7 @@ const RequestDetails = ({ user }) => {
 
       if (!requestMasterFetchResponse.ok) {
         console.error("Error fetching request master data.");
-        alert("Could not fetch the current quantity for the request.");
+        showErrorToast("Could not fetch the current quantity for the request.");
         return;
       }
 
@@ -540,7 +556,7 @@ const RequestDetails = ({ user }) => {
       if (!requestMasterResponse.ok) {
         const errorDetails = await requestMasterResponse.json();
         console.error("Request Master Error:", errorDetails);
-        alert("Error updating request master: " + JSON.stringify(errorDetails));
+        showErrorToast("Error updating request master: " + JSON.stringify(errorDetails));
         return;
       }
 
@@ -570,7 +586,7 @@ const RequestDetails = ({ user }) => {
 
   const handleConfirmAssignment = async () => {
     if (selectedSerialNumbers.length === 0) {
-      alert(`Please select at least 1 serial number.`);
+      showWarningToast(`Please select at least 1 serial number.`);
       return;
     }
 
@@ -583,7 +599,7 @@ const RequestDetails = ({ user }) => {
 
       if (!selectedDetail || !selectedDetail.id) {
         console.error("Request ID not found for the selected component.");
-        alert(
+        showErrorToast(
           "Error: Unable to find the request ID for the selected component."
         );
         65;
@@ -602,7 +618,7 @@ const RequestDetails = ({ user }) => {
           console.error(
             `Error fetching inventory data for serial: ${serialNumber}`
           );
-          alert(`Could not fetch data for serial number ${serialNumber}`);
+          showWarningToast(`Could not fetch data for serial number ${serialNumber}`);
           return;
         }
 
@@ -637,7 +653,7 @@ const RequestDetails = ({ user }) => {
 
         if (!updateResponse.ok) {
           console.error(`Error updating inventory for serial: ${serialNumber}`);
-          alert(`Could not update inventory for serial number ${serialNumber}`);
+          showInfoToast(`Could not update inventory for serial number ${serialNumber}`);
           return;
         }
       }
@@ -649,7 +665,7 @@ const RequestDetails = ({ user }) => {
 
       if (!requestMasterFetchResponse.ok) {
         console.error("Error fetching request master data.");
-        alert("Could not fetch the current quantity for the request.");
+        showInfoToast("Could not fetch the current quantity for the request.");
         return;
       }
 
@@ -676,7 +692,7 @@ const RequestDetails = ({ user }) => {
       if (!requestMasterResponse.ok) {
         const errorDetails = await requestMasterResponse.json();
         console.error("Request Master Error:", errorDetails);
-        alert("Error updating request master: " + JSON.stringify(errorDetails));
+        showErrorToast("Error updating request master: " + JSON.stringify(errorDetails));
         return;
       }
 
@@ -709,7 +725,7 @@ const RequestDetails = ({ user }) => {
       });
     } catch (error) {
       console.error("Error confirming assignment:", error);
-      alert("An error occurred while confirming assignment.");
+      showErrorToast("An error occurred while confirming assignment.");
     }
   };
 
@@ -885,34 +901,40 @@ const RequestDetails = ({ user }) => {
     };
   };
 
-  const { totalquantity, totalcost } = computeTotals();
+  // const { totalquantity, totalcost } = computeTotals();
+
   // console.log("Total cost and quantity", totalcost, totalquantity);
 
-  const calculateTotal = () => {
-    return details
-      .reduce((total, detail) => {
-        const price =
-          parseFloat(detail.price || 0) ||
-          parseFloat(
-            priceViewData.find(
-              (vendor) => vendor.vendor_id === detail.vendor_id
-            )?.latest_price || 0
-          );
-        const quantity = parseFloat(detail.qty || 0);
-        const tax =
-          parseFloat(detail.tax || 0) ||
-          parseFloat(
-            priceViewData.find(
-              (vendor) => vendor.vendor_id === detail.vendor_id
-            )?.latest_tax || 0
-          );
+  const calculateCostBreakdown = () => {
+    let baseTotal = 0;
+    let taxTotal = 0;
 
-        // Calculate the total cost for this item (including tax)
-        const itemTotal = price * quantity * (1 + tax / 100);
-        return total + itemTotal;
-      }, 0)
-      .toFixed(2); // Return the total with two decimal places
+    details.forEach((detail) => {
+      const matchedPrice = priceViewData.find(
+        (vendor) => vendor.vendor_id === detail.vendor_id
+      );
+
+      const price = parseFloat(detail.price || matchedPrice?.latest_price || 0);
+      const quantity = parseFloat(detail.qty || 0);
+      const taxPercent = parseFloat(
+        detail.tax || matchedPrice?.latest_tax || 0
+      );
+
+      const itemBase = price * quantity;
+      const itemTax = itemBase * (taxPercent / 100);
+
+      baseTotal += itemBase;
+      taxTotal += itemTax;
+    });
+
+    return {
+      baseTotal: baseTotal.toFixed(2),
+      taxTotal: taxTotal.toFixed(2),
+      grandTotal: (baseTotal + taxTotal).toFixed(2),
+    };
   };
+
+  const { baseTotal, taxTotal, grandTotal } = calculateCostBreakdown();
 
   // const handleApproval = async () => {
   //   try {
@@ -978,7 +1000,7 @@ const RequestDetails = ({ user }) => {
       const failedRequests = results.filter((response) => !response.ok);
       if (failedRequests.length > 0) {
         console.error("Some requests failed:", failedRequests);
-        alert("Failed to approve some items.");
+        showErrorToast("Failed to approve some items.");
       } else {
         console.log("All components approved successfully.");
 
@@ -992,7 +1014,7 @@ const RequestDetails = ({ user }) => {
       }
     } catch (error) {
       console.error("Error approving components:", error);
-      alert("An error occurred while approving the components.");
+      showErrorToast("An error occurred while approving the components.");
     }
   };
 
@@ -1030,7 +1052,7 @@ const RequestDetails = ({ user }) => {
                 onClick={() => handleApproval()}
                 disabled={details.every((detail) => detail.approve)}
                 style={{
-                  padding: "10px 20px",
+                  padding: "10px",
                   backgroundColor: details.every((detail) => detail.approve)
                     ? "#ddd"
                     : "#4caf50",
@@ -1275,17 +1297,41 @@ const RequestDetails = ({ user }) => {
                 {["admin", "sub-admin", "procurement", "finance"].includes(
                   user?.role?.toLowerCase().trim()
                 ) && (
-                  <tr style={{ fontWeight: "bold" }}>
-                    <td colSpan="6">Total Cost (Including Tax):</td>
-                    <td style={{ textAlign: "right" }}>
-                      ₹
-                      {parseFloat(calculateTotal()).toLocaleString("en-IN", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </td>
-                    <td colSpan="4"></td>
-                  </tr>
+                  <>
+                    <tr style={{ fontWeight: "bold" }}>
+                      <td colSpan="6">Total Base Price:</td>
+                      <td style={{ textAlign: "right" }}>
+                        ₹
+                        {parseFloat(baseTotal).toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </td>
+                      <td colSpan="4"></td>
+                    </tr>
+                    <tr style={{ fontWeight: "bold" }}>
+                      <td colSpan="6">Total Tax (GST):</td>
+                      <td style={{ textAlign: "right" }}>
+                        ₹
+                        {parseFloat(taxTotal).toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </td>
+                      <td colSpan="4"></td>
+                    </tr>
+                    <tr style={{ fontWeight: "bold" }}>
+                      <td colSpan="6">Grand Total (Price + GST):</td>
+                      <td style={{ textAlign: "right" }}>
+                        ₹
+                        {parseFloat(grandTotal).toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </td>
+                      <td colSpan="4"></td>
+                    </tr>
+                  </>
                 )}
               </tbody>
             </table>
@@ -1293,6 +1339,9 @@ const RequestDetails = ({ user }) => {
 
           {showPricePopup && pricePopupData && (
             <div className="popup">
+               <span className="x-button" onClick={() => setShowPricePopup(false)}>
+            &times;
+          </span>
               <div className="popup-content">
                 <h3>Vendor Details</h3>
                 <table>
@@ -1342,7 +1391,7 @@ const RequestDetails = ({ user }) => {
                     ))}
                   </tbody>
                 </table>
-                <button onClick={() => setShowPricePopup(false)}>Close</button>
+                {/* <button  onClick={() => setShowPricePopup(false)}>Close</button> */}
               </div>
             </div>
           )}

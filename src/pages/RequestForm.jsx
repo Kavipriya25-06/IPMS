@@ -2,6 +2,19 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import CustomMessagebox from "./CustomMessageBox.jsx";
 import config from "../Config"; // Import config for API endpoints
+import {
+  showSuccessToast,
+  showErrorToast,
+  showInfoToast,
+  showWarningToast,
+  showMessageToast,
+  ToastContainerComponent,
+} from "./Toastify.jsx";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { format, parseISO } from "date-fns";
 
 const RequestForm = () => {
   const [boms, setBoms] = useState([]);
@@ -108,7 +121,7 @@ const RequestForm = () => {
     const remainingIds = availableIds.filter((id) => !selectedIds.includes(id));
 
     if (remainingIds.length === 0) {
-      alert("All available components have already been added.");
+      showInfoToast("All available components have already been added.");
       return;
     }
 
@@ -135,41 +148,46 @@ const RequestForm = () => {
       (comp) => comp.component_id === componentId
     );
 
+    console.log("Selected component:", selectedComponent);
+
     if (!selectedComponent) {
-      alert("Invalid component selected.");
-      return;
-    }
-
-    // Check if the component is already in the table
-    const isComponentAlreadySelected = selectedComponents.some(
-      (comp, i) =>
-        comp.component?.component_id === selectedComponent.component_id &&
-        i !== index
-    );
-
-    if (isComponentAlreadySelected) {
-      alert("This component is already in the table.");
+      showErrorToast("Invalid component selected.");
       return;
     }
 
     const updatedComponents = [...selectedComponents];
     updatedComponents[index].component = selectedComponent;
 
-    // Step 1: Find vendor_id from vendor_master using component_id
-    const vendorData = vendorMaster.find(
-      (vendor) => vendor.product_id === selectedComponent.product_id
+    // Match vendors from vendor_master
+    const vendorMatches = vendorMaster.filter(
+      (vendorEntry) => vendorEntry.component_id === componentId
     );
 
-    // Step 2: Use vendor_id to find vendor_name from vendor_list
-    if (vendorData) {
-      const vendor = vendorList.find((v) => v.vendor_id === vendorData.vendor);
+    console.log("Vendor matches found:", vendorMatches);
+
+    const vendorOptions = vendorMatches
+      .map((vm) => {
+        const vendorDetails = vendorList.find((v) => v.vendor_id === vm.vendor);
+        console.log("Vendor detail for vm.vendor", vm.vendor, vendorDetails);
+        return vendorDetails;
+      })
+      .filter(Boolean);
+
+    console.log("Vendor options resolved:", vendorOptions);
+
+    updatedComponents[index].vendorOptions = vendorOptions;
+
+    // Auto-select first vendor if available
+    if (vendorOptions.length > 0) {
       updatedComponents[index].vendor = {
-        vendor_name: vendor ? vendor.vendor_name : "N/A",
-        vendor_id: vendor ? vendor.vendor_id : "",
-        product_id: vendor ? vendor.product_id : "",
+        vendor_id: vendorOptions[0].vendor_id,
+        vendor_name: vendorOptions[0].vendor_name,
       };
     } else {
-      updatedComponents[index].vendor = { vendor_name: "N/A" };
+      updatedComponents[index].vendor = {
+        vendor_id: "",
+        vendor_name: "N/A",
+      };
     }
 
     setSelectedComponents(updatedComponents);
@@ -181,7 +199,7 @@ const RequestForm = () => {
   const handlePopupSubmit = async () => {
     // Validate popup input fields
     if (!popupData.name || !popupData.projectName || !popupData.bomId) {
-      alert("Please fill in all fields.");
+      showInfoToast("Please fill in all fields.");
       return;
     }
 
@@ -205,7 +223,7 @@ const RequestForm = () => {
       if (!bomlistresponse.ok) {
         const errorData = await bomlistresponse.json();
         console.error("Error in BOM list submission:", errorData);
-        alert("Failed to save BOM. Please check the inputs.");
+        showErrorToast("Failed to save BOM. Please check the inputs.");
         return;
       }
 
@@ -261,7 +279,7 @@ const RequestForm = () => {
       if (!requestListResponse.ok) {
         const errorData = await requestListResponse.json();
         console.error("Error in request list submission:", errorData);
-        alert("Failed to save the request. Please try again.");
+        showErrorToast("Failed to save the request. Please try again.");
         return;
       }
 
@@ -296,7 +314,7 @@ const RequestForm = () => {
       setTimeout(() => navigate("/requests"), 3000);
     } catch (error) {
       console.error("Error in submission process:", error);
-      alert("An error occurred during submission. Please try again.");
+      showErrorToast("An error occurred during submission. Please try again.");
     } finally {
       setShowPopup(false);
     }
@@ -341,7 +359,7 @@ const RequestForm = () => {
       if (!requestListResponse.ok) {
         const errorData = await requestListResponse.json();
         console.error("Error in request list submission:", errorData);
-        alert("Failed to save the request. Please try again.");
+        showErrorToast("Failed to save the request. Please try again.");
         return;
       }
 
@@ -394,7 +412,7 @@ const RequestForm = () => {
       if (!projectPatchResponse.ok) {
         const patchErrorData = await projectPatchResponse.json();
         console.error("Error in project PATCH submission:", patchErrorData);
-        alert("Failed to update the project. Please try again.");
+        showErrorToast("Failed to update the project. Please try again.");
         return;
       }
 
@@ -426,14 +444,15 @@ const RequestForm = () => {
 
       console.log("All request master entries successfully added.");
       console.log("Project successfully updated with new request ID.");
-      setShowMessageBox(true);
-      setMessageBoxContent("Request submitted successfully!");
-      setTimeout(() => navigate("/requests"), 3000);
+      showSuccessToast("Request submitted successfully!");
+      setTimeout(() => navigate("/requests"), 2000);
     } catch (error) {
       console.error("Error in submission process:", error);
-      alert("An error occurred during submission. Please try again.");
+      showErrorToast("An error occurred during submission. Please try again.");
     }
   };
+
+  const formattedDate = format(new Date(), "dd-MM-yyyy");
 
   return (
     <div>
@@ -553,7 +572,22 @@ const RequestForm = () => {
               }}
             />
           </div>
-          <div style={{ marginBottom: "15px", width: "95%" }}>
+          <div
+            className="date-input-container"
+            style={{ marginBottom: "15px", width: "100%" }}
+          >
+            <label style={{ display: "block", marginBottom: "5px" }}>
+              Date:
+            </label>
+            <input
+              type="text"
+              value={formattedDate}
+              readOnly
+              className="input1"
+            />
+          </div>
+
+          {/* <div style={{ marginBottom: "15px", width: "95%" }}>
             <label style={{ display: "block", marginBottom: "5px" }}>
               Date:
             </label>
@@ -569,7 +603,7 @@ const RequestForm = () => {
                 border: "1px solid #ccc",
               }}
             />
-          </div>
+          </div> */}
 
           <div style={{ marginBottom: "15px", width: "100%" }}>
             <label style={{ display: "block", marginBottom: "5px" }}>
@@ -614,14 +648,14 @@ const RequestForm = () => {
             </select>
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
               <button
-              className="edit-btn"
+                className="edit-btn"
                 style={{
                   borderRadius: "5px",
                   border: "1px solid #ccc",
                   cursor: "pointer",
                   marginTop: "20px",
-                  
                 }}
+                onClick={handleSubmit}
               >
                 Submit Request
               </button>
@@ -696,7 +730,34 @@ const RequestForm = () => {
                         }
                       />
                     </td>
-                    <td>{component.vendor.vendor_name}</td>
+                    <td>
+                      {component.vendorOptions &&
+                      component.vendorOptions.length > 0 ? (
+                        <select
+                          value={component.vendor?.vendor_id || ""}
+                          onChange={(e) => {
+                            const updated = [...selectedComponents];
+                            const vendor = component.vendorOptions.find(
+                              (v) => v.vendor_id === e.target.value
+                            );
+                            updated[index].vendor = {
+                              vendor_name: vendor.vendor_name,
+                              vendor_id: vendor.vendor_id,
+                            };
+                            setSelectedComponents(updated);
+                          }}
+                        >
+                          <option value="">Select Vendor</option>
+                          {component.vendorOptions.map((v) => (
+                            <option key={v.vendor_id} value={v.vendor_id}>
+                              {v.vendor_name}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        component.vendor?.vendor_name || "N/A"
+                      )}
+                    </td>
                     <td>
                       <button
                         className="cancel-button"
@@ -725,6 +786,7 @@ const RequestForm = () => {
         </div>
       )}
 
+      <ToastContainer />
       {/* <button
         onClick={() => navigate("/requests")}
         style={{

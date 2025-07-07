@@ -74,6 +74,16 @@ export default function Sidebar() {
       path: "/inward",
       roles: ["Admin", "Sub-Admin", "Inventory"],
     },
+     {
+      label: "Outward",
+      path: "/outward",
+      roles: ["Admin", "Sub-Admin", "Inventory"],
+    },
+     {
+      label: "Job Order Sheet",
+      path: "/jobordersheet",
+      roles: ["Admin", "Sub-Admin", "Inventory"],
+    },
     // { label: "Add Tags", path: "/addtags", roles: ["Admin", "Inventory", "Procurement"] },
     // { label: "MRF List", path: "/Mrf", roles: ["Admin", "Procurement", "Inventory", "User"] },
     // { label: "MRF Request", path: "/MrfRequest", roles: ["Admin", "Procurement", "Inventory", "User"] },

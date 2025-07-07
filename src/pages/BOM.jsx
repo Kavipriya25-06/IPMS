@@ -4,6 +4,15 @@ import config from "../Config"; // Import config for API endpoints
 import { sortData, toggleSortDirection, renderSortArrow } from "../Sort";
 import AddIcon from "../assets/Add.png";
 import Delete from "../assets/Delete.png";
+import {
+  showSuccessToast,
+  showErrorToast,
+  showInfoToast,
+  showWarningToast,
+  showMessageToast,
+  ToastContainerComponent,
+} from "./Toastify.jsx";
+import { format, parseISO } from "date-fns";
 
 const BOM = () => {
   const [boms, setBoms] = useState([]); // List of all BOMs
@@ -13,6 +22,49 @@ const BOM = () => {
     key: null,
     direction: "ascending",
   });
+
+  const handleToggleWbom = async (bom) => {
+    if (bom.wbom) {
+      showErrorToast(
+        "This is already marked as Final BOM and cannot be changed."
+      );
+      return;
+    }
+
+    showMessageToast({
+      message: "Are you sure you want to mark this as Final BOM?",
+      onConfirm: async () => {
+        try {
+          const response = await fetch(
+            `${config.apiBaseURL}/bom_list/${bom.bom_id}/`,
+            {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ wbom: true }),
+            }
+          );
+
+          if (response.ok) {
+            setBoms((prev) =>
+              prev.map((b) =>
+                b.bom_id === bom.bom_id ? { ...b, wbom: true } : b
+              )
+            );
+            showSuccessToast("Marked as Final BOM.");
+          } else {
+            const error = await response.json();
+            showErrorToast("Error marking Final BOM: " + JSON.stringify(error));
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          showErrorToast("Failed to update Final BOM.");
+        }
+      },
+      onCancel: () => {
+        showWarningToast("Action cancelled.");
+      },
+    });
+  };
 
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -71,8 +123,8 @@ const BOM = () => {
   };
 
   // Function to handle a click on a BOM ID
-  const handleBomClick = (bomId) => {
-    navigate(`/bom/${bomId}`); // Navigate to BOM details page for the selected BOM
+  const handleBomClick = (bomId, isWbom) => {
+    navigate(`/bom/${bomId}?readonly=${isWbom}`); // Navigate to BOM details page for the selected BOM
   };
 
   const handleSort = (key) => {
@@ -99,11 +151,17 @@ const BOM = () => {
 
   //Submit form
   const handleSubmit = async () => {
+    const payload = {
+      ...formData,
+      wbom: false,
+      number_of_components: 0,
+
+    };
     try {
       const response = await fetch(`${config.apiBaseURL}/bom_list/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
@@ -122,28 +180,67 @@ const BOM = () => {
     }
   };
 
-  const handleDelete = async (bomId) => {
-    if (window.confirm(`Are you sure you want to delete BOM ID: ${bomId}?`)) {
-      try {
-        const response = await fetch(
-          `${config.apiBaseURL}/bom_list/${bomId}/`,
-          {
-            method: "DELETE",
-          }
-        );
+  const handleDelete = (bomId) => {
+    showMessageToast({
+      message: (
+        <>
+          Are you sure you want to delete <strong>BOM ID: {bomId}</strong>?
+        </>
+      ),
+      onConfirm: async () => {
+        try {
+          const response = await fetch(
+            `${config.apiBaseURL}/bom_list/${bomId}/`,
+            {
+              method: "DELETE",
+            }
+          );
 
-        if (response.ok) {
-          alert("BOM deleted successfully!");
-          // Refresh list after deletion
-          const refreshed = await fetch(`${config.apiBaseURL}/bom_list/`);
-          setBoms(await refreshed.json());
-        } else {
-          const error = await response.json();
-          alert("Error deleting BOM: " + JSON.stringify(error));
+          if (response.ok) {
+            showSuccessToast("BOM deleted successfully!");
+            const refreshed = await fetch(`${config.apiBaseURL}/bom_list/`);
+            setBoms(await refreshed.json());
+          } else {
+            const error = await response.json();
+            showErrorToast("Error deleting BOM: " + JSON.stringify(error));
+          }
+        } catch (error) {
+          console.error("Error deleting BOM:", error);
+          showErrorToast("Failed to delete BOM.");
         }
-      } catch (error) {
-        console.error("Error deleting BOM:", error);
+      },
+      onCancel: () => {
+        showWarningToast("Deletion cancelled.");
+      },
+    });
+  };
+
+  const toggleWbom = async (bom) => {
+    const updatedWbom = !bom.wbom;
+
+    try {
+      const response = await fetch(
+        `${config.apiBaseURL}/bom_list/${bom.bom_id}/`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ wbom: updatedWbom }),
+        }
+      );
+
+      if (response.ok) {
+        // Update local state
+        setBoms((prevBoms) =>
+          prevBoms.map((b) =>
+            b.bom_id === bom.bom_id ? { ...b, wbom: updatedWbom } : b
+          )
+        );
+      } else {
+        const error = await response.json();
+        alert("Error updating WBOM: " + JSON.stringify(error));
       }
+    } catch (error) {
+      console.error("Error updating WBOM:", error);
     }
   };
 
@@ -180,28 +277,39 @@ const BOM = () => {
       </div>
 
       {showForm && (
-        <div className="bom-form">
-          <input
-            type="text"
-            name="bom_name"
-            placeholder="BOM Name"
-            value={formData.bom_name}
-            onChange={handleInputChange}
-            required
-          />
-          <input
-            type="text"
-            name="created_by"
-            placeholder="Created By"
-            value={formData.created_by}
-            onChange={handleInputChange}
-            required
-          />
-          <button onClick={handleSubmit}>Submit</button>
+        <div className="modal-overlay">
+          <div className="modal-contents">
+            <h3>Add BOM</h3>
+            <div className="form-grid">
+              <label htmlFor="">BOM Name</label>
+              <input
+                type="text"
+                name="bom_name"
+                placeholder="BOM Name"
+                value={formData.bom_name}
+                onChange={handleInputChange}
+                required
+              />
+              <label htmlFor="">Created by</label>
+
+              <input
+                type="text"
+                name="created_by"
+                placeholder="Created By"
+                value={formData.created_by}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="modal-actions">
+              <button onClick={handleSubmit}>Submit</button>
+              <button onClick={() => setShowForm(false)}>Cancel</button>
+            </div>
+          </div>
         </div>
       )}
 
-      <div className="table-container">
+      <div className="table-container" style={{ marginTop: "-15px" }}>
         <table>
           <thead>
             <tr>
@@ -250,7 +358,7 @@ const BOM = () => {
             }).map((bom) => (
               <tr key={bom.bom_id}>
                 <td
-                  onClick={() => handleBomClick(bom.bom_id)}
+                  onClick={() => handleBomClick(bom.bom_id, bom.wbom)}
                   style={{
                     cursor: "pointer",
                     textDecoration: "underline",
@@ -261,26 +369,48 @@ const BOM = () => {
                 <td>{bom.bom_name}</td>
                 <td>{bomQuantities[bom.bom_id] || 0}</td>
                 <td>{bom.created_by}</td>
-                <td>{bom.created_date}</td>
-                <td>{bom.last_modified_by}</td>
-                <td>{bom.last_modified_date}</td>
                 <td>
-                  <button
-                    onClick={() => handleDelete(bom.bom_id)}
-                    style={{
-                      background: "transparent",
-                      border: "none",
-                      cursor: "pointer",
-                      padding: "4px",
-                    }}
-                    title="Delete"
-                  >
-                    <img
+                  {bom.created_date
+                    ? format(parseISO(bom.created_date), "dd-MM-yyyy")
+                    : "-"}
+                </td>
+                <td>{bom.last_modified_by}</td>
+                <td>
+                  {bom.last_modified_date
+                    ? format(parseISO(bom.last_modified_date), "dd-MM-yyyy")
+                    : "-"}
+                </td>
+                <td>
+                  <div className="action-buttons">
+                    <button
+                      onClick={() => handleToggleWbom(bom)}
+                      style={{
+                        backgroundColor: bom.wbom ? "#4CAF50" : "#f58720",
+                        color: "white",
+                        borderRadius: "5px",
+                        border: "none",
+                        cursor: "pointer",
+                      }}
+                      title={
+                        bom.wbom ? "Maeked as Final BOM" : "Mark as Final BOM"
+                      }
+                    >
+                      {bom.wbom ? "FBOM" : "WBOM"}
+                    </button>
+
+                    <button
+                      onClick={() => handleDelete(bom.bom_id)}
+                      className="delete-button"
+                      title="Delete"
+                    >
+                      {/* <img
                       src={Delete}
                       alt="Delete"
                       style={{ width: "20px", height: "20px" }}
-                    />
-                  </button>
+                    /> */}
+                      Delete
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -307,6 +437,7 @@ const BOM = () => {
           ↑
         </button>
       )}
+      <ToastContainerComponent position="top-right" autoClose={3000} />
     </div>
   );
 };

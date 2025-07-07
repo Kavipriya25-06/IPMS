@@ -15,6 +15,10 @@ import {
 } from "./Toastify.jsx"; // Import Toastify utilities
 
 const POOrderMaster = ({ user }) => {
+  const [showDeliveryModal, setShowDeliveryModal] = useState(false);
+  const [selectedDeliveryDetails, setSelectedDeliveryDetails] = useState(null);
+  const [enteredQuantity, setEnteredQuantity] = useState("");
+
   const { poId } = useParams(); // Extract PO ID from the route
   const [poDetails, setPODetails] = useState([]);
   const [poData, setPOData] = useState(null); // State for storing PO data
@@ -297,6 +301,54 @@ const POOrderMaster = ({ user }) => {
   //   }
   // };
 
+  const handleInwardWithPatch = async (delivery) => {
+    const item = {
+      component_id: selectedDeliveryDetails.cart_details.component_id,
+      component_type: selectedDeliveryDetails.cart_details.component_type,
+      component_specification:
+        selectedDeliveryDetails.cart_details.component_specification,
+      category: selectedDeliveryDetails.cart_details.category,
+      unit_of_measurement:
+        selectedDeliveryDetails.cart_details.unit_of_measurement,
+      vendor_name: selectedDeliveryDetails.cart_details.vendor_name,
+      vendor_id: selectedDeliveryDetails.cart_details.vendor_id,
+      quantity: delivery.quantity,
+      id: selectedDeliveryDetails.id, // PO Master ID
+    };
+
+    try {
+      await handleInward(item); //  Existing inward logic
+
+      //  PATCH delivery.inward = true
+      const patchResponse = await fetch(
+        `${config.apiBaseURL}/po_delivery/${delivery.id}/`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ inward: true }),
+        }
+      );
+
+      if (!patchResponse.ok) {
+        const patchError = await patchResponse.json();
+        console.error("Failed to patch delivery inward status:", patchError);
+        alert("Inward successful, but marking delivery as completed failed.");
+        return;
+      }
+
+      // Update UI to disable button
+      setSelectedDeliveryDetails((prevDetails) => {
+        const updatedDeliveries = prevDetails.deliveries.map((d) =>
+          d.id === delivery.id ? { ...d, inward: true } : d
+        );
+        return { ...prevDetails, deliveries: updatedDeliveries };
+      });
+    } catch (err) {
+      console.error("Error in handleInwardWithPatch:", err);
+      alert("An error occurred while performing the inward operation.");
+    }
+  };
+
   const handleInward = async (item) => {
     const componentKey = item.component_id;
 
@@ -332,7 +384,7 @@ const POOrderMaster = ({ user }) => {
       const matchedPO = poData.filter((po) => {
         const matches =
           po.PO_id === poId &&
-          po.cart_details?.po_master_id === id &&
+          po.id === id &&
           po.cart_details?.component_id === component_id &&
           po.cart_details?.vendor_id === vendor_id &&
           po.cart_details?.component_type === component_type &&
@@ -340,8 +392,8 @@ const POOrderMaster = ({ user }) => {
             component_specification &&
           po.cart_details?.category === category &&
           po.cart_details?.unit_of_measurement === unit_of_measurement &&
-          po.cart_details?.vendor_name?.toLowerCase().trim() ===
-            vendor_name.toLowerCase().trim();
+          (po.cart_details?.vendor_name || "").toLowerCase().trim() ===
+            (vendor_name || "").toLowerCase().trim();
 
         // Log each condition for debugging
         console.log(`PO ID ${po.id}:`, {
@@ -358,8 +410,8 @@ const POOrderMaster = ({ user }) => {
           uom_match:
             po.cart_details?.unit_of_measurement === unit_of_measurement,
           vendor_name_match:
-            po.cart_details?.vendor_name?.toLowerCase().trim() ===
-            vendor_name.toLowerCase().trim(),
+            (po.cart_details?.vendor_name || "").toLowerCase().trim() ===
+            (vendor_name || "").toLowerCase().trim(),
         });
 
         return matches;
@@ -530,6 +582,110 @@ const POOrderMaster = ({ user }) => {
   const vendor_gstn = poData?.cart_details?.gstn || "";
   const { totalquantity, totalcost } = computeTotals();
 
+  const handleQuantitySubmit = async () => {
+    if (!selectedDeliveryDetails) {
+      alert("PO not selected");
+      return;
+    }
+
+    const quantity = parseInt(enteredQuantity);
+    if (isNaN(quantity) || quantity <= 0) {
+      alert("Enter a valid quantity greater than 0");
+      return;
+    }
+
+    const totalOrderedQuantity = selectedDeliveryDetails.cart_details.quantity;
+
+    // First, fetch existing deliveries before posting
+    const currentDeliveriesRes = await fetch(
+      `${config.apiBaseURL}/po_delivery/?po_master=${selectedDeliveryDetails.id}`
+    );
+    const currentDeliveries = await currentDeliveriesRes.json();
+
+    const alreadyDelivered = currentDeliveries.reduce(
+      (acc, d) => acc + d.quantity,
+      0
+    );
+
+    const remaining = totalOrderedQuantity - alreadyDelivered;
+
+    // If already exceeded, block immediately
+    if (remaining <= 0) {
+      alert("The full ordered quantity has already been delivered.");
+      return;
+    }
+
+    if (quantity > remaining) {
+      alert(`Only ${remaining} more units can be delivered.`);
+      return;
+    }
+
+    // Proceed with posting
+    const payload = {
+      po_master: selectedDeliveryDetails.id,
+      quantity,
+      order_placed_status: "Ordered",
+      order_placed_date_time: new Date().toISOString(),
+    };
+
+    try {
+      const response = await fetch(`${config.apiBaseURL}/po_delivery/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        alert("Quantity submitted successfully");
+        setEnteredQuantity("");
+
+        // Fetch updated delivery data to refresh UI
+        const updatedDeliveryRes = await fetch(
+          `${config.apiBaseURL}/po_delivery/?po_master=${selectedDeliveryDetails.id}`
+        );
+
+        const updatedDeliveries = await updatedDeliveryRes.json();
+
+        setSelectedDeliveryDetails((prev) => ({
+          ...prev,
+          deliveries: updatedDeliveries,
+        }));
+
+        setShowDeliveryModal(false);
+      } else {
+        const err = await response.json();
+        alert("Failed to submit: " + JSON.stringify(err));
+      }
+    } catch (error) {
+      console.error("Error submitting delivery:", error);
+      alert("Error submitting delivery.");
+    }
+  };
+
+  const thStyle = {
+    border: "1px solid #ddd",
+    padding: "10px",
+    textAlign: "left",
+  };
+
+  const tdStyle = {
+    border: "1px solid #ddd",
+    padding: "10px",
+  };
+
+  const formatDateTime = (datetime) => {
+    if (!datetime) return "-";
+    const date = new Date(datetime);
+    return (
+      date.toLocaleDateString() +
+      " " +
+      date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    );
+  };
+
   return (
     <div>
       <h2>PO Details</h2>
@@ -555,7 +711,7 @@ const POOrderMaster = ({ user }) => {
                   <th>Unit Price</th>
                   <th>GST</th>
                   <th>Total Cost</th>
-                  {(isAdmin || isProcurement) && <th>Actions</th>}
+                  {/* {(isAdmin || isProcurement) && <th>Actions</th>} */}
                 </tr>
               </thead>
               <tbody>
@@ -566,7 +722,27 @@ const POOrderMaster = ({ user }) => {
                     <td>{po.cart_details.component_type}</td>
                     <td>{po.cart_details.component_specification}</td>
                     <td>{po.cart_details.unit_of_measurement}</td>
-                    <td>{po.cart_details.quantity}</td>
+                    <td
+                      style={{ cursor: "pointer", textDecoration: "underline" }}
+                      onClick={async () => {
+                        // Fetch deliveries first
+                        const res = await fetch(
+                          `${config.apiBaseURL}/po_delivery/?po_master=${po.id}`
+                        );
+                        const deliveries = await res.json();
+
+                        // Now safely set the modal data
+                        setSelectedDeliveryDetails({
+                          ...po,
+                          deliveries, // attach fetched delivery list
+                        });
+
+                        setShowDeliveryModal(true);
+                      }}
+                    >
+                      {po.cart_details.quantity}
+                    </td>
+
                     <td style={{ textAlign: "right" }}>
                       ₹
                       {parseFloat(po.cart_details.unit_price).toLocaleString(
@@ -594,7 +770,7 @@ const POOrderMaster = ({ user }) => {
                         }
                       )}
                     </td>
-                    {(isAdmin || isProcurement) && (
+                    {/* {(isAdmin || isProcurement) && (
                       <td>
                         <button
                           onClick={() => handleInward(po.cart_details)}
@@ -613,7 +789,7 @@ const POOrderMaster = ({ user }) => {
                             : "Inward"}
                         </button>
                       </td>
-                    )}
+                    )} */}
                   </tr>
                 ))}
 
@@ -635,7 +811,250 @@ const POOrderMaster = ({ user }) => {
             </table>
           </div>
 
-          {/* Order Status Buttons */}
+          {showDeliveryModal && selectedDeliveryDetails && (
+            <div
+              style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                width: "100vw",
+                height: "100vh",
+                backgroundColor: "rgba(0,0,0,0.5)",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                zIndex: 999,
+              }}
+              onClick={() => setShowDeliveryModal(false)}
+            >
+              <div
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  backgroundColor: "white",
+                  padding: "24px",
+                  borderRadius: "10px",
+                  width: "90%",
+                  maxWidth: "1000px",
+                  height: "auto",
+                }}
+              >
+                <h3 style={{ marginBottom: "16px" }}>
+                  {selectedDeliveryDetails.cart_details.component_specification}
+                </h3>
+
+                {/* Quantity Entry */}
+                <div
+                  style={{
+                    display: "flex",
+                    marginBottom: "20px",
+                    alignItems: "center",
+                  }}
+                >
+                  <label style={{ marginRight: "10px" }}>Enter Quantity</label>
+                  <input
+                    type="number"
+                    min="0"
+                    style={{ padding: "5px", width: "150px" }}
+                    value={enteredQuantity}
+                    onChange={(e) => setEnteredQuantity(e.target.value)}
+                  />
+                  <button
+                    onClick={handleQuantitySubmit}
+                    style={{
+                      marginLeft: "10px",
+                      padding: "6px 12px",
+                      backgroundColor: "#007BFF",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Enter
+                  </button>
+                </div>
+
+                {/*  Table Format for Deliveries */}
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    marginTop: "10px",
+                  }}
+                >
+                  <thead>
+                    <tr style={{ backgroundColor: "#f2f2f2" }}>
+                      <th style={thStyle}>Quantity</th>
+                      <th style={thStyle}>Order Placed</th>
+                      <th style={thStyle}>Shipped</th>
+                      <th style={thStyle}>Received</th>
+                      <th style={thStyle}>Inward</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedDeliveryDetails.deliveries?.map(
+                      (delivery, index) => {
+                        const fullyReceived = !!delivery.received_date;
+
+                        const handleFieldUpdate = async (field, value) => {
+                          try {
+                            const patchPayload = {
+                              [field]: value,
+                            };
+                            const res = await fetch(
+                              `${config.apiBaseURL}/po_delivery/${delivery.id}/`,
+                              {
+                                method: "PATCH",
+                                headers: {
+                                  "Content-Type": "application/json",
+                                },
+                                body: JSON.stringify(patchPayload),
+                              }
+                            );
+
+                            if (res.ok) {
+                              // Update local state to reflect changes
+                              const updatedDelivery = await res.json();
+                              setSelectedDeliveryDetails((prev) => {
+                                const updatedDeliveries = [...prev.deliveries];
+                                updatedDeliveries[index] = updatedDelivery;
+                                return {
+                                  ...prev,
+                                  deliveries: updatedDeliveries,
+                                };
+                              });
+                            } else {
+                              alert("Failed to update.");
+                            }
+                          } catch (err) {
+                            console.error("Update error", err);
+                            alert("Error updating date.");
+                          }
+                        };
+
+                        return (
+                          <tr key={index}>
+                            <td style={tdStyle}>{delivery.quantity || "-"}</td>
+
+                            {/* Order Placed */}
+                            <td style={tdStyle}>
+                              {formatDateTime(delivery.order_placed_date_time)}
+                            </td>
+
+                            {/* Shipped */}
+                            <td style={tdStyle}>
+                              {delivery.customer_date_time ? (
+                                formatDateTime(delivery.customer_date_time)
+                              ) : (
+                                <div>
+                                  <input
+                                    type="datetime-local"
+                                    onChange={(e) =>
+                                      handleFieldUpdate(
+                                        "customer_date_time",
+                                        e.target.value
+                                      )
+                                    }
+                                  />
+                                </div>
+                              )}
+                            </td>
+
+                            {/* Received */}
+                            <td style={tdStyle}>
+                              {delivery.received_date ? (
+                                formatDateTime(delivery.received_date)
+                              ) : (
+                                <div>
+                                  <input
+                                    type="datetime-local"
+                                    onChange={(e) =>
+                                      handleFieldUpdate(
+                                        "received_date",
+                                        e.target.value
+                                      )
+                                    }
+                                  />
+                                </div>
+                              )}
+                            </td>
+
+                            {/* Inward */}
+                            <td style={tdStyle}>
+                              <button
+                                style={{
+                                  backgroundColor:
+                                    fullyReceived && !delivery.inward
+                                      ? "#d66f00"
+                                      : "#ccc",
+                                  color: "#fff",
+                                  border: "none",
+                                  padding: "5px 12px",
+                                  borderRadius: "5px",
+                                  cursor:
+                                    fullyReceived && !delivery.inward
+                                      ? "pointer"
+                                      : "not-allowed",
+                                }}
+                                disabled={!fullyReceived || delivery.inward}
+                                onClick={() =>
+                                  fullyReceived &&
+                                  !delivery.inward &&
+                                  handleInwardWithPatch(delivery)
+                                }
+                              >
+                                Inward
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      }
+                    )}
+                  </tbody>
+                </table>
+
+                {/* Summary Section */}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    marginTop: "30px",
+                  }}
+                >
+                  <div>
+                    {/* <div>
+                      Ordered Quantity:{" "}
+                      {selectedDeliveryDetails.cart_details?.ordered_quantity ||
+                        "-"}
+                    </div>
+                    <div>
+                      Remaining Quantity:{" "}
+                      {selectedDeliveryDetails.cart_details
+                        ?.remaining_quantity || "-"}
+                    </div> */}
+                  </div>
+                </div>
+
+                {/* Close Button */}
+                <div style={{ marginTop: "20px", textAlign: "right" }}>
+                  <button
+                    onClick={() => setShowDeliveryModal(false)}
+                    style={{
+                      padding: "8px 16px",
+                      backgroundColor: "#000",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "4px",
+                    }}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Order Status Buttons
           {(isAdmin || isProcurement) && (
             <div style={{ marginTop: "20px" }}>
               <button
@@ -672,9 +1091,9 @@ const POOrderMaster = ({ user }) => {
                 Received
               </button>
             </div>
-          )}
+          )} */}
 
-          {/* Date Input Section */}
+          {/* Date Input Section
           {showPopup && (
             <div className="popup">
               <div className="popup-content">
@@ -693,9 +1112,9 @@ const POOrderMaster = ({ user }) => {
                 </div>
               </div>
             </div>
-          )}
+          )} */}
 
-          {/* Current Status */}
+          {/* Current Status
           <div
             style={{
               marginTop: "10px",
@@ -741,7 +1160,7 @@ const POOrderMaster = ({ user }) => {
                   : "Not yet received"}
               </p>
             </div>
-          </div>
+          </div> */}
         </>
       )}
       <ToastContainerComponent />

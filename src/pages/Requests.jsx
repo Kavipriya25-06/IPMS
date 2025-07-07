@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import config from "../Config"; // Import config for API endpoints
 import Add from "../assets/Add.png";
+import { format, parseISO } from "date-fns";
 
 const Requests = () => {
   const [requests, setRequests] = useState([]);
@@ -14,6 +15,7 @@ const Requests = () => {
   const [sortField, setSortField] = useState("");
   const [sortOrder, setSortOrder] = useState("asc");
   const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
+  
 
   useEffect(() => {
     fetch(`${config.apiBaseURL}/request_list/`)
@@ -206,97 +208,105 @@ const Requests = () => {
       </button> */}
       </div>
 
-      <table>
-        <thead>
-          <tr>
-            <th
-              onClick={() => handleSort("request_id")}
-              style={{ cursor: "pointer", textDecoration: "underline" }}
-            >
-              Request ID
-              {sortField === "request_id"
-                ? sortOrder === "asc"
-                  ? " 🔼"
-                  : " 🔽"
-                : ""}
-            </th>
-            {/* <th>BOM ID</th> */}
-            <th>Requester Name</th>
-            <th
-              onClick={() => handleSort("date")}
-              style={{ cursor: "pointer", textDecoration: "underline" }}
-            >
-              Date{" "}
-              {sortField === "date"
-                ? sortOrder === "asc"
-                  ? " 🔼"
-                  : " 🔽"
-                : ""}
-            </th>
-            <th>Status</th>
-            <th>Last Modified By</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sortedRequests.map((request) => {
-            const { status, mixed } = getAggregatedStatus(request.request_id);
-            return (
-              <tr key={request.request_id}>
-                <td
-                  onClick={() => handleRequestClick(request.request_id)}
-                  style={{
-                    cursor: "pointer",
-                    textDecoration: "underline",
-                  }}
-                >
-                  {request.request_id}
-                </td>
-                {/* <td>{request.bom_id}</td> */}
-                <td>{request.requester_name}</td>
-                <td>{request.date}</td>
-                {/* <td>{request.status}</td> */}
-                <td
-                  onClick={() => statusPopup(request.request_id)}
-                  style={{ cursor: "pointer", textDecoration: "underline" }}
-                >
-                  {status}
-                </td>
-                <td>{request.last_modified_by}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      <div className="table-container" style={{ marginTop:"-15px" }}>
+        <table>
+          <thead>
+            <tr>
+              <th
+                onClick={() => handleSort("request_id")}
+                style={{ cursor: "pointer", textDecoration: "underline" }}
+              >
+                Request ID
+                {sortField === "request_id"
+                  ? sortOrder === "asc"
+                    ? " 🔼"
+                    : " 🔽"
+                  : ""}
+              </th>
+              {/* <th>BOM ID</th> */}
+              <th>Requester Name</th>
+              <th
+                onClick={() => handleSort("date")}
+                style={{ cursor: "pointer", textDecoration: "underline" }}
+              >
+                Date{" "}
+                {sortField === "date"
+                  ? sortOrder === "asc"
+                    ? " 🔼"
+                    : " 🔽"
+                  : ""}
+              </th>
+              <th>Status</th>
+              <th>Last Modified By</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sortedRequests.map((request) => {
+              const { status, mixed } = getAggregatedStatus(request.request_id);
+              return (
+                <tr key={request.request_id}>
+                  <td
+                    onClick={() => handleRequestClick(request.request_id)}
+                    style={{
+                      cursor: "pointer",
+                      textDecoration: "underline",
+                    }}
+                  >
+                    {request.request_id}
+                  </td>
+                  {/* <td>{request.bom_id}</td> */}
+                  <td>{request.requester_name}</td>
+                  <td>
+                    {" "}
+                    {request.date
+                      ? format(parseISO(request.date), "dd-MM-yyyy")
+                      : "--"}
+                  </td>
+                  {/* <td>{request.status}</td> */}
+                  <td
+                    onClick={() => statusPopup(request.request_id)}
+                    style={{ cursor: "pointer", textDecoration: "underline" }}
+                  >
+                    {status}
+                  </td>
+                  <td>{request.last_modified_by}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
       {showstatus && (
         <div className="popup">
-          <span className="close-button" onClick={handleCloseStatus}>
+          <span className="x-button" onClick={handleCloseStatus}>
             &times;
           </span>
           <h3>Status Details</h3>
-
-          <table>
-            <thead>
-              <tr>
-                <th>PO ID</th>
-                <th>Request ID</th>
-                <th>Component Spec</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {requestStatusView.map((status, index) => (
-                <tr key={index}>
-                  <td>{status.po_id}</td>
-                  <td>{status.request_id}</td>
-                  <td>{status.component_specification}</td>
-                  <td>{status.po_status}</td>
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>PO ID</th>
+                  <th>Request ID</th>
+                  <th>Component Spec</th>
+                  <th>Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {requestStatusView.map((status, index) => (
+                  <tr key={index}>
+                    <td>{status.po_id}</td>
+                    <td>{status.request_id}</td>
+                    <td>{status.component_specification}</td>
+                    <td>{status.po_status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
-       {showScrollTop && (
+      {showScrollTop && (
         <button
           style={{
             position: "fixed",
