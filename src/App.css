@@ -861,6 +861,8 @@ tbody tr:hover {
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
 }
 
+
+
 .tally-edit-container {
   display: flex;
   flex-direction: column;
@@ -3462,9 +3464,15 @@ ul {
   cursor: pointer;
 }
 
+.report-select option{
+  border-radius: 10px !important;
+}
+
 .report-select:hover {
   background-color: #bab6b6;
+  
 }
+
 
 .generate-report-btn {
   padding: 10px 15px;
@@ -3801,5 +3809,169 @@ ul {
   cursor: pointer;
 }
 
+/* Responsive for tablets (768px and below) */
+@media (max-width: 768px) {
+  .joborder-container .form-section {
+    grid-template-columns: 1fr; /* Stack columns */
+    transform: translateX(0); /* Remove horizontal shift */
+    padding: 0 10px;
+  }
+
+  .joborder-container .forms-buttons {
+    position: static; /* Let it flow normally */
+    justify-content:flex-end; /* Center buttons */
+    margin-top: 20px;
+  }
+
+  .joborder-container .individual-tabs.checkbox-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .joborder-container .tab-selector {
+    justify-content: center;
+    padding: 0 10px;
+  }
+  .table-action-buttons{
+    margin-top: 20px;
+    margin-bottom: 10px;
+  }
+
+}
+
+
+/* Responsive for small phones (480px and below) */
+@media (max-width: 480px) {
+  .joborder-container .tab-btn {
+    font-size: 12px;
+    padding: 6px 8px;
+  }
+
+  .joborder-container .forms-buttons button {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  .joborder-container .form-section .individual-tabs label {
+    font-size: 14px;
+  }
+
+  .joborder-container .form-section .individual-tabs input,
+  .joborder-container .form-section .individual-tabs select {
+    font-size: 14px;
+    padding: 6px;
+  }
+}
+/* Container styling */
+.qc-question-block {
+  margin-bottom: 16px;
+}
+
+.qc-question-inline {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-top: 8px;
+  margin-left: 20px;
+  font-size: 14px;
+}
+
+.qc-question-text {
+  flex: 1;
+  font-weight: 500;
+}
+
+/* Custom radio label */
+.custom-radio {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+    padding-left: 25px;
+}
+
+.custom-radio input[type="radio"] {
+  opacity: 0;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  z-index: 1;
+  cursor: pointer;
+}
+
+
+/* Custom square box */
+.custom-radio .checkmark {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 15px;
+  width: 15px;
+  background-color: #fff;
+  border: 2px solid #f58720;
+  border-radius: 4px;
+  text-align: center;
+  line-height: 15px;
+  font-size: 14px;
+  color: white;
+  transition: all 0.2s ease;
+}
+
+/* Show tick when selected */
+.custom-radio input[type="radio"]:checked ~ .checkmark {
+  background-color: #f58720;
+  color: white;
+}
+
+/* Optional hover effect */
+.custom-radio:hover .checkmark {
+  border-color: #f1ba86;
+}
+.overall-status-block {
+  margin-top: -14px;
+}
+
+.status-button-group {
+  display: flex;
+  gap: 16px;
+  margin-top: 10px;
+  margin-left: 100px;
+
+}
+
+.status-button {
+  padding: 5px 10px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 2px solid #ccc;
+  border-radius: 6px;
+  background-color: white;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.status-button:hover {
+  border-color: #999;
+}
+
+/* Active states */
+.status-button.active-pass {
+  background-color: #f58720; /* Green */
+  border-color: #f58720;
+  color: white;
+}
+
+.status-button.active-fail {
+  background-color: gray; /* Red */
+  border-color: gray;
+  color: white;
+}
 
 

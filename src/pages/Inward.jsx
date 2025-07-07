@@ -948,75 +948,124 @@ const Inward = () => {
       </div>
 
       {showQCPopup && selectedItem && (
-        <div className="popup">
-          <h3>
-            Quality Check for{" "}
-            {getNestedValue(selectedItem, "po_master.cart.component_id")}
-          </h3>
-          <div>
-            {/* Render QC Questions */}
-            {newQuestion.qcQuestions?.map((q) => (
-              <div key={q.id}>
-                <p>{q.question}</p>
-                <label>
-                  Yes
-                  <input
-                    type="radio"
-                    name={`question-${q.id}`}
-                    onChange={() => handleQuestionAnswer(q.id, "Yes")}
-                  />
-                </label>
-                <label>
-                  No
-                  <input
-                    type="radio"
-                    name={`question-${q.id}`}
-                    onChange={() => handleQuestionAnswer(q.id, "No")}
-                  />
-                </label>
+        <div className="modal-overlay">
+          <div className="popup">
+            <h3>
+              Quality Check for{" "}
+              {getNestedValue(selectedItem, "po_master.cart.component_id")}
+            </h3>
+            <div>
+              {/* Render QC Questions */}
+              {newQuestion.qcQuestions?.map((q) => (
+                <div key={q.id} className="qc-question-block">
+                  <h4>
+                    Component Spec:&nbsp;
+                    <span style={{ fontWeight: "100" }}>
+                      {getNestedValue(
+                        selectedItem,
+                        "po_master.cart.component_specification"
+                      ) || "No Specification Available"}
+                    </span>
+                  </h4>
+                  <h4>QC Question</h4>
+                  <div className="qc-question-inline">
+                    <span className="qc-question-text">{q.question}</span>
+                    <label className="custom-radio">
+                      <input
+                        type="radio"
+                        name={`question-${q.id}`}
+                        value="Yes"
+                        onChange={() => handleQuestionAnswer(q.id, "Yes")}
+                      />
+                      <span className="checkmark">✓</span>
+                      Yes
+                    </label>
+                    <label className="custom-radio">
+                      <input
+                        type="radio"
+                        name={`question-${q.id}`}
+                        value="No"
+                        onChange={() => handleQuestionAnswer(q.id, "No")}
+                      />
+                      <span className="checkmark">✓</span>
+                      No
+                    </label>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="overall-status-block">
+              <h4>Overall Status</h4>
+              <div className="status-button-group">
+                <button
+                  type="button"
+                  className={`status-button ${
+                    newQuestion.overallStatus === "Pass" ? "active-pass" : ""
+                  }`}
+                  onClick={() =>
+                    setNewQuestion((prev) => ({
+                      ...prev,
+                      overallStatus: "Pass",
+                    }))
+                  }
+                >
+                  Pass
+                </button>
+                <button
+                  type="button"
+                  className={`status-button ${
+                    newQuestion.overallStatus === "Fail" ? "active-fail" : ""
+                  }`}
+                  onClick={() =>
+                    setNewQuestion((prev) => ({
+                      ...prev,
+                      overallStatus: "Fail",
+                    }))
+                  }
+                >
+                  Fail
+                </button>
               </div>
-            ))}
+            </div>
+
+            <div className="modal-actions">
+              <button className="edit-btn" onClick={handleSubmitQC}>
+                Submit QC
+              </button>
+              <button
+                className="cancel-button"
+                onClick={() => setShowQCPopup(false)}
+              >
+                Close
+              </button>
+            </div>
           </div>
-          <div>
-            <h4>Overall Status</h4>
-            <label>
-              Pass
-              <input
-                type="radio"
-                name="overall-status"
-                onChange={() =>
-                  setNewQuestion((prev) => ({ ...prev, overallStatus: "Pass" }))
-                }
-              />
-            </label>
-            <label>
-              Fail
-              <input
-                type="radio"
-                name="overall-status"
-                onChange={() =>
-                  setNewQuestion((prev) => ({ ...prev, overallStatus: "Fail" }))
-                }
-              />
-            </label>
-          </div>
-          <button onClick={handleSubmitQC}>Submit QC</button>
-          <button onClick={() => setShowQCPopup(false)}>Close</button>
         </div>
       )}
 
       {/* SKU Popup */}
       {skuPopupVisible && (
-        <div className="popup">
-          <h3>Enter SKU Number</h3>
-          <input
-            type="text"
-            value={skuSerialNumber}
-            onChange={(e) => setSkuSerialNumber(e.target.value)}
-            placeholder="SKU Number (optional)"
-          />
-          <button onClick={handleSkuSubmit}>Submit</button>
-          <button onClick={() => setSkuPopupVisible(false)}>Cancel</button>
+        <div className="modal-overlay">
+          <div className="popup">
+            <h3>Enter SKU Number</h3>
+            <input
+              type="text"
+              value={skuSerialNumber}
+              onChange={(e) => setSkuSerialNumber(e.target.value)}
+              placeholder="SKU Number (optional)"
+            />
+            <div className="modal-actions">
+              <button className="edit-btn" onClick={handleSkuSubmit}>
+                Submit
+              </button>
+              <button
+                className="cancel-button"
+                onClick={() => setSkuPopupVisible(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
