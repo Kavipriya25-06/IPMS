@@ -708,7 +708,6 @@ const Component = () => {
                 </th>
                 <th>Tally Reference</th>
                 <th>UOM</th>
-                <th>Product id</th>
 
                 <th
                   className="tags-dropdown-wrapper"
@@ -764,13 +763,11 @@ const Component = () => {
               {sortedComponents.length > 0 ? (
                 sortedComponents.map((item, index) => {
                   const component = item.component_id || {};
-                  // const components = sortedComponents;
-
                   return (
                     <tr key={index}>
                       <td>
                         <Link
-                          to={`/components/${component.product_id}`}
+                          to={`/components/${component.component_id}`}
                           style={{ textDecoration: "line", color: "inherit" }}
                         >
                           {component.component_id}
@@ -832,8 +829,7 @@ const Component = () => {
                         )}
                       </td>
                       <td>{component.unit_of_measurement}</td>
-                      <td>                          {component.product_id}
-</td>
+
                       <td>
                         <div>
                           {getTagsForComponent(component.component_id).length >

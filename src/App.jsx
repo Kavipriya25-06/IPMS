@@ -257,7 +257,7 @@ function App() {
               }
             />
             <Route
-              path="components/:productId"
+              path="components/:componentId"
               element={
                 <ProtectedRoute
                   allowedRoles={[

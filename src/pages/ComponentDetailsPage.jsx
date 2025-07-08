@@ -259,18 +259,11 @@
 // export default ComponentDetailsPage;
 // src\pages\Components.jsx
 
-<<<<<<< HEAD
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import config from "../Config"; // Import config for API endpoints
-import "../App.css";
-import { useParams } from "react-router-dom";
-=======
 import React, { useState, useEffect, useRef } from "react";
 import config from "../Config";
 import "../App.css";
 import { useParams } from "react-router-dom";
 import { format, parseISO } from "date-fns";
->>>>>>> 41adcc5ab071dc375e24158ac9bb11036f228f47
 
 import {
   showSuccessToast,
@@ -283,106 +276,14 @@ import {
 const ComponentDetailsPage = () => {
   const [mainImage, setMainImage] = useState("/placeholder.jpg");
   const [imageList, setImageList] = useState([]);
-<<<<<<< HEAD
-
-  const [lensVisible, setLensVisible] = useState(false);
-  // const [lensStyle, setLensStyle] = useState({});
-    const [zoomResultStyle, setZoomResultStyle] = useState({});
-
-=======
   const [lensVisible, setLensVisible] = useState(false);
   const [zoomResultStyle, setZoomResultStyle] = useState({});
->>>>>>> 41adcc5ab071dc375e24158ac9bb11036f228f47
   const imgRef = useRef();
   const { componentId } = useParams();
 
   const [vendorDetails, setVendorDetails] = useState([]);
   const [priceDataMap, setPriceDataMap] = useState({});
 
-<<<<<<< HEAD
-const handleMouseMove = (e) => {
-  const rect = imgRef.current.getBoundingClientRect();
-  const lensSize = Math.min(window.innerWidth * 0.25, 550); // Max 550px
-
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-
-  const cx = 4; // Zoom factor
-  const cy = 4;
-
-  const backgroundX = (x / rect.width) * 100;
-  const backgroundY = (y / rect.height) * 100;
-
-  setZoomResultStyle({
-    position: "absolute",
-    left: `${rect.right + 20}px`,  // 👈 Fixed position to the right of image
-    top: `20px`,          // 👈 Aligned with top of the image
-    width: `80%`,
-    height: `100%`,
-    backgroundImage: `url(${mainImage})`,
-    backgroundRepeat: "no-repeat",
-    backgroundSize: `${rect.width * cx}px ${rect.height * cy}px`,
-    backgroundPosition: `${backgroundX}% ${backgroundY}%`,
-    border: "1px solid rgba(0, 0, 0, 0.2)",
-    boxShadow: "0 0 8px rgba(0, 0, 0, 0.3)",
-    pointerEvents: "none",
-    zIndex: 9999,
-  });
-};
-
-
-  /////////////////////////
-
-  const { productId } = useParams();
-  const [vendorDetail, setVendorDetail] = useState(null);
-
-  console.log("the product id is", productId);
-  useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        const res = await fetch(
-          `${config.apiBaseURL}/vendor_master/${productId}/`
-        );
-        const data = await res.json();
-        setVendorDetail(data);
-
-        const base = config.apiBaseURL;
-
-        let images = [];
-
-        // Use attachments (multiple image files)
-        if (Array.isArray(data.attachments) && data.attachments.length > 0) {
-          images = data.attachments.map((path) => `${base}${path}`);
-        } else if (data.img) {
-          images = [`${base}${data.img}`];
-        } else {
-          images = ["/placeholder.jpg"];
-        }
-
-        setImageList(images);
-        setMainImage(images[0]); // First image becomes main
-      } catch (error) {
-        console.error("Error fetching product:", error);
-      }
-    };
-
-    fetchProduct();
-  }, [productId]);
-
- const [vendorList, setVendorList] = useState(null);
-
-
-useEffect(() => {
-  if (vendorDetail?.vendor) {
-    fetch(`${config.apiBaseURL}/vendor_list/${vendorDetail.vendor}/`)
-      .then((res) => res.json())
-      .then((data) => setVendorList(data))
-      .catch((err) => console.error("Vendor list fetch failed:", err));
-  }
-}, [vendorDetail]);
-
-  if (!vendorDetail) return <p>Loading...</p>;
-=======
   const handleMouseMove = (e) => {
     const rect = imgRef.current.getBoundingClientRect();
 
@@ -396,8 +297,8 @@ useEffect(() => {
     setZoomResultStyle({
       position: "absolute",
       left: `${rect.right + 20}px`,
-      top: `${rect.top}px`,
-      width: `350px`,
+      top: `10px`,
+      width: `400px`,
       height: `350px`,
       backgroundImage: `url(${mainImage})`,
       backgroundRepeat: "no-repeat",
@@ -409,7 +310,6 @@ useEffect(() => {
       zIndex: 9999,
     });
   };
->>>>>>> 41adcc5ab071dc375e24158ac9bb11036f228f47
 
   useEffect(() => {
     if (!componentId) {
@@ -494,12 +394,7 @@ useEffect(() => {
                 className="main-img"
               />
               {lensVisible && mainImage && mainImage !== "/placeholder.jpg" && (
-<<<<<<< HEAD
-                    <div className="zoom-result" style={zoomResultStyle} />
-
-=======
                 <div className="zoom-result" style={zoomResultStyle} />
->>>>>>> 41adcc5ab071dc375e24158ac9bb11036f228f47
               )}
             </div>
             <div className="thumbnails-wrapper">
@@ -508,11 +403,7 @@ useEffect(() => {
                   <img
                     key={index}
                     src={src}
-<<<<<<< HEAD
-                    alt={`Not found ${index + 1}`}
-=======
                     alt={`Image ${index + 1}`}
->>>>>>> 41adcc5ab071dc375e24158ac9bb11036f228f47
                     className={mainImage === src ? "active-thumbnail" : ""}
                     onClick={() => setMainImage(src)}
                   />
@@ -535,14 +426,6 @@ useEffect(() => {
 
           <div className="highlights-container">
             <div className="highlights">
-<<<<<<< HEAD
-              <h3>Categories:</h3>
-              <p>{vendorDetail.category}</p>
-            </div>
-            <div className="highlights">
-              <h3>Components:</h3>
-              <p>{vendorDetail.component_type}</p>
-=======
               <h3>Category:</h3>
               <p>{firstVendor.category || "-"}</p>
             </div>
@@ -557,17 +440,12 @@ useEffect(() => {
             <div className="highlights">
               <h3>UOM:</h3>
               <p>{firstVendor.unit_of_measurement || "-"}</p>
->>>>>>> 41adcc5ab071dc375e24158ac9bb11036f228f47
             </div>
           </div>
 
           <div className="description">
             <h3>Description</h3>
-<<<<<<< HEAD
-            <p>{vendorDetail.product_description}</p>
-=======
             <p>{firstVendor.product_description || "-"}</p>
->>>>>>> 41adcc5ab071dc375e24158ac9bb11036f228f47
           </div>
 
           <div className="specifications">
@@ -598,19 +476,6 @@ useEffect(() => {
                 </tr>
               </thead>
               <tbody>
-<<<<<<< HEAD
-                {vendorList ? (
-        <tr>
-          <td>{vendorList.vendor_name}</td>
-          <td>{vendorDetail.last_price}</td>
-          <td>{vendorDetail.tax}%</td>
-        </tr>
-      ) : (
-        <tr>
-          <td colSpan="3">Loading vendor info...</td>
-        </tr>
-      )}
-=======
                 {vendorDetails.map((vendor) => (
                   <tr key={vendor.product_id}>
                     <td className="truncate-cell" title={vendor.vendor_name}>
@@ -643,7 +508,6 @@ useEffect(() => {
                     </td>
                   </tr>
                 ))}
->>>>>>> 41adcc5ab071dc375e24158ac9bb11036f228f47
               </tbody>
             </table>
           </div>
