@@ -15,7 +15,6 @@ const Requests = () => {
   const [sortField, setSortField] = useState("");
   const [sortOrder, setSortOrder] = useState("asc");
   const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
-  
 
   useEffect(() => {
     fetch(`${config.apiBaseURL}/request_list/`)
@@ -208,7 +207,7 @@ const Requests = () => {
       </button> */}
       </div>
 
-      <div className="table-container" style={{ marginTop:"-15px" }}>
+      <div className="table-container" style={{ marginTop: "-15px" }}>
         <table>
           <thead>
             <tr>
@@ -277,32 +276,45 @@ const Requests = () => {
         </table>
       </div>
       {showstatus && (
-        <div className="popup">
-          <span className="x-button" onClick={handleCloseStatus}>
-            &times;
-          </span>
-          <h3>Status Details</h3>
-          <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>PO ID</th>
-                  <th>Request ID</th>
-                  <th>Component Spec</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {requestStatusView.map((status, index) => (
-                  <tr key={index}>
-                    <td>{status.po_id}</td>
-                    <td>{status.request_id}</td>
-                    <td>{status.component_specification}</td>
-                    <td>{status.po_status}</td>
+        <div className="modal-overlay">
+          <div className="popup">
+            <span className="x-button" onClick={handleCloseStatus}>
+              &times;
+            </span>
+            <h3>Status Details</h3>
+            <div className="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>PO ID</th>
+                    <th>Request ID</th>
+                    <th>Component Spec</th>
+                    <th>Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {requestStatusView.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan="4"
+                        style={{ textAlign: "center", padding: "1rem" }}
+                      >
+                        No data available
+                      </td>
+                    </tr>
+                  ) : (
+                    requestStatusView.map((status, index) => (
+                      <tr key={index}>
+                        <td>{status.po_id}</td>
+                        <td>{status.request_id}</td>
+                        <td>{status.component_specification}</td>
+                        <td>{status.po_status}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}

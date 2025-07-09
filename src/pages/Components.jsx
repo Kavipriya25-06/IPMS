@@ -13,6 +13,7 @@ import {
   showErrorToast,
   showInfoToast,
   showWarningToast,
+  showMessageToast,
   ToastContainerComponent,
 } from "./Toastify.jsx"; // Import Toastify utilities
 
@@ -352,7 +353,7 @@ const Component = () => {
     // Find the selected tag object from availableTags
     const selectedTag = availableTags.find((tag) => tag.tags === newTag);
     if (!selectedTag) {
-      alert("Invalid tag selection.");
+      showErrorToast("Invalid tag selection.");
       return;
     }
 
@@ -385,11 +386,11 @@ const Component = () => {
         setSelectedComponent(null); // Close the dropdown/modal
       } else {
         console.error("Failed to add tag:", response.statusText);
-        alert("Failed to add tag.");
+        showErrorToast("Failed to add tag.");
       }
     } catch (error) {
       console.error("Error adding tag:", error);
-      alert("An error occurred while adding the tag.");
+      showErrorToast("An error occurred while adding the tag.");
     }
   };
 
@@ -980,7 +981,7 @@ const Component = () => {
               <button
                 onClick={async () => {
                   if (!newTagName.trim()) {
-                    alert("Please enter a valid tag name.");
+                    showWarningToast("Please enter a valid tag name.");
                     return;
                   }
 
@@ -990,7 +991,7 @@ const Component = () => {
                   );
 
                   if (existingTag) {
-                    alert(`The tag "${newTagName}" already exists.`);
+                    showInfoToast(`The tag "${newTagName}" already exists.`);
                     setNewTagName("");
                     return;
                   }
@@ -1016,10 +1017,10 @@ const Component = () => {
                       setNewTagName("");
                       setShowPopup(false); // close popup on success
                     } else {
-                      alert("Failed to create tag.");
+                      showErrorToast("Failed to create tag.");
                     }
                   } catch (error) {
-                    alert("An error occurred while creating the tag.");
+                    showErrorToast("An error occurred while creating the tag.");
                   }
                 }}
               >

@@ -362,11 +362,11 @@ const VendorDetails = () => {
       } else {
         const errorText = await response.text();
         console.error("Delete failed:", errorText);
-        alert("Failed to delete price entry");
+        showErrorToast("Failed to delete price entry");
       }
     } catch (error) {
       console.error("Error deleting price entry:", error);
-      alert("Error deleting price entry");
+      showErrorToast("Error deleting price entry");
     }
   };
 
@@ -431,14 +431,14 @@ const VendorDetails = () => {
           return updated;
         });
 
-        alert("Images uploaded successfully!");
+        showSuccessToast("Images uploaded successfully!");
       } else {
         console.error("Upload failed:", response.statusText);
-        alert("Failed to upload images.");
+        showErrorToast("Failed to upload images.");
       }
     } catch (error) {
       console.error("Upload error:", error);
-      alert("Error uploading images.");
+      showErrorToast("Error uploading images.");
     }
   };
 
@@ -465,7 +465,7 @@ const VendorDetails = () => {
           };
           return updatedProducts;
         });
-        alert("Attachment updated successfully!");
+        showSuccessToast("Attachment updated successfully!");
       } else {
         console.error("Failed to update attachment:", response.statusText);
       }
@@ -759,13 +759,13 @@ const VendorDetails = () => {
 
       if (!matchedVendor) {
         console.error("Vendor not found in vendor_list.");
-        alert("Vendor not found.");
+        showErrorToast("Vendor not found.");
         return;
       }
 
       // Step 3: Prevent activation if vendor is inactive
       if (matchedVendor.active === false && updatedStatus === true) {
-        alert("Cannot activate product because the vendor is inactive.");
+        showInfoToast("Cannot activate product because the vendor is inactive.");
         return;
       }
 
@@ -924,6 +924,7 @@ const VendorDetails = () => {
       </div>
       {/* // Inside your JSX return block */}
       {showAddProductForm && (
+        <div className="modal-overlay">
         <div className="popup">
           <h3>Add New Product</h3>
 
@@ -1024,10 +1025,13 @@ const VendorDetails = () => {
             <button onClick={() => setShowAddProductForm(false)}>Cancel</button>
           </div>
         </div>
+        </div>
       )}
 
       {/* Price History Modal */}
       {showPriceHistory && (
+                <div className="modal-overlay">
+
         <div className="popup">
           <span className="x-button" onClick={handleClosePriceHistory}>
             &times;
@@ -1255,6 +1259,7 @@ const VendorDetails = () => {
               </tbody>
             </table>
           </div>
+        </div>
         </div>
       )}
 

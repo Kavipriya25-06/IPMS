@@ -249,7 +249,7 @@ const JobOrderSheet = () => {
                       </td>
                       <td>
                         <input
-                          type="number"
+                          type="text"
                           value={item.quantity}
                           onChange={(e) =>
                             handleDeliverableChange(
@@ -268,7 +268,7 @@ const JobOrderSheet = () => {
                       </td>
                       <td>
                         <input
-                          type="text"
+                          type="number"
                           value={item.remarks}
                           onChange={(e) =>
                             handleDeliverableChange(
@@ -295,7 +295,7 @@ const JobOrderSheet = () => {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </table> 
             </div>
           </div>
         );

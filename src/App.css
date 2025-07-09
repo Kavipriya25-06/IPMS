@@ -1880,6 +1880,7 @@ table td {
 
 .date-input-container .input1 {
   padding-right: 120px; /* Space for the calendar icon */
+
 }
 
 .date-picker-wrapper .input1 {
@@ -1890,9 +1891,9 @@ table td {
   display: none !important;
 }
 
-.react-datepicker {
-  margin-top: 35px; /* 👈 Push it slightly down */
-}
+/* .react-datepicker {
+  margin-top: 35px; 
+} */
 
 /* Calendar icon positioning */
 .calendar-icon {
@@ -3539,8 +3540,10 @@ ul {
 }
 
 .date-filter-inline .react-datepicker {
-  margin-left: 60%;
+  margin-left: 50%;
+  margin-top: 10px;
 }
+
 
 .table-action-buttons {
   display: flex;
@@ -3971,3 +3974,7 @@ ul {
   border-color: gray;
   color: white;
 }
+
+
+
+

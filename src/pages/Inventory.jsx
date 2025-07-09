@@ -10,9 +10,12 @@ import {
   showWarningToast,
   ToastContainerComponent,
 } from "./Toastify.jsx"; // Import Toastify utilities
+import { format, parseISO } from "date-fns";
+import { isAfter } from "date-fns";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import Add from "../assets/Add.png";
+import Filter from "../assets/Filter_icon.svg";
 
 const Inventory = () => {
   const [inventoryData, setInventoryData] = useState([]);
@@ -40,6 +43,8 @@ const Inventory = () => {
   const [statusFilter, setStatusFilter] = useState("Available");
   const [newToolRow, setNewToolRow] = useState(null);
   const [toolInventory, setToolInventory] = useState([]);
+  const [showDateFilter, setShowDateFilter] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
 
   useEffect(() => {
     fetchInventoryData();
@@ -101,13 +106,27 @@ const Inventory = () => {
   };
 
   const filterByDate = () => {
-    let filtered = inventoryData;
+    if (fromDate && toDate && isAfter(fromDate, toDate)) {
+      showWarningToast("From date cannot be after To date.");
+      // clear the fields
+      setFromDate(null);
+      setToDate(null);
+      return;
+    }
+
+    let filtered = [...inventoryData];
+
+    if (statusFilter && statusFilter !== "Tool") {
+      filtered = filtered.filter((item) => item.status === statusFilter);
+    }
 
     if (fromDate && toDate) {
       filtered = filtered.filter((item) => {
         const createdDate = new Date(item.create_date);
+        createdDate.setHours(0, 0, 0, 0);
         return (
-          createdDate >= new Date(fromDate) && createdDate <= new Date(toDate)
+          createdDate >= new Date(fromDate.setHours(0, 0, 0, 0)) &&
+          createdDate <= new Date(toDate.setHours(0, 0, 0, 0))
         );
       });
     }
@@ -149,6 +168,17 @@ const Inventory = () => {
       ...prev,
       [componentId]: !prev[componentId],
     }));
+  };
+
+  // Safe date formatting helper
+  const formatDate = (date) => {
+    try {
+      if (!date) return "";
+      const d = typeof date === "string" ? parseISO(date) : date;
+      return format(d, "dd-MM-yyyy");
+    } catch (e) {
+      return "";
+    }
   };
 
   // const groupedData = filteredInventory.reduce((acc, item) => {
@@ -219,7 +249,7 @@ const Inventory = () => {
 
       if (!response.ok) {
         console.error("Failed to update SKU number:", response.statusText);
-        alert("Failed to update SKU number.");
+        showErrorToast("Failed to update SKU number.");
       } else {
         // Update the state after a successful PATCH request
         setFilteredInventory((prev) =>
@@ -227,11 +257,11 @@ const Inventory = () => {
             row.id === id ? { ...row, sku_number: tempSKU } : row
           )
         );
-        alert("SKU number updated successfully!");
+        showSuccessToast("SKU number updated successfully!");
       }
     } catch (error) {
       console.error("Error updating SKU number:", error);
-      alert("Error updating SKU number.");
+      showErrorToast("Error updating SKU number.");
     } finally {
       setEditingSKU(null); // Exit edit mode
     }
@@ -248,7 +278,9 @@ const Inventory = () => {
     );
 
     if (validSerialNumbers.length === 0) {
-      alert("No valid inventory items available to generate the report.");
+      showInfoToast(
+        "No valid inventory items available to generate the report."
+      );
       return;
     }
 
@@ -347,7 +379,7 @@ const Inventory = () => {
       if (allReportData.length > 0) {
         generateCSV(allReportData);
       } else {
-        alert("No report data available.");
+        showInfoToast("No report data available.");
       }
     } catch (error) {
       console.error("Error generating report:", error);
@@ -503,11 +535,11 @@ const Inventory = () => {
   // };
 
   const clearDateFilter = () => {
-    setFromDate("");
-    setToDate("");
-    filterInventory();
-
-    // Optional: Also clear any filtered data here if needed
+    setFromDate(null);
+    setToDate(null);
+    setFilteredInventory(
+      inventoryData.filter((item) => item.status === statusFilter)
+    );
   };
 
   const handleSaveSpecification = async (componentId) => {
@@ -543,7 +575,7 @@ const Inventory = () => {
       setTempSpecification("");
     } catch (error) {
       console.error("Error updating specification:", error);
-      alert("Failed to update specification.");
+      showErrorToast("Failed to update specification.");
     }
   };
 
@@ -573,9 +605,15 @@ const Inventory = () => {
     setFilteredInventory(sorted);
   };
 
-  const filteredStatusInventory = statusFilter
-    ? inventoryData.filter((item) => item.status === statusFilter)
-    : filteredInventory;
+  const filteredStatusInventory = filteredInventory;
+
+  useEffect(() => {
+    fetchInventoryData();
+  }, [selectedStatus]);
+
+  useEffect(() => {
+    filterByDate();
+  }, [statusFilter]);
 
   const groupedData = filteredStatusInventory.reduce((acc, item) => {
     acc[item.component_id] = acc[item.component_id] || [];
@@ -659,9 +697,25 @@ const Inventory = () => {
           display: "flex",
           justifyContent: "flex-end",
           margin: "10px 0",
-          gap: "20px",
+          gap: "10px",
         }}
       >
+        <button
+          style={{
+            cursor: "pointer",
+            background: "transparent",
+            border: "none",
+          }}
+          title="Filter by Date"
+          onClick={() => setShowDateFilter(true)}
+        >
+          <img
+            src={Filter}
+            alt="Filter"
+            style={{ width: "25px", height: "30px" }}
+          />
+        </button>
+
         <button className="generate-report-btn">Generate Report</button>
         {statusFilter === "Tool" && (
           <>
@@ -870,8 +924,12 @@ const Inventory = () => {
                           {firstRow.vendor_name || ""}
                         </td>
                         <td>
-                          {firstRow.create_date ||
-                            new Date().toLocaleDateString()}
+                          {firstRow.create_date
+                            ? format(
+                                parseISO(firstRow.create_date),
+                                "dd-MM-yyyy"
+                              )
+                            : format(new Date(), "dd-MM-yyyy")}
                         </td>
                         <td style={{ textAlign: "right" }}>
                           ₹
@@ -943,8 +1001,13 @@ const Inventory = () => {
                             <td>{row.UOM || ""}</td>
                             <td>{row.vendor_name || ""}</td>
                             <td>
-                              {row.create_date ||
-                                new Date().toLocaleDateString()}
+                               {row.create_date
+                            ? format(
+                                parseISO(row.create_date),
+                                "dd-MM-yyyy"
+                              )
+                            : format(new Date(), "dd-MM-yyyy")}
+                              
                             </td>
                             <td style={{ textAlign: "right" }}>
                               ₹
@@ -961,8 +1024,19 @@ const Inventory = () => {
                 })
               ) : (
                 <tr>
-                  <td colSpan="9" className="no-data">
-                    No inventory data available
+                  <td
+                    colSpan="11"
+                    style={{ textAlign: "center", color: "gray" }}
+                  >
+                    {fromDate && toDate ? (
+                      <>
+                        No data available from{" "}
+                        <strong>{formatDate(fromDate)}</strong> to{" "}
+                        <strong>{formatDate(toDate)}</strong>.
+                      </>
+                    ) : (
+                      "No inventory data available."
+                    )}
                   </td>
                 </tr>
               )}
@@ -1113,9 +1187,9 @@ const Inventory = () => {
       )}
       <style>{`
         .modal-overlay {position: fixed; top: 0; left: 0;
-          right: 0; bottom: 0;background:rgba(0, 0, 0, 0.4);display: flex;justify-content: center;align-items: center;z-index: 999;}
+          right: 0; bottom: 0;background:rgba(0, 0, 0, 0.4);display: flex;justify-content: center;align-items: center;z-index: 9999;}
 
-        .modal-content {background: #fff;padding: 20px 40px;border-radius: 8px;box-shadow: 0 0 12px rgba(0, 0, 0, 0.25);font-size: 18px;font-weight: bold;color: #333;}
+        .modal-content {background: #fff;padding: 20px 40px;border-radius: 8px;box-shadow: 0 0 12px rgba(0, 0, 0, 0.25);font-size: 15px;font-weight: bold;color: #333;}
       `}</style>
       {returnModal && (
         <div className="modal">
@@ -1176,6 +1250,109 @@ const Inventory = () => {
         </div>
       )}
       <ToastContainerComponent />
+      {showDateFilter && (
+        <div className="modal-overlay" onClick={() => setShowDateFilter(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <span
+              className="x-button"
+              style={{ fontWeight: "lighter" }}
+              onClick={() => setShowDateFilter(false)}
+            >
+              &times;
+            </span>
+
+            <h4 style={{ marginTop: "20px", marginBottom: "10px" }}>
+              Filter Date
+            </h4>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+              }}
+              className=""
+            >
+              <label style={{ whiteSpace: "nowrap" }}>From Date:</label>
+              <div className="date-input-container">
+                <DatePicker
+                  selected={fromDate}
+                  onChange={(date) => setFromDate(date)} // required to update the value
+                  dateFormat="dd-MM-yyyy"
+                  placeholderText="dd-mm-yyyy"
+                  className="input1"
+                  showMonthDropdown
+                  showYearDropdown
+                  dropdownMode="select"
+                  popperPlacement="bottom"
+                  portalId="datepicker-portal-target"
+                  style={{ marginTop: "20px" }}
+                />
+
+                <i
+                  className="fas fa-calendar-alt calendar-icon"
+                  style={{ marginTop: "-4px" }}
+                ></i>
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+              }}
+            >
+              <label style={{ whiteSpace: "nowrap" }}>To Date:</label>
+              <div className="date-input-container">
+                <DatePicker
+                  selected={toDate}
+                  onChange={(date) => setToDate(date)}
+                  dateFormat="dd-MM-yyyy"
+                  placeholderText="dd-mm-yyyy"
+                  className="input1"
+                  showMonthDropdown
+                  showYearDropdown
+                  dropdownMode="select"
+                  popperPlacement="bottom-start"
+                  portalId="datepicker-portal-target"
+                />
+
+                <i
+                  className="fas fa-calendar-alt calendar-icon"
+                  style={{ marginTop: "-4px" }}
+                ></i>
+              </div>
+            </div>
+
+            <div
+              className="modal-actions"
+              style={{
+                marginTop: "10px",
+                display: "flex",
+                gap: "10px",
+                justifyContent: "flex-end",
+              }}
+            >
+              <button
+                onClick={() => {
+                  filterByDate();
+                  setShowDateFilter(false);
+                }}
+              >
+                Apply
+              </button>
+              <button
+                onClick={() => {
+                  clearDateFilter();
+                }}
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+          <div id="datepicker-portal-target"></div>
+        </div>
+      )}
       <style>{`
         .disabled-row {
           background-color: #e0e0e0;
@@ -1186,6 +1363,16 @@ const Inventory = () => {
           cursor: not-allowed;
         }
 
+        .react-datepicker__day,
+        .react-datepicker__day-name {
+          width: 2em;
+          line-height: 2em;
+        }
+
+        .react-datepicker__current-month,
+        .react-datepicker__header {
+          font-size: 14px;
+        }
 
         .return-button {
           background-color: red;
@@ -1211,9 +1398,10 @@ const Inventory = () => {
         }
         .modal-content {
           background: white;
-          padding: 20px; 
-          width: 400px;
+          padding: 15px; 
+          width: 350px;
           text-align: center;
+          position:absolute;
         }
         .modal-content input {
           width: 100%;

@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
 import config from "../Config"; // Adjust the config for API URLs
 import "../App.css";
+import AddIcon from "../assets/Add.png";
+
 import {
   showSuccessToast,
   showErrorToast,
   showInfoToast,
   showWarningToast,
+  showTextToast,
   ToastContainerComponent,
 } from "./Toastify.jsx"; // Import Toastify utilities
 
@@ -67,7 +70,7 @@ const AddTags = () => {
   // Opens the pop-up for adding a tag to multiple components
   const handleAddTagClick = () => {
     if (selectedComponents.length === 0) {
-      alert("Please select at least one component.");
+      showInfoToast("Please select at least one component.");
       return;
     }
     setPopupMode("multiple");
@@ -86,7 +89,7 @@ const AddTags = () => {
   // Handles adding a new tag
   const handleAddTag = async () => {
     if (!newTag.trim()) {
-      alert("Please enter a valid tag.");
+      showWarningToast("Please enter a valid tag.");
       return;
     }
 
@@ -100,7 +103,7 @@ const AddTags = () => {
       });
 
       if (componentsToTag.length === 0) {
-        alert("The tag already exists for all selected components.");
+        showInfoToast("The tag already exists for all selected components.");
         return;
       }
 
@@ -128,11 +131,11 @@ const AddTags = () => {
           setShowPopup(false); // Close the pop-up
           setSelectedComponents([]); // Clear the selected components
         } else {
-          alert("Failed to add the tag to some components.");
+          showErrorToast("Failed to add the tag to some components.");
         }
       } catch (error) {
         console.error("Error adding tag:", error);
-        alert("An error occurred. Please try again.");
+        showErrorToast("An error occurred. Please try again.");
       }
     } else if (popupMode === "single") {
       // Handle adding tag to a single component
@@ -142,7 +145,7 @@ const AddTags = () => {
       );
 
       if (isDuplicate) {
-        alert("This tag already exists for the selected component.");
+        showInfoToast("This tag already exists for the selected component.");
         return;
       }
 
@@ -165,11 +168,11 @@ const AddTags = () => {
           fetchAvailableTags(); // Refresh the tags list
           setShowPopup(false); // Close the pop-up
         } else {
-          alert("Failed to add the tag.");
+          showErrorToast("Failed to add the tag.");
         }
       } catch (error) {
         console.error("Error adding tag:", error);
-        alert("An error occurred. Please try again.");
+        showErrorToast("An error occurred. Please try again.");
       }
     }
   };
@@ -185,11 +188,11 @@ const AddTags = () => {
         showSuccessToast("Tag deleted successfully!");
         fetchAvailableTags(); // Refresh the tags list
       } else {
-        alert("Failed to delete the tag.");
+        showErrorToast("Failed to delete the tag.");
       }
     } catch (error) {
       console.error("Error deleting tag:", error);
-      alert("An error occurred. Please try again.");
+      showErrorToast("An error occurred. Please try again.");
     }
   };
 
@@ -199,25 +202,21 @@ const AddTags = () => {
         <h2>Available Meta Tags</h2>
 
         <button
-          onClick={handleAddTagClick}
           style={{
-            marginTop: "15px",
-            marginBottom: "10px",
-            padding: "8px",
-            background: "#fc9d03",
-            color: "#fff",
-            border: "none",
-            borderRadius: "10px",
             cursor: "pointer",
-            alignItems: "end",
-            fontSize: "14px",
+            marginLeft: "auto",
+            marginRight: 20,
+            background: "transparent",
+            border: "none",
           }}
+          title="Add Tag for Selected Components"
+          onClick={handleAddTagClick}
         >
-          Add Tag to Selected Components
+          <img src={AddIcon} alt="" style={{ width: "20px", height: "20px" }} />
         </button>
       </div>
 
-      <div className="table-container">
+      <div className="table-container" style={{marginTop:"-14px"}}>
         <table className="full-width-table">
           <thead>
             <tr>
@@ -305,73 +304,75 @@ const AddTags = () => {
 
       {/* Pop-up for adding a new tag */}
       {showPopup && (
-        <div
-          style={{
-            position: "fixed",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            background: "#fff",
-            padding: "20px",
-            borderRadius: "8px",
-            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-            zIndex: 1000,
-            width: "300px",
-          }}
-        >
-          <h3>
-            {popupMode === "multiple"
-              ? "Add a New Tag to Selected Components"
-              : "Add a New Tag to Component"}
-          </h3>
-          <input
-            type="text"
-            value={newTag}
-            onChange={(e) => setNewTag(e.target.value)}
-            placeholder="Enter tag"
+        <div className="modal-overlay">
+          <div
             style={{
-              width: "100%",
-              padding: "8px",
-              marginBottom: "10px",
-              boxSizing: "border-box",
+              position: "fixed",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              background: "#fff",
+              padding: "20px",
+              borderRadius: "8px",
+              boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
+              zIndex: 1000,
+              width: "300px",
             }}
-          />
-          <div style={{ display: "flex", justifyContent: "flex-end" }}>
-            <button
-              onClick={handleAddTag}
+          >
+            <h3>
+              {popupMode === "multiple"
+                ? "Add a New Tag to Selected Components"
+                : "Add a New Tag to Component"}
+            </h3>
+            <input
+              type="text"
+              value={newTag}
+              onChange={(e) => setNewTag(e.target.value)}
+              placeholder="Enter tag"
               style={{
-                padding: "8px 12px",
-                background: "#f58720",
-                color: "#fff",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-                marginRight: "10px",
-                justifyContent: "end",
+                width: "100%",
+                padding: "8px",
+                marginBottom: "10px",
+                boxSizing: "border-box",
               }}
-            >
-              Add Tag
-            </button>
-            <button
-              onClick={() => setShowPopup(false)}
-              style={{
-                padding: "8px 12px",
-                background: "gray",
-                color: "#fff",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-                alignItems: "flexend",
-              }}
-            >
-              Cancel
-            </button>
+            />
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <button
+                onClick={handleAddTag}
+                style={{
+                  padding: "8px 12px",
+                  background: "#f58720",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  marginRight: "10px",
+                  justifyContent: "end",
+                }}
+              >
+                Add Tag
+              </button>
+              <button
+                onClick={() => setShowPopup(false)}
+                style={{
+                  padding: "8px 12px",
+                  background: "gray",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  alignItems: "flexend",
+                }}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* Overlay for pop-up */}
-      {showPopup && (
+      {/* {showPopup && (
         <div
           onClick={() => setShowPopup(false)}
           style={{
@@ -381,10 +382,10 @@ const AddTags = () => {
             width: "100%",
             height: "100%",
             background: "rgba(0, 0, 0, 0.3)",
-            zIndex: 999,
+            zIndex: 9999,
           }}
         />
-      )}
+      )} */}
       <ToastContainerComponent />
     </div>
   );
