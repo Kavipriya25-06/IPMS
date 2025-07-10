@@ -811,6 +811,13 @@ const POOrderMaster = ({ user }) => {
             </table>
           </div>
 
+          {/* <button onClick={() => updatePOMasterStatuses(poId, "Approved")}>
+            Approve
+          </button>
+          <button onClick={() => updatePOMasterStatuses(poId, "Rejected")}>
+            Reject
+          </button> */}
+
           {showDeliveryModal && selectedDeliveryDetails && (
             <div
               style={{
@@ -1163,6 +1170,97 @@ const POOrderMaster = ({ user }) => {
           </div> */}
         </>
       )}
+
+      <div style={{ marginTop: "30px" }}>
+        {/* Approved → Show 3 main buttons */}
+        {poData?.status === "Approved" && (
+          <>
+            <button
+              style={{
+                marginRight: "10px",
+                backgroundColor: "black",
+                color: "white",
+                padding: "8px 16px",
+              }}
+            >
+              Send Email
+            </button>
+            <button
+              style={{
+                marginRight: "10px",
+                backgroundColor: "green",
+                color: "white",
+                padding: "8px 16px",
+              }}
+            >
+              Place Order
+            </button>
+            <button
+              style={{
+                marginRight: "10px",
+                backgroundColor: "red",
+                color: "white",
+                padding: "8px 16px",
+              }}
+            >
+              Cancel Order
+            </button>
+            {/* <span
+              style={{
+                marginLeft: "20px",
+                color: "green",
+                fontWeight: "bold",
+                fontSize: "16px",
+              }}
+            >
+              Approved
+            </span> */}
+          </>
+        )}
+
+        {/*  Rejected → Only show rejected label */}
+        {poData?.status === "Rejected" && (
+          <span
+            style={{
+              marginLeft: "10px",
+              color: "red",
+              fontWeight: "bold",
+              fontSize: "16px",
+            }}
+          >
+            Rejected
+          </span>
+        )}
+
+        {/* Pending → Show Approve/Reject */}
+        {poData?.status !== "Approved" && poData?.status !== "Rejected" && (
+          <>
+            <button
+              onClick={() => updatePOMasterStatuses(poId, "Approved")}
+              style={{
+                marginRight: "10px",
+                backgroundColor: "green",
+                color: "#fff",
+                padding: "8px 16px",
+              }}
+            >
+              Approve
+            </button>
+            <button
+              onClick={() => updatePOMasterStatuses(poId, "Rejected")}
+              style={{
+                marginRight: "10px",
+                backgroundColor: "red",
+                color: "#fff",
+                padding: "8px 16px",
+              }}
+            >
+              Reject
+            </button>
+          </>
+        )}
+      </div>
+
       <ToastContainerComponent />
     </div>
   );
