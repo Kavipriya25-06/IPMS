@@ -426,6 +426,7 @@ const ProjectList = () => {
             background: "transparent",
             border: "none",
           }}
+          className="plus-button"
           title={showAddForm ? "Cancel" : "Add Project"}
           onClick={() => setShowAddForm(!showAddForm)}
         >

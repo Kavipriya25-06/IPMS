@@ -30,11 +30,23 @@ const POOrderMaster = ({ user }) => {
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedStatus, setSelectedStatus] = useState(null);
   const [inwardLoadingIds, setInwardLoadingIds] = useState([]);
+  const [showModal, setShowModal] = useState(false);
 
   // The user object is now passed as a prop
   const isAdmin = user?.role === "Admin";
   const isProcurement = user?.role === "Procurement";
   const isFinance = user?.role === "Finance";
+
+  const [formData, setFormData] = useState({
+    sender: "",
+    sender_title: "",
+    recipient: "",
+    cc: "",
+    bcc: "",
+    subject: "",
+    body: "",
+    filename: "",
+  });
 
   // Fetch PO Details
   const fetchPODetails = async () => {
@@ -686,6 +698,20 @@ const POOrderMaster = ({ user }) => {
     );
   };
 
+  const handleOpenModal = (po) => {
+    setFormData((prev) => ({
+      ...prev,
+      subject: `Order Details for PO ID: ${po.id}`, // Add PO ID to subject
+      sender_title: `Order Details for PO ID: ${po.id}`,
+    }));
+    setShowModal(true);
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
   return (
     <div>
       <h2>PO Details</h2>
@@ -698,7 +724,22 @@ const POOrderMaster = ({ user }) => {
           <h3>PO Number: {poId}</h3>
           <h3>Vendor Name: {vendorName}</h3>
           <h3>GSTIN: {vendor_gstn}</h3>
+
           <div className="table-container">
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                marginBottom: "5px",
+              }}
+            >
+              <button
+                className="send-email"
+                onClick={() => handleOpenModal(poId)}
+              >
+                Send Email
+              </button>
+            </div>
             <table>
               <thead>
                 <tr>
@@ -1174,23 +1215,16 @@ const POOrderMaster = ({ user }) => {
       <div style={{ marginTop: "30px" }}>
         {/* Approved → Show 3 main buttons */}
         {poData?.status === "Approved" && (
-          <>
-            <button
-              style={{
-                marginRight: "10px",
-                backgroundColor: "black",
-                color: "white",
-                padding: "8px 16px",
-              }}
-            >
-              Send Email
-            </button>
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <button
               style={{
                 marginRight: "10px",
                 backgroundColor: "green",
                 color: "white",
                 padding: "8px 16px",
+                borderRadius: "5px",
+                border: "none",
+                cursor: "pointer",
               }}
             >
               Place Order
@@ -1201,6 +1235,9 @@ const POOrderMaster = ({ user }) => {
                 backgroundColor: "red",
                 color: "white",
                 padding: "8px 16px",
+                borderRadius: "5px",
+                border: "none",
+                cursor: "pointer",
               }}
             >
               Cancel Order
@@ -1215,7 +1252,126 @@ const POOrderMaster = ({ user }) => {
             >
               Approved
             </span> */}
-          </>
+          </div>
+        )}
+
+        {showModal && (
+          <div className="modal-overlay">
+            <div className="popup">
+              <h3>Send Email for PO ID: {poId}</h3>
+              <form style={{ marginTop: "5px" }}>
+                {/* <div>
+              <label>Sender:</label>
+              <input
+                type="email"
+                name="sender"
+                value={formData.sender}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div>
+              <label>Recipient:</label>
+              <input
+                type="email"
+                name="recipient"
+                value={formData.recipient}
+                onChange={handleChange}
+                required
+              />
+            </div> */}
+
+                <div
+                  style={{
+                    padding: 5,
+                    display: "flex",
+                    justifyContent: "space-between",
+                  }}
+                  className="form-row"
+                >
+                  <label>Recipient:</label>
+                  <input
+                    type="text"
+                    name="recipient"
+                    value={formData.recipient}
+                    onChange={handleChange}
+                    placeholder="Enter multiple emails separated by commas"
+                    required
+                  />
+                </div>
+
+                <div
+                  style={{
+                    padding: 5,
+                    display: "flex",
+                    justifyContent: "space-between",
+                  }}
+                  className="form-row"
+                >
+                  <label>CC:</label>
+                  <input
+                    type="text"
+                    name="cc"
+                    value={formData.cc}
+                    onChange={handleChange}
+                    placeholder="Enter multiple emails separated by commas"
+                  />
+                </div>
+
+                <div
+                  style={{
+                    padding: 5,
+                    display: "flex",
+                    justifyContent: "space-between",
+                  }}
+                  className="form-row"
+                >
+                  <label>BCC:</label>
+                  <input
+                    type="text"
+                    name="bcc"
+                    value={formData.bcc}
+                    onChange={handleChange}
+                    placeholder="Enter multiple emails separated by commas"
+                  />
+                </div>
+
+                <div
+                  style={{
+                    padding: 5,
+                    display: "flex",
+                    justifyContent: "space-between",
+                  }}
+                  className="form-row"
+                >
+                  <label>Body:</label>
+                  <textarea
+                    name="body"
+                    value={formData.body}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="actions-button" style={{ marginTop: "20px" }}>
+                  <button
+                    className="edit-button"
+                    type="button"
+                    // onClick={handleSendEmail}
+                  >
+                    Send Email
+                  </button>
+                  <button
+                    className="cancel-button"
+                    type="button"
+                    onClick={() => setShowModal(false)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         )}
 
         {/*  Rejected → Only show rejected label */}
@@ -1234,7 +1390,7 @@ const POOrderMaster = ({ user }) => {
 
         {/* Pending → Show Approve/Reject */}
         {poData?.status !== "Approved" && poData?.status !== "Rejected" && (
-          <>
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <button
               onClick={() => updatePOMasterStatuses(poId, "Approved")}
               style={{
@@ -1242,6 +1398,9 @@ const POOrderMaster = ({ user }) => {
                 backgroundColor: "green",
                 color: "#fff",
                 padding: "8px 16px",
+                borderRadius: "5px",
+                border: "none",
+                cursor: "pointer",
               }}
             >
               Approve
@@ -1253,11 +1412,14 @@ const POOrderMaster = ({ user }) => {
                 backgroundColor: "red",
                 color: "#fff",
                 padding: "8px 16px",
+                borderRadius: "5px",
+                border: "none",
+                cursor: "pointer",
               }}
             >
               Reject
             </button>
-          </>
+          </div>
         )}
       </div>
 
