@@ -649,7 +649,7 @@ const Inventory = () => {
       <div className="header">
         <h2>Inventory Data</h2>
         <div className="right-wrapper">
-          <div className="search-bar-container">
+          <div className="search-bar-container"  style={{width:"300px"}}>
             <input
               type="text"
               className="search-bar"

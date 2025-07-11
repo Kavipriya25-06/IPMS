@@ -573,7 +573,7 @@ const Component = () => {
         /> */}
       </div>
       <div class="center-wrapper">
-        <div className="search-bar-container">
+        <div className="search-bar-container"  style={{width:"300px"}}>
           <input
             type="text"
             className="search-bar"

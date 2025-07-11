@@ -261,6 +261,7 @@ const BOM = () => {
                   <img src={AddIcon} alt="" style={{width:"20px",height:"20px"}}/>
                 </button> */}
 
+
         <button
           style={{
             cursor: "pointer",
@@ -272,7 +273,7 @@ const BOM = () => {
           title="Add Vendor"
           onClick={() => setShowForm(!showForm)}
         >
-          <img src={AddIcon} alt="" style={{ width: "20px", height: "20px" }} />
+          <img src={AddIcon} alt="" style={{ width: "20px", height: "20px", marginBottom:"5px" }} />
         </button>
       </div>
 

@@ -433,7 +433,7 @@ const ProjectList = () => {
           <img
             src={showAddForm ? CancelIcon : AddIcon}
             alt={showAddForm ? "Cancel" : "Add Project"}
-            style={{ width: "20px", height: "20px" }}
+            style={{ width: "20px", height: "20px",marginBottom:"5px"}}
           />{" "}
         </button>
         {/* <button
