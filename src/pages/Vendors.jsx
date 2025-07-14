@@ -760,7 +760,7 @@ const Vendors = () => {
               <th>Email</th>
               <th>Phone</th>
               <th>Location</th>
-              {/* <th>Category</th> */}
+              {/* <th>Categosfbry</th> */}
               <th>Actions</th>
               <th>Status</th>
             </tr>

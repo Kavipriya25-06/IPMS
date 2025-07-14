@@ -251,7 +251,7 @@ const Inventory = () => {
         console.error("Failed to update SKU number:", response.statusText);
         showErrorToast("Failed to update SKU number.");
       } else {
-        // Update the state after a successful PATCH request
+        // Update the state after a successful PATCHs request
         setFilteredInventory((prev) =>
           prev.map((row) =>
             row.id === id ? { ...row, sku_number: tempSKU } : row

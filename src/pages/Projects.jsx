@@ -343,7 +343,7 @@ const ProjectList = () => {
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
-      behavior: "smooth", // Smooth scroll effect
+      behavior: "smooth", // Smooth scroll effect sffb
     });
   };
 

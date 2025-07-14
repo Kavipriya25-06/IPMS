@@ -2818,7 +2818,7 @@ main {
     opacity: 0;
   }
   .hamburger-button.change .bar:nth-child(3) {
-    transform: rotate(-45deg) translate(7px, -5px);
+    transform: rotate(-45deg) translate(7px,-5px);
   }
 
   /* Hide main content margin (because sidebar overlays) */
@@ -2944,6 +2944,7 @@ main {
     flex-direction: column; /* Stack vertically */
     margin-left: -40px;
     margin-top: -70px;
+    gap: 10px;
   }
 
   .header-controls {
@@ -3112,8 +3113,6 @@ main {
     margin-top: 30px;               /* Ensure it's aligned horizontally */
   }
 }
-
-
 
 /* ProductDetailPage.css */
 

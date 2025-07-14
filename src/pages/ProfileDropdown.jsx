@@ -51,7 +51,7 @@ const ProfileDropdown = () => {
             width: "400px",
             zIndex: 1000,
           }}
-          onClick={(e) => e.stopPropagation()} // Prevents closing when clicking inside
+          onClick={(e) => e.stopPropagation()} // Prevents closing when clicking insidde
         >
           <div style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>
             <p style={{ margin: "5px 0" }}>
