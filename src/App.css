@@ -2444,7 +2444,6 @@ main {
 }
 
 .custom-form-wrapper {
-  padding: 20px;
   max-width: 450px;
   background: none !important;
   border-radius: 10px;
@@ -2490,7 +2489,9 @@ main {
   border-radius: 6px;
   margin-bottom: 12px;
   transition: border-color 0.2s;
-  margin-left: 10px;
+  margin-left: 20px;
+  width: 220px;
+  max-width: 300px;
 }
 
 .request-selector-dropdown:focus {
@@ -2963,7 +2964,7 @@ main {
    .right-wrapper .search-bar-container {
     margin-top: 20px;
     display: flex;
-    align-items: end;
+    align-items: flex-end;
     gap: 8px;
     width: 240px !important;
   }
@@ -3653,7 +3654,7 @@ ul {
 }
 
 .date-filter-inline .react-datepicker {
-  margin-left: 50%;
+  margin-left: 55%;
   margin-top: 10px;
 }
 
@@ -3692,6 +3693,7 @@ ul {
   outline: none;
   box-shadow: none;
 }
+
 .date-row {
   display: flex;
   align-items: center;

@@ -337,26 +337,28 @@ const Mrf = () => {
               <th>Name</th>
               <th
                 className="date-filter-inline"
-                style={{ width: "100%", height: "26px" }}
+                style={{ width: "100%", height: "27px"}}
               >
-                <span>Create Date</span>
+                {!dateFilter && <span>Create Date</span>}
+
                 <DatePicker
                   selected={dateFilter}
-                  onChange={(date) => {
-                    setDateFilter(date);
-                    // 🔽 You can call your filter function here
-                    // handleFilter(date);
-                  }}
+                  onChange={(date) => setDateFilter(date)}
                   ref={datePickerRef}
                   dateFormat="yyyy-MM-dd"
-                  customInput={<div />} // No default input field
+                  customInput={<div />} // Hides input field
                   popperPlacement="bottom-end"
-                   showMonthDropdown
+                  showMonthDropdown
                   showYearDropdown
                   dropdownMode="select"
                 />
 
-                {/* Icon Trigger */}
+                {dateFilter && (
+                  <span style={{marginLeft:"10px", fontSize: "16px", color: "white" }}>
+                    {format(dateFilter, "dd-MM-yyyy")}
+                  </span>
+                )}
+
                 <FaCalendarAlt
                   style={{
                     fontSize: "14px",
@@ -366,6 +368,7 @@ const Mrf = () => {
                   onClick={() => datePickerRef.current.setOpen(true)}
                 />
               </th>
+
               <th>Request ID</th>
               <th>Project name</th>
               <th className="status-dropdown-wrapper" ref={statusDropdownRef}>

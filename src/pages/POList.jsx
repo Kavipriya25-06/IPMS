@@ -594,29 +594,31 @@ const POOrderList = ({ user }) => {
                   className="date-filter-inline"
                   style={{ width: "100%", height: "26px" }}
                 >
-                  <span>Date</span>
+                  {!dateFilter && <span>Date</span>}
                   <DatePicker
                     selected={dateFilter}
-                    onChange={(date) => {
-                      setDateFilter(date);
-                      // 🔽 You can call your filter function here
-                      // handleFilter(date);
-                    }}
+                    onChange={(date) => setDateFilter(date)}
                     ref={datePickerRef}
                     dateFormat="yyyy-MM-dd"
-                    customInput={<div />} // No default input field
+                    customInput={<div />}
                     popperPlacement="bottom-end"
-                     showMonthDropdown
-                  showYearDropdown
-                  dropdownMode="select"
+                    showMonthDropdown
+                    showYearDropdown
+                    dropdownMode="select"
                   />
 
-                  {/* Icon Trigger */}
+                  {dateFilter && (
+                    <span style={{ fontSize: "16px", color: "White" }}>
+                      {format(dateFilter, "dd-MM-yyyy")}
+                    </span>
+                  )}
+
                   <FaCalendarAlt
                     style={{
                       fontSize: "14px",
                       cursor: "pointer",
                       color: "#333",
+                      marginTop: "1px",
                     }}
                     onClick={() => datePickerRef.current.setOpen(true)}
                   />
@@ -670,10 +672,11 @@ const POOrderList = ({ user }) => {
       </div>
       {/* Email Modal */}
       {showModal && (
-        <div className="popup">
-          <h3>Send Email for PO ID: {currentPO?.id}</h3>
-          <form style={{ marginTop: "5px" }}>
-            {/* <div>
+        <div className="modal-overlay">
+          <div className="popup">
+            <h3>Send Email for PO ID: {currentPO?.id}</h3>
+            <form style={{ marginTop: "5px" }}>
+              {/* <div>
               <label>Sender:</label>
               <input
                 type="email"
@@ -695,94 +698,95 @@ const POOrderList = ({ user }) => {
               />
             </div> */}
 
-            <div
-              style={{
-                padding: 5,
-                display: "flex",
-                justifyContent: "space-between",
-              }}
-              className="form-row"
-            >
-              <label>Recipient:</label>
-              <input
-                type="text"
-                name="recipient"
-                value={formData.recipient}
-                onChange={handleChange}
-                placeholder="Enter multiple emails separated by commas"
-                required
-              />
-            </div>
-
-            <div
-              style={{
-                padding: 5,
-                display: "flex",
-                justifyContent: "space-between",
-              }}
-              className="form-row"
-            >
-              <label>CC:</label>
-              <input
-                type="text"
-                name="cc"
-                value={formData.cc}
-                onChange={handleChange}
-                placeholder="Enter multiple emails separated by commas"
-              />
-            </div>
-
-            <div
-              style={{
-                padding: 5,
-                display: "flex",
-                justifyContent: "space-between",
-              }}
-              className="form-row"
-            >
-              <label>BCC:</label>
-              <input
-                type="text"
-                name="bcc"
-                value={formData.bcc}
-                onChange={handleChange}
-                placeholder="Enter multiple emails separated by commas"
-              />
-            </div>
-
-            <div
-              style={{
-                padding: 5,
-                display: "flex",
-                justifyContent: "space-between",
-              }}
-              className="form-row"
-            >
-              <label>Body:</label>
-              <textarea
-                name="body"
-                value={formData.body}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="actions-button" style={{ marginTop: "20px" }}>
-              <button
-                className="edit-button"
-                type="button"
-                onClick={handleSendEmail}
+              <div
+                style={{
+                  padding: 5,
+                  display: "flex",
+                  justifyContent: "space-between",
+                }}
+                className="form-row"
               >
-                Send Email
-              </button>
-              <button
-                className="cancel-button"
-                type="button"
-                onClick={() => setShowModal(false)}
+                <label>Recipient:</label>
+                <input
+                  type="text"
+                  name="recipient"
+                  value={formData.recipient}
+                  onChange={handleChange}
+                  placeholder="Enter multiple emails separated by commas"
+                  required
+                />
+              </div>
+
+              <div
+                style={{
+                  padding: 5,
+                  display: "flex",
+                  justifyContent: "space-between",
+                }}
+                className="form-row"
               >
-                Cancel
-              </button>
-            </div>
-          </form>
+                <label>CC:</label>
+                <input
+                  type="text"
+                  name="cc"
+                  value={formData.cc}
+                  onChange={handleChange}
+                  placeholder="Enter multiple emails separated by commas"
+                />
+              </div>
+
+              <div
+                style={{
+                  padding: 5,
+                  display: "flex",
+                  justifyContent: "space-between",
+                }}
+                className="form-row"
+              >
+                <label>BCC:</label>
+                <input
+                  type="text"
+                  name="bcc"
+                  value={formData.bcc}
+                  onChange={handleChange}
+                  placeholder="Enter multiple emails separated by commas"
+                />
+              </div>
+
+              <div
+                style={{
+                  padding: 5,
+                  display: "flex",
+                  justifyContent: "space-between",
+                }}
+                className="form-row"
+              >
+                <label>Body:</label>
+                <textarea
+                  name="body"
+                  value={formData.body}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="actions-button" style={{ marginTop: "20px" }}>
+                <button
+                  className="edit-button"
+                  type="button"
+                  onClick={handleSendEmail}
+                >
+                  Send Email
+                </button>
+                <button
+                  className="cancel-button"
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
