@@ -53,7 +53,7 @@ import JobOrderSheet from "./pages/JobOrderSheet";
 function App() {
   const { user, logout } = useAuth();
 
-  // Role-based access control for navigation tabs
+  // Role-based access control for navigation tabsxf
   const isTabEnabled = (allowedRoles) =>
     user && allowedRoles.includes(user.role);
 

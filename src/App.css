@@ -535,7 +535,6 @@ tbody tr:hover {
 }
 
 .btn-reject:hover {
-  
   background-color: #c2c1c1;
   color: white;
 }
@@ -1159,11 +1158,15 @@ table td {
 .center-wrapper {
   display: flex;
   justify-content: center;
-  margin-bottom: 10px;
-  margin-top: -55px;
+  align-items: center;
+  margin: 10px auto; /* Center horizontally */
+  padding: 0 12px;
   width: 100%;
-  max-width: 700px;
-  margin-left: 200px;
+  max-width: 800px; /* LIMIT WIDTH */
+  box-sizing: border-box;
+  flex-wrap: wrap;
+  margin-top: -50px;
+  margin-bottom: 10px;
 }
 
 .right-wrapper {
@@ -1172,6 +1175,24 @@ table td {
   margin-bottom: 10px;
   width: 100%;
   max-width: 800px;
+}
+
+.right-wrapper .search-bar-container {
+  display: flex;
+  align-items: center;
+  background-color: white;
+  padding: 5px 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  width: 40%;
+}
+
+.right-wrapper .search-bar {
+  border: none;
+  outline: none;
+  padding: 6px 8px;
+  font-size: 14px;
+  width: 100%;
 }
 
 .search-bar-container {
@@ -1880,7 +1901,6 @@ table td {
 
 .date-input-container .input1 {
   padding-right: 120px; /* Space for the calendar icon */
-
 }
 
 .date-picker-wrapper .input1 {
@@ -2732,7 +2752,7 @@ main {
     top: 80px;
     left: 13px;
     width: 200px !important;
-    height: 32vh;
+    height: 35vh;
     background: #fff;
     box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
     padding: 10px;
@@ -2798,7 +2818,7 @@ main {
     opacity: 0;
   }
   .hamburger-button.change .bar:nth-child(3) {
-    transform: rotate(-45deg) translate(7px, -5px);
+    transform: rotate(-45deg) translate(7px,-5px);
   }
 
   /* Hide main content margin (because sidebar overlays) */
@@ -2924,6 +2944,7 @@ main {
     flex-direction: column; /* Stack vertically */
     margin-left: -40px;
     margin-top: -70px;
+    gap: 10px;
   }
 
   .header-controls {
@@ -2934,21 +2955,32 @@ main {
   }
 
   .search-bar-container {
-    margin-top: 20px;
-    margin-left: auto; /* Pushes container to the right */
     display: flex;
-    align-items: center;
+    align-items: end;
     gap: 8px;
   }
 
-  .center-wrapper {
+   .right-wrapper .search-bar-container {
+    margin-top: 20px;
     display: flex;
-    justify-content: center;
-    margin-bottom: 10px;
-    margin-top: -15px;
-    width: 100%;
-    max-width: 1000px;
+    align-items: end;
+    gap: 8px;
+    width: 240px !important;
   }
+
+  .center-wrapper {
+    justify-content: flex-end;
+    margin-top: 8px;
+    margin-bottom: 12px;
+  }
+
+    .right-wrapper {
+    justify-content: flex-end;
+    margin-top: -15px;
+    margin-bottom: 20px;
+  }
+
+
 
   .date-filter,
   .status-filter {
@@ -2998,6 +3030,87 @@ main {
 
   .calendar-icon {
     right: 20px;
+  }
+}
+
+/* === Default (Desktop) Styles === */
+.search-wrapper-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  margin-top: -60px;
+  gap: 16px;
+}
+
+.search-wrapper {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.search-bar-container {
+  display: flex;
+  align-items: center;
+  width: 350px;
+  max-width: 100%;
+}
+
+.search-bar {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.search-icon {
+  margin-left: 8px;
+  color: #555;
+}
+
+.plus-button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.plus-button img {
+  width: 20px;
+  height: 20px;
+}
+
+/* === Mobile View: Right-align both search and button === */
+@media (max-width: 1024px) {
+  .search-wrapper-container {
+    display: flex;
+    flex-direction: row;         /* 👈 Make them stay in a row */
+    justify-content: flex-end;   /* 👈 Align to right */
+    align-items: center;         /* 👈 Align vertically center */
+    padding: 10px 16px;
+    margin-top: -30px;
+    gap: 10px;                   /* 👈 Space between input and button */
+    flex-wrap: wrap;             /* Optional: wraps on very small screens */
+  }
+
+  .search-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    width: auto;
+  }
+
+  .button-group{
+    margin-top: 0% !important;
+  }
+
+  .search-bar-container {
+    display: flex;
+    align-items: center;
+    width: 320px;
+    margin-top: 20px;
+  }
+
+  .plus-button {
+    margin-top: 30px;               /* Ensure it's aligned horizontally */
   }
 }
 
@@ -3544,7 +3657,6 @@ ul {
   margin-top: 10px;
 }
 
-
 .table-action-buttons {
   display: flex;
   justify-content: flex-end;
@@ -3975,6 +4087,15 @@ ul {
   color: white;
 }
 
+.send-email {
+  background-color: gray;
+  border: none;
+  border-radius: 5px;
+  padding: 8px 10px;
+  color: white;
+  cursor: pointer;
+}
 
-
-
+.send-email:hover {
+  background-color: rgb(94, 94, 94);
+}

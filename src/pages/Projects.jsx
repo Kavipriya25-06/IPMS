@@ -343,7 +343,7 @@ const ProjectList = () => {
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
-      behavior: "smooth", // Smooth scroll effect
+      behavior: "smooth", // Smooth scroll effect sffb
     });
   };
 
@@ -426,13 +426,14 @@ const ProjectList = () => {
             background: "transparent",
             border: "none",
           }}
+          className="plus-button"
           title={showAddForm ? "Cancel" : "Add Project"}
           onClick={() => setShowAddForm(!showAddForm)}
         >
           <img
             src={showAddForm ? CancelIcon : AddIcon}
             alt={showAddForm ? "Cancel" : "Add Project"}
-            style={{ width: "20px", height: "20px" }}
+            style={{ width: "20px", height: "20px",marginBottom:"5px"}}
           />{" "}
         </button>
         {/* <button
