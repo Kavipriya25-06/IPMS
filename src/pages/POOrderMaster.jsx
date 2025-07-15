@@ -1,7 +1,3 @@
-//
-// Final code, this works correctly
-//
-
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import config from "../Config"; // Import config for API endpoints
@@ -30,6 +26,15 @@ const POOrderMaster = ({ user }) => {
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedStatus, setSelectedStatus] = useState(null);
   const [inwardLoadingIds, setInwardLoadingIds] = useState([]);
+
+  const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState({
+    recipient: "",
+    cc: "",
+    bcc: "",
+    subject: "",
+    body: "",
+  });
 
   // The user object is now passed as a prop
   const isAdmin = user?.role === "Admin";
@@ -243,63 +248,6 @@ const POOrderMaster = ({ user }) => {
       alert("An error occurred while updating the PO Master statuses.");
     }
   };
-
-  // const handleInward = async (item) => {
-  //   try {
-  //     // Destructure the necessary fields from the item
-  //     const {
-  //       component_id,
-  //       component_type,
-  //       component_specification,
-  //       category,
-  //       unit_of_measurement,
-  //       quantity,
-  //       vendor_name,
-  //       vendor_id,
-  //     } = item;
-
-  //     // Hardcode po_master_id
-  //     const po_master_id = 1; // Hardcoded
-
-  //     // Loop through the quantity to post each unit individually
-  //     for (let i = 0; i < quantity; i++) {
-  //       const inwardPayload = {
-  //         component_id,
-  //         component_type,
-  //         component_specification,
-  //         category,
-  //         unit_of_measurement,
-  //         unit: 1, // Post each unit as 1
-  //         vendor_name,
-  //         vendor_id,
-  //         po_master_id, // Include the hardcoded po_master_id
-  //         quality_check: "Pending", // Set quality_check as "Pending"
-  //       };
-
-  //       // POST request to the inward API
-  //       const response = await fetch(`${config.apiBaseURL}/inward/`, {
-  //         method: "POST",
-  //         headers: { "Content-Type": "application/json" },
-  //         body: JSON.stringify(inwardPayload),
-  //       });
-
-  //       if (!response.ok) {
-  //         const error = await response.json();
-  //         console.error(`Error posting inward data for unit ${i + 1}:`, error);
-  //         alert(`Failed to post inward data for unit ${i + 1}.`);
-  //         return;
-  //       }
-  //     }
-
-  //     // Success message after all POST requests
-  //     alert(
-  //       `Inward operation completed successfully for ${quantity} units of Component ID: ${component_id}.`
-  //     );
-  //   } catch (error) {
-  //     console.error("Error during inward operation:", error);
-  //     alert("An error occurred while performing the inward operation.");
-  //   }
-  // };
 
   const handleInwardWithPatch = async (delivery) => {
     const item = {
@@ -536,27 +484,6 @@ const POOrderMaster = ({ user }) => {
 
   const currentStatus = getCurrentStatus();
 
-  // // Compute Total Price, GST, and Final Total
-  // const computeTotals = () => {
-  //   const totals = poDetails.reduce(
-  //     (acc, po) => {
-  //       const totalCost = parseFloat(po.cart_details.unit_price || 0);
-  //       const gst = parseFloat(po.cart_details.GST || 0);
-  //       acc.totalPrice += totalCost; // Exclude GST from total price
-  //       acc.gst += gst;
-  //       acc.finalTotal += totalCost + gst; // Include GST in final total
-  //       return acc;
-  //     },
-  //     { totalPrice: 0, gst: 0, finalTotal: 0 }
-  //   );
-
-  //   return {
-  //     totalPrice: totals.totalPrice.toFixed(2),
-  //     gst: totals.gst.toFixed(2),
-  //     finalTotal: totals.finalTotal.toFixed(2),
-  //   };
-  // };
-
   // Compute Total Price, GST, and Final Total
   const computeTotals = () => {
     const totals = poDetails.reduce(
@@ -686,6 +613,115 @@ const POOrderMaster = ({ user }) => {
     );
   };
 
+  const handleOpenModal = () => {
+    setFormData((prev) => ({
+      ...prev,
+      subject: `Order Details for PO ID: ${poId}`,
+      sender_title: `Order Details for PO ID: ${poId}`,
+    }));
+    setShowModal(true);
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const generatePDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(12);
+    doc.text("Purchase Order", 105, 10, { align: "center" });
+    doc.text(`PO ID: ${poId}`, 10, 20);
+    doc.text(`Vendor Name: ${vendorName}`, 10, 30);
+    doc.text(`Date: ${poData?.date || "N/A"}`, 10, 40);
+    doc.text(`GSTIN: ${vendor_gstn}`, 10, 50);
+    doc.text("Order Details:", 10, 60);
+
+    const columns = ["Description", "UOM", "Qty", "Unit Price", "GST", "Total"];
+    const rows = poDetails.map((po) => [
+      po.cart_details.component_specification,
+      po.cart_details.unit_of_measurement,
+      po.cart_details.quantity,
+      po.cart_details.unit_price,
+      po.cart_details.GST,
+      po.cart_details.total_cost,
+    ]);
+
+    doc.autoTable({
+      head: [columns],
+      body: rows,
+      startY: 70,
+    });
+
+    return doc.output("blob");
+  };
+
+  const handleSendEmail = async () => {
+    try {
+      const pdfBlob = generatePDF();
+      const pdfFileName = `PO_${poId}.pdf`;
+
+      const recipientList = formData.recipient.split(",").map((s) => s.trim());
+      const ccList = formData.cc.split(",").map((s) => s.trim());
+      const bccList = formData.bcc.split(",").map((s) => s.trim());
+
+      const formDataUpload = new FormData();
+      formDataUpload.append(
+        "file",
+        new File([pdfBlob], pdfFileName, { type: "application/pdf" })
+      );
+
+      const uploadResponse = await fetch(
+        `${config.apiBaseURL}/file_upload_view/`,
+        {
+          method: "POST",
+          body: formDataUpload,
+        }
+      );
+
+      if (!uploadResponse.ok) {
+        const err = await uploadResponse.json();
+        alert(`File upload failed: ${err.error}`);
+        return;
+      }
+
+      const emailPayload = new FormData();
+      emailPayload.append("recipient", JSON.stringify(recipientList));
+      emailPayload.append("cc", JSON.stringify(ccList));
+      emailPayload.append("bcc", JSON.stringify(bccList));
+      emailPayload.append(
+        "subject",
+        formData.subject || `Order Details for PO ID: ${poId}`
+      );
+      emailPayload.append("sender_title", `Order Details for PO ID: ${poId}`);
+      emailPayload.append(
+        "body",
+        formData.body || `Please find attached the PO ID: ${poId}`
+      );
+      emailPayload.append(
+        "filename",
+        new File([pdfBlob], pdfFileName, { type: "application/pdf" })
+      );
+
+      const sendResponse = await fetch(`${config.apiBaseURL}/send-email/`, {
+        method: "POST",
+        body: emailPayload,
+      });
+
+      if (sendResponse.ok) {
+        const emailData = await sendResponse.json();
+        alert(`Email sent successfully: ${emailData.message}`);
+        setShowModal(false);
+      } else {
+        const emailError = await sendResponse.json();
+        alert(`Failed to send email: ${emailError.error}`);
+      }
+    } catch (error) {
+      console.error("Error sending email:", error);
+      alert("An error occurred while uploading the file or sending the email.");
+    }
+  };
+
   return (
     <div>
       <h2>PO Details</h2>
@@ -770,26 +806,6 @@ const POOrderMaster = ({ user }) => {
                         }
                       )}
                     </td>
-                    {/* {(isAdmin || isProcurement) && (
-                      <td>
-                        <button
-                          onClick={() => handleInward(po.cart_details)}
-                          disabled={
-                            inwardLoadingIds.includes(
-                              po.cart_details.component_id
-                            ) || // actively processing
-                            orderStatus.received_status !== "Received" || // not yet received
-                            !po.inward_status // already inwarded
-                          }
-                        >
-                          {inwardLoadingIds.includes(
-                            po.cart_details.component_id
-                          )
-                            ? "Processing..."
-                            : "Inward"}
-                        </button>
-                      </td>
-                    )} */}
                   </tr>
                 ))}
 
@@ -810,13 +826,6 @@ const POOrderMaster = ({ user }) => {
               </tbody>
             </table>
           </div>
-
-          {/* <button onClick={() => updatePOMasterStatuses(poId, "Approved")}>
-            Approve
-          </button>
-          <button onClick={() => updatePOMasterStatuses(poId, "Rejected")}>
-            Reject
-          </button> */}
 
           {showDeliveryModal && selectedDeliveryDetails && (
             <div
@@ -1027,20 +1036,7 @@ const POOrderMaster = ({ user }) => {
                     justifyContent: "flex-end",
                     marginTop: "30px",
                   }}
-                >
-                  <div>
-                    {/* <div>
-                      Ordered Quantity:{" "}
-                      {selectedDeliveryDetails.cart_details?.ordered_quantity ||
-                        "-"}
-                    </div>
-                    <div>
-                      Remaining Quantity:{" "}
-                      {selectedDeliveryDetails.cart_details
-                        ?.remaining_quantity || "-"}
-                    </div> */}
-                  </div>
-                </div>
+                ></div>
 
                 {/* Close Button */}
                 <div style={{ marginTop: "20px", textAlign: "right" }}>
@@ -1060,114 +1056,6 @@ const POOrderMaster = ({ user }) => {
               </div>
             </div>
           )}
-
-          {/* Order Status Buttons
-          {(isAdmin || isProcurement) && (
-            <div style={{ marginTop: "20px" }}>
-              <button
-                onClick={() => {
-                  handleStatusButtonClick("Ordered");
-                  // updatePOStatus(poId, "Ordered");
-                }}
-                disabled={orderStatus.order_placed_status === "Ordered"}
-              >
-                Order Placed
-              </button>
-              <button
-                onClick={() => {
-                  handleStatusButtonClick("Shipped");
-                  // updatePOStatus(poId, "Shipped");
-                }}
-                disabled={
-                  orderStatus.customer_status === "Shipped" ||
-                  orderStatus.order_placed_status !== "Ordered"
-                }
-              >
-                Shipped
-              </button>
-              <button
-                onClick={() => {
-                  handleStatusButtonClick("Received");
-                  // updatePOStatus(poId, "Received");
-                }}
-                disabled={
-                  orderStatus.received_status === "Received" ||
-                  orderStatus.customer_status !== "Shipped"
-                }
-              >
-                Received
-              </button>
-            </div>
-          )} */}
-
-          {/* Date Input Section
-          {showPopup && (
-            <div className="popup">
-              <div className="popup-content">
-                <h3>{`Update Status: ${selectedStatus}`}</h3>
-                <label>
-                  Select Date and Time:
-                  <input
-                    type="datetime-local"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                  />
-                </label>
-                <div style={{ marginTop: "20px" }}>
-                  <button onClick={handleUpdateStatus}>Confirm</button>
-                  <button onClick={() => setShowPopup(false)}>Cancel</button>
-                </div>
-              </div>
-            </div>
-          )} */}
-
-          {/* Current Status
-          <div
-            style={{
-              marginTop: "10px",
-              padding: "15px",
-              border: "1px solid #ddd",
-              borderRadius: "8px",
-              backgroundColor: "#f9f9f9",
-              boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <div style={{ textAlign: "center", flex: 1 }}>
-              <p style={{ fontSize: "16px", color: "#333" }}>
-                <strong>Order Placed</strong>
-              </p>
-              <p style={{ fontSize: "14px", color: "#555" }}>
-                {orderStatus.order_placed_date_time
-                  ? new Date(
-                      orderStatus.order_placed_date_time
-                    ).toLocaleString()
-                  : "Not yet placed"}
-              </p>
-            </div>
-            <div style={{ textAlign: "center", flex: 1 }}>
-              <p style={{ fontSize: "16px", color: "#333" }}>
-                <strong>Shipped</strong>
-              </p>
-              <p style={{ fontSize: "14px", color: "#555" }}>
-                {orderStatus.customer_date_time
-                  ? new Date(orderStatus.customer_date_time).toLocaleString()
-                  : "Not yet shipped"}
-              </p>
-            </div>
-            <div style={{ textAlign: "center", flex: 1 }}>
-              <p style={{ fontSize: "16px", color: "#333" }}>
-                <strong>Received</strong>
-              </p>
-              <p style={{ fontSize: "14px", color: "#555" }}>
-                {orderStatus.received_date
-                  ? new Date(orderStatus.received_date).toLocaleString()
-                  : "Not yet received"}
-              </p>
-            </div>
-          </div> */}
         </>
       )}
 
@@ -1182,6 +1070,7 @@ const POOrderMaster = ({ user }) => {
                 color: "white",
                 padding: "8px 16px",
               }}
+              onClick={handleOpenModal}
             >
               Send Email
             </button>
@@ -1205,16 +1094,6 @@ const POOrderMaster = ({ user }) => {
             >
               Cancel Order
             </button>
-            {/* <span
-              style={{
-                marginLeft: "20px",
-                color: "green",
-                fontWeight: "bold",
-                fontSize: "16px",
-              }}
-            >
-              Approved
-            </span> */}
           </>
         )}
 
@@ -1260,6 +1139,106 @@ const POOrderMaster = ({ user }) => {
           </>
         )}
       </div>
+
+      {showModal && (
+        <div className="popup">
+          <h3>Send Email for PO ID: {poId}</h3>
+          <form style={{ marginTop: "5px" }}>
+            <div
+              style={{
+                padding: 5,
+                display: "flex",
+                justifyContent: "space-between",
+              }}
+            >
+              <label>Recipient:</label>
+              <input
+                type="text"
+                name="recipient"
+                value={formData.recipient}
+                onChange={handleChange}
+                placeholder="Enter multiple emails separated by commas"
+                required
+              />
+            </div>
+
+            <div
+              style={{
+                padding: 5,
+                display: "flex",
+                justifyContent: "space-between",
+              }}
+            >
+              <label>CC:</label>
+              <input
+                type="text"
+                name="cc"
+                value={formData.cc}
+                onChange={handleChange}
+                placeholder="Enter multiple emails separated by commas"
+              />
+            </div>
+
+            <div
+              style={{
+                padding: 5,
+                display: "flex",
+                justifyContent: "space-between",
+              }}
+            >
+              <label>BCC:</label>
+              <input
+                type="text"
+                name="bcc"
+                value={formData.bcc}
+                onChange={handleChange}
+                placeholder="Enter multiple emails separated by commas"
+              />
+            </div>
+
+            <div
+              style={{
+                padding: 5,
+                display: "flex",
+                justifyContent: "space-between",
+              }}
+            >
+              <label>Body:</label>
+              <textarea
+                name="body"
+                value={formData.body}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div style={{ marginTop: "20px", textAlign: "center" }}>
+              <button
+                type="button"
+                onClick={handleSendEmail}
+                style={{
+                  backgroundColor: "#f7931e",
+                  color: "white",
+                  marginRight: 10,
+                  padding: "8px 20px",
+                }}
+              >
+                Send Email
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                style={{
+                  backgroundColor: "gray",
+                  color: "white",
+                  padding: "8px 20px",
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       <ToastContainerComponent />
     </div>
