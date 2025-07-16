@@ -12,6 +12,7 @@ import AddIcon from "../assets/Add.png";
 import { useAuth } from "../AuthContext"; // adjust the path
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { format } from "date-fns";
 
 const MRFCreate = () => {
   const [requestList, setRequestList] = useState([]);
@@ -230,6 +231,8 @@ const MRFCreate = () => {
       (row) => selectedItems[row.serial_number]
     );
 
+    const formattedDate = date ? format(date, "yyyy-MM-dd") : null;
+
     // Include newly added rows
     const additionalSelectedRows = newRows
       .filter((row) => row.checked && row.serial_number)
@@ -264,7 +267,7 @@ const MRFCreate = () => {
     // Step 1: Create MRF Entry
     const mrfPayload = {
       name: name,
-      date: date,
+      date: formattedDate,
       Request_id_assign: selectedRequest ? selectedRequest : "",
     };
 
@@ -505,42 +508,11 @@ const MRFCreate = () => {
                   <td>{selectedItem ? selectedItem.status : "Available"}</td>
 
                   <td>
-                    {user.role === "User" || "Admin" ? (
-                      <input
-                        type="checkbox"
-                        checked={row.checked || false}
-                        onChange={() => handleNewRowCheckbox(index)}
-                      />
-                    ) : user.role === "Inventory" ? (
-                      <div style={{ display: "flex", gap: "8px" }}>
-                        <button
-                          // onClick={() => handleAssign(index)}
-                          style={{
-                            padding: "5px 10px",
-                            backgroundColor: "#4CAF50",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "4px",
-                            cursor: "pointer",
-                          }}
-                        >
-                          Assigned
-                        </button>
-                        <button
-                          // onClick={() => handleReturn(index)}
-                          style={{
-                            padding: "5px 10px",
-                            backgroundColor: "#f44336",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "4px",
-                            cursor: "pointer",
-                          }}
-                        >
-                          Return
-                        </button>
-                      </div>
-                    ) : null}
+                    <input
+                      type="checkbox"
+                      checked={row.checked || false}
+                      onChange={() => handleNewRowCheckbox(index)}
+                    />
                   </td>
                 </tr>
               );

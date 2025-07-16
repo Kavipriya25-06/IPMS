@@ -440,8 +440,8 @@ const Mrf = () => {
                 >
                   {item.MRF_id}
                 </td>
-                <td>{item.name}</td>
-                <td>{item.create_date}</td>
+                <td>{item.name}</td>                
+                <td>{item.create_date  ? format(new Date(item.date), "dd-MM-yyyy") : ""}</td>
                 <td>{item.Request_id_assign}</td>
                 <td>{getProjectName(item.Request_id_assign)}</td>
                 <td>{item.approval ? "Approved" : "Pending"}</td>
