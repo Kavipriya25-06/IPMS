@@ -2971,9 +2971,14 @@ main {
 
   .center-wrapper {
     justify-content: flex-end;
-    margin-top: 8px;
+    margin-top: -10px;
     margin-bottom: 12px;
   }
+  .request-selector-dropdown{
+    margin-top: 5px;
+  }
+
+
 
     .right-wrapper {
     justify-content: flex-end;

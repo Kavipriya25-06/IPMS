@@ -339,6 +339,7 @@ const MRFCreate = () => {
           alignContent: "space-between",
           gap: "50px",
         }}
+        className="material-form"
       >
         <div>
           <label className="request-selector-label">
