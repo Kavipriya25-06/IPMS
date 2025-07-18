@@ -8,6 +8,11 @@ import {
   showWarningToast,
   ToastContainerComponent,
 } from "./Toastify.jsx"; // Import Toastify utilities
+import AddIcon from "../assets/Add.png";
+import { useAuth } from "../AuthContext"; // adjust the path
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { format } from "date-fns";
 
 const MRFCreate = () => {
   const [requestList, setRequestList] = useState([]);
@@ -17,6 +22,7 @@ const MRFCreate = () => {
   const [materialRequest, setMaterialRequest] = useState([]);
   const [projectDetails, setProjectDetails] = useState([]);
   const [projectName, setProjectName] = useState("");
+  const { user } = useAuth(); // ✅ gets the current user
   const [name, setName] = useState("");
   const [date, setDate] = useState("");
   const [selectedItems, setSelectedItems] = useState({}); // Stores selected rows
@@ -225,6 +231,8 @@ const MRFCreate = () => {
       (row) => selectedItems[row.serial_number]
     );
 
+    const formattedDate = date ? format(date, "yyyy-MM-dd") : null;
+
     // Include newly added rows
     const additionalSelectedRows = newRows
       .filter((row) => row.checked && row.serial_number)
@@ -259,7 +267,7 @@ const MRFCreate = () => {
     // Step 1: Create MRF Entry
     const mrfPayload = {
       name: name,
-      date: date,
+      date: formattedDate,
       Request_id_assign: selectedRequest ? selectedRequest : "",
     };
 
@@ -329,8 +337,9 @@ const MRFCreate = () => {
           marginTop: "20px",
           display: "flex",
           alignContent: "space-between",
-          justifyContent: "space-between",
+          gap: "50px",
         }}
+        className="material-form"
       >
         <div>
           <label className="request-selector-label">
@@ -365,12 +374,20 @@ const MRFCreate = () => {
           </div>
           <div className="custom-form-field">
             <label className="custom-form-label">Date:</label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="custom-form-input"
-            />
+            <div className="date-input-container" style={{ width: "220px" }}>
+              <DatePicker
+                selected={date}
+                onChange={(date) => setDate(date)}
+                dateFormat="dd-MM-yyyy"
+                placeholderText="dd-mm-yyyy"
+                className="input1"
+                showMonthDropdown
+                showYearDropdown
+                dropdownMode="select"
+                required
+              />
+              <i className="fas fa-calendar-alt calendar-icon"></i>{" "}
+            </div>
           </div>
         </div>
       </div>
@@ -439,6 +456,11 @@ const MRFCreate = () => {
                       onChange={(e) =>
                         handleNewRowChange(index, e.target.value)
                       }
+                      style={{
+                        padding: "5px",
+                        borderRadius: "5px",
+                        cursor: "pointer",
+                      }}
                     >
                       <option value="">Select</option>
                       {[
@@ -485,6 +507,7 @@ const MRFCreate = () => {
                     </select>
                   </td> */}
                   <td>{selectedItem ? selectedItem.status : "Available"}</td>
+
                   <td>
                     <input
                       type="checkbox"
@@ -498,6 +521,24 @@ const MRFCreate = () => {
             <tr>
               <td>
                 <button
+                  style={{
+                    cursor: "pointer",
+                    marginLeft: "auto",
+                    marginRight: 20,
+                    background: "transparent",
+                    border: "none",
+                  }}
+                  className="plus-button"
+                  title={"Add MRF"}
+                  onClick={handleAddRow}
+                >
+                  <img
+                    src={AddIcon}
+                    alt=""
+                    style={{ width: "17px", height: "17px" }}
+                  />
+                </button>
+                {/* <button
                   onClick={handleAddRow}
                   style={{
                     padding: "8px",
@@ -509,29 +550,45 @@ const MRFCreate = () => {
                   }}
                 >
                   Add
-                </button>
+                </button> */}
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-      <div style={{ alignSelf: "end", justifyContent: "end" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: "10px",
+          marginTop: "20px",
+        }}
+      >
         <button
           onClick={handleCreateMRF}
           disabled={!selectedRequest && newRows.length === 0}
           style={{
-            marginTop: "20px",
             padding: "10px 15px",
-            backgroundColor: "grey",
-            color: "white",
             border: "none",
             cursor: "pointer",
-            alignSelf: "end",
-            justifyContent: "end",
             borderRadius: "5px",
           }}
+          className="save-button"
         >
           Create MRF
+        </button>{" "}
+        <button
+          onClick={() => navigate("/mrf")}
+          style={{
+            padding: "10px 15px",
+
+            border: "none",
+            cursor: "pointer",
+            borderRadius: "5px",
+          }}
+          className="delete-button"
+        >
+          Cancel
         </button>
       </div>
       <ToastContainerComponent />

@@ -2444,7 +2444,6 @@ main {
 }
 
 .custom-form-wrapper {
-  padding: 20px;
   max-width: 450px;
   background: none !important;
   border-radius: 10px;
@@ -2490,7 +2489,9 @@ main {
   border-radius: 6px;
   margin-bottom: 12px;
   transition: border-color 0.2s;
-  margin-left: 10px;
+  margin-left: 20px;
+  width: 220px;
+  max-width: 300px;
 }
 
 .request-selector-dropdown:focus {
@@ -2963,16 +2964,21 @@ main {
    .right-wrapper .search-bar-container {
     margin-top: 20px;
     display: flex;
-    align-items: end;
+    align-items: flex-end;
     gap: 8px;
     width: 240px !important;
   }
 
   .center-wrapper {
     justify-content: flex-end;
-    margin-top: 8px;
+    margin-top: -10px;
     margin-bottom: 12px;
   }
+  .request-selector-dropdown{
+    margin-top: 5px;
+  }
+
+
 
     .right-wrapper {
     justify-content: flex-end;
@@ -3653,7 +3659,7 @@ ul {
 }
 
 .date-filter-inline .react-datepicker {
-  margin-left: 50%;
+  margin-left: 55%;
   margin-top: 10px;
 }
 
@@ -3692,12 +3698,14 @@ ul {
   outline: none;
   box-shadow: none;
 }
+
 .date-row {
   display: flex;
   align-items: center;
   gap: 2px; /* space between h5, input, and icon */
   font-size: 20px;
   margin-bottom: -10px;
+  color: #b6b5b5;
 }
 
 .add-tag-wrapper {
@@ -4098,4 +4106,17 @@ ul {
 
 .send-email:hover {
   background-color: rgb(94, 94, 94);
+}
+
+.approve-screen{
+  padding: 8px 10px;
+  background-color: green;
+  border-radius: 5px;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+
+.approve-screen:hover{
+  background-color: #7bab7b;
 }

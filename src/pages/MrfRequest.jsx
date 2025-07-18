@@ -10,7 +10,7 @@ import {
   ToastContainerComponent,
 } from "./Toastify.jsx"; // Import Toastify utilities
 import { useAuth } from "../AuthContext";
-
+import { format } from "date-fns";
 
 const Mrfrequest = () => {
   const { MRF_id } = useParams();
@@ -41,7 +41,7 @@ const Mrfrequest = () => {
     component_id: null,
   }); // State for new question
 
-  const { user } = useAuth(); 
+  const { user } = useAuth();
 
   const role = user?.role?.toLowerCase().trim();
   const isAdmin = role === "admin";
@@ -50,7 +50,6 @@ const Mrfrequest = () => {
 
   const canApproveMRF = isAdmin || isSubAdmin;
   const canSeeActions = !isUser;
-
 
   useEffect(() => {
     fetchMrfData();
@@ -64,7 +63,7 @@ const Mrfrequest = () => {
       const data = await response.json();
       const filteredData = data.find((item) => item.MRF_id === MRF_id);
       setMrfData(data);
-      setMrfData(filteredData)
+      setMrfData(filteredData);
       setApprovalStatus(filteredData.approval);
       console.log("Approval", filteredData);
       console.log("Approval");
@@ -116,33 +115,39 @@ const Mrfrequest = () => {
         throw new Error("Failed to fetch inventory data");
       }
       const inventoryData = await response.json();
-  
+
       // If status is not "Available", assign directly
-      const currentItem = inventoryData.find(inv => inv.serial_number === serialNumber);
+      const currentItem = inventoryData.find(
+        (inv) => inv.serial_number === serialNumber
+      );
       if (!currentItem) {
         showErrorToast("Serial number not found in inventory.");
         return;
       }
-  
+
       if (currentItem.status !== "Available") {
         await assignSerial(serialNumber, MRFListId);
         return;
       }
-  
+
       // Else, find the next available serial number matching component & specification
       const availableOptions = inventoryData.filter(
         (inv) =>
-          inv.component_type?.toLowerCase().trim() === item.component_type?.toLowerCase().trim() &&
+          inv.component_type?.toLowerCase().trim() ===
+            item.component_type?.toLowerCase().trim() &&
           inv.specification?.toLowerCase().trim() ===
-            (item.component_specification?.toLowerCase().trim() || item.specification?.toLowerCase().trim()) &&
+            (item.component_specification?.toLowerCase().trim() ||
+              item.specification?.toLowerCase().trim()) &&
           inv.status === "Available"
       );
-  
+
       if (availableOptions.length === 0) {
-        showWarningToast("No available serial numbers found for this component.");
+        showWarningToast(
+          "No available serial numbers found for this component."
+        );
         return;
       }
-  
+
       // Assign the first available serial number
       await assignSerial(availableOptions[0].serial_number, MRFListId);
       showSuccessToast("Serial number assigned successfully.");
@@ -215,49 +220,58 @@ const Mrfrequest = () => {
     }));
   };
 
-
   // Function to assign the selected serial number from popup
-const assignSerial = async (serialNumber, MRFListId) => {
-  try {
-    const response = await fetch(`${config.apiBaseURL}/inventory/${serialNumber}/`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "In_drone" }),
-    });
+  const assignSerial = async (serialNumber, MRFListId) => {
+    try {
+      const response = await fetch(
+        `${config.apiBaseURL}/inventory/${serialNumber}/`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "In_drone" }),
+        }
+      );
 
-    if (!response.ok) {
-      throw new Error("Failed to update inventory status");
+      if (!response.ok) {
+        throw new Error("Failed to update inventory status");
+      }
+
+      const updateMRFResponse = await fetch(
+        `${config.apiBaseURL}/MRFList/${MRFListId}/`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: false,
+            serial_number: serialNumber,
+          }),
+        }
+      );
+
+      if (!updateMRFResponse.ok) {
+        throw new Error("Failed to update MRF action status");
+      }
+
+      setMrfListData((prevData) =>
+        prevData.map((item) =>
+          item.id === MRFListId
+            ? {
+                ...item,
+                status: "In_drone",
+                action: false,
+                serial_number: serialNumber,
+              }
+            : item
+        )
+      );
+
+      setShowSerialPopup(false);
+      // showSuccessToast(`Serial ${serialNumber} assigned successfully`);
+    } catch (error) {
+      console.error("Error during assignment:", error);
+      showErrorToast("Error while assigning serial number");
     }
-
-    const updateMRFResponse = await fetch(`${config.apiBaseURL}/MRFList/${MRFListId}/`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: false,
-        serial_number: serialNumber, 
-      }),
-    });
-
-
-    if (!updateMRFResponse.ok) {
-      throw new Error("Failed to update MRF action status");
-    }
-
-    setMrfListData((prevData) =>
-      prevData.map((item) =>
-        item.id === MRFListId
-          ? { ...item, status: "In_drone", action: false, serial_number: serialNumber }
-          : item
-      )
-    );
-
-    setShowSerialPopup(false);
-    // showSuccessToast(`Serial ${serialNumber} assigned successfully`);
-  } catch (error) {
-    console.error("Error during assignment:", error);
-    showErrorToast("Error while assigning serial number");
-  }
-};
+  };
 
   const handleSubmitQC = async () => {
     if (!newQuestion.qcQuestions || newQuestion.qcQuestions.length === 0) {
@@ -376,12 +390,20 @@ const assignSerial = async (serialNumber, MRFListId) => {
   return (
     <div>
       <h2>Material Request Data for {MRF_id}</h2>
-      <div style={{ display: "flex", gap: "20px", marginBottom: "10px", alignItems: "center" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: "20px",
+          marginBottom: "10px",
+          alignItems: "center",
+        }}
+      >
         <div>
           <strong>Requester Name:</strong> {mrfData.name}
         </div>
         <div>
-          <strong>Date:</strong> {mrfData.date}
+          <strong>Date:</strong>{" "}
+          {mrfData.date ? format(new Date(mrfData.date), "dd-MM-yyyy") : ""}
         </div>
         <div>
           <strong>Request ID:</strong> {mrfData.Request_id_assign}
@@ -391,124 +413,128 @@ const assignSerial = async (serialNumber, MRFListId) => {
         <strong>Approval Status:</strong>{" "}
         {approvalStatus ? "Approved" : "Pending"}
         {!approvalStatus && canApproveMRF && (
-          <button
-            onClick={handleApproval}
+          <div
             style={{
-              marginLeft: "10px",
-              padding: "5px 10px",
-              backgroundColor: "green",
-              color: "white",
-              borderRadius: "5px",
+              display: "flex",
+              justifyContent: "flex-end",
             }}
           >
-            Approve MRF
-          </button>
+            <button onClick={handleApproval} className="approve-screen">
+              Approve MRF
+            </button>
+          </div>
         )}
       </div>
 
-       <div className="table-container"> 
-      <table>
-        <thead>
-          <tr>
-            {/* <th>MRF ID</th> */}
-            {/* <th>Create Date</th>
-            <th>Name</th> */}
-            <th>Component Type</th>
-            <th>Component Specification</th>
-            <th>Unit of Measurement</th>
-            <th>Category</th>
-            <th>Serial Number</th>
-            {canSeeActions && <th>Actions</th>} 
-          </tr>
-        </thead>
-        <tbody>
-          {mrfListData.length === 0 ? (
+      <div className="table-container">
+        <table>
+          <thead>
             <tr>
-              <td colSpan="8" style={{ textAlign: "center" }}>
-                No material requests available.
-              </td>
+              {/* <th>MRF ID</th> */}
+              {/* <th>Create Date</th>
+            <th>Name</th> */}
+              <th>Component Type</th>
+              <th>Component Specification</th>
+              <th>Unit of Measurement</th>
+              <th>Category</th>
+              <th>Serial Number</th>
+              {canSeeActions && <th>Actions</th>}
             </tr>
-          ) : (
-            mrfListData.map((item) => (
-              <tr key={item.serial_number}>
-                {/* <td>{item.MRF_id}</td> */}
-                {/* <td>{item.create_date}</td>
-                <td>{item.name}</td> */}
-                <td>{item.component_type}</td>
-                <td>{item.component_specification}</td>
-                <td>{item.unit_of_measurement}</td>
-                <td>{item.category}</td>
-                <td>{item.action === false ? item.serial_number : "-"}</td>
-                
-                {canSeeActions && (
-                <td>
-                  {item.returns ? (
-                    <button
-                      disabled
-                      style={{
-                        padding: "5px 10px",
-                        backgroundColor: "#b8730b",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "5px",
-                      }}
-                    >
-                      Returned
-                    </button>
-                  ) : item.action ? (
-                    <button
-                      onClick={() => handleAssign(item.serial_number, item.id,item)}
-                      disabled={!approvalStatus}
-                      style={{
-                        padding: "5px 10px",
-                        backgroundColor: approvalStatus ? "gray" : "grey",
-                        color: approvalStatus ? "white" : "black",
-                        border: "none",
-                        cursor: "pointer",
-                        borderRadius: "5px",
-                      }}
-                    >
-                      Assign
-                    </button>
-                  ) : (
-                    <>
-                      <button
-                        disabled
-                        style={{
-                          padding: "5px 10px",
-                          backgroundColor: "grey",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "5px",
-                        }}
-                      >
-                        Assigned
-                      </button>
-                      <button
-                        onClick={() =>
-                          handleReturnClick(item.serial_number, item.id, item)
-                        }
-                        style={{
-                          padding: "5px 10px",
-                          backgroundColor: "orange",
-                          color: "white",
-                          border: "none",
-                          cursor: "pointer",
-                          marginLeft: "5px",
-                          borderRadius: "5px",
-                        }}
-                      >
-                        Return
-                      </button>
-                    </>
-                  )}
+          </thead>
+          <tbody>
+            {mrfListData.length === 0 ? (
+              <tr>
+                <td colSpan="8" style={{ textAlign: "center" }}>
+                  No material requests available.
                 </td>
-                )}
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            ) : (
+              mrfListData.map((item) => (
+                <tr key={item.serial_number}>
+                  {/* <td>{item.MRF_id}</td> */}
+                  {/* <td>{item.create_date}</td>
+                <td>{item.name}</td> */}
+                  <td>{item.component_type}</td>
+                  <td>{item.component_specification}</td>
+                  <td>{item.unit_of_measurement}</td>
+                  <td>{item.category}</td>
+                  <td>{item.action === false ? item.serial_number : "-"}</td>
+
+                  {canSeeActions && (
+                    <td>
+                      {item.returns ? (
+                        <button
+                          disabled
+                          style={{
+                            padding: "5px 10px",
+                            backgroundColor: "#b8730b",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "5px",
+                          }}
+                        >
+                          Returned
+                        </button>
+                      ) : item.action ? (
+                        <button
+                          onClick={() =>
+                            handleAssign(item.serial_number, item.id, item)
+                          }
+                          disabled={!approvalStatus}
+                          style={{
+                            padding: "5px 10px",
+                            backgroundColor: approvalStatus ? "gray" : "grey",
+                            color: "white",
+                            border: "none",
+                            cursor: "pointer",
+                            borderRadius: "5px",
+                          }}
+                        >
+                          Assign
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            disabled
+                            style={{
+                              padding: "5px 10px",
+                              backgroundColor: "grey",
+                              color: "white",
+                              border: "none",
+                              borderRadius: "5px",
+                            }}
+                          >
+                            Assigned
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleReturnClick(
+                                item.serial_number,
+                                item.id,
+                                item
+                              )
+                            }
+                            style={{
+                              padding: "5px 10px",
+                              backgroundColor: "orange",
+                              color: "white",
+                              border: "none",
+                              cursor: "pointer",
+                              marginLeft: "5px",
+                              borderRadius: "5px",
+                            }}
+                          >
+                            Return
+                          </button>
+                        </>
+                      )}
+                    </td>
+                  )}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
       {showPopup && (
         <div className="popup">
@@ -557,7 +583,8 @@ const assignSerial = async (serialNumber, MRFListId) => {
                 onChange={(e) => setReturnStatus(e.target.value)}
               />{" "}
               Damaged
-            </label>*
+            </label>
+            *
           </div>
           <button onClick={handleReturnSubmit}>Submit</button>
           <button onClick={() => setShowPopup(false)}>Cancel</button>
@@ -619,7 +646,7 @@ const assignSerial = async (serialNumber, MRFListId) => {
         </div>
       )}
 
-{/* {showSerialPopup && selectedItemForAssign && (
+      {/* {showSerialPopup && selectedItemForAssign && (
   <div className="popup">
     <h3>Choose Available Serial Number</h3>
     {alternativeSerials.length > 0 ? (

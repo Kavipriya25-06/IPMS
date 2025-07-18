@@ -269,7 +269,10 @@ const Mrf = () => {
   };
 
   const filteredData = mrfData.filter((item) => {
-    const dateMatch = dateFilter ? item.create_date === dateFilter : true;
+    const dateMatch = dateFilter
+      ? format(new Date(item.create_date), "yyyy-MM-dd") ===
+        format(dateFilter, "yyyy-MM-dd")
+      : true;
     const statusMatch = statusFilter
       ? statusFilter === "Approved"
         ? item.approval === true
@@ -300,35 +303,35 @@ const Mrf = () => {
         }}
       >
         <h2>Material Requests (MRF)</h2>
+      </div>
+
+
+      <div className="search-wrapper-container">
+        {/* Centered search bar */}
+        <div className="search-wrapper">
+          <div className="search-bar-container">
+            <input
+              type="text"
+              className="search-bar"
+              placeholder="Search by Project Name, MRF ID"
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+            />
+            <span className="search-icon">
+              <i className="fa fa-search" aria-hidden="true"></i>
+            </span>
+          </div>
+        </div>
+
+        {/* Add Vendor Button */}
         <button
-          style={{
-            cursor: "pointer",
-            marginLeft: "auto",
-            marginRight: 20,
-            background: "transparent",
-            border: "none",
-          }}
+          className="plus-button"
           title="Create MRF"
           onClick={() => navigate("/MRFCreate")}
         >
-          <img src={Add} alt="" style={{ width: "20px", height: "20px" }} />
+          <img src={Add} alt="Add Vendor" />
         </button>
       </div>
-      <div className="center-wrapper">
-        <div className="search-bar-container">
-          <input
-            type="text"
-            className="search-bar"
-            placeholder="Search by Project Name, MRF ID"
-            value={searchQuery}
-            onChange={(e) => handleSearch(e.target.value)}
-          />
-          <span className="search-icon">
-            <i className="fa fa-search" aria-hidden="true"></i>
-          </span>
-        </div>
-      </div>
-
       <div className="table-container">
         <table>
           <thead>
@@ -337,26 +340,34 @@ const Mrf = () => {
               <th>Name</th>
               <th
                 className="date-filter-inline"
-                style={{ width: "100%", height: "26px" }}
+                style={{ width: "100%", height: "27px" }}
               >
-                <span>Create Date</span>
+                {!dateFilter && <span>Create Date</span>}
+
                 <DatePicker
                   selected={dateFilter}
-                  onChange={(date) => {
-                    setDateFilter(date);
-                    // 🔽 You can call your filter function here
-                    // handleFilter(date);
-                  }}
+                  onChange={(date) => setDateFilter(date)}
                   ref={datePickerRef}
                   dateFormat="yyyy-MM-dd"
-                  customInput={<div />} // No default input field
+                  customInput={<div />} // Hides input field
                   popperPlacement="bottom-end"
-                   showMonthDropdown
+                  showMonthDropdown
                   showYearDropdown
                   dropdownMode="select"
                 />
 
-                {/* Icon Trigger */}
+                {dateFilter && (
+                  <span
+                    style={{
+                      marginLeft: "10px",
+                      fontSize: "16px",
+                      color: "white",
+                    }}
+                  >
+                    {format(dateFilter, "dd-MM-yyyy")}
+                  </span>
+                )}
+
                 <FaCalendarAlt
                   style={{
                     fontSize: "14px",
@@ -366,6 +377,7 @@ const Mrf = () => {
                   onClick={() => datePickerRef.current.setOpen(true)}
                 />
               </th>
+
               <th>Request ID</th>
               <th>Project name</th>
               <th className="status-dropdown-wrapper" ref={statusDropdownRef}>
@@ -426,24 +438,40 @@ const Mrf = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredData.map((item) => (
-              <tr key={item.MRF_id}>
+            {filteredData.length === 0 ? (
+              <tr>
                 <td
-                  onClick={() => navigate(`/MrfRequest/${item.MRF_id}`)}
+                  colSpan="6"
                   style={{
-                    cursor: "pointer",
-                    textDecoration: "underline",
+                    textAlign: "center",
+                    color: "gray",
+                    fontStyle: "italic",
                   }}
                 >
-                  {item.MRF_id}
+                  No data available for this date
                 </td>
-                <td>{item.name}</td>
-                <td>{item.create_date}</td>
-                <td>{item.Request_id_assign}</td>
-                <td>{getProjectName(item.Request_id_assign)}</td>
-                <td>{item.approval ? "Approved" : "Pending"}</td>
               </tr>
-            ))}
+            ) : (
+              filteredData.map((item) => (
+                <tr key={item.MRF_id}>
+                  <td
+                    onClick={() => navigate(`/MrfRequest/${item.MRF_id}`)}
+                    style={{ cursor: "pointer", textDecoration: "underline" }}
+                  >
+                    {item.MRF_id}
+                  </td>
+                  <td>{item.name}</td>
+                  <td>
+                    {item.create_date && !isNaN(new Date(item.create_date))
+                      ? format(new Date(item.create_date), "dd-MM-yyyy")
+                      : "No Data Available"}
+                  </td>
+                  <td>{item.Request_id_assign}</td>
+                  <td>{getProjectName(item.Request_id_assign)}</td>
+                  <td>{item.approval ? "Approved" : "Pending"}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
