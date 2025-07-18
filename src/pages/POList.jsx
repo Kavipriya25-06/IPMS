@@ -606,9 +606,9 @@ const POOrderList = ({ user }) => {
                     dateFormat="yyyy-MM-dd"
                     customInput={<div />} // No default input field
                     popperPlacement="bottom-end"
-                     showMonthDropdown
-                  showYearDropdown
-                  dropdownMode="select"
+                    showMonthDropdown
+                    showYearDropdown
+                    dropdownMode="select"
                   />
 
                   {/* Icon Trigger */}

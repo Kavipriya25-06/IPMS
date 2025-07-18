@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import config from "../Config"; // Import config for API endpoints
+import axios from "axios";
 
 import {
   showSuccessToast,
@@ -11,10 +12,6 @@ import {
 } from "./Toastify.jsx"; // Import Toastify utilities
 
 const POOrderMaster = ({ user }) => {
-  const [showDeliveryModal, setShowDeliveryModal] = useState(false);
-  const [selectedDeliveryDetails, setSelectedDeliveryDetails] = useState(null);
-  const [enteredQuantity, setEnteredQuantity] = useState("");
-
   const { poId } = useParams(); // Extract PO ID from the route
   const [poDetails, setPODetails] = useState([]);
   const [poData, setPOData] = useState(null); // State for storing PO data
@@ -26,6 +23,13 @@ const POOrderMaster = ({ user }) => {
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedStatus, setSelectedStatus] = useState(null);
   const [inwardLoadingIds, setInwardLoadingIds] = useState([]);
+
+  const [showPlaceOrderPopup, setShowPlaceOrderPopup] = useState(false);
+  const [placeOrderDateTime, setPlaceOrderDateTime] = useState("");
+
+  const [showOrderedTable, setShowOrderedTable] = useState(false);
+  const [orderedItems, setOrderedItems] = useState([]);
+  const [orderPlaced, setOrderPlaced] = useState(false);
 
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
@@ -249,220 +253,19 @@ const POOrderMaster = ({ user }) => {
     }
   };
 
-  const handleInwardWithPatch = async (delivery) => {
-    const item = {
-      component_id: selectedDeliveryDetails.cart_details.component_id,
-      component_type: selectedDeliveryDetails.cart_details.component_type,
-      component_specification:
-        selectedDeliveryDetails.cart_details.component_specification,
-      category: selectedDeliveryDetails.cart_details.category,
-      unit_of_measurement:
-        selectedDeliveryDetails.cart_details.unit_of_measurement,
-      vendor_name: selectedDeliveryDetails.cart_details.vendor_name,
-      vendor_id: selectedDeliveryDetails.cart_details.vendor_id,
-      quantity: delivery.quantity,
-      id: selectedDeliveryDetails.id, // PO Master ID
-    };
-
-    try {
-      await handleInward(item); //  Existing inward logic
-
-      //  PATCH delivery.inward = true
-      const patchResponse = await fetch(
-        `${config.apiBaseURL}/po_delivery/${delivery.id}/`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ inward: true }),
-        }
-      );
-
-      if (!patchResponse.ok) {
-        const patchError = await patchResponse.json();
-        console.error("Failed to patch delivery inward status:", patchError);
-        alert("Inward successful, but marking delivery as completed failed.");
-        return;
-      }
-
-      // Update UI to disable button
-      setSelectedDeliveryDetails((prevDetails) => {
-        const updatedDeliveries = prevDetails.deliveries.map((d) =>
-          d.id === delivery.id ? { ...d, inward: true } : d
-        );
-        return { ...prevDetails, deliveries: updatedDeliveries };
-      });
-    } catch (err) {
-      console.error("Error in handleInwardWithPatch:", err);
-      alert("An error occurred while performing the inward operation.");
-    }
-  };
-
-  const handleInward = async (item) => {
-    const componentKey = item.component_id;
-
-    // Prevent if already processing this component
-    if (inwardLoadingIds.includes(componentKey)) return;
-
-    setInwardLoadingIds((prev) => [...prev, componentKey]);
-    try {
-      const {
-        id,
-        component_id,
-        component_type,
-        component_specification,
-        category,
-        unit_of_measurement,
-        quantity,
-        vendor_name,
-        vendor_id,
-      } = item;
-
-      // Fetch PO Master Data
-      const poResponse = await fetch(`${config.apiBaseURL}/po_master/`);
-      if (!poResponse.ok) {
-        throw new Error("Failed to fetch PO Master data.");
-      }
-
-      const poData = await poResponse.json();
-
-      // Debug: Log the fetched PO Master data
-      console.log("Fetched PO Master Data:", poData);
-
-      // Filter to find the matching PO entry
-      const matchedPO = poData.filter((po) => {
-        const matches =
-          po.PO_id === poId &&
-          po.id === id &&
-          po.cart_details?.component_id === component_id &&
-          po.cart_details?.vendor_id === vendor_id &&
-          po.cart_details?.component_type === component_type &&
-          po.cart_details?.component_specification ===
-            component_specification &&
-          po.cart_details?.category === category &&
-          po.cart_details?.unit_of_measurement === unit_of_measurement &&
-          (po.cart_details?.vendor_name || "").toLowerCase().trim() ===
-            (vendor_name || "").toLowerCase().trim();
-
-        // Log each condition for debugging
-        console.log(`PO ID ${po.id}:`, {
-          po_id_match: po.PO_id === poId,
-          po_master_id_match: po.cart_details?.po_master_id === id,
-          component_id_match: po.cart_details?.component_id === component_id,
-          vendor_id_match: po.cart_details?.vendor_id === vendor_id,
-          component_type_match:
-            po.cart_details?.component_type === component_type,
-          specification_match:
-            po.cart_details?.component_specification ===
-            component_specification,
-          category_match: po.cart_details?.category === category,
-          uom_match:
-            po.cart_details?.unit_of_measurement === unit_of_measurement,
-          vendor_name_match:
-            (po.cart_details?.vendor_name || "").toLowerCase().trim() ===
-            (vendor_name || "").toLowerCase().trim(),
-        });
-
-        return matches;
-      });
-
-      // Debug: Log matched PO entries
-      console.log("Matched PO Entries:", matchedPO);
-
-      if (matchedPO.length === 0) {
-        alert("No matching PO Master ID found for the selected item.");
-        return;
-      }
-
-      const po_master_id = matchedPO[0]?.id;
-      const unit_price = matchedPO[0]?.cart_details?.unit_price || 0;
-
-      // Debug: Log the extracted PO Master ID and Unit Price
-      console.log("Extracted PO Master ID:", po_master_id);
-      console.log("Unit Price for PO:", unit_price);
-
-      if (!po_master_id) {
-        alert("PO Master ID is missing or invalid.");
-        return;
-      }
-
-      // Perform inward operations for the quantity specified
-      for (let i = 0; i < quantity; i++) {
-        const inwardPayload = {
-          component_id,
-          component_type,
-          component_specification,
-          category,
-          unit_of_measurement,
-          unit: 1,
-          vendor_name,
-          vendor_id,
-          po_master_id,
-          quality_check: "Pending",
-          price: unit_price,
-        };
-
-        console.log(`Inward Payload for Unit ${i + 1}:`, inwardPayload);
-
-        const response = await fetch(`${config.apiBaseURL}/inward/`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(inwardPayload),
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          console.error(`Error posting inward data for unit ${i + 1}:`, error);
-          alert(`Failed to post inward data for unit ${i + 1}.`);
-          return;
-        }
-      }
-
-      showSuccessToast(
-        `Inward operation completed successfully for ${quantity} units of Component ID: ${component_id}.`
-      );
-
-      // Update PO Master Status
-      const updatePayload = {
-        PO_id: matchedPO[0]?.PO_id,
-        status: matchedPO[0]?.status,
-        cart_id: matchedPO[0]?.cart_id,
-        inward_status: false,
-      };
-
-      console.log("Update Payload for PO Master:", updatePayload);
-
-      const updateResponse = await fetch(
-        `${config.apiBaseURL}/po_master/${po_master_id}/`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(updatePayload),
-        }
-      );
-
-      if (!updateResponse.ok) {
-        const updateError = await updateResponse.json();
-        console.error("Error updating PO Master status:", updateError);
-        alert("Failed to update PO Master status.");
-        return;
-      }
-
-      // Refresh PO Details
+  useEffect(() => {
+    if (poId) {
       fetchPODetails();
-    } catch (error) {
-      console.error("Error in handleInward function:", error);
-      alert("An error occurred while performing the inward operation.");
-    } finally {
-      setTimeout(() => {
-        setInwardLoadingIds((prev) => prev.filter((id) => id !== componentKey));
-      }, 1000);
+      fetchPOData();
+      // fetchOrderedItems(); // only when poId is valid
     }
-  };
+  }, [poId]);
 
   useEffect(() => {
-    fetchPODetails();
-    fetchPOData();
-  }, [poId]);
+    if (poData?.PO_id) {
+      fetchOrderedItems(poData.PO_id);
+    }
+  }, [poData]);
 
   useEffect(() => {
     if (poDetails.length > 0) {
@@ -508,110 +311,6 @@ const POOrderMaster = ({ user }) => {
   const vendorName = poData?.cart_details?.vendor_name || "N/A";
   const vendor_gstn = poData?.cart_details?.gstn || "";
   const { totalquantity, totalcost } = computeTotals();
-
-  const handleQuantitySubmit = async () => {
-    if (!selectedDeliveryDetails) {
-      alert("PO not selected");
-      return;
-    }
-
-    const quantity = parseInt(enteredQuantity);
-    if (isNaN(quantity) || quantity <= 0) {
-      alert("Enter a valid quantity greater than 0");
-      return;
-    }
-
-    const totalOrderedQuantity = selectedDeliveryDetails.cart_details.quantity;
-
-    // First, fetch existing deliveries before posting
-    const currentDeliveriesRes = await fetch(
-      `${config.apiBaseURL}/po_delivery/?po_master=${selectedDeliveryDetails.id}`
-    );
-    const currentDeliveries = await currentDeliveriesRes.json();
-
-    const alreadyDelivered = currentDeliveries.reduce(
-      (acc, d) => acc + d.quantity,
-      0
-    );
-
-    const remaining = totalOrderedQuantity - alreadyDelivered;
-
-    // If already exceeded, block immediately
-    if (remaining <= 0) {
-      alert("The full ordered quantity has already been delivered.");
-      return;
-    }
-
-    if (quantity > remaining) {
-      alert(`Only ${remaining} more units can be delivered.`);
-      return;
-    }
-
-    // Proceed with posting
-    const payload = {
-      po_master: selectedDeliveryDetails.id,
-      quantity,
-      order_placed_status: "Ordered",
-      order_placed_date_time: new Date().toISOString(),
-    };
-
-    try {
-      const response = await fetch(`${config.apiBaseURL}/po_delivery/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (response.ok) {
-        alert("Quantity submitted successfully");
-        setEnteredQuantity("");
-
-        // Fetch updated delivery data to refresh UI
-        const updatedDeliveryRes = await fetch(
-          `${config.apiBaseURL}/po_delivery/?po_master=${selectedDeliveryDetails.id}`
-        );
-
-        const updatedDeliveries = await updatedDeliveryRes.json();
-
-        setSelectedDeliveryDetails((prev) => ({
-          ...prev,
-          deliveries: updatedDeliveries,
-        }));
-
-        setShowDeliveryModal(false);
-      } else {
-        const err = await response.json();
-        alert("Failed to submit: " + JSON.stringify(err));
-      }
-    } catch (error) {
-      console.error("Error submitting delivery:", error);
-      alert("Error submitting delivery.");
-    }
-  };
-
-  const thStyle = {
-    border: "1px solid #ddd",
-    padding: "10px",
-    textAlign: "left",
-  };
-
-  const tdStyle = {
-    border: "1px solid #ddd",
-    padding: "10px",
-  };
-
-  const formatDateTime = (datetime) => {
-    if (!datetime) return "-";
-    const date = new Date(datetime);
-    return (
-      date.toLocaleDateString() +
-      " " +
-      date.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    );
-  };
 
   const handleOpenModal = () => {
     setFormData((prev) => ({
@@ -722,6 +421,108 @@ const POOrderMaster = ({ user }) => {
     }
   };
 
+  const fetchOrderedItems = async (poId) => {
+    try {
+      const response = await axios.get(
+        `${config.baseUrl}po_delivery/?po_id=${poId}`
+      );
+      if (Array.isArray(response.data)) {
+        setOrderedItems(response.data);
+      } else {
+        console.warn(
+          "Ordered items API did not return an array:",
+          response.data
+        );
+        setOrderedItems([]);
+      }
+    } catch (error) {
+      console.error("Error fetching ordered items:", error);
+    }
+  };
+
+  const handlePlaceOrder = async () => {
+    if (!placeOrderDateTime) {
+      alert("Please select a date and time.");
+      return;
+    }
+
+    try {
+      const uniquePoMasterIds = [...new Set(poDetails.map((po) => po.id))];
+
+      // 1. Post po_delivery entries
+      for (const po of poDetails) {
+        const item = po.cart_details;
+        const payload = {
+          po_master: po.id,
+          component_id: item.component_id,
+          specification: item.component_specification,
+          quantity: item.quantity,
+          order_placed_date_time: new Date(placeOrderDateTime).toISOString(),
+        };
+
+        const response = await fetch(`${config.apiBaseURL}/po_delivery/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          alert(`Failed to place order: ${JSON.stringify(error)}`);
+          return;
+        }
+      }
+
+      // 2. Patch each po_master
+      for (const poMasterId of uniquePoMasterIds) {
+        const patchResponse = await fetch(
+          `${config.apiBaseURL}/po_master/${poMasterId}/`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              status: "Ordered",
+              inward_status: false,
+            }),
+          }
+        );
+
+        if (!patchResponse.ok) {
+          const error = await patchResponse.json();
+          alert(
+            `Failed to update PO Master ${poMasterId}: ${JSON.stringify(error)}`
+          );
+          return;
+        }
+      }
+
+      alert("All order items placed successfully!");
+      setShowPlaceOrderPopup(false);
+      setPlaceOrderDateTime("");
+      setOrderPlaced(true); //  use this to hide buttons
+
+      // 3. Fetch ordered components using the first po_master ID
+      const currentPoId = uniquePoMasterIds[0]; // pick the first one
+      const fetchOrdered = await fetch(
+        `${config.apiBaseURL}/po_delivery/?po_id=${poId}` // again use poId
+      );
+
+      const orderedData = await fetchOrdered.json();
+      setOrderedItems(orderedData);
+      setShowOrderedTable(true); //  show the new table
+
+      // 4. Re-fetch updated poData to hide Place/Send Email buttons
+      const fetchPoMaster = await fetch(
+        `${config.apiBaseURL}/po_master/${currentPoId}/`
+      );
+      const updatedPoData = await fetchPoMaster.json();
+      setPOData(updatedPoData);
+    } catch (error) {
+      console.error("Error placing order:", error);
+      alert("Error while placing order.");
+    }
+  };
+
   return (
     <div>
       <h2>PO Details</h2>
@@ -758,26 +559,7 @@ const POOrderMaster = ({ user }) => {
                     <td>{po.cart_details.component_type}</td>
                     <td>{po.cart_details.component_specification}</td>
                     <td>{po.cart_details.unit_of_measurement}</td>
-                    <td
-                      style={{ cursor: "pointer", textDecoration: "underline" }}
-                      onClick={async () => {
-                        // Fetch deliveries first
-                        const res = await fetch(
-                          `${config.apiBaseURL}/po_delivery/?po_master=${po.id}`
-                        );
-                        const deliveries = await res.json();
-
-                        // Now safely set the modal data
-                        setSelectedDeliveryDetails({
-                          ...po,
-                          deliveries, // attach fetched delivery list
-                        });
-
-                        setShowDeliveryModal(true);
-                      }}
-                    >
-                      {po.cart_details.quantity}
-                    </td>
+                    <td>{po.cart_details.quantity}</td>
 
                     <td style={{ textAlign: "right" }}>
                       ₹
@@ -826,239 +608,8 @@ const POOrderMaster = ({ user }) => {
               </tbody>
             </table>
           </div>
-
-          {showDeliveryModal && selectedDeliveryDetails && (
-            <div
-              style={{
-                position: "fixed",
-                top: 0,
-                left: 0,
-                width: "100vw",
-                height: "100vh",
-                backgroundColor: "rgba(0,0,0,0.5)",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                zIndex: 999,
-              }}
-              onClick={() => setShowDeliveryModal(false)}
-            >
-              <div
-                onClick={(e) => e.stopPropagation()}
-                style={{
-                  backgroundColor: "white",
-                  padding: "24px",
-                  borderRadius: "10px",
-                  width: "90%",
-                  maxWidth: "1000px",
-                  height: "auto",
-                }}
-              >
-                <h3 style={{ marginBottom: "16px" }}>
-                  {selectedDeliveryDetails.cart_details.component_specification}
-                </h3>
-
-                {/* Quantity Entry */}
-                <div
-                  style={{
-                    display: "flex",
-                    marginBottom: "20px",
-                    alignItems: "center",
-                  }}
-                >
-                  <label style={{ marginRight: "10px" }}>Enter Quantity</label>
-                  <input
-                    type="number"
-                    min="0"
-                    style={{ padding: "5px", width: "150px" }}
-                    value={enteredQuantity}
-                    onChange={(e) => setEnteredQuantity(e.target.value)}
-                  />
-                  <button
-                    onClick={handleQuantitySubmit}
-                    style={{
-                      marginLeft: "10px",
-                      padding: "6px 12px",
-                      backgroundColor: "#007BFF",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Enter
-                  </button>
-                </div>
-
-                {/*  Table Format for Deliveries */}
-                <table
-                  style={{
-                    width: "100%",
-                    borderCollapse: "collapse",
-                    marginTop: "10px",
-                  }}
-                >
-                  <thead>
-                    <tr style={{ backgroundColor: "#f2f2f2" }}>
-                      <th style={thStyle}>Quantity</th>
-                      <th style={thStyle}>Order Placed</th>
-                      <th style={thStyle}>Shipped</th>
-                      <th style={thStyle}>Received</th>
-                      <th style={thStyle}>Inward</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedDeliveryDetails.deliveries?.map(
-                      (delivery, index) => {
-                        const fullyReceived = !!delivery.received_date;
-
-                        const handleFieldUpdate = async (field, value) => {
-                          try {
-                            const patchPayload = {
-                              [field]: value,
-                            };
-                            const res = await fetch(
-                              `${config.apiBaseURL}/po_delivery/${delivery.id}/`,
-                              {
-                                method: "PATCH",
-                                headers: {
-                                  "Content-Type": "application/json",
-                                },
-                                body: JSON.stringify(patchPayload),
-                              }
-                            );
-
-                            if (res.ok) {
-                              // Update local state to reflect changes
-                              const updatedDelivery = await res.json();
-                              setSelectedDeliveryDetails((prev) => {
-                                const updatedDeliveries = [...prev.deliveries];
-                                updatedDeliveries[index] = updatedDelivery;
-                                return {
-                                  ...prev,
-                                  deliveries: updatedDeliveries,
-                                };
-                              });
-                            } else {
-                              alert("Failed to update.");
-                            }
-                          } catch (err) {
-                            console.error("Update error", err);
-                            alert("Error updating date.");
-                          }
-                        };
-
-                        return (
-                          <tr key={index}>
-                            <td style={tdStyle}>{delivery.quantity || "-"}</td>
-
-                            {/* Order Placed */}
-                            <td style={tdStyle}>
-                              {formatDateTime(delivery.order_placed_date_time)}
-                            </td>
-
-                            {/* Shipped */}
-                            <td style={tdStyle}>
-                              {delivery.customer_date_time ? (
-                                formatDateTime(delivery.customer_date_time)
-                              ) : (
-                                <div>
-                                  <input
-                                    type="datetime-local"
-                                    onChange={(e) =>
-                                      handleFieldUpdate(
-                                        "customer_date_time",
-                                        e.target.value
-                                      )
-                                    }
-                                  />
-                                </div>
-                              )}
-                            </td>
-
-                            {/* Received */}
-                            <td style={tdStyle}>
-                              {delivery.received_date ? (
-                                formatDateTime(delivery.received_date)
-                              ) : (
-                                <div>
-                                  <input
-                                    type="datetime-local"
-                                    onChange={(e) =>
-                                      handleFieldUpdate(
-                                        "received_date",
-                                        e.target.value
-                                      )
-                                    }
-                                  />
-                                </div>
-                              )}
-                            </td>
-
-                            {/* Inward */}
-                            <td style={tdStyle}>
-                              <button
-                                style={{
-                                  backgroundColor:
-                                    fullyReceived && !delivery.inward
-                                      ? "#d66f00"
-                                      : "#ccc",
-                                  color: "#fff",
-                                  border: "none",
-                                  padding: "5px 12px",
-                                  borderRadius: "5px",
-                                  cursor:
-                                    fullyReceived && !delivery.inward
-                                      ? "pointer"
-                                      : "not-allowed",
-                                }}
-                                disabled={!fullyReceived || delivery.inward}
-                                onClick={() =>
-                                  fullyReceived &&
-                                  !delivery.inward &&
-                                  handleInwardWithPatch(delivery)
-                                }
-                              >
-                                Inward
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      }
-                    )}
-                  </tbody>
-                </table>
-
-                {/* Summary Section */}
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    marginTop: "30px",
-                  }}
-                ></div>
-
-                {/* Close Button */}
-                <div style={{ marginTop: "20px", textAlign: "right" }}>
-                  <button
-                    onClick={() => setShowDeliveryModal(false)}
-                    style={{
-                      padding: "8px 16px",
-                      backgroundColor: "#000",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: "4px",
-                    }}
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </>
       )}
-
       <div style={{ marginTop: "30px" }}>
         {/* Approved → Show 3 main buttons */}
         {poData?.status === "Approved" && (
@@ -1075,6 +626,7 @@ const POOrderMaster = ({ user }) => {
               Send Email
             </button>
             <button
+              onClick={() => setShowPlaceOrderPopup(true)}
               style={{
                 marginRight: "10px",
                 backgroundColor: "green",
@@ -1084,7 +636,7 @@ const POOrderMaster = ({ user }) => {
             >
               Place Order
             </button>
-            <button
+            {/* <button
               style={{
                 marginRight: "10px",
                 backgroundColor: "red",
@@ -1093,8 +645,23 @@ const POOrderMaster = ({ user }) => {
               }}
             >
               Cancel Order
-            </button>
+            </button> */}
           </>
+        )}
+
+        {/* Approved or Ordered → Show Cancel Order */}
+        {(poData?.status === "Approved" || poData?.status === "Ordered") && (
+          <button
+            onClick={() => updatePOMasterStatuses(poId, "Cancelled")} // update to your desired cancel logic
+            style={{
+              marginRight: "10px",
+              backgroundColor: "red",
+              color: "white",
+              padding: "8px 16px",
+            }}
+          >
+            Cancel Order
+          </button>
         )}
 
         {/*  Rejected → Only show rejected label */}
@@ -1112,34 +679,35 @@ const POOrderMaster = ({ user }) => {
         )}
 
         {/* Pending → Show Approve/Reject */}
-        {poData?.status !== "Approved" && poData?.status !== "Rejected" && (
-          <>
-            <button
-              onClick={() => updatePOMasterStatuses(poId, "Approved")}
-              style={{
-                marginRight: "10px",
-                backgroundColor: "green",
-                color: "#fff",
-                padding: "8px 16px",
-              }}
-            >
-              Approve
-            </button>
-            <button
-              onClick={() => updatePOMasterStatuses(poId, "Rejected")}
-              style={{
-                marginRight: "10px",
-                backgroundColor: "red",
-                color: "#fff",
-                padding: "8px 16px",
-              }}
-            >
-              Reject
-            </button>
-          </>
-        )}
+        {poData?.status !== "Approved" &&
+          poData?.status !== "Rejected" &&
+          poData?.status !== "Ordered" && (
+            <>
+              <button
+                onClick={() => updatePOMasterStatuses(poId, "Approved")}
+                style={{
+                  marginRight: "10px",
+                  backgroundColor: "green",
+                  color: "#fff",
+                  padding: "8px 16px",
+                }}
+              >
+                Approve
+              </button>
+              <button
+                onClick={() => updatePOMasterStatuses(poId, "Rejected")}
+                style={{
+                  marginRight: "10px",
+                  backgroundColor: "red",
+                  color: "#fff",
+                  padding: "8px 16px",
+                }}
+              >
+                Reject
+              </button>
+            </>
+          )}
       </div>
-
       {showModal && (
         <div className="popup">
           <h3>Send Email for PO ID: {poId}</h3>
@@ -1240,6 +808,83 @@ const POOrderMaster = ({ user }) => {
         </div>
       )}
 
+      {/* Naveen Added */}
+
+      {showPlaceOrderPopup && (
+        <div className="popup">
+          <div className="popup-content">
+            <h3>Place Order - Date & Time</h3>
+            <label>
+              Select Date and Time:
+              <input
+                type="datetime-local"
+                value={placeOrderDateTime}
+                onChange={(e) => setPlaceOrderDateTime(e.target.value)}
+              />
+            </label>
+            <div style={{ marginTop: "20px" }}>
+              <button onClick={handlePlaceOrder}>Submit</button>
+              <button onClick={() => setShowPlaceOrderPopup(false)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {orderedItems.length > 0 && (
+        <div>
+          <h3 style={{ marginTop: "30px" }}>Ordered Items</h3>
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              marginTop: "10px",
+            }}
+          >
+            <thead>
+              <tr style={{ backgroundColor: "#f2f2f2" }}>
+                <th style={{ border: "1px solid #ddd", padding: "8px" }}>
+                  Component ID
+                </th>
+                <th style={{ border: "1px solid #ddd", padding: "8px" }}>
+                  Specification
+                </th>
+                <th style={{ border: "1px solid #ddd", padding: "8px" }}>
+                  Quantity
+                </th>
+                <th style={{ border: "1px solid #ddd", padding: "8px" }}>
+                  Status
+                </th>
+                <th style={{ border: "1px solid #ddd", padding: "8px" }}>
+                  Ordered Date
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {orderedItems.map((item, index) => (
+                <tr key={index}>
+                  <td style={{ border: "1px solid #ddd", padding: "8px" }}>
+                    {item.component_id}
+                  </td>
+                  <td style={{ border: "1px solid #ddd", padding: "8px" }}>
+                    {item.specification}
+                  </td>
+                  <td style={{ border: "1px solid #ddd", padding: "8px" }}>
+                    {item.quantity}
+                  </td>
+                  <td style={{ border: "1px solid #ddd", padding: "8px" }}>
+                    {item.status}
+                  </td>
+                  <td style={{ border: "1px solid #ddd", padding: "8px" }}>
+                    {item.order_placed_date_time}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       <ToastContainerComponent />
     </div>
   );
