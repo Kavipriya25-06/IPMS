@@ -10,6 +10,9 @@ import {
   showWarningToast,
   ToastContainerComponent,
 } from "./Toastify.jsx"; // Import Toastify utilities
+import { format } from "date-fns";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const POOrderMaster = ({ user }) => {
   const { poId } = useParams(); // Extract PO ID from the route
@@ -251,6 +254,10 @@ const POOrderMaster = ({ user }) => {
       console.error("Error updating PO Master statuses:", error.message);
       alert("An error occurred while updating the PO Master statuses.");
     }
+    setPOData((prevData) => ({
+      ...prevData,
+      status: newStatus,
+    }));
   };
 
   useEffect(() => {
@@ -262,10 +269,16 @@ const POOrderMaster = ({ user }) => {
   }, [poId]);
 
   useEffect(() => {
-    if (poData?.PO_id) {
-      fetchOrderedItems(poData.PO_id);
+    if (poDetails[0]?.PO_id) {
+      fetchOrderedItems(poDetails[0].PO_id);
     }
-  }, [poData]);
+  }, [poDetails]);
+
+  // useEffect(() => {
+  //   if (poData?.PO_id) {
+  //     fetchOrderedItems(poData.PO_id);
+  //   }
+  // }, [poData]);
 
   useEffect(() => {
     if (poDetails.length > 0) {
@@ -321,9 +334,11 @@ const POOrderMaster = ({ user }) => {
     setShowModal(true);
   };
 
-  const handleChange = (e) => {
+  const handleChange = (e, index) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    const updatedItems = [...orderedItems];
+    updatedItems[index][name] = value;
+    setOrderedItems(updatedItems);
   };
 
   const generatePDF = () => {
@@ -424,7 +439,7 @@ const POOrderMaster = ({ user }) => {
   const fetchOrderedItems = async (poId) => {
     try {
       const response = await axios.get(
-        `${config.baseUrl}po_delivery/?po_id=${poId}`
+        `${config.apiBaseURL}/po_delivery/?po_id=${poId}`
       );
       if (Array.isArray(response.data)) {
         setOrderedItems(response.data);
@@ -612,31 +627,19 @@ const POOrderMaster = ({ user }) => {
       )}
       <div style={{ marginTop: "30px" }}>
         {/* Approved → Show 3 main buttons */}
-        {poData?.status === "Approved" && (
-          <>
-            <button
-              style={{
-                marginRight: "10px",
-                backgroundColor: "black",
-                color: "white",
-                padding: "8px 16px",
-              }}
-              onClick={handleOpenModal}
-            >
-              Send Email
-            </button>
-            <button
-              onClick={() => setShowPlaceOrderPopup(true)}
-              style={{
-                marginRight: "10px",
-                backgroundColor: "green",
-                color: "white",
-                padding: "8px 16px",
-              }}
-            >
-              Place Order
-            </button>
-            {/* <button
+        <div className="po-actions">
+          {poData?.status === "Approved" && (
+            <>
+              <button className="email-button" onClick={handleOpenModal}>
+                Send Email
+              </button>
+              <button
+                className="place-order-button"
+                onClick={() => setShowPlaceOrderPopup(true)}
+              >
+                Place Order
+              </button>
+              {/* <button
               style={{
                 marginRight: "10px",
                 backgroundColor: "red",
@@ -646,69 +649,163 @@ const POOrderMaster = ({ user }) => {
             >
               Cancel Order
             </button> */}
-          </>
-        )}
+            </>
+          )}
 
-        {/* Approved or Ordered → Show Cancel Order */}
-        {(poData?.status === "Approved" || poData?.status === "Ordered") && (
-          <button
-            onClick={() => updatePOMasterStatuses(poId, "Cancelled")} // update to your desired cancel logic
-            style={{
-              marginRight: "10px",
-              backgroundColor: "red",
-              color: "white",
-              padding: "8px 16px",
-            }}
-          >
-            Cancel Order
-          </button>
-        )}
+          {(poData?.status === "Approved" || poData?.status === "Ordered") && (
+            <button
+              className="cancel-button"
+              onClick={() => updatePOMasterStatuses(poId, "Cancelled")}
+            >
+              Cancel Order
+            </button>
+          )}
 
-        {/*  Rejected → Only show rejected label */}
-        {poData?.status === "Rejected" && (
-          <span
-            style={{
-              marginLeft: "10px",
-              color: "red",
-              fontWeight: "bold",
-              fontSize: "16px",
-            }}
-          >
-            Rejected
-          </span>
-        )}
+          {poData?.status === "Rejected" && (
+            <span className="rejected-label">Rejected</span>
+          )}
+        </div>
 
         {/* Pending → Show Approve/Reject */}
         {poData?.status !== "Approved" &&
           poData?.status !== "Rejected" &&
           poData?.status !== "Ordered" && (
-            <>
+            <div className="po-actions">
               <button
                 onClick={() => updatePOMasterStatuses(poId, "Approved")}
-                style={{
-                  marginRight: "10px",
-                  backgroundColor: "green",
-                  color: "#fff",
-                  padding: "8px 16px",
-                }}
+                className="approve-button"
               >
                 Approve
               </button>
               <button
                 onClick={() => updatePOMasterStatuses(poId, "Rejected")}
-                style={{
-                  marginRight: "10px",
-                  backgroundColor: "red",
-                  color: "#fff",
-                  padding: "8px 16px",
-                }}
+                className="reject-button"
               >
                 Reject
               </button>
-            </>
+            </div>
           )}
       </div>
       {showModal && (
+        <div className="modal-overlay">
+          <div className="popup">
+            <h3>Send Email for PO ID: {poId}</h3>
+            <form style={{ marginTop: "5px" }}>
+              {/* <div>
+              <label>Sender:</label>
+              <input
+                type="email"
+                name="sender"
+                value={formData.sender}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div>
+              <label>Recipient:</label>
+              <input
+                type="email"
+                name="recipient"
+                value={formData.recipient}
+                onChange={handleChange}
+                required
+              />
+            </div> */}
+
+              <div
+                style={{
+                  padding: 5,
+                  display: "flex",
+                  justifyContent: "space-between",
+                }}
+                className="form-row"
+              >
+                <label>Recipient:</label>
+                <input
+                  type="text"
+                  name="recipient"
+                  value={formData.recipient}
+                  onChange={handleChange}
+                  placeholder="Enter multiple emails separated by commas"
+                  required
+                />
+              </div>
+
+              <div
+                style={{
+                  padding: 5,
+                  display: "flex",
+                  justifyContent: "space-between",
+                }}
+                className="form-row"
+              >
+                <label>CC:</label>
+                <input
+                  type="text"
+                  name="cc"
+                  value={formData.cc}
+                  onChange={handleChange}
+                  placeholder="Enter multiple emails separated by commas"
+                />
+              </div>
+
+              <div
+                style={{
+                  padding: 5,
+                  display: "flex",
+                  justifyContent: "space-between",
+                }}
+                className="form-row"
+              >
+                <label>BCC:</label>
+                <input
+                  type="text"
+                  name="bcc"
+                  value={formData.bcc}
+                  onChange={handleChange}
+                  placeholder="Enter multiple emails separated by commas"
+                />
+              </div>
+
+              <div
+                style={{
+                  padding: 5,
+                  display: "flex",
+                  justifyContent: "space-between",
+                }}
+                className="form-row"
+              >
+                <label>Body:</label>
+                <textarea
+                  name="body"
+                  value={formData.body}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="actions-button" style={{ marginTop: "20px" }}>
+                <button
+                  className="edit-button"
+                  type="button"
+                  onClick={handleSendEmail}
+                >
+                  Send Email
+                </button>
+                <button
+                  className="cancel-button"
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* {showModal && (
         <div className="popup">
           <h3>Send Email for PO ID: {poId}</h3>
           <form style={{ marginTop: "5px" }}>
@@ -806,81 +903,186 @@ const POOrderMaster = ({ user }) => {
             </div>
           </form>
         </div>
-      )}
+      )} */}
 
       {/* Naveen Added */}
 
       {showPlaceOrderPopup && (
-        <div className="popup">
-          <div className="popup-content">
-            <h3>Place Order - Date & Time</h3>
-            <label>
-              Select Date and Time:
-              <input
-                type="datetime-local"
-                value={placeOrderDateTime}
-                onChange={(e) => setPlaceOrderDateTime(e.target.value)}
-              />
-            </label>
-            <div style={{ marginTop: "20px" }}>
-              <button onClick={handlePlaceOrder}>Submit</button>
-              <button onClick={() => setShowPlaceOrderPopup(false)}>
-                Cancel
-              </button>
+        <div className="modal-overlay">
+          <div className="popup" style={{marginTop:"-80px"}}>
+            <div className="popup-content">
+              <h3>Place Order - Date & Time</h3>
+              <label>Select Date and Time:</label>
+              <div className="date-input-containers">
+                <DatePicker
+                  selected={
+                    placeOrderDateTime ? new Date(placeOrderDateTime) : null
+                  }
+                  onChange={(date) => setPlaceOrderDateTime(date)}
+                  showTimeSelect
+                  timeFormat="HH:mm"
+                  showMonthDropdown
+                  showYearDropdown
+                  dropdownMode="select"
+                  timeIntervals={1}
+                  dateFormat="dd-MM-yyyy HH:mm"
+                  placeholderText="dd-mm-yyyy hh:mm"
+                  className="input1"
+                />
+                <i className="fas fa-calendar-alt calendar-icon"></i>
+              </div>
+
+              <div className="modal-actions">
+                <button className="edit-btn" onClick={handlePlaceOrder}>
+                  Submit
+                </button>
+                <button
+                  className="delete-btn"
+                  onClick={() => setShowPlaceOrderPopup(false)}
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
       {orderedItems.length > 0 && (
-        <div>
+        <div className="table-container">
           <h3 style={{ marginTop: "30px" }}>Ordered Items</h3>
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              marginTop: "10px",
-            }}
-          >
+          <table>
             <thead>
-              <tr style={{ backgroundColor: "#f2f2f2" }}>
-                <th style={{ border: "1px solid #ddd", padding: "8px" }}>
-                  Component ID
-                </th>
-                <th style={{ border: "1px solid #ddd", padding: "8px" }}>
-                  Specification
-                </th>
-                <th style={{ border: "1px solid #ddd", padding: "8px" }}>
-                  Quantity
-                </th>
-                <th style={{ border: "1px solid #ddd", padding: "8px" }}>
-                  Status
-                </th>
-                <th style={{ border: "1px solid #ddd", padding: "8px" }}>
-                  Ordered Date
-                </th>
+              <tr>
+                <th>Component ID</th>
+                <th>Specification</th>
+                <th>Ordered Qty</th>
+                <th>Ordered Date</th>
+                <th>Shipping Qty</th>
+                <th>Shipping Date</th>
+                <th>Received Qty</th>
+                <th>Received Date</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
-              {orderedItems.map((item, index) => (
-                <tr key={index}>
-                  <td style={{ border: "1px solid #ddd", padding: "8px" }}>
-                    {item.component_id}
-                  </td>
-                  <td style={{ border: "1px solid #ddd", padding: "8px" }}>
-                    {item.specification}
-                  </td>
-                  <td style={{ border: "1px solid #ddd", padding: "8px" }}>
-                    {item.quantity}
-                  </td>
-                  <td style={{ border: "1px solid #ddd", padding: "8px" }}>
-                    {item.status}
-                  </td>
-                  <td style={{ border: "1px solid #ddd", padding: "8px" }}>
-                    {item.order_placed_date_time}
-                  </td>
-                </tr>
-              ))}
+              {orderedItems.map((item, index) => {
+                const orderedQtyFilled = !!item.quantity;
+                const orderedDateFilled = !!item.order_placed_date_time;
+
+                const shippingEnabled = orderedQtyFilled && orderedDateFilled;
+                const shippingQtyFilled = !!item.shipping_qty;
+                const shippingDateFilled = !!item.shipping_date;
+
+                const receivedEnabled = shippingQtyFilled && shippingDateFilled;
+                const receivedQtyFilled = !!item.received_qty;
+                const receivedDateFilled = !!item.received_date;
+
+                const inwardEnabled = receivedQtyFilled && receivedDateFilled;
+
+                return (
+                  <tr key={index}>
+                    <td>{item.component_id}</td>
+                    <td>{item.specification}</td>
+                    <td>{item.quantity}</td>
+                    <td>
+                      {item.order_placed_date_time &&
+                        format(
+                          new Date(item.order_placed_date_time),
+                          "dd-MM-yyyy"
+                        )}
+                    </td>
+
+                    <td>
+                      <input
+                        type="number"
+                        name="shipping_qty"
+                        value={item.shipping_qty || ""}
+                        disabled={!shippingEnabled}
+                        onChange={(e) => handleChange(e, index)}
+                      />
+                    </td>
+                    <td>
+                      <div className="date-input-container">
+                        <DatePicker
+                          selected={
+                            item.shipping_date
+                              ? new Date(item.shipping_date)
+                              : null
+                          }
+                          onChange={(date) => {
+                            const fakeEvent = {
+                              target: {
+                                name: "shipping_date",
+                                value: date.toISOString().split("T")[0], // or format with date-fns
+                              },
+                            };
+                            handleChange(fakeEvent, index);
+                          }}
+                          dateFormat="dd-MM-yyyy"
+                          placeholderText="dd-mm-yyyy"
+                          className="input2"
+                          showMonthDropdown
+                          showYearDropdown
+                          dropdownMode="select"
+                          popperPlacement="bottom"
+                          portalId="datepicker-portal-target"
+                          disabled={!shippingEnabled}
+                        />
+                        <i className="fas fa-calendar-alt calendar-icon"></i>
+                      </div>
+                    </td>
+
+                    <td>
+                      <input
+                        type="number"
+                        name="received_qty"
+                        value={item.received_qty || ""}
+                        disabled={!receivedEnabled}
+                        onChange={(e) => handleChange(e, index)}
+                      />
+                    </td>
+                    <td>
+                      <div className="date-input-container">
+                        <DatePicker
+                          selected={
+                            item.received_date
+                              ? new Date(item.received_date)
+                              : null
+                          }
+                          onChange={(date) => {
+                            const fakeEvent = {
+                              target: {
+                                name: "received_date",
+                                value: date.toISOString().split("T")[0], // Or format with date-fns if needed
+                              },
+                            };
+                            handleChange(fakeEvent, index);
+                          }}
+                          dateFormat="dd-MM-yyyy"
+                          placeholderText="dd-mm-yyyy"
+                          className="input2"
+                          showMonthDropdown
+                          showYearDropdown
+                          dropdownMode="select"
+                          popperPlacement="bottom"
+                          portalId="datepicker-portal-target"
+                          disabled={!receivedEnabled}
+                        />
+                        <i className="fas fa-calendar-alt calendar-icon"></i>
+                      </div>
+                    </td>
+                    <td>
+                      <button
+                        disabled={!inwardEnabled}
+                        onClick={() => handleInward(index)}
+                      >
+                        Inward
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

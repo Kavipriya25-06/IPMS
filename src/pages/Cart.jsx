@@ -132,7 +132,7 @@ const Cart = ({ user }) => {
       if (!poListResponse.ok) {
         const error = await poListResponse.json();
         console.error("Error posting to PO_list:", error);
-      showErrorToast(`Failed to create PO_list: ${JSON.stringify(error)}`);
+        showErrorToast(`Failed to create PO_list: ${JSON.stringify(error)}`);
         return;
       }
 
@@ -151,7 +151,7 @@ const Cart = ({ user }) => {
                 const poMasterPayload = {
                   PO_id: poListId, // Use the generated PO_list ID
                   cart_id: item.id, // Use the cart item ID
-                  status: "In Progress", // Order status
+                  status: "Pending", // Order status
                 };
 
                 return fetch(`${config.apiBaseURL}/po_master/`, {
@@ -238,54 +238,56 @@ const Cart = ({ user }) => {
     }
   };
 
-const handleRemoveFromCart = (item) => {
-  showMessageToast({
-    message: `Remove ${item.component_type} - ${item.component_specification} from cart?`,
-    onConfirm: async () => {
-      try {
-        // Step 1: DELETE from cart
-        const deleteRes = await fetch(`${config.apiBaseURL}/cart/${item.id}/`, {
-          method: "DELETE",
-        });
-
-        if (!deleteRes.ok) {
-          showErrorToast("Failed to delete item from cart.");
-          return;
-        }
-
-        // Step 2: PATCH request_master to set cart_assign = false
-        const requestFormatted = item.request_list_id;
-        const requestMasterId = item.request_id;
-
-        if (requestFormatted && requestMasterId) {
-          const patchRes = await fetch(
-            `${config.apiBaseURL}/request_master/${requestFormatted}/${requestMasterId}/`,
+  const handleRemoveFromCart = (item) => {
+    showMessageToast({
+      message: `Remove ${item.component_type} - ${item.component_specification} from cart?`,
+      onConfirm: async () => {
+        try {
+          // Step 1: DELETE from cart
+          const deleteRes = await fetch(
+            `${config.apiBaseURL}/cart/${item.id}/`,
             {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ cart_assign: false }),
+              method: "DELETE",
             }
           );
 
-          if (!patchRes.ok) {
-            const error = await patchRes.json();
-            console.warn("Failed to patch request_master:", error);
+          if (!deleteRes.ok) {
+            showErrorToast("Failed to delete item from cart.");
+            return;
           }
+
+          // Step 2: PATCH request_master to set cart_assign = false
+          const requestFormatted = item.request_list_id;
+          const requestMasterId = item.request_id;
+
+          if (requestFormatted && requestMasterId) {
+            const patchRes = await fetch(
+              `${config.apiBaseURL}/request_master/${requestFormatted}/${requestMasterId}/`,
+              {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ cart_assign: false }),
+              }
+            );
+
+            if (!patchRes.ok) {
+              const error = await patchRes.json();
+              console.warn("Failed to patch request_master:", error);
+            }
+          }
+
+          showSuccessToast("Removed from cart successfully.");
+          fetchCartItems(); // Refresh UI
+        } catch (error) {
+          console.error("Error removing from cart:", error);
+          showErrorToast("Error removing item from cart.");
         }
-
-        showSuccessToast("Removed from cart successfully.");
-        fetchCartItems(); // Refresh UI
-      } catch (error) {
-        console.error("Error removing from cart:", error);
-        showErrorToast("Error removing item from cart.");
-      }
-    },
-    onCancel: () => {
-      showWarningToast("Action cancelled.");
-    },
-  });
-};
-
+      },
+      onCancel: () => {
+        showWarningToast("Action cancelled.");
+      },
+    });
+  };
 
   return (
     <div>

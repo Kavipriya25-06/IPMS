@@ -975,6 +975,15 @@ tbody tr:hover {
   cursor: pointer;
 }
 
+.delete-btn{
+  background-color: gray;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 6px;
+  cursor: pointer;
+}
+
 .save-button {
   background-color: #28a745;
   color: white;
@@ -1899,8 +1908,17 @@ table td {
   width: 100%; /* Container takes full available width */
 }
 
+.date-input-containers {
+  position: relative;
+  width: 100%; /* Container takes full available width */
+}
+
 .date-input-container .input1 {
   padding-right: 120px; /* Space for the calendar icon */
+}
+
+.date-input-containers .input1 {
+  padding-right: 200px; /* Space for the calendar icon */
 }
 
 .date-picker-wrapper .input1 {
@@ -2642,6 +2660,19 @@ main {
   position: relative;
 }
 
+.input2{
+  padding: 7px 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.popup {
+  overflow: visible; /* ✅ VERY IMPORTANT */
+  z-index: 1050;
+}
+
+
+
 .date-picker-wrapper .input1 {
   width: 120%;
   height: 36px;
@@ -2819,7 +2850,7 @@ main {
     opacity: 0;
   }
   .hamburger-button.change .bar:nth-child(3) {
-    transform: rotate(-45deg) translate(7px,-5px);
+    transform: rotate(-45deg) translate(7px, -5px);
   }
 
   /* Hide main content margin (because sidebar overlays) */
@@ -2961,7 +2992,7 @@ main {
     gap: 8px;
   }
 
-   .right-wrapper .search-bar-container {
+  .right-wrapper .search-bar-container {
     margin-top: 20px;
     display: flex;
     align-items: flex-end;
@@ -2974,19 +3005,15 @@ main {
     margin-top: -10px;
     margin-bottom: 12px;
   }
-  .request-selector-dropdown{
+  .request-selector-dropdown {
     margin-top: 5px;
   }
 
-
-
-    .right-wrapper {
+  .right-wrapper {
     justify-content: flex-end;
     margin-top: -15px;
     margin-bottom: 20px;
   }
-
-
 
   .date-filter,
   .status-filter {
@@ -3089,13 +3116,13 @@ main {
 @media (max-width: 1024px) {
   .search-wrapper-container {
     display: flex;
-    flex-direction: row;         /* 👈 Make them stay in a row */
-    justify-content: flex-end;   /* 👈 Align to right */
-    align-items: center;         /* 👈 Align vertically center */
+    flex-direction: row; /* 👈 Make them stay in a row */
+    justify-content: flex-end; /* 👈 Align to right */
+    align-items: center; /* 👈 Align vertically center */
     padding: 10px 16px;
     margin-top: -30px;
-    gap: 10px;                   /* 👈 Space between input and button */
-    flex-wrap: wrap;             /* Optional: wraps on very small screens */
+    gap: 10px; /* 👈 Space between input and button */
+    flex-wrap: wrap; /* Optional: wraps on very small screens */
   }
 
   .search-wrapper {
@@ -3104,7 +3131,7 @@ main {
     width: auto;
   }
 
-  .button-group{
+  .button-group {
     margin-top: 0% !important;
   }
 
@@ -3116,7 +3143,7 @@ main {
   }
 
   .plus-button {
-    margin-top: 30px;               /* Ensure it's aligned horizontally */
+    margin-top: 30px; /* Ensure it's aligned horizontally */
   }
 }
 
@@ -4108,7 +4135,7 @@ ul {
   background-color: rgb(94, 94, 94);
 }
 
-.approve-screen{
+.approve-screen {
   padding: 8px 10px;
   background-color: green;
   border-radius: 5px;
@@ -4117,6 +4144,100 @@ ul {
   cursor: pointer;
 }
 
-.approve-screen:hover{
+.approve-screen:hover {
   background-color: #7bab7b;
 }
+
+.po-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.po-actions .approve-button {
+  background-color: green;
+  color: #fff;
+  padding: 5px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.po-actions .reject-button {
+  background-color: rgb(247, 22, 22);
+  color: #fff;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.po-actions .approve-button:hover,
+.po-actions .reject-button:hover {
+  opacity: 0.5;
+}
+
+
+.po-actions .email-button {
+  background-color: rgb(180, 180, 180);
+  color: black;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.po-actions .place-order-button {
+  background-color: green;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.po-actions .cancel-button {
+  background-color: red;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.po-actions .email-button:hover{
+  background-color: gray;
+}
+.po-actions .place-order-button:hover,
+.po-actions .cancel-button:hover
+ {
+  opacity: 0.5;
+}
+
+.po-actions .rejected-label {
+  color: red;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.popup-content h3 {
+  margin-bottom: 15px;
+  font-size: 20px;
+  color: #333;
+}
+
+.popup-content label {
+  font-weight: bold;
+  margin-bottom: 8px;
+  display: block;
+}
+
+
+
+
+
+
+
+
+
+
