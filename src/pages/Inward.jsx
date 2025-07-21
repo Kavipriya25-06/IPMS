@@ -10,6 +10,7 @@ import {
   showWarningToast,
   ToastContainerComponent,
 } from "./Toastify.jsx"; // Import Toastify utilities
+import { format } from "date-fns";
 
 const Inward = () => {
   const [inwardData, setInwardData] = useState([]); // State to store inward data
@@ -895,7 +896,9 @@ const Inward = () => {
                 </td>
                 <td>{item.serial_number || "Not Available"}</td>
                 <td>
-                  {new Date(item.date).toLocaleDateString() || "Not Available"}
+                  {item.date
+                    ? format(new Date(item.date), "dd-MM-yyyy")
+                    : "Not Available"}
                 </td>
                 <td>{item.quality_check || "Not Available"}</td>
                 <td className="sku-cell">

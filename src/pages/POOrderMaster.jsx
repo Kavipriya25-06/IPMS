@@ -33,6 +33,14 @@ const POOrderMaster = ({ user }) => {
   const [showOrderedTable, setShowOrderedTable] = useState(false);
   const [orderedItems, setOrderedItems] = useState([]);
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const isPOCancelled = poData?.status === "Cancelled";
+
+  const [showShippedPopup, setShowShippedPopup] = useState(false);
+  const [selectedPendingItem, setSelectedPendingItem] = useState(null);
+  const [shippedInput, setShippedInput] = useState({
+    quantity: "",
+    date: "",
+  });
 
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
@@ -461,18 +469,25 @@ const POOrderMaster = ({ user }) => {
       return;
     }
 
+    const localDateTime = new Date(
+      placeOrderDateTime.getTime() -
+        placeOrderDateTime.getTimezoneOffset() * 60000
+    ).toISOString();
+
     try {
       const uniquePoMasterIds = [...new Set(poDetails.map((po) => po.id))];
 
       // 1. Post po_delivery entries
       for (const po of poDetails) {
         const item = po.cart_details;
+        const orderDate = new Date(placeOrderDateTime); // convert to Date object if not already
+
         const payload = {
           po_master: po.id,
           component_id: item.component_id,
           specification: item.component_specification,
           quantity: item.quantity,
-          order_placed_date_time: new Date(placeOrderDateTime).toISOString(),
+          order_placed_date_time: orderDate.toISOString(), // no timezone offset
         };
 
         const response = await fetch(`${config.apiBaseURL}/po_delivery/`, {
@@ -537,6 +552,258 @@ const POOrderMaster = ({ user }) => {
       alert("Error while placing order.");
     }
   };
+
+  const saveDeliveryUpdate = async (index, field, value) => {
+    const item = orderedItems[index];
+    const updatedItem = { ...item, [field]: value };
+
+    let payload = {};
+
+    // SHIPMENT case
+    const hasShippedDate = field === "shipping_date" || item.shipping_date;
+    const hasShippedQty =
+      field === "shipping_qty" || item.shipping_qty || item.shipped_quantity;
+
+    if (hasShippedDate && hasShippedQty) {
+      const shippedQty = Number(
+        field === "shipping_qty"
+          ? value
+          : updatedItem.shipping_qty || item.shipped_quantity
+      );
+      const shippedDate =
+        field === "shipping_date"
+          ? value
+          : updatedItem.shipping_date || item.shipped_date;
+
+      if (shippedQty > item.quantity) {
+        showWarningToast(
+          `Shipped quantity cannot exceed ordered quantity (${item.quantity})`
+        );
+        return;
+      }
+
+      const pendingQty = item.quantity - shippedQty;
+
+      payload = {
+        shipped_quantity: shippedQty,
+        shipped_date: shippedDate,
+        pending_quantity: pendingQty,
+      };
+    }
+
+    // RECEIVED case (if applicable)
+    const hasReceivedDate = field === "received_date" || item.received_date;
+    const hasReceivedQty =
+      field === "received_qty" || item.received_qty || item.received_quantity;
+
+    if (hasReceivedDate && hasReceivedQty) {
+      const receivedQty = Number(
+        field === "received_qty"
+          ? value
+          : updatedItem.received_qty || item.received_quantity
+      );
+      const receivedDate =
+        field === "received_date"
+          ? value
+          : updatedItem.received_date || item.received_date;
+
+      payload = {
+        ...payload,
+        received_quantity: receivedQty,
+        received_date: receivedDate,
+      };
+    }
+
+    // Save if there’s something valid to send
+    if (Object.keys(payload).length > 0) {
+      try {
+        const response = await fetch(
+          `${config.apiBaseURL}/po_delivery/${item.id}/`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          }
+        );
+
+        if (response.ok) {
+          const updatedData = await response.json();
+          const newItems = [...orderedItems];
+          newItems[index] = updatedData;
+          setOrderedItems(newItems);
+          showSuccessToast("Delivery data saved.");
+        } else {
+          showErrorToast("Failed to save delivery data.");
+        }
+      } catch (error) {
+        console.error("Save error", error);
+        showErrorToast("Error saving delivery data.");
+      }
+    }
+  };
+
+  const handleInward = async (item) => {
+    const cart = item.po_master.cart_details;
+    const receivedQty = parseInt(item.received_quantity);
+
+    if (!receivedQty || receivedQty <= 0) {
+      showWarningToast("Received quantity must be greater than 0");
+      return;
+    }
+
+    try {
+      for (let i = 0; i < receivedQty; i++) {
+        const payload = {
+          component_id: cart.component_id,
+          component_type: cart.component_type,
+          component_specification: cart.component_specification,
+          category: cart.category,
+          unit_of_measurement: cart.unit_of_measurement,
+          vendor_id: cart.vendor_id,
+          vendor_name: cart.vendor_name,
+          po_master_id: item.po_master.id,
+          price: cart.unit_price,
+          unit: 1,
+          quality_check: "Pending",
+        };
+
+        const response = await fetch(`${config.apiBaseURL}/inward/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          showErrorToast(
+            `Inward failed for unit ${i + 1}: ` + JSON.stringify(error)
+          );
+          return;
+        }
+      }
+
+      //  PATCH the po_delivery item to mark inward: true
+      const patchResp = await fetch(
+        `${config.apiBaseURL}/po_delivery/${item.id}/`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ inward: true }),
+        }
+      );
+
+      if (patchResp.ok) {
+        showSuccessToast(
+          "All units posted to Inward and delivery marked as Inwarded!"
+        );
+        fetchOrderedItems(poId); // Refresh the table
+      } else {
+        const err = await patchResp.json();
+        showWarningToast(
+          "Inwarded but failed to mark delivery: " + JSON.stringify(err)
+        );
+      }
+    } catch (err) {
+      console.error("Inward Error:", err);
+      showErrorToast("Error posting units to Inward.");
+    }
+  };
+
+  const pendingItems = orderedItems.filter(
+    (item) =>
+      item.pending_quantity > 0 &&
+      item.PO_id === poId &&
+      item.shipped_quantity !== undefined &&
+      item.shipped_quantity !== null &&
+      item.shipped_date
+  );
+
+  const CustomDateInput = React.forwardRef(({ value, onClick, item }, ref) => {
+    const shippingQty =
+      item.shipping_qty !== undefined
+        ? item.shipping_qty
+        : item.shipped_quantity || 0;
+
+    const isDisabled =
+      shippingQty > item.quantity ||
+      (item.shipped_date && item.shipped_quantity) ||
+      isPOCancelled;
+
+    const handleFocus = (e) => {
+      if (shippingQty > item.quantity) {
+        showWarningToast("Shipped quantity cannot exceed ordered quantity.");
+        e.preventDefault(); // Prevent calendar open
+        return;
+      }
+
+      if (!isDisabled) {
+        onClick(e); // Only open if valid
+      } else {
+        e.preventDefault(); // Block if disabled
+      }
+    };
+
+    return (
+      <input
+        ref={ref}
+        value={value}
+        onClick={handleFocus}
+        readOnly
+        className={`input2 ${
+          isDisabled ? "datepicker-disabled" : "datepicker-enabled"
+        }`}
+        placeholder="dd-mm-yyyy"
+      />
+    );
+  });
+
+  const CustomReceivedDateInput = React.forwardRef(
+    ({ value, onClick, item }, ref) => {
+      const receivedQty =
+        item.received_qty !== undefined
+          ? item.received_qty
+          : item.received_quantity || 0;
+
+      const shippedQty =
+        item.shipping_qty !== undefined
+          ? item.shipping_qty
+          : item.shipped_quantity || 0;
+
+      const isDisabled =
+        receivedQty > shippedQty || // Block if over-shipped
+        (item.received_date && item.received_quantity) ||
+        isPOCancelled; // Already saved
+
+      const handleFocus = (e) => {
+        if (shippedQty <= 0) {
+          showWarningToast(
+            "Cannot select Received Date before Shipping is done."
+          );
+          e.preventDefault();
+          return;
+        }
+
+        if (!isDisabled) {
+          onClick(e);
+        } else {
+          e.preventDefault();
+        }
+      };
+
+      return (
+        <input
+          ref={ref}
+          value={value}
+          onClick={handleFocus}
+          readOnly
+          className={`input2 ${
+            isDisabled ? "datepicker-disabled" : "datepicker-enabled"
+          }`}
+          placeholder="dd-mm-yyyy"
+        />
+      );
+    }
+  );
 
   return (
     <div>
@@ -661,15 +928,23 @@ const POOrderMaster = ({ user }) => {
             </button>
           )}
 
+          {poData?.status === "Cancelled" && (
+            <div className="order-cancelled-banner">
+              <strong>Order Cancelled:</strong> No further actions are allowed
+              on this order.
+            </div>
+          )}
+
           {poData?.status === "Rejected" && (
-            <span className="rejected-label">Rejected</span>
+            <span className="rejected-label">Order Has Rejected...</span>
           )}
         </div>
 
         {/* Pending → Show Approve/Reject */}
         {poData?.status !== "Approved" &&
           poData?.status !== "Rejected" &&
-          poData?.status !== "Ordered" && (
+          poData?.status !== "Ordered" &&
+          poData?.status !== "Cancelled" && (
             <div className="po-actions">
               <button
                 onClick={() => updatePOMasterStatuses(poId, "Approved")}
@@ -909,26 +1184,34 @@ const POOrderMaster = ({ user }) => {
 
       {showPlaceOrderPopup && (
         <div className="modal-overlay">
-          <div className="popup" style={{marginTop:"-80px"}}>
+          <div className="popup" style={{ marginTop: "-80px" }}>
             <div className="popup-content">
               <h3>Place Order - Date & Time</h3>
               <label>Select Date and Time:</label>
               <div className="date-input-containers">
                 <DatePicker
-                  selected={
-                    placeOrderDateTime ? new Date(placeOrderDateTime) : null
-                  }
-                  onChange={(date) => setPlaceOrderDateTime(date)}
-                  showTimeSelect
-                  timeFormat="HH:mm"
+                  selected={placeOrderDateTime}
+                  onChange={(date) => {
+                    const now = new Date(); // ⏰ current time
+                    const combinedDateTime = new Date(
+                      date.getFullYear(),
+                      date.getMonth(),
+                      date.getDate(),
+                      now.getHours(),
+                      now.getMinutes(),
+                      now.getSeconds()
+                    );
+                    setPlaceOrderDateTime(combinedDateTime);
+                  }}
                   showMonthDropdown
                   showYearDropdown
                   dropdownMode="select"
-                  timeIntervals={1}
-                  dateFormat="dd-MM-yyyy HH:mm"
-                  placeholderText="dd-mm-yyyy hh:mm"
+                  dateFormat="dd-MM-yyyy"
+                  placeholderText="dd-mm-yyyy"
                   className="input1"
+                  minDate={new Date()}
                 />
+
                 <i className="fas fa-calendar-alt calendar-icon"></i>
               </div>
 
@@ -967,18 +1250,12 @@ const POOrderMaster = ({ user }) => {
             </thead>
             <tbody>
               {orderedItems.map((item, index) => {
-                const orderedQtyFilled = !!item.quantity;
-                const orderedDateFilled = !!item.order_placed_date_time;
-
-                const shippingEnabled = orderedQtyFilled && orderedDateFilled;
-                const shippingQtyFilled = !!item.shipping_qty;
-                const shippingDateFilled = !!item.shipping_date;
-
-                const receivedEnabled = shippingQtyFilled && shippingDateFilled;
-                const receivedQtyFilled = !!item.received_qty;
-                const receivedDateFilled = !!item.received_date;
-
-                const inwardEnabled = receivedQtyFilled && receivedDateFilled;
+                const isShippingSaved =
+                  item.shipped_quantity && item.shipped_date;
+                const isReceivedSaved =
+                  item.received_quantity && item.received_date;
+                const inwardEnabled = isReceivedSaved;
+                const isPOCancelled = poData?.status === "Cancelled";
 
                 return (
                   <tr key={index}>
@@ -993,31 +1270,114 @@ const POOrderMaster = ({ user }) => {
                         )}
                     </td>
 
+                    {/* Shipping Quantity */}
                     <td>
                       <input
                         type="number"
                         name="shipping_qty"
-                        value={item.shipping_qty || ""}
-                        disabled={!shippingEnabled}
+                        value={
+                          item.shipping_qty !== undefined
+                            ? item.shipping_qty
+                            : item.shipped_quantity !== undefined
+                            ? item.shipped_quantity
+                            : ""
+                        }
+                        className={
+                          !item.quantity ||
+                          !item.order_placed_date_time ||
+                          isPOCancelled ||
+                          isShippingSaved
+                            ? "input-disabled"
+                            : "input-enabled"
+                        }
+                        disabled={
+                          !item.quantity ||
+                          !item.order_placed_date_time ||
+                          isShippingSaved ||
+                          isPOCancelled
+                        }
                         onChange={(e) => handleChange(e, index)}
+                        onBlur={(e) => {
+                          const { name, value } = e.target;
+                          const numericValue = Number(value);
+
+                          if (numericValue > item.quantity) {
+                            showWarningToast(
+                              "Shipped quantity cannot exceed ordered quantity."
+                            );
+                            setTimeout(() => e.target.focus(), 0);
+                            return;
+                          }
+
+                          if (value) {
+                            saveDeliveryUpdate(index, name, value); // only save qty here
+                          }
+                        }}
                       />
                     </td>
+
+                    {/* Shipping Date */}
                     <td>
                       <div className="date-input-container">
                         <DatePicker
                           selected={
                             item.shipping_date
                               ? new Date(item.shipping_date)
+                              : item.shipped_date
+                              ? new Date(item.shipped_date)
                               : null
                           }
                           onChange={(date) => {
-                            const fakeEvent = {
-                              target: {
-                                name: "shipping_date",
-                                value: date.toISOString().split("T")[0], // or format with date-fns
+                            const now = new Date();
+                            const mergedDateTime = new Date(
+                              date.getFullYear(),
+                              date.getMonth(),
+                              date.getDate(),
+                              now.getHours(),
+                              now.getMinutes(),
+                              now.getSeconds()
+                            );
+                            const isoString = mergedDateTime.toISOString();
+
+                            // Fix: Compare only date parts
+                            const orderedDateTime = item.order_placed_date_time
+                              ? new Date(item.order_placed_date_time)
+                              : null;
+
+                            if (orderedDateTime) {
+                              const shippingDateOnly = new Date(
+                                date.getFullYear(),
+                                date.getMonth(),
+                                date.getDate()
+                              );
+                              const orderedDateOnly = new Date(
+                                orderedDateTime.getFullYear(),
+                                orderedDateTime.getMonth(),
+                                orderedDateTime.getDate()
+                              );
+
+                              if (shippingDateOnly < orderedDateOnly) {
+                                showErrorToast(
+                                  "Shipping date cannot be before ordered date"
+                                );
+                                return;
+                              }
+                            }
+
+                            handleChange(
+                              {
+                                target: {
+                                  name: "shipping_date",
+                                  value: isoString,
+                                },
                               },
-                            };
-                            handleChange(fakeEvent, index);
+                              index
+                            );
+                            saveDeliveryUpdate(
+                              index,
+                              "shipping_date",
+                              isoString
+                            );
                           }}
                           dateFormat="dd-MM-yyyy"
                           placeholderText="dd-mm-yyyy"
@@ -1027,21 +1387,71 @@ const POOrderMaster = ({ user }) => {
                           dropdownMode="select"
                           popperPlacement="bottom"
                           portalId="datepicker-portal-target"
-                          disabled={!shippingEnabled}
+                          disabled={isShippingSaved || isPOCancelled}
+                          customInput={<CustomDateInput item={item} />}
+                          minDate={
+                            item.order_placed_date_time
+                              ? new Date(item.order_placed_date_time)
+                              : null
+                          }
                         />
-                        <i className="fas fa-calendar-alt calendar-icon"></i>
+
+                        {/* Hide the calendar icon when date is saved */}
+                        {!isShippingSaved && (
+                          <i className="fas fa-calendar-alt calendar-icons"></i>
+                        )}
                       </div>
                     </td>
 
+                    {/* Received Quantity */}
                     <td>
                       <input
                         type="number"
                         name="received_qty"
-                        value={item.received_qty || ""}
-                        disabled={!receivedEnabled}
+                        value={
+                          item.received_qty !== undefined
+                            ? item.received_qty
+                            : item.received_quantity !== undefined
+                            ? item.received_quantity
+                            : ""
+                        }
+                        className={
+                          isReceivedSaved || !isShippingSaved || isPOCancelled
+                            ? "input-disabled"
+                            : "input-enabled"
+                        }
+                        disabled={
+                          isReceivedSaved || !isShippingSaved || isPOCancelled
+                        }
                         onChange={(e) => handleChange(e, index)}
+                        onBlur={(e) => {
+                          const { name, value } = e.target;
+                          const numericValue = Number(value);
+
+                          //Check if received quantity > shipped quantity
+                          const shippedQty =
+                            item.shipping_qty !== undefined
+                              ? item.shipping_qty
+                              : item.shipped_quantity || 0;
+
+                          if (numericValue > shippedQty) {
+                            showWarningToast(
+                              "Received quantity cannot exceed shipped quantity."
+                            );
+
+                            setTimeout(() => {
+                              e.target.focus();
+                            }, 0);
+
+                            return;
+                          }
+
+                          if (value) saveDeliveryUpdate(index, name, value);
+                        }}
                       />
                     </td>
+
+                    {/* Received Date */}
                     <td>
                       <div className="date-input-container">
                         <DatePicker
@@ -1051,13 +1461,46 @@ const POOrderMaster = ({ user }) => {
                               : null
                           }
                           onChange={(date) => {
-                            const fakeEvent = {
-                              target: {
-                                name: "received_date",
-                                value: date.toISOString().split("T")[0], // Or format with date-fns if needed
+                            const now = new Date();
+                            const mergedDateTime = new Date(
+                              date.getFullYear(),
+                              date.getMonth(),
+                              date.getDate(),
+                              now.getHours(),
+                              now.getMinutes(),
+                              now.getSeconds()
+                            );
+
+                            const isoString = mergedDateTime.toISOString();
+
+                            // Compare with shipping date (if exists)
+                            const shippingDate =
+                              item.shipping_date || item.shipped_date;
+                            if (
+                              shippingDate &&
+                              new Date(mergedDateTime) < new Date(shippingDate)
+                            ) {
+                              showWarningToast(
+                                "Received date must be after shipping date."
+                              );
+                              return; // prevent saving
+                            }
+
+                            //Save only if valid
+                            handleChange(
+                              {
+                                target: {
+                                  name: "received_date",
+                                  value: isoString,
+                                },
                               },
-                            };
-                            handleChange(fakeEvent, index);
+                              index
+                            );
+                            saveDeliveryUpdate(
+                              index,
+                              "received_date",
+                              isoString
+                            );
                           }}
                           dateFormat="dd-MM-yyyy"
                           placeholderText="dd-mm-yyyy"
@@ -1067,17 +1510,48 @@ const POOrderMaster = ({ user }) => {
                           dropdownMode="select"
                           popperPlacement="bottom"
                           portalId="datepicker-portal-target"
-                          disabled={!receivedEnabled}
+                          disabled={
+                            isReceivedSaved || !isShippingSaved || isPOCancelled
+                          }
+                          customInput={<CustomReceivedDateInput item={item} />}
+                          minDate={
+                            item.shipping_date || item.shipped_date
+                              ? new Date(
+                                  item.shipping_date || item.shipped_date
+                                )
+                              : null
+                          }
                         />
-                        <i className="fas fa-calendar-alt calendar-icon"></i>
+
+                        {/*Hide icon if date is finalized */}
+                        {!isReceivedSaved && (
+                          <i className="fas fa-calendar-alt calendar-icons"></i>
+                        )}
                       </div>
                     </td>
+
+                    {/* Inward Button */}
                     <td>
                       <button
-                        disabled={!inwardEnabled}
-                        onClick={() => handleInward(index)}
+                        onClick={() => handleInward(item)}
+                        disabled={
+                          item.inward ||
+                          !item.received_date ||
+                          !item.received_quantity ||
+                          item.received_quantity <= 0 ||
+                          isPOCancelled
+                        }
+                        className={`edit-btn ${
+                          item.inward ||
+                          !item.received_date ||
+                          !item.received_quantity ||
+                          isPOCancelled ||
+                          item.received_quantity <= 0
+                            ? "disabled-btn"
+                            : ""
+                        }`}
                       >
-                        Inward
+                        {item.inward ? "Inwarded" : "Inward"}
                       </button>
                     </td>
                   </tr>
@@ -1087,6 +1561,248 @@ const POOrderMaster = ({ user }) => {
           </table>
         </div>
       )}
+
+      {pendingItems.length > 0 && (
+        <div style={{ marginTop: "40px" }}>
+          <h3>Pending Items for PO</h3>
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              marginTop: "10px",
+              border: "1px solid #ddd",
+            }}
+          >
+            <thead>
+              <tr style={{ backgroundColor: "#fff7e6" }}>
+                <th style={{ border: "1px solid #ddd", padding: "8px" }}>
+                  Component ID
+                </th>
+                <th style={{ border: "1px solid #ddd", padding: "8px" }}>
+                  Specification
+                </th>
+                <th style={{ border: "1px solid #ddd", padding: "8px" }}>
+                  Remaining Qty
+                </th>
+                <th style={{ border: "1px solid #ddd", padding: "8px" }}>
+                  Shipped Qty
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {pendingItems.map((item, index) => (
+                <tr key={index}>
+                  <td style={{ border: "1px solid #ddd", padding: "8px" }}>
+                    {item.component_id}
+                  </td>
+                  <td style={{ border: "1px solid #ddd", padding: "8px" }}>
+                    {item.specification}
+                  </td>
+                  <td style={{ border: "1px solid #ddd", padding: "8px" }}>
+                    {item.pending_quantity}
+                  </td>
+                  <td
+                    style={{
+                      border: "1px solid #ddd",
+                      padding: "8px",
+                      cursor: isPOCancelled ? "not-allowed" : "pointer",
+                      color: isPOCancelled ? "gray" : "blue",
+                      textDecoration: isPOCancelled ? "none" : "underline",
+                      opacity: isPOCancelled ? 0.6 : 1,
+                    }}
+                    onClick={() => {
+                      if (isPOCancelled) return; // 🚫 Prevent action if cancelled
+
+                      setSelectedPendingItem((prev) => ({
+                        ...item,
+                        po_master:
+                          typeof item.po_master === "object"
+                            ? item.po_master
+                            : { id: item.po_master },
+                      }));
+                      setShippedInput({
+                        quantity: "",
+                        date: "", // fresh input
+                      });
+                      setShowShippedPopup(true);
+                    }}
+                  >
+                    {item.pending_quantity}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {showShippedPopup && (
+        <div className="modal-overlay">
+          <div className="popup">
+            <div className="popup-content">
+              <h3>Update Shipped Quantity</h3>
+
+              <label>
+                Quantity:
+                <input
+                  type="number"
+                  min="1"
+                  max={selectedPendingItem?.pending_quantity}
+                  value={shippedInput.quantity}
+                  onChange={(e) =>
+                    setShippedInput({
+                      ...shippedInput,
+                      quantity: e.target.value,
+                    })
+                  }
+                  style={{ marginTop: "5px" }}
+                />
+              </label>
+
+              <br />
+
+              <label>
+                Shipping Date:
+                <div className="date-input-container">
+                  <DatePicker
+                    selected={
+                      shippedInput.date ? new Date(shippedInput.date) : null
+                    }
+                    onChange={(date) => {
+                      if (!date) return;
+
+                      const now = new Date();
+                      const mergedDateTime = new Date(
+                        date.getFullYear(),
+                        date.getMonth(),
+                        date.getDate(),
+                        now.getHours(),
+                        now.getMinutes(),
+                        now.getSeconds()
+                      );
+
+                      setShippedInput({
+                        ...shippedInput,
+                        date: mergedDateTime.toISOString(), // Store full datetime
+                      });
+                    }}
+                    placeholderText="dd-mm-yyyy"
+                    dateFormat="dd-MM-yyyy"
+                    className="input3"
+                    showMonthDropdown
+                    showYearDropdown
+                    dropdownMode="select"
+                  />
+                  <i
+                    className="fas fa-calendar-alt calendar-icon"
+                    style={{ marginTop: "2px" }}
+                  ></i>
+                </div>
+              </label>
+
+              <div style={{ marginTop: "20px" }} className="modal-actions">
+                <button
+                  onClick={async () => {
+                    const enteredQty = Number(shippedInput.quantity);
+                    const pendingQty = selectedPendingItem.pending_quantity;
+
+                    if (!enteredQty || !shippedInput.date) {
+                      showWarningToast("Both fields are required.");
+                      return;
+                    }
+
+                    if (enteredQty > pendingQty) {
+                      showWarningToast(
+                        `Entered quantity (${enteredQty}) exceeds remaining quantity (${pendingQty})`
+                      );
+                      return;
+                    }
+
+                    const remainingQty = pendingQty - enteredQty;
+
+                    try {
+                      // Always PATCH to reduce the pending quantity
+                      const patchPayload = {
+                        pending_quantity: remainingQty,
+                      };
+
+                      const patchResp = await fetch(
+                        `${config.apiBaseURL}/po_delivery/${selectedPendingItem.id}/`,
+                        {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify(patchPayload),
+                        }
+                      );
+
+                      if (!patchResp.ok) {
+                        const err = await patchResp.json();
+                        showErrorToast(
+                          "Failed to patch: " + JSON.stringify(err)
+                        );
+                        return;
+                      }
+
+                      // Always POST a new row for the shipped quantity
+                      const postPayload = {
+                        component_id: selectedPendingItem.component_id,
+                        specification: selectedPendingItem.specification,
+                        quantity: enteredQty,
+                        shipped_quantity: enteredQty,
+                        shipped_date: shippedInput.date,
+                        po_master: selectedPendingItem.po_master.id, // always the ID
+                        order_placed_date_time:
+                          selectedPendingItem.order_placed_date_time,
+                        status: "Shipped",
+                      };
+
+                      const postResp = await fetch(
+                        `${config.apiBaseURL}/po_delivery/`,
+                        {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json",
+                          },
+                          body: JSON.stringify(postPayload),
+                        }
+                      );
+
+                      if (!postResp.ok) {
+                        const err = await postResp.json();
+                        showErrorToast(
+                          "Failed to post shipped quantity: " +
+                            JSON.stringify(err)
+                        );
+                        return;
+                      }
+
+                      showSuccessToast(
+                        "Shipped quantity updated successfully."
+                      );
+                      setShowShippedPopup(false);
+                      setSelectedPendingItem(null);
+                      fetchOrderedItems(poId); // refresh updated list
+                    } catch (err) {
+                      console.error(err);
+                      showErrorToast("Network error occurred.");
+                    }
+                  }}
+                  className="edit-btn"
+                >
+                  Save
+                </button>
+
+                <button
+                  onClick={() => setShowShippedPopup(false)}
+                  className="delete-btn"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <ToastContainerComponent />
     </div>
   );

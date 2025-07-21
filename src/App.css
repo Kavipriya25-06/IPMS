@@ -1908,6 +1908,8 @@ table td {
   width: 100%; /* Container takes full available width */
 }
 
+
+
 .date-input-containers {
   position: relative;
   width: 100%; /* Container takes full available width */
@@ -1941,6 +1943,15 @@ table td {
   transform: translateY(-50%);
   font-size: 16px;
   color: #555;
+  pointer-events: none;
+}
+
+.calendar-icons {
+  position:relative;
+  right: 20px;
+  top: 50%;
+  font-size: 16px;
+  color: rgb(98, 97, 97);
   pointer-events: none;
 }
 
@@ -2664,6 +2675,14 @@ main {
   padding: 7px 10px;
   border: 1px solid #ccc;
   border-radius: 5px;
+}
+
+.input3{
+  padding: 7px 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  width: 360px !important;
+  margin-top: 5px;
 }
 
 .popup {
@@ -4231,6 +4250,50 @@ ul {
   margin-bottom: 8px;
   display: block;
 }
+
+.datepicker-enabled {
+  background-color: white;
+  color: black;
+  cursor: pointer;
+}
+
+.datepicker-disabled {
+  background-color: #f7f7f7;
+  color: #888;
+  cursor: not-allowed;
+  border: none;
+}
+
+.input-enabled {
+  background-color: white;
+  color: black;
+  border: 1px solid #ccc;
+    padding: 6px;
+  border-radius: 5px;
+}
+
+.input-disabled {
+   background-color: #f7f7f7;
+  color: #888;
+  cursor: not-allowed;
+  border: none;
+  padding: 5px;
+  border-radius: 5px;
+}
+
+.disabled-btn {
+  background-color: rgb(189, 187, 187) !important;
+  cursor: not-allowed;
+}
+
+.order-cancelled-banner {
+  font-size: 20px;
+  color: #e40d0d;
+  font-weight: bold;
+}
+
+
+
 
 
 
