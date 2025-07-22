@@ -88,7 +88,7 @@ const POOrderMaster = ({ user }) => {
   const updateOrderStatus = async (newStatus, date) => {
     if (!poDetails.length) return;
     if (!date) {
-      alert("Please select a date before updating the status.");
+      showInfoToast("Please select a date before updating the status.");
       return;
     }
 
@@ -153,7 +153,7 @@ const POOrderMaster = ({ user }) => {
 
   const handleUpdateStatus = () => {
     if (!selectedDate) {
-      alert("Please select a date and time.");
+      showInfoToast("Please select a date and time.");
       return;
     }
     updateOrderStatus(selectedStatus, selectedDate);
@@ -199,11 +199,11 @@ const POOrderMaster = ({ user }) => {
       } else {
         const errorData = await response.json();
         console.error("Failed to update PO status:", errorData);
-        alert(`Failed to update status: ${JSON.stringify(errorData)}`);
+        showErrorToast(`Failed to update status: ${JSON.stringify(errorData)}`);
       }
     } catch (error) {
       console.error("Error updating PO status:", error.message);
-      alert("An error occurred while updating the status.");
+      showErrorToast("An error occurred while updating the status.");
     }
   };
 
@@ -222,7 +222,7 @@ const POOrderMaster = ({ user }) => {
       );
 
       if (matchingEntries.length === 0) {
-        alert(`No entries found for PO ID: ${poId}`);
+        showErrorToast(`No entries found for PO ID: ${poId}`);
         return;
       }
 
@@ -253,14 +253,14 @@ const POOrderMaster = ({ user }) => {
             `Failed to update PO Master entry ID: ${entry.id}`,
             errorData
           );
-          alert(`Error updating entry ID: ${entry.id}`);
+          showErrorToast(`Error updating entry ID: ${entry.id}`);
         }
       }
 
       `Successfully updated all entries for PO ID: ${poId}`;
     } catch (error) {
       console.error("Error updating PO Master statuses:", error.message);
-      alert("An error occurred while updating the PO Master statuses.");
+      showErrorToast("An error occurred while updating the PO Master statuses.");
     }
     setPOData((prevData) => ({
       ...prevData,
@@ -403,7 +403,7 @@ const POOrderMaster = ({ user }) => {
 
       if (!uploadResponse.ok) {
         const err = await uploadResponse.json();
-        alert(`File upload failed: ${err.error}`);
+        showErrorToast(`File upload failed: ${err.error}`);
         return;
       }
 
@@ -432,15 +432,15 @@ const POOrderMaster = ({ user }) => {
 
       if (sendResponse.ok) {
         const emailData = await sendResponse.json();
-        alert(`Email sent successfully: ${emailData.message}`);
+        showSuccessToast(`Email sent successfully: ${emailData.message}`);
         setShowModal(false);
       } else {
         const emailError = await sendResponse.json();
-        alert(`Failed to send email: ${emailError.error}`);
+        showErrorToast(`Failed to send email: ${emailError.error}`);
       }
     } catch (error) {
       console.error("Error sending email:", error);
-      alert("An error occurred while uploading the file or sending the email.");
+      showErrorToast("An error occurred while uploading the file or sending the email.");
     }
   };
 
@@ -465,7 +465,7 @@ const POOrderMaster = ({ user }) => {
 
   const handlePlaceOrder = async () => {
     if (!placeOrderDateTime) {
-      alert("Please select a date and time.");
+      showInfoToast("Please select a date and time.");
       return;
     }
 
@@ -498,7 +498,7 @@ const POOrderMaster = ({ user }) => {
 
         if (!response.ok) {
           const error = await response.json();
-          alert(`Failed to place order: ${JSON.stringify(error)}`);
+          showErrorToast(`Failed to place order: ${JSON.stringify(error)}`);
           return;
         }
       }
@@ -519,14 +519,14 @@ const POOrderMaster = ({ user }) => {
 
         if (!patchResponse.ok) {
           const error = await patchResponse.json();
-          alert(
+          showErrorToast(
             `Failed to update PO Master ${poMasterId}: ${JSON.stringify(error)}`
           );
           return;
         }
       }
 
-      alert("All order items placed successfully!");
+      showSuccessToast("All order items placed successfully!");
       setShowPlaceOrderPopup(false);
       setPlaceOrderDateTime("");
       setOrderPlaced(true); //  use this to hide buttons
@@ -549,7 +549,7 @@ const POOrderMaster = ({ user }) => {
       setPOData(updatedPoData);
     } catch (error) {
       console.error("Error placing order:", error);
-      alert("Error while placing order.");
+      showErrorToast("Error while placing order.");
     }
   };
 
@@ -557,8 +557,13 @@ const POOrderMaster = ({ user }) => {
     const item = orderedItems[index];
     const updatedItem = { ...item, [field]: value };
 
+    if (field === "shipping_qty") {
+      updatedItem.received_qty = Number(value);
+    }
+
     let payload = {};
 
+    // SHIPMENT case
     // SHIPMENT case
     const hasShippedDate = field === "shipping_date" || item.shipping_date;
     const hasShippedQty =
@@ -588,6 +593,7 @@ const POOrderMaster = ({ user }) => {
         shipped_quantity: shippedQty,
         shipped_date: shippedDate,
         pending_quantity: pendingQty,
+        received_quantity: shippedQty, // ✅ force received = shipped
       };
     }
 
@@ -643,7 +649,37 @@ const POOrderMaster = ({ user }) => {
   };
 
   const handleInward = async (item) => {
-    const cart = item.po_master.cart_details;
+    // If po_master is just an ID, use it directly
+    let poMasterId =
+      typeof item.po_master === "object" ? item.po_master?.id : item.po_master;
+
+    if (!poMasterId) {
+      showErrorToast("PO Master ID missing. Please refresh.");
+      return;
+    }
+
+    let cart = item?.po_master?.cart_details;
+
+    // If cart details not available, fetch full PO Master
+    if (!cart || !cart.component_id) {
+      try {
+        console.log("🔎 Fetching PO Master with ID:", poMasterId);
+
+        const resp = await fetch(
+          `${config.apiBaseURL}/po_master/${poMasterId}/`
+        );
+        if (!resp.ok) throw new Error("Network response was not OK");
+
+        const updated = await resp.json();
+        item.po_master = updated;
+        cart = updated.cart_details;
+      } catch (e) {
+        console.error("Failed to fetch PO Master:", e);
+        showErrorToast("Failed to fetch complete PO details.");
+        return;
+      }
+    }
+
     const receivedQty = parseInt(item.received_quantity);
 
     if (!receivedQty || receivedQty <= 0) {
@@ -661,11 +697,13 @@ const POOrderMaster = ({ user }) => {
           unit_of_measurement: cart.unit_of_measurement,
           vendor_id: cart.vendor_id,
           vendor_name: cart.vendor_name,
-          po_master_id: item.po_master.id,
+          po_master_id: poMasterId,
           price: cart.unit_price,
           unit: 1,
           quality_check: "Pending",
         };
+
+        console.log(`📦 Posting inward unit ${i + 1}:`, payload);
 
         const response = await fetch(`${config.apiBaseURL}/inward/`, {
           method: "POST",
@@ -676,13 +714,12 @@ const POOrderMaster = ({ user }) => {
         if (!response.ok) {
           const error = await response.json();
           showErrorToast(
-            `Inward failed for unit ${i + 1}: ` + JSON.stringify(error)
+            `Inward failed for unit ${i + 1}: ${JSON.stringify(error)}`
           );
           return;
         }
       }
 
-      //  PATCH the po_delivery item to mark inward: true
       const patchResp = await fetch(
         `${config.apiBaseURL}/po_delivery/${item.id}/`,
         {
@@ -696,7 +733,7 @@ const POOrderMaster = ({ user }) => {
         showSuccessToast(
           "All units posted to Inward and delivery marked as Inwarded!"
         );
-        fetchOrderedItems(poId); // Refresh the table
+        fetchOrderedItems(poId); // make sure poId is in scope
       } else {
         const err = await patchResp.json();
         showWarningToast(
@@ -1413,41 +1450,13 @@ const POOrderMaster = ({ user }) => {
                             ? item.received_qty
                             : item.received_quantity !== undefined
                             ? item.received_quantity
-                            : ""
+                            : item.shipping_qty !== undefined
+                            ? item.shipping_qty
+                            : item.shipped_quantity || 0
                         }
-                        className={
-                          isReceivedSaved || !isShippingSaved || isPOCancelled
-                            ? "input-disabled"
-                            : "input-enabled"
-                        }
-                        disabled={
-                          isReceivedSaved || !isShippingSaved || isPOCancelled
-                        }
-                        onChange={(e) => handleChange(e, index)}
-                        onBlur={(e) => {
-                          const { name, value } = e.target;
-                          const numericValue = Number(value);
-
-                          //Check if received quantity > shipped quantity
-                          const shippedQty =
-                            item.shipping_qty !== undefined
-                              ? item.shipping_qty
-                              : item.shipped_quantity || 0;
-
-                          if (numericValue > shippedQty) {
-                            showWarningToast(
-                              "Received quantity cannot exceed shipped quantity."
-                            );
-
-                            setTimeout(() => {
-                              e.target.focus();
-                            }, 0);
-
-                            return;
-                          }
-
-                          if (value) saveDeliveryUpdate(index, name, value);
-                        }}
+                        className="input-disabled"
+                        disabled
+                        readOnly
                       />
                     </td>
 
@@ -1748,6 +1757,7 @@ const POOrderMaster = ({ user }) => {
                         specification: selectedPendingItem.specification,
                         quantity: enteredQty,
                         shipped_quantity: enteredQty,
+                        received_quantity: enteredQty,
                         shipped_date: shippedInput.date,
                         po_master: selectedPendingItem.po_master.id, // always the ID
                         order_placed_date_time:

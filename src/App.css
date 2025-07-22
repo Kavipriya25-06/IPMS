@@ -975,7 +975,7 @@ tbody tr:hover {
   cursor: pointer;
 }
 
-.delete-btn{
+.delete-btn {
   background-color: gray;
   color: white;
   border: none;
@@ -1908,8 +1908,6 @@ table td {
   width: 100%; /* Container takes full available width */
 }
 
-
-
 .date-input-containers {
   position: relative;
   width: 100%; /* Container takes full available width */
@@ -1947,7 +1945,7 @@ table td {
 }
 
 .calendar-icons {
-  position:relative;
+  position: relative;
   right: 20px;
   top: 50%;
   font-size: 16px;
@@ -2283,11 +2281,15 @@ main {
   padding: 8px 12px;
 }
 
+.action-buttons-cell .qc-button {
+  padding: 5px 8px;
+}
+
 .action-buttons-cell button {
   padding: 6px 12px;
   font-size: 14px;
   border-radius: 4px;
-  border: 1.5px solid gray;
+  border: 1px solid gray;
   background-color: gray;
   color: white;
   cursor: pointer;
@@ -2295,8 +2297,8 @@ main {
 }
 
 .action-buttons-cell button:hover:not(:disabled) {
-  background-color: gray;
-  border-color: gray q;
+  background-color: #c0bfbf;
+  border-color: #c0bfbf;
 }
 
 .action-buttons-cell button:disabled {
@@ -2671,13 +2673,13 @@ main {
   position: relative;
 }
 
-.input2{
+.input2 {
   padding: 7px 10px;
   border: 1px solid #ccc;
   border-radius: 5px;
 }
 
-.input3{
+.input3 {
   padding: 7px 10px;
   border: 1px solid #ccc;
   border-radius: 5px;
@@ -2689,8 +2691,6 @@ main {
   overflow: visible; /* ✅ VERY IMPORTANT */
   z-index: 1050;
 }
-
-
 
 .date-picker-wrapper .input1 {
   width: 120%;
@@ -4196,7 +4196,6 @@ ul {
   opacity: 0.5;
 }
 
-
 .po-actions .email-button {
   background-color: rgb(180, 180, 180);
   color: black;
@@ -4224,12 +4223,11 @@ ul {
   cursor: pointer;
 }
 
-.po-actions .email-button:hover{
+.po-actions .email-button:hover {
   background-color: gray;
 }
 .po-actions .place-order-button:hover,
-.po-actions .cancel-button:hover
- {
+.po-actions .cancel-button:hover {
   opacity: 0.5;
 }
 
@@ -4268,12 +4266,12 @@ ul {
   background-color: white;
   color: black;
   border: 1px solid #ccc;
-    padding: 6px;
+  padding: 6px;
   border-radius: 5px;
 }
 
 .input-disabled {
-   background-color: #f7f7f7;
+  background-color: #f7f7f7;
   color: #888;
   cursor: not-allowed;
   border: none;
@@ -4292,15 +4290,130 @@ ul {
   font-weight: bold;
 }
 
+.profile-dropdown {
+  position: relative;
+  font-family: "Segoe UI", sans-serif;
+}
 
+.profile-picture {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid #ccc;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s;
+}
 
+.profile-picture:hover {
+  transform: scale(1.05);
+}
 
+.dropdown-menu {
+  position: absolute;
+  top: 60px;
+  right: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid #e2e2e2;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+  border-radius: 12px;
+  width: 320px;
+  z-index: 1000;
+  animation: fadeSlide 0.25s ease-in-out;
+  overflow: hidden;
+}
 
+@keyframes fadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+/* Overlay behind the dropdown */
+.dropdown-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* semi-transparent background */
+  z-index: 1000;
+}
 
+/* Dropdown container positioned top-right */
+.dropdown-content {
+  position: absolute; /* stays relative to parent or top of screen */
+  top: 60px; /* adjust based on your button height */
+  right: 20px;
+  background-color: white;
+  border-radius: 8px;
+  min-width: 260px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  z-index: 1001; /* on top of overlay */
+}
 
+/* Existing styles (unchanged) */
+.dropdown-header {
+  padding: 16px;
+  background-color: #f9f9f9;
+  border-bottom: 1px solid #e6e6e6;
+  position: relative;
+}
 
+.dropdown-menu {
+  margin-right: 10px;
+  margin-top: 20px;
+}
 
+.dropdown-header .label {
+  font-size: 16px;
+  color: #666;
+  display: flex;
+  justify-content: space-between;
+  margin: 6px 0;
+  padding: 5px;
+}
 
+.dropdown-header .value {
+  font-weight: 600;
+  margin-left: 8px;
+  color: #333;
+}
 
+.dropdown-item {
+  width: 100%;
+  padding: 14px 18px;
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
 
+.dropdown-item .icon {
+  margin-right: 10px;
+  font-size: 18px;
+  color: #555;
+}
 
+.dropdown-item:hover {
+  background-color: #dfdddd;
+}
+
+.logout {
+  background-color: #fff5f5;
+  color: #c53030;
+}
+
+.logout:hover {
+  background-color: #ffe3e3;
+}

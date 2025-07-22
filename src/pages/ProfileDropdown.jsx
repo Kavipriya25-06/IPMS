@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
-import defaultProfilePic from "../assets/profile.png"; // Placeholder image
+import defaultProfilePic from "../assets/profile.svg"; // Placeholder image
+import { FaUserShield, FaSignOutAlt } from "react-icons/fa"; // Admin icon, Logout icon
 
 const ProfileDropdown = () => {
   const { user, logout } = useAuth();
@@ -22,77 +23,70 @@ const ProfileDropdown = () => {
   if (!user) return null; // Don't render if user is not logged in
 
   return (
-    <div style={{ position: "relative" }} ref={dropdownRef}>
-      {/* Profile Picture */}
-      <img
-        src={defaultProfilePic}
-        alt="Profile"
-        onClick={() => setIsOpen(!isOpen)}
+    <div className="profile-dropdown" ref={dropdownRef}>
+      <div
         style={{
           width: "40px",
           height: "40px",
+          border: isOpen ? "2px solid #28a745" : "2px solid transparent",
           borderRadius: "50%",
+          padding: "1px",
+          backgroundColor: isOpen ? "#e9f9ee" : "transparent",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
           cursor: "pointer",
-          border: "2px solid #ddd",
+          transition: "all 0.2s ease-in-out",
+          boxShadow: isOpen ? "0 0 4px rgba(40, 167, 69, 0.4)" : "none",
         }}
-      />
+        onClick={() => setIsOpen(!isOpen)}
+        className="profile-picture"
+      >
+        <img
+          src={defaultProfilePic}
+          alt="Profile"
+          style={{
+            width: "24px",
+            height: "24px",
+            objectFit: "contain",
+          }}
+        />
+      </div>
 
-      {/* Dropdown Menu */}
       {isOpen && (
         <div
-          style={{
-            position: "absolute",
-            top: "50px",
-            right: "0",
-            background: "#fff",
-            border: "1px solid #ddd",
-            boxShadow: "0px 4px 6px rgba(0,0,0,0.1)",
-            borderRadius: "5px",
-            width: "400px",
-            zIndex: 1000,
-          }}
-          onClick={(e) => e.stopPropagation()} // Prevents closing when clicking insidde
+          className="dropdown-overlay"
+          onClick={() => setIsOpen(false)} // closes on outside click
         >
-          <div style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>
-            <p style={{ margin: "5px 0" }}>
-              Logged in as: <strong>{user.email}</strong>
-            </p>
-            <p style={{ margin: "5px 0" }}>
-              Role: <em>{user.role}</em>
-            </p>
-          </div>
-
-          {user.role === "Admin" && (
-            <button
-              onClick={() => navigate("/roles")}
-              style={{
-                display: "block",
-                width: "100%",
-                padding: "10px",
-                border: "none",
-                backgroundColor: "#f5f5f5",
-                textAlign: "center",
-                cursor: "pointer",
-              }}
-            >
-              Roles
-            </button>
-          )}
-
-          <button
-            onClick={logout}
-            style={{
-              display: "block",
-              width: "100%",
-              padding: "10px",
-              border: "none",
-              backgroundColor: "#f8d7da",
-              textAlign: "center",
-              cursor: "pointer",
-            }}
+          <div
+            className="dropdown-menu"
+            onClick={(e) => e.stopPropagation()} // prevents inside click from closing
           >
-            Logout
-          </button>
+            <div className="dropdown-header">
+              <p className="label">
+                <span>User:</span> <span className="value">{user.email}</span>
+              </p>
+              <hr />
+              <p className="label">
+                <span>Role:</span> <span className="value">{user.role}</span>
+              </p>
+            </div>
+
+            {user.role === "Admin" && (
+              <button
+                className="dropdown-item"
+                onClick={() => navigate("/roles")}
+              >
+                <FaUserShield className="icon" />
+                Roles
+              </button>
+            )}
+
+            <button className="dropdown-item logout" onClick={logout}>
+              <FaSignOutAlt className="icon" />
+              Logout
+            </button>
+          </div>
         </div>
       )}
     </div>
