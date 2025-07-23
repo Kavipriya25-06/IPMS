@@ -576,7 +576,8 @@ const Inward = () => {
         component_id: componentId,
         specification: componentSpecification,
         quantity: quantity,
-        type_of_outward: typeOfOutward,
+        type_of_outward: "Return",
+        OUTWARD_CATEGORY_CHOICES: "Defects",
       };
 
       const response = await fetch(`${config.apiBaseURL}/outward/`, {
@@ -735,6 +736,7 @@ const Inward = () => {
 
   return (
     <div>
+<<<<<<< HEAD
       <div className="header">
         {/* <h2>Inward</h2> */}
 
@@ -742,6 +744,9 @@ const Inward = () => {
           Back to Inward List
         </button>
       </div>
+=======
+      <div className="header">{/* <h2>Inward</h2> */}</div>
+>>>>>>> c340953f70197450a1e1fc41bde84c9e4889cdbf
 
       {/* Render CustomMessagebox when showMessageBox is true */}
       {showMessageBox && (
