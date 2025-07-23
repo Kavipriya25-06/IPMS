@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../AuthContext";
-import ShoppingCart from "../assets/cart.png"; // Import Cart Icon
+import ShoppingCart from "../assets/Cart.svg"; // Import Cart Icon
 
 const CartIcon = () => {
   const { user, logout } = useAuth();
@@ -20,20 +20,35 @@ const CartIcon = () => {
   const isActive = location.pathname === "/cart";
 
   return (
-    <img
-      src={ShoppingCart}
-      alt="Cart"
-      onClick={() => navigate("/cart")}
-      style={{
-        width: "40px",
-        height: "40px",
-        cursor: "pointer",
-        border: isActive ? "2px solid green" : "2px solid transparent",
-        borderRadius: "50%",
-        padding: "3px",
-        backgroundColor: isActive ? "#e6ffe6" : "transparent",
-      }}
-    />
+  <div
+  style={{
+    width: "40px",
+    height: "40px",
+    border: isActive ? "2px solid #28a745" : "2px solid transparent",
+    borderRadius: "50%",
+    padding: "1px",
+    backgroundColor: isActive ? "#e9f9ee" : "transparent",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    cursor: "pointer",
+    transition: "all 0.2s ease-in-out",
+    boxShadow: isActive ? "0 0 4px rgba(40, 167, 69, 0.4)" : "none",
+  }}
+  onClick={() => navigate("/cart")}
+>
+  <img
+    src={ShoppingCart}
+    alt="Cart"
+    style={{
+      width: "24px",
+      height: "24px",
+      objectFit: "contain",
+    }}
+  />
+</div>
+
+
   );
 };
 

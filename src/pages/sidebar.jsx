@@ -69,9 +69,14 @@ export default function Sidebar() {
       path: "/po-list",
       roles: ["Admin", "Sub-Admin", "Procurement", "Finance"],
     },
+    // {
+    //   label: "Inward",
+    //   path: "/inward",
+    //   roles: ["Admin", "Sub-Admin", "Inventory"],
+    // },
     {
       label: "Inward",
-      path: "/inward",
+      path: "/inwardlist",
       roles: ["Admin", "Sub-Admin", "Inventory"],
     },
      {
