@@ -22,7 +22,7 @@ import HomePage from "./pages/HomePage";
 import POOrderMaster from "./pages/POOrderMaster";
 import POOrderList from "./pages/POList";
 import Inward from "./pages/Inward";
-import InwardList from "./pages/InwardList"
+import InwardList from "./pages/Inwardlist";
 import PurchaseOrder from "./pages/POTemplate";
 import Login from "./pages/Login";
 import ProtectedRoute from "./ProtectedRoute";
@@ -43,9 +43,6 @@ import ResetPassword from "./pages/ResetPassword";
 import SideBar from "./pages/sidebar";
 import RequestComponent from "./pages/RequestComponent";
 import Outward from "./pages/Outward";
-import OutwardEvent from "./pages/OutwardEvent";
-import OutwardManufacture from "./pages/OutwardManufacture";
-import OutwardSales from "./pages/OutwardSales";
 import JobOrderSheet from "./pages/JobOrderSheet";
 
 // import { useAuth } from "./AuthContext";
@@ -419,7 +416,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-             <Route
+            <Route
               path="inwardlist"
               element={
                 <ProtectedRoute
@@ -429,7 +426,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-             <Route
+            <Route
               path="outward"
               element={
                 <ProtectedRoute
@@ -439,7 +436,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
+            {/* <Route
               path="outward/add-sales-list"
               element={
                 <ProtectedRoute
@@ -468,8 +465,8 @@ function App() {
                   <OutwardManufacture />
                 </ProtectedRoute>
               }
-            />
-             <Route
+            /> */}
+            <Route
               path="jobordersheet"
               element={
                 <ProtectedRoute
