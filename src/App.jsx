@@ -25,7 +25,7 @@ import Inward from "./pages/Inward";
 
 // import InwardList from "./pages/InwardList";
 // import InwardList from "./pages/InwardList";
-import Inwardlist from "./pages/Inwardlist";
+import Inwardlist from "./pages/InwardList";
 import PurchaseOrder from "./pages/POTemplate";
 import Login from "./pages/Login";
 import ProtectedRoute from "./ProtectedRoute";
