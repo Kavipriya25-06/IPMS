@@ -4,7 +4,6 @@ import config from "../Config";
 import { useLocation } from "react-router-dom";
 import { format } from "date-fns";
 
-
 import {
   showSuccessToast,
   showErrorToast,
@@ -576,7 +575,8 @@ const Inward = () => {
         component_id: componentId,
         specification: componentSpecification,
         quantity: quantity,
-        type_of_outward: typeOfOutward,
+        type_of_outward: "Return",
+        OUTWARD_CATEGORY_CHOICES: "Defects",
       };
 
       const response = await fetch(`${config.apiBaseURL}/outward/`, {
@@ -735,9 +735,7 @@ const Inward = () => {
 
   return (
     <div>
-      <div className="header">
-        {/* <h2>Inward</h2> */}
-      </div>
+      <div className="header">{/* <h2>Inward</h2> */}</div>
 
       {/* Render CustomMessagebox when showMessageBox is true */}
       {showMessageBox && (
@@ -747,7 +745,7 @@ const Inward = () => {
         />
       )}
 
-      <div className="table-container" style={{marginTop:"20px"}}>
+      <div className="table-container" style={{ marginTop: "20px" }}>
         <table>
           <thead>
             <tr>
@@ -790,9 +788,9 @@ const Inward = () => {
                   {getNestedValue(item, "po_master.cart.vendor_name")}
                 </td>
                 <td>{item.serial_number || "Not Available"}</td>
-               <td>
-  {item.date ? format(new Date(item.date), "dd-MM-yyyy") : "-"}
-</td>
+                <td>
+                  {item.date ? format(new Date(item.date), "dd-MM-yyyy") : "-"}
+                </td>
                 <td>{item.quality_check || "Not Available"}</td>
                 <td className="sku-cell">
                   {item.sku_number ? (
