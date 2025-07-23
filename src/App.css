@@ -411,8 +411,8 @@ tbody tr:hover {
 .form-grid label {
   font-weight: 500;
   color: #444;
-  margin-bottom: 4px;
-  text-align: left;
+  text-align: center;
+  margin-top: 10px;
 }
 
 .form-grid input,

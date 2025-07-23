@@ -481,12 +481,12 @@ const ComponentDetailsPage = () => {
                     <td className="truncate-cell" title={vendor.vendor_name}>
                       {vendor.vendor_name}
                     </td>
-                    <td>
-                      {priceDataMap[vendor.product_id]?.price ??
+                    <td style={{textAlign:"right"}}>
+                      ₹{priceDataMap[vendor.product_id]?.price ??
                         vendor.last_price ??
                         "-"}
                     </td>
-                    <td>
+                    <td style={{textAlign:"right"}}>
                       {priceDataMap[vendor.product_id]?.tax ??
                         vendor.tax ??
                         "-"}

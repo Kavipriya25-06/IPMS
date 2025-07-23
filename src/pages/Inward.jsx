@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
 import CustomMessagebox from "./CustomMessageBox.jsx";
 import config from "../Config";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-
 
 import {
   showSuccessToast,
@@ -14,6 +13,7 @@ import {
 } from "./Toastify.jsx"; // Import Toastify utilities
 
 const Inward = () => {
+  const navigate = useNavigate();
   const [inwardData, setInwardData] = useState([]); // State to store inward data
   const [showQCPopup, setShowQCPopup] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -737,6 +737,10 @@ const Inward = () => {
     <div>
       <div className="header">
         {/* <h2>Inward</h2> */}
+
+        <button onClick={() => navigate(-1)} className="back-button">
+          Back to Inward List
+        </button>
       </div>
 
       {/* Render CustomMessagebox when showMessageBox is true */}
@@ -747,7 +751,7 @@ const Inward = () => {
         />
       )}
 
-      <div className="table-container" style={{marginTop:"20px"}}>
+      <div className="table-container" style={{ marginTop: "20px" }}>
         <table>
           <thead>
             <tr>
@@ -790,9 +794,9 @@ const Inward = () => {
                   {getNestedValue(item, "po_master.cart.vendor_name")}
                 </td>
                 <td>{item.serial_number || "Not Available"}</td>
-               <td>
-  {item.date ? format(new Date(item.date), "dd-MM-yyyy") : "-"}
-</td>
+                <td>
+                  {item.date ? format(new Date(item.date), "dd-MM-yyyy") : "-"}
+                </td>
                 <td>{item.quality_check || "Not Available"}</td>
                 <td className="sku-cell">
                   {item.sku_number ? (

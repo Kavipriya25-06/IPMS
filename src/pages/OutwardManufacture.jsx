@@ -61,7 +61,7 @@ const Outward = () => {
           />
         </div>
 
-        <button className="generate-report-btn">Generate Report</button>
+        <button className="generate-report-btn">Generadeewte Report</button>
       </div>
 
       <div className="table-container">
