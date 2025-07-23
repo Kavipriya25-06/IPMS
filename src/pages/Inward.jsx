@@ -576,6 +576,8 @@ const Inward = () => {
         component_id: componentId,
         specification: componentSpecification,
         quantity: quantity,
+        invoice_no: invoice_number,
+        vendor: vendor_name,
         type_of_outward: "Return",
         OUTWARD_CATEGORY_CHOICES: "Defects",
       };
@@ -736,7 +738,6 @@ const Inward = () => {
 
   return (
     <div>
-
       <div className="header">
         {/* <h2>Inward</h2> */}
 
@@ -744,7 +745,6 @@ const Inward = () => {
           Back to Inward List
         </button>
       </div>
-
 
       {/* Render CustomMessagebox when showMessageBox is true */}
       {showMessageBox && (

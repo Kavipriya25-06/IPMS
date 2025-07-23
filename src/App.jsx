@@ -22,7 +22,9 @@ import HomePage from "./pages/HomePage";
 import POOrderMaster from "./pages/POOrderMaster";
 import POOrderList from "./pages/POList";
 import Inward from "./pages/Inward";
-import InwardList from "./pages/Inwardlist";
+// import InwardList from "./pages/InwardList";
+// import InwardList from "./pages/InwardList";
+import Inwardlist from "./pages/Inwardlist";
 import PurchaseOrder from "./pages/POTemplate";
 import Login from "./pages/Login";
 import ProtectedRoute from "./ProtectedRoute";
@@ -422,7 +424,7 @@ function App() {
                 <ProtectedRoute
                   allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
                 >
-                  <InwardList />
+                  <Inwardlist />
                 </ProtectedRoute>
               }
             />
