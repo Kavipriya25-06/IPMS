@@ -43,6 +43,9 @@ import ResetPassword from "./pages/ResetPassword";
 import SideBar from "./pages/sidebar";
 import RequestComponent from "./pages/RequestComponent";
 import Outward from "./pages/Outward";
+import OutwardSales from "./pages/OutwardSales";
+import OutwardManufacture from "./pages/OutwardManufacture";
+import OutwardEvent from "./pages/OutwardEvent";
 import JobOrderSheet from "./pages/JobOrderSheet";
 
 // import { useAuth } from "./AuthContext";
@@ -435,8 +438,8 @@ function App() {
                   <Outward />
                 </ProtectedRoute>
               }
-            />
-            {/* <Route
+            /> 
+            <Route
               path="outward/add-sales-list"
               element={
                 <ProtectedRoute
@@ -465,7 +468,7 @@ function App() {
                   <OutwardManufacture />
                 </ProtectedRoute>
               }
-            /> */}
+            />
             <Route
               path="jobordersheet"
               element={
