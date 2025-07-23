@@ -706,10 +706,98 @@
 
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import config from "../Config.js";
+import AddIcon from "../assets/Add.png";
+import CancelIcon from "../assets/cancel.png";
+
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { format, parseISO } from "date-fns";
 
 const Outward = () => {
   const [reportType, setReportType] = useState("Defects");
   const [tableData, setTableData] = useState([]);
+  const [showEventForm, setShowEventForm] = useState(false);
+  const [showServiceForm, setShowServiceForm] = useState(false);
+  const [showSalesForm, setShowSalesForm] = useState(false);
+  const [currentTime, setCurrentTime] = useState("");
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [availableVendors, setAvailableVendors] = useState([]);
+  const [componentSpecList, setComponentSpecList] = useState([]);
+
+  const [serviceForm, setServiceForm] = useState({
+    outDate: new Date(),
+    time: format(new Date(), "hh:mm a"),
+    gatePass: "",
+    specification: "",
+    componentId: "",
+    vendor: "",
+    project: "",
+    typeOfOutward: "",
+    quantity: "",
+    returnDate: null,
+    remarks: "",
+  });
+
+  //to fetch dropdown spec in select 
+  useEffect(() => {
+    const fetchSpecs = async () => {
+      try {
+        const res = await fetch(`${config.apiBaseURL}/vendor_master/`);
+        const data = await res.json();
+        const uniqueSpecs = [
+          ...new Set(data.map((item) => item.component_specification)),
+        ];
+        setComponentSpecList(uniqueSpecs);
+      } catch (err) {
+        console.error("Failed to fetch component specs", err);
+      }
+    };
+
+    fetchSpecs();
+  }, []);
+
+  //after selecting id and vendor to fetch
+  const handleSpecChange = async (e) => {
+    const selectedSpec = e.target.value;
+    setServiceForm((prev) => ({ ...prev, specification: selectedSpec }));
+
+    try {
+      const res = await fetch(`${config.apiBaseURL}/vendor_master/`);
+      const data = await res.json();
+      const filtered = data.filter(
+        (item) => item.component_specification === selectedSpec
+      );
+
+      if (filtered.length === 0) {
+        setAvailableVendors([]);
+        setServiceForm((prev) => ({
+          ...prev,
+          componentId: "",
+          vendor: "",
+        }));
+        return;
+      }
+
+      const componentId = filtered[0].component_id;
+      const vendors = [...new Set(filtered.map((item) => item.vendor_name))];
+
+      setServiceForm((prev) => ({
+        ...prev,
+        componentId,
+        vendor: vendors.length === 1 ? vendors[0] : "",
+      }));
+
+      setAvailableVendors(vendors);
+    } catch (err) {
+      console.error("Error loading vendors", err);
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setServiceForm((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleReportChange = (e) => {
     setReportType(e.target.value);
@@ -769,7 +857,7 @@ const Outward = () => {
     const fetchData = async () => {
       try {
         const response = await axios.get(
-          `http://127.0.0.1:8000/outward/${reportType}/`
+          `${config.apiBaseURL}/outward/${reportType}/`
         );
         setTableData(response.data || []);
       } catch (error) {
@@ -780,6 +868,41 @@ const Outward = () => {
 
     fetchData();
   }, [reportType]);
+
+  const handleSubmit = async () => {
+    const payload = {
+      category: "Manufacture",
+      date: serviceForm.outDate?.toISOString().split("T")[0],
+      time: serviceForm.time || new Date().toTimeString().split(" ")[0],
+      gatepass: serviceForm.gatePass,
+      specification: serviceForm.specification,
+      component_id: serviceForm.componentId,
+      vendor: serviceForm.vendor,
+      quantity: serviceForm.quantity,
+      project: serviceForm.project || null,
+      type_of_outward: serviceForm.typeOfOutward,
+      remarks: serviceForm.remarks,
+      return_date: serviceForm.returnDate?.toISOString().split("T")[0] || null,
+    };
+
+    try {
+      const res = await fetch(`${config.apiBaseURL}/outward/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        alert("Outward entry saved!");
+        setShowServiceForm(false);
+      } else {
+        const err = await res.json();
+        console.error("Error saving:", err);
+      }
+    } catch (err) {
+      console.error("Save failed", err);
+    }
+  };
 
   return (
     <div>
@@ -798,7 +921,71 @@ const Outward = () => {
           <option value="Manufacture">Manufacture</option>
           <option value="Event">Event</option>
         </select>
-        <button className="generate-report-btn">Generate Report</button>
+        <div className="table-action-buttons">
+          <button className="generate-report-btn">Generate Report</button>
+          {reportType === "Sales" && (
+            <button
+              style={{
+                cursor: "pointer",
+                marginLeft: "auto",
+                marginRight: 10,
+                background: "transparent",
+                border: "none",
+              }}
+              className="plus-button"
+              title={showSalesForm ? "Cancel" : "Add Sales List"}
+              onClick={() => setShowSalesForm(!showSalesForm)}
+            >
+              <img
+                src={showSalesForm ? CancelIcon : AddIcon}
+                alt={showSalesForm ? "Cancel" : "Add Sales List"}
+                style={{ width: "20px", height: "20px" }}
+              />
+            </button>
+          )}
+
+          {reportType === "Manufacture" && (
+            <button
+              style={{
+                cursor: "pointer",
+                marginLeft: "auto",
+                marginRight: 10,
+                background: "transparent",
+                border: "none",
+              }}
+              className="plus-button"
+              title={showSalesForm ? "Cancel" : "Add Sales List"}
+              onClick={() => setShowServiceForm(true)}
+            >
+              <img
+                src={showServiceForm ? CancelIcon : AddIcon}
+                alt={showServiceForm ? "Cancel" : "Add Sales List"}
+                style={{ width: "20px", height: "20px" }}
+              />
+            </button>
+          )}
+
+          {reportType === "Event" && (
+            <button
+              style={{
+                cursor: "pointer",
+                marginLeft: "auto",
+                marginRight: 10,
+                background: "transparent",
+                border: "none",
+              }}
+              className="plus-button"
+              title={showSalesForm ? "Cancel" : "Add Sales List"}
+              onClick={() => setShowEventForm(true)}
+            >
+              <img
+                src={showEventForm ? CancelIcon : AddIcon}
+                alt={showEventForm ? "Cancel" : "Add Sales List"}
+                style={{ width: "20px", height: "20px" }}
+              />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="table-container">
@@ -818,8 +1005,20 @@ const Outward = () => {
                   <td>{index + 1}</td>
                   {reportType === "Defects" && (
                     <>
-                      <td>{row.date || "-"}</td>
-                      <td>{row.time || "-"}</td>
+                      <td>
+                        {row.date
+                          ? format(new Date(row.date), "dd-MM-yyyy")
+                          : "-"}
+                      </td>
+                      <td>
+                        {row.time
+                          ? format(
+                              new Date(`1970-01-01T${row.time}`),
+                              "hh:mm a"
+                            )
+                          : "-"}
+                      </td>
+
                       <td>{row.invoice_no || "-"}</td>
                       <td>{row.vendor || "-"}</td>
                       <td>{row.specification || "-"}</td>
@@ -831,8 +1030,19 @@ const Outward = () => {
                   )}
                   {reportType === "Sales" && (
                     <>
-                      <td>{row.date || "-"}</td>
-                      <td>{row.time || "-"}</td>
+                      <td>
+                        {row.date
+                          ? format(new Date(row.date), "dd-MM-yyyy")
+                          : "-"}
+                      </td>
+                      <td>
+                        {row.time
+                          ? format(
+                              new Date(`1970-01-01T${row.time}`),
+                              "hh:mm a"
+                            )
+                          : "-"}
+                      </td>
                       <td>{row.invoice_no || "-"}</td>
                       <td>{row.description || "-"}</td>
                       <td>{row.client || "-"}</td>
@@ -842,8 +1052,19 @@ const Outward = () => {
                   )}
                   {reportType === "Manufacture" && (
                     <>
-                      <td>{row.date || "-"}</td>
-                      <td>{row.time || "-"}</td>
+                      <td>
+                        {row.date
+                          ? format(new Date(row.date), "dd-MM-yyyy")
+                          : "-"}
+                      </td>
+                      <td>
+                        {row.time
+                          ? format(
+                              new Date(`1970-01-01T${row.time}`),
+                              "hh:mm a"
+                            )
+                          : "-"}
+                      </td>
                       <td>{row.gatepass || "-"}</td>
                       <td>{row.specification || "-"}</td>
                       <td>{row.component_id || "-"}</td>
@@ -856,8 +1077,19 @@ const Outward = () => {
                   )}
                   {reportType === "Event" && (
                     <>
-                      <td>{row.date || "-"}</td>
-                      <td>{row.time || "-"}</td>
+                      <td>
+                        {row.date
+                          ? format(new Date(row.date), "dd-MM-yyyy")
+                          : "-"}
+                      </td>
+                      <td>
+                        {row.time
+                          ? format(
+                              new Date(`1970-01-01T${row.time}`),
+                              "hh:mm a"
+                            )
+                          : "-"}
+                      </td>
                       <td>{row.invoice_no || "-"}</td>
                       <td>{row.event_name || "-"}</td>
                       <td>{row.project || "-"}</td>
@@ -877,6 +1109,345 @@ const Outward = () => {
           </tbody>
         </table>
       </div>
+
+      {showSalesForm && (
+        <div className="modal-overlay" onClick={() => setShowSalesForm(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2 style={{ marginTop: "5px" }}>Add Sales List</h2>
+
+            {/* Your form fields go here */}
+            <div className="form-grid">
+              <label htmlFor="">Out Date</label>
+
+              <div className="date-input-container">
+                <DatePicker
+                  selected={new Date()} //
+                  dateFormat="dd-MM-yyyy"
+                  placeholderText="dd-mm-yyyy"
+                  className="input1"
+                  showMonthDropdown
+                  showYearDropdown
+                  dropdownMode="select"
+                  readOnly
+                />
+                <i className="fas fa-calendar-alt calendar-icon"></i>{" "}
+              </div>
+              <label htmlFor="">Time</label>
+
+              <input
+                type="text"
+                name="Time"
+                value={currentTime}
+                readOnly
+                placeholder="Time"
+              />
+              <label htmlFor="">Invoice/Gate Pass</label>
+
+              <input
+                type="text"
+                name="gate pass"
+                // value={newProject.description}
+                // onChange={handleInputChange}
+                required
+                placeholder="gate pass"
+              />
+              <label htmlFor="">Specification</label>
+              <select name="project_type" required>
+                <option value="">Select Component</option>
+                <option value="R&D">R&D</option>
+                <option value="OPS">OPS</option>
+                <option value="SER">SER</option>
+                <option value="MISC">MISC</option>
+                <option value="U/D">U/D</option>
+              </select>
+
+              <label htmlFor="">BOM</label>
+              <select name="project_type" required>
+                <option value="">Select BOM</option>
+                <option value="R&D">R&D</option>
+                <option value="OPS">OPS</option>
+                <option value="SER">SER</option>
+                <option value="MISC">MISC</option>
+                <option value="U/D">U/D</option>
+              </select>
+
+              <label htmlFor="">Client</label>
+              <select name="project_type" required>
+                <option value="">Select your client</option>
+                <option value="R&D">R&D</option>
+                <option value="OPS">OPS</option>
+                <option value="SER">SER</option>
+                <option value="MISC">MISC</option>
+                <option value="U/D">U/D</option>
+              </select>
+
+              <label htmlFor="">Type Of Outward</label>
+              <select name="project_type" required>
+                <option value="">Select Type</option>
+                <option value="R&D">R&D</option>
+                <option value="OPS">OPS</option>
+                <option value="SER">SER</option>
+                <option value="MISC">MISC</option>
+                <option value="U/D">U/D</option>
+              </select>
+
+              <label htmlFor="">Remarks</label>
+
+              <input
+                type="text"
+                name="remarks"
+                // value={newProject.description}
+                // onChange={handleInputChange}
+                required
+                placeholder="remarks"
+              />
+            </div>
+            <div className="modal-actions">
+              <button>Create</button>
+              <button onClick={() => setShowSalesForm(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEventForm && (
+        <div
+          className="modal-overlay"
+          onClick={() => setShowEventForm(false)} // Close on outside click
+        >
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()} // Prevent modal close on inner click
+          >
+            <h2 style={{ marginTop: "5px" }}>Add Event List</h2>
+
+            <div className="form-grid">
+              <label>Out Date</label>
+              <div className="date-input-container">
+                <DatePicker
+                  selected={new Date()}
+                  dateFormat="dd-MM-yyyy"
+                  placeholderText="dd-mm-yyyy"
+                  className="input1"
+                  showMonthDropdown
+                  showYearDropdown
+                  dropdownMode="select"
+                  readOnly
+                />
+                <i className="fas fa-calendar-alt calendar-icon"></i>
+              </div>
+
+              <label>Time</label>
+              <input
+                type="text"
+                value={currentTime}
+                readOnly
+                placeholder="Time"
+              />
+
+              <label>Event Name</label>
+              <input type="text" placeholder="Event Name" required />
+
+              <label>Project</label>
+              <input type="text" placeholder="Project Name" required />
+
+              <label>Type of Outward</label>
+              <select required>
+                <option value="">Select Type</option>
+                <option value="R&D">R&D</option>
+                <option value="OPS">OPS</option>
+                <option value="SER">SER</option>
+                <option value="MISC">MISC</option>
+                <option value="U/D">U/D</option>
+              </select>
+
+              <label>Return Date</label>
+              <div className="date-input-container">
+                <DatePicker
+                  selected={selectedDate}
+                  onChange={(date) => setSelectedDate(date)}
+                  dateFormat="dd-MM-yyyy"
+                  placeholderText="dd-mm-yyyy"
+                  className="input1"
+                  showMonthDropdown
+                  showYearDropdown
+                  dropdownMode="select"
+                  required
+                />
+                <i className="fas fa-calendar-alt calendar-icon"></i>
+              </div>
+
+              <label>Remarks</label>
+              <input type="text" placeholder="Remarks" required />
+            </div>
+
+            <div className="modal-actions">
+              <button className="modal-button save">Create</button>
+              <button
+                className="modal-button cancel"
+                onClick={() => setShowEventForm(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showServiceForm && (
+        <div
+          className="modal-overlay"
+          onClick={() => setShowServiceForm(false)}
+        >
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2 style={{ marginTop: "5px" }}>Add Service List</h2>
+
+            {/* Your form fields go here */}
+            <div className="form-grid">
+              <label>Out Date</label>
+              <div className="date-input-container">
+                <DatePicker
+                  selected={serviceForm.outDate}
+                  dateFormat="dd-MM-yyyy"
+                  className="input1"
+                  showMonthDropdown
+                  showYearDropdown
+                  dropdownMode="select"
+                  readOnly
+                />
+                <i className="fas fa-calendar-alt calendar-icon"></i>
+              </div>
+
+              <label>Time</label>
+              <input
+                type="text"
+                name="time"
+                value={serviceForm.time}
+                readOnly
+                placeholder="Time"
+              />
+
+              <label>Gate Pass</label>
+              <input
+                type="text"
+                name="gatePass"
+                value={serviceForm.gatePass}
+                onChange={handleChange}
+                required
+                placeholder="gate pass"
+              />
+
+              <label>Component Spec</label>
+              <select
+                name="specification"
+                value={serviceForm.specification}
+                onChange={handleSpecChange}
+                required
+              >
+                <option value="">Select Spec</option>
+                {componentSpecList.map((spec, index) => (
+                  <option key={index} value={spec}>
+                    {spec}
+                  </option>
+                ))}
+              </select>
+
+              <label>Component ID</label>
+              <input
+                type="text"
+                name="componentId"
+                value={serviceForm.componentId}
+                readOnly
+                placeholder="Component ID"
+              />
+
+              <label>Vendor</label>
+              <select
+                name="vendor"
+                value={serviceForm.vendor}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Select Vendor</option>
+                {availableVendors.map((v, i) => (
+                  <option key={i} value={v}>
+                    {v}
+                  </option>
+                ))}
+              </select>
+
+              <label>Project</label>
+              <select
+                name="project"
+                value={serviceForm.project}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Select Project Type</option>
+                <option value="R&D">R&D</option>
+                <option value="OPS">OPS</option>
+                <option value="SER">SER</option>
+                <option value="MISC">MISC</option>
+                <option value="U/D">U/D</option>
+              </select>
+
+              <label>Type Of Outward</label>
+              <select
+                name="typeOfOutward"
+                value={serviceForm.typeOfOutward}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Select Type</option>
+                <option value="Return">Return</option>
+                <option value="Non-Return">Non-Return</option>
+              </select>
+
+              <label>Quantity</label>
+              <input
+                type="number"
+                name="quantity"
+                value={serviceForm.quantity}
+                onChange={handleChange}
+                required
+                placeholder="quantity"
+              />
+
+              <label>Return Date</label>
+              <div className="date-input-container">
+                <DatePicker
+                  selected={serviceForm.returnDate}
+                  onChange={(date) =>
+                    setServiceForm((prev) => ({ ...prev, returnDate: date }))
+                  }
+                  dateFormat="dd-MM-yyyy"
+                  placeholderText="dd-mm-yyyy"
+                  className="input1"
+                  showMonthDropdown
+                  showYearDropdown
+                  dropdownMode="select"
+                />
+                <i className="fas fa-calendar-alt calendar-icon"></i>
+              </div>
+
+              <label>Remarks</label>
+              <input
+                type="text"
+                name="remarks"
+                value={serviceForm.remarks}
+                onChange={handleChange}
+                required
+                placeholder="Remarks"
+              />
+            </div>
+
+            <div className="modal-actions">
+              <button onClick={handleSubmit}>Create</button>
+              <button onClick={() => setShowServiceForm(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
