@@ -336,7 +336,8 @@ const Inwardlist = () => {
                   %
                 </td>
                 <td style={{ textAlign: "right" }}>
-                  ₹{calculateGrandTotal(
+                  ₹
+                  {calculateGrandTotal(
                     item.price,
                     item.quantity,
                     item.gst
