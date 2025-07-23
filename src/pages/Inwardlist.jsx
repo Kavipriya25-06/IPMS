@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import CustomMessagebox from "./CustomMessageBox.jsx";
-import config from "../Config";
+import config from "../Config.js";
 import { useNavigate } from "react-router-dom";
 import { FaEdit } from "react-icons/fa";
 import { format } from "date-fns";
