@@ -22,13 +22,10 @@ import HomePage from "./pages/HomePage";
 import POOrderMaster from "./pages/POOrderMaster";
 import POOrderList from "./pages/POList";
 import Inward from "./pages/Inward";
-<<<<<<< HEAD
+
 // import InwardList from "./pages/InwardList";
 // import InwardList from "./pages/InwardList";
 import Inwardlist from "./pages/Inwardlist";
-=======
-import InwardList from "./pages/InwardList";
->>>>>>> 9e8c20e1484745b2c06d19d002098622732a1f7e
 import PurchaseOrder from "./pages/POTemplate";
 import Login from "./pages/Login";
 import ProtectedRoute from "./ProtectedRoute";
