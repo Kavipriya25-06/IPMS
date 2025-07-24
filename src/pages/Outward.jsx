@@ -714,6 +714,14 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { format, parseISO } from "date-fns";
 
+import {
+  showSuccessToast,
+  showErrorToast,
+  showInfoToast,
+  showWarningToast,
+  ToastContainerComponent,
+} from "./Toastify.jsx";
+
 const Outward = () => {
   const [reportType, setReportType] = useState("Defects");
   const [tableData, setTableData] = useState([]);
@@ -724,6 +732,7 @@ const Outward = () => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [availableVendors, setAvailableVendors] = useState([]);
   const [componentSpecList, setComponentSpecList] = useState([]);
+  const [projectList, setProjectList] = useState([]);
 
   const [serviceForm, setServiceForm] = useState({
     outDate: new Date(),
@@ -739,7 +748,17 @@ const Outward = () => {
     remarks: "",
   });
 
-  //to fetch dropdown spec in select 
+  const [eventForm, setEventForm] = useState({
+    outDate: new Date(),
+    time: format(new Date(), "hh:mm a"),
+    eventName: "",
+    project: "",
+    typeOfOutward: "",
+    returnDate: null,
+    remarks: "",
+  });
+
+  //to fetch dropdown spec in select
   useEffect(() => {
     const fetchSpecs = async () => {
       try {
@@ -792,6 +811,11 @@ const Outward = () => {
     } catch (err) {
       console.error("Error loading vendors", err);
     }
+  };
+
+  const handleEventChange = (e) => {
+    const { name, value } = e.target;
+    setEventForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleChange = (e) => {
@@ -853,23 +877,44 @@ const Outward = () => {
   const currentHeaders = tableHeaders[reportType] || [];
 
   // Fetch data from API when reportType changes
+  const fetchData = async () => {
+    try {
+      const response = await axios.get(
+        `${config.apiBaseURL}/outward/${reportType}/`
+      );
+      setTableData(response.data || []);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setTableData([]);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
+    fetchData(); // call on report type change
+  }, [reportType]);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
       try {
-        const response = await axios.get(
-          `${config.apiBaseURL}/outward/${reportType}/`
-        );
-        setTableData(response.data || []);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        setTableData([]);
+        const res = await fetch(`${config.apiBaseURL}/project/`);
+        const data = await res.json();
+        setProjectList(data); // Save full project list
+      } catch (err) {
+        console.error("Error fetching project list:", err);
       }
     };
 
-    fetchData();
-  }, [reportType]);
+    fetchProjects();
+  }, []);
 
-  const handleSubmit = async () => {
+  // To display project name in table
+  const getProjectName = (projectId) => {
+    const project = projectList.find((p) => p.project_id === projectId);
+    return project?.project_name || "-";
+  };
+
+  //Submit the Manufacturer
+  const handleManufactureSubmit = async () => {
     const payload = {
       category: "Manufacture",
       date: serviceForm.outDate?.toISOString().split("T")[0],
@@ -879,7 +924,7 @@ const Outward = () => {
       component_id: serviceForm.componentId,
       vendor: serviceForm.vendor,
       quantity: serviceForm.quantity,
-      project: serviceForm.project || null,
+      project: serviceForm.project,
       type_of_outward: serviceForm.typeOfOutward,
       remarks: serviceForm.remarks,
       return_date: serviceForm.returnDate?.toISOString().split("T")[0] || null,
@@ -893,14 +938,47 @@ const Outward = () => {
       });
 
       if (res.ok) {
-        alert("Outward entry saved!");
+        showSuccessToast("Outward entry saved!");
         setShowServiceForm(false);
+        fetchData(); // Refresh the table with latest data
       } else {
         const err = await res.json();
         console.error("Error saving:", err);
       }
     } catch (err) {
       console.error("Save failed", err);
+    }
+  };
+
+  const handleEventSubmit = async () => {
+    const payload = {
+      category: "Event",
+      date: eventForm.outDate?.toISOString().split("T")[0],
+      time: eventForm.time,
+      event_name: eventForm.eventName,
+      project: eventForm.project,
+      type_of_outward: eventForm.typeOfOutward,
+      return_date: eventForm.returnDate?.toISOString().split("T")[0] || null,
+      remarks: eventForm.remarks,
+    };
+
+    try {
+      const res = await fetch(`${config.apiBaseURL}/outward/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        showSuccessToast("Event saved!");
+        setShowEventForm(false);
+        fetchData();
+      } else {
+        const err = await res.json();
+        console.error("Save error:", err);
+      }
+    } catch (error) {
+      console.error("Error submitting event:", error);
     }
   };
 
@@ -1070,7 +1148,7 @@ const Outward = () => {
                       <td>{row.component_id || "-"}</td>
                       <td>{row.vendor || "-"}</td>
                       <td>{row.quantity || "-"}</td>
-                      <td>{row.project || "-"}</td>
+                      <td>{getProjectName(row.project)}</td>
                       <td>{row.type_of_outward || "-"}</td>
                       <td>{row.remarks || "-"}</td>
                     </>
@@ -1095,7 +1173,11 @@ const Outward = () => {
                       <td>{row.project || "-"}</td>
                       <td>{row.type_of_outward || "-"}</td>
                       <td>{row.quantity || "-"}</td>
-                      <td>{row.return_date || "-"}</td>
+                      <td>
+                        {row.return_date
+                          ? format(new Date(row.return_date), "dd-MM-yyyy")
+                          : "-"}
+                      </td>{" "}
                       <td>{row.remarks || "-"}</td>
                     </>
                   )}
@@ -1236,36 +1318,54 @@ const Outward = () => {
                 />
                 <i className="fas fa-calendar-alt calendar-icon"></i>
               </div>
-
               <label>Time</label>
               <input
                 type="text"
-                value={currentTime}
+                value={eventForm.time}
                 readOnly
                 placeholder="Time"
               />
-
               <label>Event Name</label>
-              <input type="text" placeholder="Event Name" required />
-
+              <input
+                type="text"
+                name="eventName"
+                value={eventForm.eventName}
+                onChange={handleEventChange}
+                placeholder="Event Name"
+                required
+              />
               <label>Project</label>
-              <input type="text" placeholder="Project Name" required />
-
-              <label>Type of Outward</label>
-              <select required>
-                <option value="">Select Type</option>
-                <option value="R&D">R&D</option>
-                <option value="OPS">OPS</option>
-                <option value="SER">SER</option>
-                <option value="MISC">MISC</option>
-                <option value="U/D">U/D</option>
+              <select
+                name="project"
+                value={eventForm.project}
+                onChange={handleEventChange}
+                required
+              >
+                <option value="">Select Project</option>
+                {projectList.map((proj) => (
+                  <option key={proj.project_id} value={proj.project_id}>
+                    {proj.project_name}
+                  </option>
+                ))}
               </select>
-
+              <label>Type of Outward</label>
+              <select
+                name="typeOfOutward"
+                value={eventForm.typeOfOutward}
+                onChange={handleEventChange}
+                required
+              >
+                <option value="">Select Type</option>
+                <option value="Return">Return</option>
+                <option value="Non-Return">Non-Return</option>
+              </select>
               <label>Return Date</label>
               <div className="date-input-container">
                 <DatePicker
-                  selected={selectedDate}
-                  onChange={(date) => setSelectedDate(date)}
+                  selected={eventForm.returnDate}
+                  onChange={(date) =>
+                    setEventForm((prev) => ({ ...prev, returnDate: date }))
+                  }
                   dateFormat="dd-MM-yyyy"
                   placeholderText="dd-mm-yyyy"
                   className="input1"
@@ -1276,13 +1376,21 @@ const Outward = () => {
                 />
                 <i className="fas fa-calendar-alt calendar-icon"></i>
               </div>
-
               <label>Remarks</label>
-              <input type="text" placeholder="Remarks" required />
+              <input
+                type="text"
+                name="remarks"
+                value={eventForm.remarks}
+                onChange={handleEventChange}
+                required
+                placeholder="Remarks"
+              />{" "}
             </div>
 
             <div className="modal-actions">
-              <button className="modal-button save">Create</button>
+              <button className="modal-button save" onClick={handleEventSubmit}>
+                Create
+              </button>
               <button
                 className="modal-button cancel"
                 onClick={() => setShowEventForm(false)}
@@ -1383,12 +1491,12 @@ const Outward = () => {
                 onChange={handleChange}
                 required
               >
-                <option value="">Select Project Type</option>
-                <option value="R&D">R&D</option>
-                <option value="OPS">OPS</option>
-                <option value="SER">SER</option>
-                <option value="MISC">MISC</option>
-                <option value="U/D">U/D</option>
+                <option value="">Select Project</option>
+                {projectList.map((proj) => (
+                  <option key={proj.project_id} value={proj.project_id}>
+                    {proj.project_name}
+                  </option>
+                ))}
               </select>
 
               <label>Type Of Outward</label>
@@ -1442,12 +1550,13 @@ const Outward = () => {
             </div>
 
             <div className="modal-actions">
-              <button onClick={handleSubmit}>Create</button>
+              <button onClick={handleManufactureSubmit}>Create</button>
               <button onClick={() => setShowServiceForm(false)}>Cancel</button>
             </div>
           </div>
         </div>
       )}
+      <ToastContainerComponent />
     </div>
   );
 };
