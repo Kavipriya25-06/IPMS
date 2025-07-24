@@ -1056,9 +1056,12 @@ table td {
 }
 
 .category-dropdown-option {
-  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  text-align: left;
 }
 
 .category-dropdown-option:hover {
@@ -1115,9 +1118,12 @@ table td {
 }
 
 .component-type-dropdown-option {
-  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
   cursor: pointer;
-  white-space: nowrap;
+  text-align: left;
 }
 
 .component-type-dropdown-option:hover {
@@ -4417,3 +4423,55 @@ ul {
 .logout:hover {
   background-color: #ffe3e3;
 }
+
+.custom-multiselect {
+  position: relative;
+  width: 100%;
+  max-width: 300px;
+  margin-bottom: 10px;
+}
+
+.dropdown-display {
+  border: 1px solid #ccc;
+  padding: 8px;
+  background-color: white;
+  cursor: pointer;
+    border-radius: 5px;
+    font-size: 14px;
+    text-align: left;
+
+}
+
+.dropdown-display .arrow {
+  float: right;
+}
+
+.dropdown-options {
+  position: absolute;
+  z-index: 999;
+  width: 100%;
+  border: 1px solid #ccc;
+  max-height: 150px;
+  overflow-y: auto;
+  background-color: white;
+  margin-top: 2px;
+  border-radius: 5px;
+  text-align: left;
+
+}
+
+.dropdown-option {
+  display: flex;
+  align-items:center;
+  justify-content: flex-start;
+  padding: 1px 3px;
+  cursor: pointer;
+  user-select: none;
+  gap: 8px !important;
+  text-align: left !important;
+  width: 50%; /* ensure it fills the dropdown width */
+  font-size: 14px;
+}
+
+
+

@@ -704,7 +704,7 @@
 // };
 // export default Outward;
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import config from "../Config.js";
 import AddIcon from "../assets/Add.png";
@@ -733,6 +733,31 @@ const Outward = () => {
   const [availableVendors, setAvailableVendors] = useState([]);
   const [componentSpecList, setComponentSpecList] = useState([]);
   const [projectList, setProjectList] = useState([]);
+  const [serialNumberList, setSerialNumberList] = useState([]);
+  const [showSerialDropdown, setShowSerialDropdown] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowSerialDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const [salesForm, setSalesForm] = useState({
+    outDate: new Date(),
+    time: format(new Date(), "hh:mm a"),
+    invoice: "",
+    specification: "",
+    bom: "",
+    client: "",
+    typeOfOutward: "",
+    remarks: "",
+  });
 
   const [serviceForm, setServiceForm] = useState({
     outDate: new Date(),
@@ -746,6 +771,7 @@ const Outward = () => {
     quantity: "",
     returnDate: null,
     remarks: "",
+    serialNumbers: [],
   });
 
   const [eventForm, setEventForm] = useState({
@@ -782,9 +808,10 @@ const Outward = () => {
     setServiceForm((prev) => ({ ...prev, specification: selectedSpec }));
 
     try {
-      const res = await fetch(`${config.apiBaseURL}/vendor_master/`);
-      const data = await res.json();
-      const filtered = data.filter(
+      const resVendor = await fetch(`${config.apiBaseURL}/vendor_master/`);
+      const vendorData = await resVendor.json();
+
+      const filtered = vendorData.filter(
         (item) => item.component_specification === selectedSpec
       );
 
@@ -794,7 +821,9 @@ const Outward = () => {
           ...prev,
           componentId: "",
           vendor: "",
+          serialNumbers: [],
         }));
+        setSerialNumberList([]);
         return;
       }
 
@@ -806,10 +835,22 @@ const Outward = () => {
         componentId,
         vendor: vendors.length === 1 ? vendors[0] : "",
       }));
-
       setAvailableVendors(vendors);
+
+      // Fetch from inventory
+      const resInventory = await fetch(`${config.apiBaseURL}/inventory/`);
+      const inventoryData = await resInventory.json();
+
+      const availableSerials = inventoryData
+        .filter(
+          (item) =>
+            item.component_id === componentId && item.status === "Available"
+        )
+        .map((item) => item.serial_number);
+
+      setSerialNumberList(availableSerials);
     } catch (err) {
-      console.error("Error loading vendors", err);
+      console.error("Error loading data:", err);
     }
   };
 
@@ -825,6 +866,11 @@ const Outward = () => {
 
   const handleReportChange = (e) => {
     setReportType(e.target.value);
+  };
+
+  const handleSalesChange = (e) => {
+    const { name, value } = e.target;
+    setSalesForm((prev) => ({ ...prev, [name]: value }));
   };
 
   // Table headers for each category
@@ -918,10 +964,11 @@ const Outward = () => {
     const payload = {
       category: "Manufacture",
       date: serviceForm.outDate?.toISOString().split("T")[0],
-      time: serviceForm.time || new Date().toTimeString().split(" ")[0],
+      time: serviceForm.time,
       gatepass: serviceForm.gatePass,
       specification: serviceForm.specification,
       component_id: serviceForm.componentId,
+      serial_numbers: serviceForm.serialNumbers,
       vendor: serviceForm.vendor,
       quantity: serviceForm.quantity,
       project: serviceForm.project,
@@ -940,13 +987,60 @@ const Outward = () => {
       if (res.ok) {
         showSuccessToast("Outward entry saved!");
         setShowServiceForm(false);
-        fetchData(); // Refresh the table with latest data
+        setServiceForm({
+          outDate: new Date(),
+          time: format(new Date(), "hh:mm a"),
+          gatePass: "",
+          specification: "",
+          componentId: "",
+          vendor: "",
+          project: "",
+          typeOfOutward: "",
+          quantity: "",
+          returnDate: null,
+          remarks: "",
+          serialNumbers: [],
+        });
+        fetchData();
       } else {
         const err = await res.json();
         console.error("Error saving:", err);
       }
     } catch (err) {
       console.error("Save failed", err);
+    }
+  };
+
+  const handleSalesSubmit = async () => {
+    const payload = {
+      category: "Sales",
+      date: salesForm.outDate?.toISOString().split("T")[0],
+      time: salesForm.time,
+      invoice_no: salesForm.invoice,
+      specification: salesForm.specification,
+      bom: salesForm.bom,
+      client: salesForm.client,
+      type_of_outward: salesForm.typeOfOutward,
+      remarks: salesForm.remarks,
+    };
+
+    try {
+      const res = await fetch(`${config.apiBaseURL}/outward/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        showSuccessToast("Sales entry saved!");
+        setShowSalesForm(false);
+        fetchData(); // refresh table
+      } else {
+        const err = await res.json();
+        console.error("Save failed:", err);
+      }
+    } catch (err) {
+      console.error("Network error:", err);
     }
   };
 
@@ -1122,7 +1216,7 @@ const Outward = () => {
                           : "-"}
                       </td>
                       <td>{row.invoice_no || "-"}</td>
-                      <td>{row.description || "-"}</td>
+                      <td>{row.specification || "-"}</td>
                       <td>{row.client || "-"}</td>
                       <td>{row.type_of_outward || "-"}</td>
                       <td>{row.remarks || "-"}</td>
@@ -1219,7 +1313,7 @@ const Outward = () => {
               <input
                 type="text"
                 name="Time"
-                value={currentTime}
+                value={salesForm.time}
                 readOnly
                 placeholder="Time"
               />
@@ -1227,50 +1321,42 @@ const Outward = () => {
 
               <input
                 type="text"
-                name="gate pass"
-                // value={newProject.description}
-                // onChange={handleInputChange}
+                name="invoice"
+                value={salesForm.invoice}
+                onChange={handleSalesChange}
                 required
                 placeholder="gate pass"
               />
-              <label htmlFor="">Specification</label>
-              <select name="project_type" required>
-                <option value="">Select Component</option>
-                <option value="R&D">R&D</option>
-                <option value="OPS">OPS</option>
-                <option value="SER">SER</option>
-                <option value="MISC">MISC</option>
-                <option value="U/D">U/D</option>
-              </select>
-
-              <label htmlFor="">BOM</label>
-              <select name="project_type" required>
-                <option value="">Select BOM</option>
-                <option value="R&D">R&D</option>
-                <option value="OPS">OPS</option>
-                <option value="SER">SER</option>
-                <option value="MISC">MISC</option>
-                <option value="U/D">U/D</option>
-              </select>
+              <label htmlFor="">Description</label>
+              <input
+                type="text"
+                name="specification"
+                value={salesForm.specification}
+                onChange={handleSalesChange}
+                required
+                placeholder="Description"
+              />
 
               <label htmlFor="">Client</label>
-              <select name="project_type" required>
-                <option value="">Select your client</option>
-                <option value="R&D">R&D</option>
-                <option value="OPS">OPS</option>
-                <option value="SER">SER</option>
-                <option value="MISC">MISC</option>
-                <option value="U/D">U/D</option>
-              </select>
+              <input
+                type="text"
+                name="client"
+                value={salesForm.client}
+                onChange={handleSalesChange}
+                required
+                placeholder="remarks"
+              />
 
               <label htmlFor="">Type Of Outward</label>
-              <select name="project_type" required>
+              <select
+                name="typeOfOutward"
+                value={salesForm.typeOfOutward}
+                onChange={handleSalesChange}
+                required
+              >
                 <option value="">Select Type</option>
-                <option value="R&D">R&D</option>
-                <option value="OPS">OPS</option>
-                <option value="SER">SER</option>
-                <option value="MISC">MISC</option>
-                <option value="U/D">U/D</option>
+                <option value="Return">Return</option>
+                <option value="Non-Return">Non-Return</option>
               </select>
 
               <label htmlFor="">Remarks</label>
@@ -1278,14 +1364,14 @@ const Outward = () => {
               <input
                 type="text"
                 name="remarks"
-                // value={newProject.description}
-                // onChange={handleInputChange}
+                value={salesForm.remarks}
+                onChange={handleSalesChange}
                 required
                 placeholder="remarks"
               />
             </div>
             <div className="modal-actions">
-              <button>Create</button>
+              <button onClick={handleSalesSubmit}>Create</button>
               <button onClick={() => setShowSalesForm(false)}>Cancel</button>
             </div>
           </div>
@@ -1469,6 +1555,48 @@ const Outward = () => {
                 placeholder="Component ID"
               />
 
+              <label>Serial Numbers</label>
+              <div className="custom-multiselect" ref={dropdownRef}>
+                <div
+                  className="dropdown-display"
+                  onClick={() => setShowSerialDropdown((prev) => !prev)}
+                >
+                  {serviceForm.serialNumbers.length > 0
+                    ? serviceForm.serialNumbers.join(", ")
+                    : "Select Serial Numbers"}
+                  <span className="arrow">&#9662;</span>
+                </div>
+
+                {showSerialDropdown && (
+                  <div className="dropdown-options">
+                    {serialNumberList.map((sn, index) => (
+                      <label key={index} className="dropdown-option">
+                        <input
+                          type="checkbox"
+                          value={sn}
+                          checked={serviceForm.serialNumbers.includes(sn)}
+                          onChange={(e) => {
+                            const selected = [...serviceForm.serialNumbers];
+                            if (e.target.checked) {
+                              selected.push(sn);
+                            } else {
+                              const i = selected.indexOf(sn);
+                              if (i > -1) selected.splice(i, 1);
+                            }
+                            setServiceForm((prev) => ({
+                              ...prev,
+                              serialNumbers: selected,
+                              quantity: selected.length,
+                            }));
+                          }}
+                        />
+                        {sn}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <label>Vendor</label>
               <select
                 name="vendor"
@@ -1515,10 +1643,9 @@ const Outward = () => {
               <input
                 type="number"
                 name="quantity"
-                value={serviceForm.quantity}
-                onChange={handleChange}
-                required
-                placeholder="quantity"
+                value={serviceForm.serialNumbers.length}
+                readOnly
+                placeholder="Quantity"
               />
 
               <label>Return Date</label>

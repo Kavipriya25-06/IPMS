@@ -75,7 +75,11 @@ const ProfileDropdown = () => {
             {user.role === "Admin" && (
               <button
                 className="dropdown-item"
-                onClick={() => navigate("/roles")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsOpen(false);
+                  navigate("/roles");
+                }}
               >
                 <FaUserShield className="icon" />
                 Roles
