@@ -47,11 +47,15 @@ const Inventory = () => {
   const [selectedDate, setSelectedDate] = useState(null);
 
   useEffect(() => {
-    fetchInventoryData();
+    if (statusFilter === "Tool") {
+      fetchToolInventoryData(); // Fetch tool inventory
+    } else {
+      fetchInventoryData(statusFilter); // Fetch normal inventory
+    }
     fetchComponentMasterData();
     fetchVendorMasterData();
     fetchMetaTags();
-  }, [selectedStatus]);
+  }, [statusFilter]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -66,9 +70,9 @@ const Inventory = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  useEffect(() => {
-    filterInventory();
-  }, [selectedTag, inventoryData, componentData, metaTags, selectedStatus]);
+  // useEffect(() => {
+  //   filterInventory();
+  // }, [selectedTag, inventoryData, componentData, metaTags, selectedStatus]);
 
   // const fetchInventoryData = async () => {
   //   try {
@@ -81,20 +85,37 @@ const Inventory = () => {
   // };
 
   // Fetch inventory data from API (filtered by status)
-  const fetchInventoryData = async () => {
+  const fetchInventoryData = async (status = "Available") => {
     try {
       let apiUrl = `${config.apiBaseURL}/inventory/`;
-      if (selectedStatus && selectedStatus !== "Tool") {
-        apiUrl += `?status=${selectedStatus}`;
+      if (status && status !== "Tool") {
+        apiUrl += `?status=${status}`;
       }
 
       const response = await fetch(apiUrl);
+      if (!response.ok) throw new Error("Failed to fetch inventory data");
+
       const data = await response.json();
       setInventoryData(data);
-
+      setFilteredInventory(data); // direct from backend
       console.log("Fetched inventory data:", data);
     } catch (error) {
       console.error("Error fetching inventory data:", error);
+      showErrorToast("Failed to fetch inventory data");
+    }
+  };
+
+  const fetchToolInventoryData = async () => {
+    try {
+      const response = await fetch(`${config.apiBaseURL}/tool_inventory/`); // <-- Tool inventory API endpoint
+      if (!response.ok) throw new Error("Failed to fetch tool inventory");
+
+      const data = await response.json();
+      setToolInventory(data); // set tool inventory data separately
+      console.log("Fetched tool inventory data:", data);
+    } catch (error) {
+      console.error("Error fetching tool inventory:", error);
+      showErrorToast("Failed to fetch tool inventory");
     }
   };
 
@@ -116,9 +137,9 @@ const Inventory = () => {
 
     let filtered = [...inventoryData];
 
-    if (statusFilter && statusFilter !== "Tool") {
-      filtered = filtered.filter((item) => item.status === statusFilter);
-    }
+    // if (statusFilter && statusFilter !== "Tool") {
+    //   filtered = filtered.filter((item) => item.status === statusFilter);
+    // }
 
     if (fromDate && toDate) {
       filtered = filtered.filter((item) => {
@@ -649,7 +670,7 @@ const Inventory = () => {
       <div className="header">
         <h2>Inventory Data</h2>
         <div className="right-wrapper">
-          <div className="search-bar-container"  style={{width:"300px"}}>
+          <div className="search-bar-container" style={{ width: "300px" }}>
             <input
               type="text"
               className="search-bar"
@@ -847,7 +868,9 @@ const Inventory = () => {
                   const componentRowsCount =
                     groupedData[componentId].filter(
                       (row) =>
-                        row.status === "Available" || row.status === "Reserved"
+                        row.status === "Available" ||
+                        row.status === "Reserved" ||
+                        row.status === "In_drone"
                     ).length || 0;
                   const firstRow = componentRows[0];
                   const component = componentData[componentId] || {};
@@ -1001,13 +1024,12 @@ const Inventory = () => {
                             <td>{row.UOM || ""}</td>
                             <td>{row.vendor_name || ""}</td>
                             <td>
-                               {row.create_date
-                            ? format(
-                                parseISO(row.create_date),
-                                "dd-MM-yyyy"
-                              )
-                            : format(new Date(), "dd-MM-yyyy")}
-                              
+                              {row.create_date
+                                ? format(
+                                    parseISO(row.create_date),
+                                    "dd-MM-yyyy"
+                                  )
+                                : format(new Date(), "dd-MM-yyyy")}
                             </td>
                             <td style={{ textAlign: "right" }}>
                               ₹

@@ -563,6 +563,12 @@ const Inward = () => {
         item,
         "po_master.cart.component_specification"
       );
+      const invoiceNumber = getNestedValue(item, "po_master.invoice_no", "N/A");
+      const vendorName = getNestedValue(
+        item,
+        "po_master.cart.vendor_name",
+        "N/A"
+      );
       const quantity = 1;
       const typeOfOutward = "QC Failed";
 
@@ -576,8 +582,8 @@ const Inward = () => {
         component_id: componentId,
         specification: componentSpecification,
         quantity: quantity,
-        invoice_no: invoice_number,
-        vendor: vendor_name,
+        invoice_no: invoiceNumber,
+        vendor: vendorName,
         type_of_outward: "Return",
         OUTWARD_CATEGORY_CHOICES: "Defects",
       };
