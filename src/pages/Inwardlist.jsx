@@ -162,7 +162,7 @@ const Inwardlist = () => {
         throw new Error(`${failed.length} updates failed`);
       }
 
-      // ✅ Update state locally to reflect changes without refresh
+      //  Update state locally to reflect changes without refresh
       const updatedData = inwardData.map((item) => {
         if (item.po_master?.PO_id === poId) {
           return {

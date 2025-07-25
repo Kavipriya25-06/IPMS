@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 import config from "../Config"; // Import config for API endpoints
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -21,16 +21,16 @@ const POOrderList = ({ user }) => {
   const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
   const datePickerRef = React.useRef(null);
 
-  const [formData, setFormData] = useState({
-    sender: "",
-    sender_title: "",
-    recipient: "",
-    cc: "",
-    bcc: "",
-    subject: "",
-    body: "",
-    filename: "",
-  });
+  // const [formData, setFormData] = useState({
+  //   sender: "",
+  //   sender_title: "",
+  //   recipient: "",
+  //   cc: "",
+  //   bcc: "",
+  //   subject: "",
+  //   body: "",
+  //   filename: "",
+  // });
   const [currentPO, setCurrentPO] = useState(null); // Store the current PO for email
 
   const [nameFilter, setNameFilter] = useState("");
@@ -331,28 +331,11 @@ const POOrderList = ({ user }) => {
     doc.setFontSize(12);
     doc.text("Purchase Order", 105, 10, { align: "center" });
     doc.text(`PO ID: ${poDetails.id}`, 10, 20);
-    doc.text(
-      `Vendor Name: ${poDetails.cart_details.vendor_name} (${
-        vendorContact?.location || "Location not available"
-      })`,
-      10,
-      30
-    );
+    doc.text(`Vendor Name: ${poDetails.cart_details.vendor_name}`, 10, 30);
     doc.text(`Date: ${poDetails.date}`, 10, 40);
     doc.text(`GSTIN: ${poDetails.cart_details.gstn}`, 10, 50);
     doc.text("Order Details:", 10, 60);
 
-    // const tableColumns = ["Item", "Quantity", "Unit Price", "Total Cost"];
-    // const tableRows = [
-    //   [
-    //     "Component",
-    //     poDetails.cart_details.quantity.toString(),
-    //     poDetails.cart_details.unit_price || "N/A",
-    //     poDetails.cart_details.total_cost,
-    //   ],
-    // ];
-
-    // Table columns
     const tableColumns = [
       "Description of goods",
       "Per",
@@ -362,7 +345,6 @@ const POOrderList = ({ user }) => {
       "Total Cost",
     ];
 
-    // Filter rows for the current PO ID
     const tableRows = poMaster
       .filter((item) => item.PO_id === poDetails.id)
       .map((item) => [
@@ -374,34 +356,14 @@ const POOrderList = ({ user }) => {
         item.cart_details.total_cost,
       ]);
 
-    doc.autoTable({
+    // Use autoTable correctly
+    autoTable(doc, {
       head: [tableColumns],
       body: tableRows,
       startY: 70,
     });
 
-    // // Calculate totals
-    // const totalCost = tableRows.reduce(
-    //   (acc, row) => acc + parseFloat(row[8]),
-    //   0
-    // );
-    // const totalGST = tableRows.reduce(
-    //   (acc, row) => acc + (parseFloat(row[8]) * parseFloat(row[7])) / 100,
-    //   0
-    // );
-
-    // doc.text(
-    //   `Total GST: ${totalGST.toFixed(2)}`,
-    //   10,
-    //   doc.lastAutoTable.finalY + 10
-    // );
-    // doc.text(
-    //   `Grand Total: ${totalCost.toFixed(2)}`,
-    //   10,
-    //   doc.lastAutoTable.finalY + 20
-    // );
-
-    return doc.output("blob"); // Return PDF as a Blob object
+    return doc.output("blob");
   };
 
   const handleSort = (field) => {
@@ -450,15 +412,15 @@ const POOrderList = ({ user }) => {
       return 0;
     });
 
-  const handleOpenModal = (po) => {
-    setCurrentPO(po); // Set the current PO details
-    setFormData((prev) => ({
-      ...prev,
-      subject: `Order Details for PO ID: ${po.id}`, // Add PO ID to subject
-      sender_title: `Order Details for PO ID: ${po.id}`,
-    }));
-    setShowModal(true);
-  };
+  // const handleOpenModal = (po) => {
+  //   setCurrentPO(po); // Set the current PO details
+  //   setFormData((prev) => ({
+  //     ...prev,
+  //     subject: `Order Details for PO ID: ${po.id}`, // Add PO ID to subject
+  //     sender_title: `Order Details for PO ID: ${po.id}`,
+  //   }));
+  //   setShowModal(true);
+  // };
 
   // Close Status Popup
   const handleClosePopup = () => {
@@ -624,7 +586,7 @@ const POOrderList = ({ user }) => {
                   />
                 </th>
 
-                {(isAdmin || isProcurement) && <th>Actions</th>}
+                {/* {(isAdmin || isProcurement) && <th>Actions</th>} */}
               </tr>
             </thead>
             <tbody>
@@ -652,7 +614,7 @@ const POOrderList = ({ user }) => {
                         maximumFractionDigits: 2,
                       })}
                     </td>
-                    <td>{format(new Date(order.date), "dd-MM-yyyy")}</td>
+                    {/* <td>{format(new Date(order.date), "dd-MM-yyyy")}</td>
                     {(isAdmin || isProcurement) && (
                       <td>
                         <button
@@ -662,7 +624,7 @@ const POOrderList = ({ user }) => {
                           Send Email
                         </button>
                       </td>
-                    )}
+                    )} */}
                   </tr>
                 );
               })}
