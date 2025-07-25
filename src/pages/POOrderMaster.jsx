@@ -3,6 +3,9 @@ import { useParams } from "react-router-dom";
 import config from "../Config"; // Import config for API endpoints
 import axios from "axios";
 
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
 import {
   showSuccessToast,
   showErrorToast,
@@ -55,6 +58,14 @@ const POOrderMaster = ({ user }) => {
   const isAdmin = user?.role === "Admin";
   const isProcurement = user?.role === "Procurement";
   const isFinance = user?.role === "Finance";
+
+  const handleEmailChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
   // Fetch PO Details
   const fetchPODetails = async () => {
@@ -260,7 +271,9 @@ const POOrderMaster = ({ user }) => {
       `Successfully updated all entries for PO ID: ${poId}`;
     } catch (error) {
       console.error("Error updating PO Master statuses:", error.message);
-      showErrorToast("An error occurred while updating the PO Master statuses.");
+      showErrorToast(
+        "An error occurred while updating the PO Master statuses."
+      );
     }
     setPOData((prevData) => ({
       ...prevData,
@@ -360,16 +373,27 @@ const POOrderMaster = ({ user }) => {
     doc.text("Order Details:", 10, 60);
 
     const columns = ["Description", "UOM", "Qty", "Unit Price", "GST", "Total"];
+
     const rows = poDetails.map((po) => [
       po.cart_details.component_specification,
       po.cart_details.unit_of_measurement,
       po.cart_details.quantity,
-      po.cart_details.unit_price,
-      po.cart_details.GST,
-      po.cart_details.total_cost,
+      parseFloat(po.cart_details.unit_price).toFixed(2),
+      parseFloat(po.cart_details.GST).toFixed(2),
+      parseFloat(po.cart_details.total_cost).toFixed(2),
     ]);
 
-    doc.autoTable({
+    // ➤ Add totals row
+    rows.push([
+      "Totals",
+      "",
+      totalquantity,
+      "",
+      "",
+      parseFloat(totalcost).toFixed(2),
+    ]);
+
+    autoTable(doc, {
       head: [columns],
       body: rows,
       startY: 70,
@@ -440,7 +464,9 @@ const POOrderMaster = ({ user }) => {
       }
     } catch (error) {
       console.error("Error sending email:", error);
-      showErrorToast("An error occurred while uploading the file or sending the email.");
+      showErrorToast(
+        "An error occurred while uploading the file or sending the email."
+      );
     }
   };
 
@@ -593,7 +619,7 @@ const POOrderMaster = ({ user }) => {
         shipped_quantity: shippedQty,
         shipped_date: shippedDate,
         pending_quantity: pendingQty,
-        received_quantity: shippedQty, // ✅ force received = shipped
+        received_quantity: shippedQty, //  force received = shipped
       };
     }
 
@@ -663,7 +689,7 @@ const POOrderMaster = ({ user }) => {
     // If cart details not available, fetch full PO Master
     if (!cart || !cart.component_id) {
       try {
-        console.log("🔎 Fetching PO Master with ID:", poMasterId);
+        console.log(" Fetching PO Master with ID:", poMasterId);
 
         const resp = await fetch(
           `${config.apiBaseURL}/po_master/${poMasterId}/`
@@ -703,7 +729,7 @@ const POOrderMaster = ({ user }) => {
           quality_check: "Pending",
         };
 
-        console.log(`📦 Posting inward unit ${i + 1}:`, payload);
+        console.log(` Posting inward unit ${i + 1}:`, payload);
 
         const response = await fetch(`${config.apiBaseURL}/inward/`, {
           method: "POST",
@@ -1038,7 +1064,7 @@ const POOrderMaster = ({ user }) => {
                   type="text"
                   name="recipient"
                   value={formData.recipient}
-                  onChange={handleChange}
+                  onChange={handleEmailChange}
                   placeholder="Enter multiple emails separated by commas"
                   required
                 />
@@ -1057,7 +1083,7 @@ const POOrderMaster = ({ user }) => {
                   type="text"
                   name="cc"
                   value={formData.cc}
-                  onChange={handleChange}
+                  onChange={handleEmailChange}
                   placeholder="Enter multiple emails separated by commas"
                 />
               </div>
@@ -1075,7 +1101,7 @@ const POOrderMaster = ({ user }) => {
                   type="text"
                   name="bcc"
                   value={formData.bcc}
-                  onChange={handleChange}
+                  onChange={handleEmailChange}
                   placeholder="Enter multiple emails separated by commas"
                 />
               </div>
@@ -1092,7 +1118,7 @@ const POOrderMaster = ({ user }) => {
                 <textarea
                   name="body"
                   value={formData.body}
-                  onChange={handleChange}
+                  onChange={handleEmailChange}
                 />
               </div>
 

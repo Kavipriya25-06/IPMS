@@ -138,6 +138,9 @@ const Inventory = () => {
     return acc;
   }, {});
 
+  const [editingToolRow, setEditingToolRow] = useState(null);
+  const [editToolRowData, setEditToolRowData] = useState({});
+
   useEffect(() => {
     if (statusFilter === "Tool") {
       fetchToolInventoryData(); // Fetch tool inventory
@@ -208,6 +211,30 @@ const Inventory = () => {
     } catch (error) {
       console.error("Error fetching tool inventory:", error);
       showErrorToast("Failed to fetch tool inventory");
+    }
+  };
+
+  const handleUpdateToolRow = async () => {
+    try {
+      const response = await fetch(
+        `${config.apiBaseURL}/tool_inventory/${editingToolRow}/`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(editToolRowData),
+        }
+      );
+
+      if (response.ok) {
+        showSuccessToast("Tool inventory updated successfully!");
+        fetchToolInventoryData();
+        setEditingToolRow(null);
+      } else {
+        throw new Error("Failed to update tool");
+      }
+    } catch (error) {
+      console.error(error);
+      showErrorToast("Error updating tool inventory.");
     }
   };
 
@@ -642,7 +669,7 @@ const Inventory = () => {
 
   const handleSaveToolRow = async () => {
     try {
-      const response = await fetch(`${config.apiBaseURL}/inventory/`, {
+      const response = await fetch(`${config.apiBaseURL}/tool_inventory/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -753,8 +780,8 @@ const Inventory = () => {
                   tool_name: "",
                   quantity: 0,
                   in_inventory: 0,
-                  team1: 0,
-                  team2: 0,
+                  team: "",
+                  remark: "",
                 })
               }
             >
@@ -1229,12 +1256,13 @@ const Inventory = () => {
                   <th>Tool Name</th>
                   <th>Quantity</th>
                   <th>In Inventory</th>
-                  <th>Team-1</th>
-                  <th>Team-2</th>
-                  {newToolRow && <th>Action</th>}
+                  <th>Team</th>
+                  <th>Remarks</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
+                {/* Adding new tool row */}
                 {newToolRow && (
                   <tr>
                     <td>
@@ -1268,7 +1296,7 @@ const Inventory = () => {
                         onChange={(e) =>
                           setNewToolRow({
                             ...newToolRow,
-                            quantity: parseInt(e.target.value),
+                            quantity: parseInt(e.target.value) || 0,
                           })
                         }
                       />
@@ -1280,31 +1308,28 @@ const Inventory = () => {
                         onChange={(e) =>
                           setNewToolRow({
                             ...newToolRow,
-                            in_inventory: parseInt(e.target.value),
+                            in_inventory: parseInt(e.target.value) || 0,
                           })
                         }
                       />
                     </td>
                     <td>
                       <input
-                        type="number"
-                        value={newToolRow.team1}
+                        type="text"
+                        value={newToolRow.team}
                         onChange={(e) =>
-                          setNewToolRow({
-                            ...newToolRow,
-                            team1: parseInt(e.target.value),
-                          })
+                          setNewToolRow({ ...newToolRow, team: e.target.value })
                         }
                       />
                     </td>
                     <td>
                       <input
-                        type="number"
-                        value={newToolRow.team2}
+                        type="text"
+                        value={newToolRow.remarks}
                         onChange={(e) =>
                           setNewToolRow({
                             ...newToolRow,
-                            team2: parseInt(e.target.value),
+                            remarks: e.target.value,
                           })
                         }
                       />
@@ -1318,21 +1343,115 @@ const Inventory = () => {
                   </tr>
                 )}
 
+                {/* Existing tool rows with edit functionality */}
                 {toolInventory.length > 0 ? (
-                  toolInventory.map((tool, idx) => (
-                    <tr key={idx}>
-                      <td>{tool.component_id}</td>
-                      <td>{tool.tool_name || "N/A"}</td>
-                      <td>{tool.quantity || 0}</td>
-                      <td>{tool.in_inventory || 0}</td>
-                      <td>{tool.team1 || "0"}</td>
-                      <td>{tool.team2 || "0"}</td>
-                    </tr>
-                  ))
+                  toolInventory.map((tool, idx) =>
+                    editingToolRow === tool.id ? (
+                      <tr key={tool.id}>
+                        <td>
+                          <input
+                            type="text"
+                            value={editToolRowData.component_id}
+                            onChange={(e) =>
+                              setEditToolRowData({
+                                ...editToolRowData,
+                                component_id: e.target.value,
+                              })
+                            }
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="text"
+                            value={editToolRowData.tool_name}
+                            onChange={(e) =>
+                              setEditToolRowData({
+                                ...editToolRowData,
+                                tool_name: e.target.value,
+                              })
+                            }
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            value={editToolRowData.quantity}
+                            onChange={(e) =>
+                              setEditToolRowData({
+                                ...editToolRowData,
+                                quantity: parseInt(e.target.value) || 0,
+                              })
+                            }
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            value={editToolRowData.in_inventory}
+                            onChange={(e) =>
+                              setEditToolRowData({
+                                ...editToolRowData,
+                                in_inventory: parseInt(e.target.value) || 0,
+                              })
+                            }
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="text"
+                            value={editToolRowData.team}
+                            onChange={(e) =>
+                              setEditToolRowData({
+                                ...editToolRowData,
+                                team: e.target.value,
+                              })
+                            }
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="text"
+                            value={editToolRowData.remarks}
+                            onChange={(e) =>
+                              setEditToolRowData({
+                                ...editToolRowData,
+                                remarks: e.target.value,
+                              })
+                            }
+                          />
+                        </td>
+                        <td>
+                          <button onClick={handleUpdateToolRow}>Save</button>
+                          <button onClick={() => setEditingToolRow(null)}>
+                            Cancel
+                          </button>
+                        </td>
+                      </tr>
+                    ) : (
+                      <tr key={tool.id}>
+                        <td>{tool.component_id}</td>
+                        <td>{tool.tool_name || "N/A"}</td>
+                        <td>{tool.quantity || 0}</td>
+                        <td>{tool.in_inventory || 0}</td>
+                        <td>{tool.team || "0"}</td>
+                        <td>{tool.remarks || "null"}</td>
+                        <td>
+                          <button
+                            onClick={() => {
+                              setEditingToolRow(tool.id);
+                              setEditToolRowData(tool);
+                            }}
+                          >
+                            Edit
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  )
                 ) : (
                   <tr>
                     <td
-                      colSpan="6"
+                      colSpan="7"
                       style={{ textAlign: "center", color: "gray" }}
                     >
                       No Tool Inventory found
