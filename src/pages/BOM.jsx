@@ -270,7 +270,7 @@ const BOM = () => {
             background: "transparent",
             border: "none",
           }}
-          title="Add Vendor"
+          title="Add BOM"
           onClick={() => setShowForm(!showForm)}
         >
           <img src={AddIcon} alt="" style={{ width: "20px", height: "20px", marginBottom:"5px" }} />

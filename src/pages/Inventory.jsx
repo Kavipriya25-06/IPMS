@@ -1,7 +1,7 @@
 // import React, { useState, useEffect } from "react";
 // src\pages\Inventory.jsx
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import config from "../Config"; // Import config for API endpoints
 import {
   showSuccessToast,
@@ -44,7 +44,99 @@ const Inventory = () => {
   const [newToolRow, setNewToolRow] = useState(null);
   const [toolInventory, setToolInventory] = useState([]);
   const [showDateFilter, setShowDateFilter] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState([]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [dropdownCoords, setDropdownCoords] = useState({ top: 0, left: 0 });
+  const dropdownRef = useRef();
+
+  const [componentTypeDropdownOpen, setComponentTypeDropdownOpen] =
+    useState(false);
+  const [componentTypeCoords, setComponentTypeCoords] = useState({
+    top: 0,
+    left: 0,
+  });
+  const [selectedComponentTypes, setSelectedComponentTypes] = useState([]);
+
+  const componentTypeRef = useRef(null);
+
+  const [vendorDropdownOpen, setVendorDropdownOpen] = useState(false);
+  const [vendorCoords, setVendorCoords] = useState({ top: 0, left: 0 });
+  const [selectedVendors, setSelectedVendors] = useState([]);
+  const vendorRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        componentTypeRef.current &&
+        !componentTypeRef.current.contains(event.target)
+      ) {
+        setComponentTypeDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (vendorRef.current && !vendorRef.current.contains(event.target)) {
+        setVendorDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const getAllCategories = () => {
+    const categories = filteredInventory.map((item) => item.category);
+    return [...new Set(categories)];
+  };
+
+  const getAllComponentTypes = () => {
+    const allTypes = filteredInventory.map((item) => item.component_type);
+    return [...new Set(allTypes)].filter(Boolean); // unique + remove undefined/null
+  };
+
+  const getAllVendors = () => {
+    const allVendors = filteredInventory.map((item) => item.vendor_name);
+    return [...new Set(allVendors)].filter(Boolean);
+  };
+
+  // Apply filter
+  // Step 2: Apply the category filter
+
+  const categoryFilteredInventory = filteredInventory.filter((item) => {
+    const categoryMatch =
+      selectedCategory.length === 0 || selectedCategory.includes(item.category);
+
+    const typeMatch =
+      selectedComponentTypes.length === 0 ||
+      selectedComponentTypes.includes(item.component_type);
+
+    const vendorMatch =
+      selectedVendors.length === 0 ||
+      selectedVendors.includes(item.vendor_name);
+
+    return categoryMatch && typeMatch && vendorMatch;
+  });
+
+  // Step: Group by component_id after filtering
+  const groupedData = categoryFilteredInventory.reduce((acc, item) => {
+    acc[item.component_id] = acc[item.component_id] || [];
+    acc[item.component_id].push(item);
+    return acc;
+  }, {});
 
   useEffect(() => {
     if (statusFilter === "Tool") {
@@ -293,121 +385,43 @@ const Inventory = () => {
     setTempSKU("");
   };
 
-  const handleGenerateReport = async () => {
-    const validSerialNumbers = filteredInventory.map(
-      (item) => item.serial_number
+  const handleGenerateReport = () => {
+    // Filter based on selected tab/status
+    const reportData = filteredInventory.filter(
+      (item) => item.status === statusFilter
     );
 
-    if (validSerialNumbers.length === 0) {
-      showInfoToast(
-        "No valid inventory items available to generate the report."
-      );
+    if (reportData.length === 0) {
+      showInfoToast(`No inventory items found for status: ${statusFilter}`);
       return;
     }
 
-    setIsGeneratingReport(true);
-
     const formatPrice = (value) =>
-      value !== undefined && value !== null
+      value !== undefined && value !== null && value !== ""
         ? `₹${parseFloat(value).toFixed(2)}`
         : "N/A";
 
     const formatPercentage = (value) =>
-      value !== undefined && value !== null
+      value !== undefined && value !== null && value !== ""
         ? `${parseFloat(value).toFixed(2)}%`
         : "N/A";
 
-    const fetchInventoryDetails = async (serial) => {
-      try {
-        const response = await fetch(
-          `${config.apiBaseURL}/inventory_details/${serial}/`
-        );
-        if (!response.ok) throw new Error();
-        const data = await response.json();
+    const formattedData = reportData.map((item) => ({
+      Serial_Number: item.serial_number || "N/A",
+      Component_ID: item.component_id || "N/A",
+      Component_Type: item.component_type || "N/A",
+      Vendor_Name: item.vendor_name || "N/A",
+      Category: item.category || "N/A",
+      Specification: item.specification || "N/A",
+      UOM: item.UOM || "N/A",
+      Create_Date: item.create_date || "N/A",
+      Status: item.status || "N/A",
+      Price: formatPrice(item.price),
+      SKU_Number_Inventory: item.sku_number_inventory || "N/A",
+      Request_ID_Assign: item.Request_id_assign || "N/A",
+    }));
 
-        return {
-          Serial_Number: serial,
-          Component_ID: data.inventory_item?.component_id || "N/A",
-          Component_Type: data.inventory_item?.component_type || "N/A",
-          Vendor_Name: data.inventory_item?.vendor_name || "N/A",
-          Category: data.inventory_item?.category || "N/A",
-          Specification: data.inventory_item?.specification || "N/A",
-          UOM: data.inventory_item?.UOM || "N/A",
-          Create_Date: data.inventory_item?.create_date || "N/A",
-          Status: data.inventory_item?.status || "N/A",
-          Price: formatPrice(data.inventory_item?.price),
-          SKU_Number_Inventory:
-            data.inventory_item?.sku_number_inventory || "N/A",
-          Request_ID_Assign: data.inventory_item?.Request_id_assign || "N/A",
-          PO_ID: data.po_master?.[0]?.PO_id || "N/A",
-          Cart_ID: data.po_master?.[0]?.cart_id || "N/A",
-          GST: formatPercentage(data.cart?.[0]?.GST),
-          GSTN: data.cart?.[0]?.gstn || "N/A",
-          Request_ID: data.request_list?.[0]?.request_id || "N/A",
-          Requester_Name: data.request_list?.[0]?.requester_name || "N/A",
-          BOM_ID: data.request_list?.[0]?.bom || "N/A",
-          BOM_Name: data.request_list?.[0]?.bom_name || "N/A",
-          Project_ID: data.project?.[0]?.project_id || "N/A",
-          Project_Name: data.project?.[0]?.project_name || "N/A",
-        };
-      } catch {
-        return {
-          Serial_Number: serial,
-          Component_ID: "N/A",
-          Component_Type: "N/A",
-          Vendor_Name: "N/A",
-          Category: "N/A",
-          Specification: "N/A",
-          UOM: "N/A",
-          Create_Date: "N/A",
-          Status: "N/A",
-          Price: "N/A",
-          SKU_Number_Inventory: "N/A",
-          Request_ID_Assign: "N/A",
-          PO_ID: "N/A",
-          Cart_ID: "N/A",
-          GST: "N/A",
-          GSTN: "N/A",
-          Request_ID: "N/A",
-          Requester_Name: "N/A",
-          BOM_ID: "N/A",
-          BOM_Name: "N/A",
-          Project_ID: "N/A",
-          Project_Name: "N/A",
-        };
-      }
-    };
-
-    const chunkArray = (array, size) => {
-      const chunks = [];
-      for (let i = 0; i < array.length; i += size) {
-        chunks.push(array.slice(i, i + size));
-      }
-      return chunks;
-    };
-
-    const batchSize = 200; // Increase batch size if your backend supports it
-    const serialChunks = chunkArray(validSerialNumbers, batchSize);
-    let allReportData = [];
-
-    try {
-      for (const chunk of serialChunks) {
-        // Run each chunk concurrently
-        const results = await Promise.all(chunk.map(fetchInventoryDetails));
-        allReportData.push(...results);
-      }
-
-      if (allReportData.length > 0) {
-        generateCSV(allReportData);
-      } else {
-        showInfoToast("No report data available.");
-      }
-    } catch (error) {
-      console.error("Error generating report:", error);
-      showErrorToast("Report generation failed.");
-    } finally {
-      setIsGeneratingReport(false); // Hide the popup when done
-    }
+    generateCSV(formattedData, statusFilter);
   };
 
   // Function to format price values (₹, commas, two decimal places)
@@ -427,7 +441,7 @@ const Inventory = () => {
 
   const generateCSV = (data, selectedStatus = "") => {
     let csvContent =
-      "Serial Number,Component ID,Component Type,Vendor Name,Category,Specification,UOM,Created Date,Status,Price,SKU Number Inventory,Request ID Assign,PO ID,Cart ID,GST,GSTN,Request ID,Requester Name,BOM ID,BOM Name,Project ID,Project Name\n";
+      "Serial Number,Component ID,Component Type,Vendor Name,Category,Specification,UOM,Created Date,Status,Price,SKU Number Inventory,Request ID Assign\n";
 
     data.forEach((row) => {
       csvContent += `${Object.values(row)
@@ -435,23 +449,8 @@ const Inventory = () => {
         .join(",")}\n`;
     });
 
-    // Auto-detect status from data if not explicitly passed
-    let statusForFileName = "All";
+    let statusForFileName = selectedStatus?.trim() || "All";
 
-    if (selectedStatus && selectedStatus.trim() !== "") {
-      statusForFileName = selectedStatus;
-    } else {
-      // Get unique statuses from the data
-      const uniqueStatuses = [...new Set(data.map((row) => row.Status))];
-
-      if (uniqueStatuses.length === 1) {
-        statusForFileName = uniqueStatuses[0];
-      } else {
-        statusForFileName = "All";
-      }
-    }
-
-    // Format the current date in Indian time (DD-MM-YYYY hh:mm am/pm)
     const indianTime = new Date().toLocaleString("en-IN", {
       timeZone: "Asia/Kolkata",
       day: "2-digit",
@@ -462,7 +461,6 @@ const Inventory = () => {
       hour12: true,
     });
 
-    // Replace colon and comma to make filename safe
     const formattedTime = indianTime
       .replace(/:/g, "-")
       .replace(/, /g, "_")
@@ -636,11 +634,11 @@ const Inventory = () => {
     filterByDate();
   }, [statusFilter]);
 
-  const groupedData = filteredStatusInventory.reduce((acc, item) => {
-    acc[item.component_id] = acc[item.component_id] || [];
-    acc[item.component_id].push(item);
-    return acc;
-  }, {});
+  // const groupedData = filteredStatusInventory.reduce((acc, item) => {
+  //   acc[item.component_id] = acc[item.component_id] || [];
+  //   acc[item.component_id].push(item);
+  //   return acc;
+  // }, {});
 
   const handleSaveToolRow = async () => {
     try {
@@ -737,7 +735,9 @@ const Inventory = () => {
           />
         </button>
 
-        <button className="generate-report-btn">Generate Report</button>
+        <button onClick={handleGenerateReport} className="generate-report-btn">
+          Generate Report
+        </button>
         {statusFilter === "Tool" && (
           <>
             <button
@@ -746,7 +746,7 @@ const Inventory = () => {
                 background: "transparent",
                 border: "none",
               }}
-              title="Add Vendor"
+              title="Add Tool Inventory"
               onClick={() =>
                 setNewToolRow({
                   component_id: "",
@@ -791,28 +791,123 @@ const Inventory = () => {
                     : ""}
                 </th>
                 <th>SKU Number</th>
-                <th
-                  onClick={() => handleSort("category")}
-                  style={{ textDecoration: "underline", cursor: "pointer" }}
-                >
-                  Category{" "}
-                  {sortField === "category"
-                    ? sortOrder === "asc"
-                      ? " 🔼"
-                      : " 🔽"
-                    : ""}
+                <th className="category-dropdown-wrapper" ref={dropdownRef}>
+                  <div
+                    className="category-dropdown"
+                    onClick={(e) => {
+                      const rect = e.target.getBoundingClientRect();
+                      setDropdownCoords({ top: rect.bottom, left: rect.left });
+                      setDropdownOpen(!dropdownOpen);
+                    }}
+                  >
+                    {selectedCategory.length > 0
+                      ? `Selected (${selectedCategory.length})`
+                      : "Category"}
+                  </div>
+
+                  {dropdownOpen && (
+                    <div
+                      className="category-dropdown-options"
+                      style={{
+                        position: "fixed",
+                        top: dropdownCoords.top,
+                        left: dropdownCoords.left,
+                        zIndex: 9999,
+                        // width: "150px",
+                        // maxWidth:"300px"
+                      }}
+                    >
+                      <label className="category-dropdown-option">
+                        <input
+                          type="checkbox"
+                          checked={selectedCategory.length === 0}
+                          onChange={() => setSelectedCategory([])}
+                        />
+                        All
+                      </label>
+                      {getAllCategories().map((category) => (
+                        <label
+                          key={category}
+                          className="category-dropdown-option"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedCategory.includes(category)}
+                            onChange={(e) => {
+                              const isChecked = e.target.checked;
+                              setSelectedCategory((prev) =>
+                                isChecked
+                                  ? [...prev, category]
+                                  : prev.filter((c) => c !== category)
+                              );
+                            }}
+                          />
+                          {category}
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </th>
+
                 <th
-                  onClick={() => handleSort("component_type")}
-                  style={{ textDecoration: "underline", cursor: "pointer" }}
+                  className="component-type-dropdown-wrapper"
+                  ref={componentTypeRef}
                 >
-                  Component Type{" "}
-                  {sortField === "component_type"
-                    ? sortOrder === "asc"
-                      ? " 🔼"
-                      : " 🔽"
-                    : ""}
+                  <div
+                    className="category-dropdown"
+                    onClick={(e) => {
+                      const rect = e.target.getBoundingClientRect();
+                      setComponentTypeCoords({
+                        top: rect.bottom,
+                        left: rect.left,
+                      });
+                      setComponentTypeDropdownOpen(!componentTypeDropdownOpen);
+                    }}
+                  >
+                    {selectedComponentTypes.length > 0
+                      ? `Selected (${selectedComponentTypes.length})`
+                      : "Component Type"}
+                  </div>
+
+                  {componentTypeDropdownOpen && (
+                    <div
+                      className="category-dropdown-options"
+                      style={{
+                        position: "fixed",
+                        top: componentTypeCoords.top,
+                        left: componentTypeCoords.left,
+                        zIndex: 9999,
+                      }}
+                    >
+                      <label className="category-dropdown-option">
+                        <input
+                          type="checkbox"
+                          checked={selectedComponentTypes.length === 0}
+                          onChange={() => setSelectedComponentTypes([])}
+                        />
+                        All
+                      </label>
+                      {getAllComponentTypes().map((type) => (
+                        <label key={type} className="category-dropdown-option">
+                          <input
+                            type="checkbox"
+                            checked={selectedComponentTypes.includes(type)}
+                            onChange={(e) => {
+                              const isChecked = e.target.checked;
+                              setSelectedComponentTypes((prev) =>
+                                isChecked
+                                  ? [...prev, type]
+                                  : prev.filter((t) => t !== type)
+                              );
+                            }}
+                          />
+                          {type}
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </th>
+
                 <th
                   onClick={() => handleSort("specification")}
                   style={{ textDecoration: "underline", cursor: "pointer" }}
@@ -825,17 +920,68 @@ const Inventory = () => {
                     : ""}
                 </th>
                 <th>UOM</th>
-                <th
-                  onClick={() => handleSort("vendor_name")}
-                  style={{ textDecoration: "underline", cursor: "pointer" }}
-                >
-                  Vendor{" "}
-                  {sortField === "vendor_name"
-                    ? sortOrder === "asc"
-                      ? " 🔼"
-                      : " 🔽"
-                    : ""}
+                <th className="vendor-dropdown-wrapper" ref={vendorRef}>
+                  <div
+                    className="category-dropdown"
+                    onClick={(e) => {
+                      const rect = e.target.getBoundingClientRect();
+                      setVendorCoords({ top: rect.bottom, left: rect.left });
+                      setVendorDropdownOpen(!vendorDropdownOpen);
+                    }}
+                    // style={{ textDecoration: "underline", cursor: "pointer" }}
+                  >
+                    {selectedVendors.length > 0
+                      ? `Selected (${selectedVendors.length})`
+                      : "Vendor"}
+                    {sortField === "vendor_name"
+                      ? sortOrder === "asc"
+                        ? " 🔼"
+                        : " 🔽"
+                      : ""}
+                  </div>
+
+                  {vendorDropdownOpen && (
+                    <div
+                      className="category-dropdown-options"
+                      style={{
+                        position: "fixed",
+                        top: vendorCoords.top,
+                        left: vendorCoords.left,
+                        zIndex: 9999,
+                      }}
+                    >
+                      <label className="category-dropdown-option">
+                        <input
+                          type="checkbox"
+                          checked={selectedVendors.length === 0}
+                          onChange={() => setSelectedVendors([])}
+                        />
+                        All
+                      </label>
+                      {getAllVendors().map((vendor) => (
+                        <label
+                          key={vendor}
+                          className="category-dropdown-option"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedVendors.includes(vendor)}
+                            onChange={(e) => {
+                              const isChecked = e.target.checked;
+                              setSelectedVendors((prev) =>
+                                isChecked
+                                  ? [...prev, vendor]
+                                  : prev.filter((v) => v !== vendor)
+                              );
+                            }}
+                          />
+                          {vendor}
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </th>
+
                 <th
                   onClick={() => handleSort("create_date")}
                   style={{ textDecoration: "underline", cursor: "pointer" }}
