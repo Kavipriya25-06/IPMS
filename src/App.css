@@ -670,7 +670,7 @@ tbody tr:hover {
   left: 50%;
   transform: translate(-50%, -50%);
   width: 400px; /* Fixed width */
-  max-height: 90vh; /* Adjust to prevent overflow */
+  max-height: 100vh; /* Adjust to prevent overflow */
   overflow-y: auto;
   background: #fff;
   border-radius: 8px;

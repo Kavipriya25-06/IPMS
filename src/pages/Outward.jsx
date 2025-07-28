@@ -1034,7 +1034,20 @@ const Outward = () => {
       if (res.ok) {
         showSuccessToast("Sales entry saved!");
         setShowSalesForm(false);
-        fetchData(); // refresh table
+
+        // Reset form values just like you do in manufacture
+        setSalesForm({
+          outDate: new Date(),
+          time: format(new Date(), "hh:mm a"),
+          invoice: "",
+          specification: "",
+          bom: "",
+          client: "",
+          typeOfOutward: "",
+          remarks: "",
+        });
+
+        fetchData(); // Refresh table after save
       } else {
         const err = await res.json();
         console.error("Save failed:", err);
@@ -1066,7 +1079,19 @@ const Outward = () => {
       if (res.ok) {
         showSuccessToast("Event saved!");
         setShowEventForm(false);
-        fetchData();
+
+        //  Reset the form after save
+        setEventForm({
+          outDate: new Date(),
+          time: format(new Date(), "hh:mm a"),
+          eventName: "",
+          project: "",
+          typeOfOutward: "",
+          returnDate: null,
+          remarks: "",
+        });
+
+        fetchData(); // Refresh list
       } else {
         const err = await res.json();
         console.error("Save error:", err);
@@ -1093,7 +1118,7 @@ const Outward = () => {
     }
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000${endpoint}`, {
+      const response = await fetch(`${config.apiBaseURL}${endpoint}`, {
         method: "GET",
         headers: {
           Accept: "application/json",
@@ -1126,8 +1151,10 @@ const Outward = () => {
           : "N/A";
 
       // Map fields dynamically based on reportType
-      const formattedData = data.map((item) => {
-        const row = {};
+      const formattedData = data.map((item, index) => {
+        const row = {
+          "S.No": index + 1, // Add serial number here
+        };
 
         headers.forEach((header) => {
           switch (header) {
@@ -1484,7 +1511,7 @@ const Outward = () => {
                 value={salesForm.client}
                 onChange={handleSalesChange}
                 required
-                placeholder="remarks"
+                placeholder="client"
               />
 
               <label htmlFor="">Type Of Outward</label>

@@ -138,7 +138,7 @@ const InwardList = () => {
 
   const updateInvoiceForPO = async (poId, invoiceNumber, invoiceDate) => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/inward/");
+      const res = await fetch(`${config.apiBaseURL}/inward/`);
       const inwardList = await res.json();
 
       const matchingInwards = inwardList.filter(
@@ -146,7 +146,7 @@ const InwardList = () => {
       );
 
       const updatePromises = matchingInwards.map((item) =>
-        fetch(`http://127.0.0.1:8000/inward/${item.inward_id}/`, {
+        fetch(`${config.apiBaseURL}/inward/${item.inward_id}/`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -209,12 +209,13 @@ const generateInwardReport = () => {
     return path.split(".").reduce((acc, part) => acc?.[part], obj) ?? defaultVal;
   };
 
-  const formattedData = filteredData.map((item) => {
+  const formattedData = filteredData.map((item, index) => {
     const price = item.price || 0;
     const quantity = item.quantity || 0;
     const gst = item.gst || 0;
 
     return {
+     "S.No": index + 1,
       "PO_ID": getNestedValue(item, "po_master.PO_id"),
       "Component ID": getNestedValue(item, "po_master.cart.component_id"),
       "Component Specification": getNestedValue(item, "po_master.cart.component_specification"),
@@ -232,7 +233,6 @@ const generateInwardReport = () => {
   generateCSV(formattedData, "Inward_Report");
 };
 
-
 const generateCSV = (data, filename) => {
   const headers = Object.keys(data[0]).join(",");
   const rows = data.map((row) =>
@@ -242,7 +242,10 @@ const generateCSV = (data, filename) => {
   );
   const csvContent = [headers, ...rows].join("\n");
 
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  // Add UTF-8 BOM for Excel to recognize ₹ and other characters correctly
+  const BOM = "\uFEFF";
+  const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
+
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -251,6 +254,8 @@ const generateCSV = (data, filename) => {
   link.click();
   link.remove();
 };
+
+
 
 
   return (

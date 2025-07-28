@@ -868,6 +868,93 @@ const POOrderMaster = ({ user }) => {
     }
   );
 
+  const generatePOCSV = (poDetails, totalquantity, totalcost) => {
+    const headers = [
+      "S.No",
+      "Component ID",
+      "Category",
+      "Type",
+      "Specification",
+      "UOM",
+      "Quantity",
+      "Unit Price",
+      "GST",
+      "Total Cost",
+    ];
+
+    const rows = poDetails.map((po, index) => [
+      index + 1,
+      po.cart_details.component_id || "",
+      po.cart_details.category || "",
+      po.cart_details.component_type || "",
+      po.cart_details.component_specification || "",
+      po.cart_details.unit_of_measurement || "",
+      po.cart_details.quantity || "",
+      `₹${parseFloat(po.cart_details.unit_price).toLocaleString("en-IN", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`,
+      `${parseFloat(po.cart_details.GST || 0).toLocaleString("en-IN")}%`,
+      `₹${parseFloat(po.cart_details.total_cost).toLocaleString("en-IN", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`,
+    ]);
+
+    // Add Totals Row
+    rows.push([
+      "",
+      "",
+      "",
+      "",
+      "",
+      "Totals",
+      totalquantity || "",
+      "",
+      "",
+      `₹${parseFloat(totalcost).toLocaleString("en-IN", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`,
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) => row.map((val) => `"${val}"`).join(",")),
+    ].join("\n");
+
+    // BOM to support ₹ symbol in Excel
+    const BOM = "\uFEFF";
+
+    const indianTime = new Date().toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+
+    const formattedTime = indianTime
+      .replace(/:/g, "-")
+      .replace(/, /g, "_")
+      .toLowerCase();
+
+    const filename = `PO_Report_${formattedTime}.csv`;
+
+    const blob = new Blob([BOM + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   return (
     <div>
       <h2>PO Details</h2>
@@ -880,6 +967,20 @@ const POOrderMaster = ({ user }) => {
           <h3>PO Number: {poId}</h3>
           <h3>Vendor Name: {vendorName}</h3>
           <h3>GSTIN: {vendor_gstn}</h3>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginBottom: "10px",
+            }}
+          >
+            <button
+              className="generate-report-btn"
+              onClick={() => generatePOCSV(poDetails, totalquantity, totalcost)}
+            >
+              Generate Report
+            </button>
+          </div>
           <div className="table-container">
             <table>
               <thead>
