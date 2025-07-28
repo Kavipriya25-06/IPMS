@@ -724,7 +724,7 @@ const Inventory = () => {
         </button>
         <button
           className={`tab-btn ${statusFilter === "Scrap" ? "active" : ""}`}
-          onClick={() => setStatusFilter("Scrap")}
+          onClick={() => setStatusFilter("Damaged")}
         >
           Scrap
         </button>
