@@ -841,7 +841,7 @@ const BOMDetails = () => {
               title={
                 selectedBom.wbom
                   ? "Cannot add component in Final BOM"
-                  : "Add Component"
+                  : "Add New Component"
               }
               disabled={selectedBom.wbom}
             >
