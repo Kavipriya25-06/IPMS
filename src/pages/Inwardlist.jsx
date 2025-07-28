@@ -184,71 +184,54 @@ const Inwardlist = () => {
     }
   };
 
-  const generateInwardReport = async () => {
-  try {
-    const response = await fetch("http://127.0.0.1:8000/inward/", {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error("Backend error:", errText);
-      throw new Error("Failed to fetch Inward data");
-    }
-
-    const data = await response.json();
-    if (!Array.isArray(data)) {
-      console.error("Invalid data format");
-      return;
-    }
-
-    const formatDate = (val) =>
-      val ? new Date(val).toLocaleDateString("en-GB") : "-";
-
-    const formatCurrency = (value) =>
-      value ? `₹${parseFloat(value).toFixed(2)}` : "-";
-
-    const formatGST = (gst) =>
-      gst % 1 === 0 ? `${parseInt(gst)}%` : `${parseFloat(gst)}%`;
-
-    const calculateGrandTotal = (price, qty, gst) => {
-      const total = (parseFloat(price) || 0) * (parseInt(qty) || 0);
-      const gstAmount = (total * (parseFloat(gst) || 0)) / 100;
-      return total + gstAmount;
-    };
-
-    const getNestedValue = (obj, path) => {
-      return path.split(".").reduce((acc, part) => acc?.[part], obj) ?? "-";
-    };
-
-    const formattedData = data.map((item) => {
-      const price = item.price || 0;
-      const qty = getNestedValue(item, "po_master.cart.quantity") || 0;
-      const gst = item.gst || 0;
-
-      return {
-        "PO_ID": getNestedValue(item, "po_master.PO_id"),
-        "Component ID": getNestedValue(item, "po_master.cart.component_id"),
-        "Component Specification": getNestedValue(item, "po_master.cart.component_specification"),
-        "Vendor Name": getNestedValue(item, "po_master.cart.vendor_name"),
-        "Date": formatDate(item.date),
-        "Invoice No": item.invoice_number || "-",
-        "Invoice Date": formatDate(item.invoice_date),
-        "Quantity": qty,
-        "Unit Price": formatCurrency(price),
-        "GST": formatGST(gst),
-        "Grand Total": formatCurrency(calculateGrandTotal(price, qty, gst)),
-      };
-    });
-
-    generateCSV(formattedData, "Inward_Report");
-  } catch (err) {
-    console.error("Download failed:", err);
+const generateInwardReport = () => {
+  if (!filteredData || filteredData.length === 0) {
+    showInfoToast("No data available to export.");
+    return;
   }
+
+  const formatDate = (val) =>
+    val ? new Date(val).toLocaleDateString("en-GB") : "-";
+
+  const formatCurrency = (value) =>
+    value ? `₹${parseFloat(value).toFixed(2)}` : "-";
+
+  const formatGST = (gst) =>
+    gst % 1 === 0 ? `${parseInt(gst)}%` : `${parseFloat(gst)}%`;
+
+  const calculateGrandTotal = (unitPrice, qty, gst) => {
+    const total = (parseFloat(unitPrice) || 0) * (parseInt(qty) || 0);
+    const gstAmount = (total * (parseFloat(gst) || 0)) / 100;
+    return total + gstAmount;
+  };
+
+  const getNestedValue = (obj, path, defaultVal = "-") => {
+    return path.split(".").reduce((acc, part) => acc?.[part], obj) ?? defaultVal;
+  };
+
+  const formattedData = filteredData.map((item) => {
+    const price = item.price || 0;
+    const quantity = item.quantity || 0;
+    const gst = item.gst || 0;
+
+    return {
+      "PO_ID": getNestedValue(item, "po_master.PO_id"),
+      "Component ID": getNestedValue(item, "po_master.cart.component_id"),
+      "Component Specification": getNestedValue(item, "po_master.cart.component_specification"),
+      "Vendor Name": getNestedValue(item, "po_master.cart.vendor_name"),
+      "Date": formatDate(item.date),
+      "Invoice No": item.invoice_number || "-",
+      "Invoice Date": formatDate(item.invoice_date),
+      "Quantity": quantity,
+      "Unit Price": formatCurrency(price),
+      "GST": formatGST(gst),
+      "Grand Total": formatCurrency(calculateGrandTotal(price, quantity, gst)),
+    };
+  });
+
+  generateCSV(formattedData, "Inward_Report");
 };
+
 
 const generateCSV = (data, filename) => {
   const headers = Object.keys(data[0]).join(",");
