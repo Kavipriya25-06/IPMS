@@ -16,7 +16,7 @@ import {
   ToastContainerComponent,
 } from "./Toastify.jsx"; // Import Toastify utilities
 
-const Inwardlist = () => {
+const InwardList = () => {
   const [inwardData, setInwardData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -462,4 +462,4 @@ const generateCSV = (data, filename) => {
   );
 };
 
-export default Inwardlist;
+export default InwardList;
