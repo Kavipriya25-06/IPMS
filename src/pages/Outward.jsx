@@ -1076,6 +1076,144 @@ const Outward = () => {
     }
   };
 
+  const generateReport = async () => {
+    const endpoints = {
+      Sales: "/outward/sales/",
+      Manufacture: "/outward/manufacture/",
+      Event: "/outward/event/",
+      Defects: "/outward/defects/",
+    };
+
+    const headers = tableHeaders[reportType];
+    const endpoint = endpoints[reportType];
+
+    if (!headers || !endpoint) {
+      console.error("Invalid report type:", reportType);
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://127.0.0.1:8000${endpoint}`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error("Backend error:", errText);
+        throw new Error("Failed to fetch report data");
+      }
+
+      const data = await response.json();
+
+      if (!Array.isArray(data) || data.length === 0) {
+        showInfoToast(`No data found for ${reportType}`);
+        return;
+      }
+
+      const formatDate = (val) =>
+        val ? new Date(val).toLocaleDateString("en-GB") : "N/A";
+
+      const formatTime = (val) =>
+        val
+          ? new Date(`1970-01-01T${val}`).toLocaleTimeString("en-US", {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            })
+          : "N/A";
+
+      // Map fields dynamically based on reportType
+      const formattedData = data.map((item) => {
+        const row = {};
+
+        headers.forEach((header) => {
+          switch (header) {
+            case "Date":
+            case "Out Date":
+              row[header] = formatDate(item.date);
+              break;
+            case "Time":
+              row[header] = formatTime(item.time || item.date);
+              break;
+            case "Return Date":
+              row[header] = formatDate(item.return_date);
+              break;
+            case "Invoice Number":
+              row[header] = item.invoice_no || "N/A";
+              break;
+            case "Gate Pass":
+              row[header] = item.gatepass || "N/A";
+              break;
+            case "Component Spec":
+              row[header] = item.specification || "N/A";
+              break;
+            case "Comp id":
+              row[header] = item.component_id || "N/A";
+              break;
+            case "Vendor":
+              row[header] = item.vendor || item.vendor_name || "N/A";
+              break;
+            case "Client":
+              row[header] = item.client || "N/A";
+              break;
+            case "Description":
+              row[header] = item.specification || "N/A";
+              break;
+            case "Event Name":
+              row[header] = item.event_name || "N/A";
+              break;
+            case "Quantity":
+            case "No. of Components":
+              row[header] = item.quantity ?? "N/A";
+              break;
+            case "Project":
+              row[header] = item.project || "N/A";
+              break;
+            case "Type of Outward":
+              row[header] = item.type || item.type_of_outward || "N/A";
+              break;
+            case "Remarks":
+              row[header] = item.remarks || "N/A";
+              break;
+            default:
+              row[header] = "N/A";
+          }
+        });
+
+        return row;
+      });
+
+      generateCSV(formattedData, `${reportType}_Report`);
+    } catch (err) {
+      console.error("Download failed:", err);
+    }
+  };
+
+  const generateCSV = (data, filename) => {
+    if (!data || data.length === 0) return;
+
+    const headers = Object.keys(data[0]).join(",");
+    const rows = data.map((row) =>
+      Object.values(row)
+        .map((val) => `"${val}"`)
+        .join(",")
+    );
+
+    const csvContent = [headers, ...rows].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `${filename}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  };
+
   return (
     <div>
       <div
@@ -1094,7 +1232,9 @@ const Outward = () => {
           <option value="Event">Event</option>
         </select>
         <div className="table-action-buttons">
-          <button className="generate-report-btn">Generate Report</button>
+          <button className="generate-report-btn" onClick={generateReport}>
+            Generate Report
+          </button>
           {reportType === "Sales" && (
             <button
               style={{

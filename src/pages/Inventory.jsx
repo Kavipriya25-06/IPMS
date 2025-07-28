@@ -214,29 +214,37 @@ const Inventory = () => {
     }
   };
 
-  const handleUpdateToolRow = async () => {
-    try {
-      const response = await fetch(
-        `${config.apiBaseURL}/tool_inventory/${editingToolRow}/`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(editToolRowData),
-        }
-      );
-
-      if (response.ok) {
-        showSuccessToast("Tool inventory updated successfully!");
-        fetchToolInventoryData();
-        setEditingToolRow(null);
-      } else {
-        throw new Error("Failed to update tool");
+const handleUpdateToolRow = async () => {
+  try {
+    const response = await fetch(
+      `${config.apiBaseURL}/tool_inventory/${editingToolRow}/`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(editToolRowData),
       }
-    } catch (error) {
-      console.error(error);
-      showErrorToast("Error updating tool inventory.");
+    );
+
+    if (response.ok) {
+      showSuccessToast("Tool updated successfully.");
+      setEditingToolRow(null); // exit edit mode
+      await fetchToolInventoryData(); // Refresh data
+    } else {
+      showErrorToast("Failed to update tool.");
     }
-  };
+  } catch (error) {
+    console.error("Error updating tool:", error);
+    showErrorToast("Something went wrong.");
+  }
+};
+
+useEffect(() => {
+  fetchToolInventoryData();
+}, []);
+
+
 
   const scrollToTop = () => {
     window.scrollTo({
@@ -668,27 +676,28 @@ const Inventory = () => {
   // }, {});
 
   const handleSaveToolRow = async () => {
-    try {
-      const response = await fetch(`${config.apiBaseURL}/tool_inventory/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ ...newToolRow, status: "Tool" }),
-      });
+  try {
+    const response = await fetch(`${config.apiBaseURL}/tool_inventory/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(newToolRow),
+    });
 
-      if (response.ok) {
-        setNewToolRow(null);
-        fetchInventoryData(); // Re-fetch inventory
-        showSuccessToast("Tool inventory added.");
-      } else {
-        throw new Error("Failed to save tool.");
-      }
-    } catch (error) {
-      console.error(error);
-      showErrorToast("Error saving tool inventory.");
+    if (response.ok) {
+      showSuccessToast("Tool saved successfully.");
+      setNewToolRow(null); // clear input
+      await fetchToolInventoryData(); // Refresh data
+    } else {
+      showErrorToast("Failed to save tool.");
     }
-  };
+  } catch (error) {
+    console.error("Error saving tool:", error);
+    showErrorToast("Something went wrong.");
+  }
+};
+
 
   return (
     <div className="inventory-container">
@@ -1420,9 +1429,9 @@ const Inventory = () => {
                             }
                           />
                         </td>
-                        <td>
-                          <button onClick={handleUpdateToolRow}>Save</button>
-                          <button onClick={() => setEditingToolRow(null)}>
+                        <td className="event-buttons">
+                          <button onClick={handleUpdateToolRow} className="edit-btn">Save</button>
+                          <button onClick={() => setEditingToolRow(null)} className="delete-btn">
                             Cancel
                           </button>
                         </td>
@@ -1441,6 +1450,7 @@ const Inventory = () => {
                               setEditingToolRow(tool.id);
                               setEditToolRowData(tool);
                             }}
+                            className="edit-btn"
                           >
                             Edit
                           </button>
