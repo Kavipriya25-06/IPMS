@@ -360,7 +360,13 @@ function App() {
               path="request-form"
               element={
                 <ProtectedRoute
-                  allowedRoles={["Admin", "Sub-Admin", "User", "Procurement"]}
+                  allowedRoles={[
+                    "Admin",
+                    "Sub-Admin",
+                    "User",
+                    "Procurement",
+                    "Inventory",
+                  ]}
                 >
                   <RequestForm />
                 </ProtectedRoute>

@@ -414,13 +414,16 @@ const VendorDetails = () => {
 
       if (response.ok) {
         const uploaded = await response.json();
-        const uploadedImagePaths = uploaded.map((item) => item.image);
+        const uploadedImages = uploaded.map((item) => ({
+          id: item.id,
+          image: item.image,
+        }));
 
         setSelectedVendorData((prevState) => {
           const updated = [...prevState];
           updated[index] = {
             ...updated[index],
-            images: uploadedImagePaths, // Save new image URLs
+            images: [...(updated[index].images || []), ...uploadedImages], // append to existing
             newImages: [],
             isEditingImage: false,
           };
