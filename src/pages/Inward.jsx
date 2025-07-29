@@ -433,7 +433,6 @@ const Inward = () => {
       alert("An error occurred while moving to inventory.");
     }
   };
-
   const handleMoveToInventory = async (item) => {
     try {
       // Extract necessary values using getNestedValue and ensure data integrity
@@ -844,7 +843,7 @@ const Inward = () => {
                     <button
                       className="move-outward-button"
                       onClick={() => handleMoveToOutward(item)}
-                      // disabled={!item.mode_to_inventory}
+                      disabled={!item.mode_to_inventory}
                     >
                       Move to Outward
                     </button>
