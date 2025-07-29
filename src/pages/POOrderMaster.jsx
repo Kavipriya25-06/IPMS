@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+
 import config from "../Config"; // Import config for API endpoints
 import axios from "axios";
+import { useParams, useNavigate } from "react-router-dom";
+import Back from "../assets/Back.png";
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -29,7 +31,7 @@ const POOrderMaster = ({ user }) => {
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedStatus, setSelectedStatus] = useState(null);
   const [inwardLoadingIds, setInwardLoadingIds] = useState([]);
-
+  const navigate = useNavigate(); // Initialize useNavigate
   const [showPlaceOrderPopup, setShowPlaceOrderPopup] = useState(false);
   const [placeOrderDateTime, setPlaceOrderDateTime] = useState("");
 
@@ -967,6 +969,22 @@ const POOrderMaster = ({ user }) => {
           <h3>PO Number: {poId}</h3>
           <h3>Vendor Name: {vendorName}</h3>
           <h3>GSTIN: {vendor_gstn}</h3>
+          <button
+            onClick={() => navigate("/po-list")}
+            style={{
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              padding: "4px",
+            }}
+            title="Back to BOM List"
+          >
+            <img
+              src={Back}
+              alt="Back to BOM list "
+              style={{ width: "20px", height: "20px" }}
+            />
+          </button>
           <div
             style={{
               display: "flex",

@@ -12,6 +12,7 @@ import {
   showInfoToast,
   showWarningToast,
   ToastContainerComponent,
+  showTextToast,
 } from "./Toastify.jsx"; // Import Toastify utilities
 import { th } from "date-fns/locale";
 
@@ -108,7 +109,7 @@ const RequestComponent = () => {
       });
 
       if (response.ok) {
-        alert("Component request submitted!");
+        showSuccessToast("Component request submitted!");
         setShowModal(false);
         setFormData({
           name: "Dronix",
@@ -124,11 +125,11 @@ const RequestComponent = () => {
         ).then((res) => res.json());
         setComponentList(updatedList);
       } else {
-        alert("Submission failed");
+        showErrorToast("Submission failed");
       }
     } catch (error) {
       console.error("Submission error:", error);
-      alert("Network error");
+      showErrorToast("Network error");
     }
   };
 
@@ -200,28 +201,63 @@ const RequestComponent = () => {
     }
   };
 
-  const handleRejectRequest = async (item) => {
-    const componentId = prompt("Enter Component ID for rejection:");
-    if (!componentId) return;
+const handleRejectRequest = (item) => {
+  let componentId = item.component_id || "";
 
-    try {
-      // Update status and component ID
-      await fetch(`${config.apiBaseURL}/request_component/${item.id}/`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "Rejected", component_id: componentId }),
-      });
+  showTextToast({
+    message: ({ closeToast }) => (
+      <div>
+        <p>Enter Component ID for rejection:</p>
+        <input
+          type="text"
+          defaultValue={componentId}
+          onChange={(e) => {
+            componentId = e.target.value.trim();
+          }}
+          style={{
+            marginTop: "8px",
+            padding: "6px",
+            width: "100%",
+            border: "1px solid #ccc",
+            borderRadius: "4px",
+          }}
+        />
+      </div>
+    ),
+    confirmText: "Reject",
+    cancelText: "Cancel",
+    onConfirm: async () => {
+      if (!componentId) {
+        showErrorToast("Component ID is required for rejection.");
+        return;
+      }
 
-      showWarningToast(`Component ${componentId} rejected.`);
-      const updatedList = await fetch(
-        `${config.apiBaseURL}/request_component/`
-      ).then((res) => res.json());
-      setComponentList(updatedList);
-    } catch (error) {
-      showErrorToast("Failed to reject");
-      console.error("Reject error:", error);
-    }
-  };
+      try {
+        // Send PATCH request to reject
+        await fetch(`${config.apiBaseURL}/request_component/${item.id}/`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "Rejected", component_id: componentId }),
+        });
+
+        showWarningToast(`Component ${componentId} rejected.`);
+
+        const updatedList = await fetch(
+          `${config.apiBaseURL}/request_component/`
+        ).then((res) => res.json());
+
+        setComponentList(updatedList);
+      } catch (error) {
+        showErrorToast("Failed to reject");
+        console.error("Reject error:", error);
+      }
+    },
+    onCancel: () => {
+      showWarningToast("Rejection cancelled.");
+    },
+  });
+};
+
 
   return (
     <div>
