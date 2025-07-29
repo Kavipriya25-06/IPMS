@@ -78,16 +78,6 @@ const RequestComponent = () => {
       .catch((err) => console.error("Error fetching request data:", err));
   }, [user]);
 
-  // useEffect(() => {
-  //   const handleOutsideClick = (e) => {
-  //     if (modalRef.current && !modalRef.current.contains(e.target)) {
-  //       setShowModal(false);
-  //     }
-  //   };
-  //   document.addEventListener("mousedown", handleOutsideClick);
-  //   return () => document.removeEventListener("mousedown", handleOutsideClick);
-  // }, []);
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));

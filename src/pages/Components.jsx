@@ -1,7 +1,3 @@
-// Third set of code
-// do the development here
-// src\pages\Components.jsx
-
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import tagIcon from "../assets/Tag_icon.png";
 import config from "../Config"; // Import config for API endpoints
@@ -558,19 +554,6 @@ const Component = () => {
             Add Component
           </button>
         </div>
-
-        {/* <img
-          src={tagIcon}
-          alt="Tag Icon"
-          title="Add tags"
-          style={{
-            width: "39px",
-            height: "39px",
-            cursor: "pointer",
-            marginLeft: "auto",
-          }}
-          onClick={handleTagIconClick}
-        /> */}
       </div>
       <div class="center-wrapper">
         <div className="search-bar-container" style={{ width: "300px" }}>
@@ -1051,9 +1034,6 @@ const Component = () => {
           </div>
         </div>
       )}
-
-      {/* Overlay for closing the pop-up */}
-
       <ToastContainerComponent />
     </div>
   );

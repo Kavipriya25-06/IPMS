@@ -440,9 +440,6 @@ const Mrfrequest = () => {
         <table>
           <thead>
             <tr>
-              {/* <th>MRF ID</th> */}
-              {/* <th>Create Date</th>
-            <th>Name</th> */}
               <th>Component Type</th>
               <th>Component Specification</th>
               <th>Unit of Measurement</th>
@@ -461,9 +458,6 @@ const Mrfrequest = () => {
             ) : (
               mrfListData.map((item) => (
                 <tr key={item.serial_number}>
-                  {/* <td>{item.MRF_id}</td> */}
-                  {/* <td>{item.create_date}</td>
-                <td>{item.name}</td> */}
                   <td>{item.component_type}</td>
                   <td>{item.component_specification}</td>
                   <td>{item.unit_of_measurement}</td>
@@ -716,81 +710,9 @@ const Mrfrequest = () => {
           </div>
         </div>
       )}
-
-      {/* {showSerialPopup && selectedItemForAssign && (
-  <div className="popup">
-    <h3>Choose Available Serial Number</h3>
-    {alternativeSerials.length > 0 ? (
-      alternativeSerials.map((serial) => (
-        <div key={serial.serial_number} style={{ marginBottom: "8px" }}>
-          <span>{serial.serial_number}</span>
-          <button
-            style={{
-              marginLeft: "10px",
-              padding: "3px 8px",
-              backgroundColor: "green",
-              color: "white",
-              border: "none",
-              cursor: "pointer",
-            }}
-            onClick={() => assignSerial(serial.serial_number, selectedItemForAssign.MRFListId)}
-          >
-           Assign
-          </button>
-        </div>
-      ))
-    ) : (
-      <p>No available serial numbers found matching the criteria.</p>
-    )}
-    <button onClick={() => setShowSerialPopup(false)} style={{ marginTop: "10px" }}>
-      Close
-    </button>
-  </div>
-)} */}
       <ToastContainerComponent />
     </div>
   );
 };
 
 export default Mrfrequest;
-
-// const handleAssign = async (serialNumber, MRFListId, item) => {
-//   try {
-//     // Fetch all inventory data
-//     const response = await fetch(`${config.apiBaseURL}/inventory/`);
-//     if (!response.ok) {
-//       throw new Error("Failed to fetch inventory data");
-//     }
-//     const inventoryData = await response.json();
-
-//     // Get the current serial number record
-//     const inventoryItem = inventoryData.find(inv => inv.serial_number === serialNumber);
-
-//     if (!inventoryItem) {
-//       showErrorToast("Serial number not found in inventory.");
-//       return;
-//     }
-
-//     // If reserved (not available), follow normal assign flow
-//     if (inventoryItem.status !== "Available") {
-//       await assignSerial(serialNumber, MRFListId);
-//       return;
-//     }
-
-//     // If status is Available, fetch alternative serials
-//     const alternatives = inventoryData.filter(
-//       (inv) =>
-//         inv.component_type?.toLowerCase().trim() === item.component_type?.toLowerCase().trim() &&
-//         inv.specification?.toLowerCase().trim() ===
-//           (item.component_specification?.toLowerCase().trim() || item.specification?.toLowerCase().trim()) &&
-//         inv.status === "Available"
-//     );
-
-//     setAlternativeSerials(alternatives);
-//     setSelectedItemForAssign({ MRFListId });
-//     setShowSerialPopup(true);
-//   } catch (error) {
-//     console.error("Error during assign process:", error);
-//     showErrorToast("Error during assignment process");
-//   }
-// };

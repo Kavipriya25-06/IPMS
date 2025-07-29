@@ -2717,7 +2717,7 @@ main {
 }
 
 .popup {
-  overflow: visible; /* ✅ VERY IMPORTANT */
+  overflow: visible; /*  VERY IMPORTANT */
   z-index: 1050;
 }
 
@@ -3028,8 +3028,8 @@ main {
   }
 
   .header-controls {
-    flex-direction: column; /* ✅ Keep them side by side */
-    flex-wrap: wrap; /* ✅ Allow wrapping if screen is too small */
+    flex-direction: column; /*  Keep them side by side */
+    flex-wrap: wrap; /*  Allow wrapping if screen is too small */
     justify-content: center;
     gap: 20px;
   }

@@ -1,7 +1,3 @@
-// Second set of code
-
-// src/pages/VendorDetails.jsx
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import CustomMessagebox from "./CustomMessageBox.jsx";
@@ -295,12 +291,12 @@ const VendorDetails = () => {
       if (response.ok) {
         const updatedEntry = await response.json();
 
-        // ✅ 1. Update priceHistory table
+        //  1. Update priceHistory table
         const updatedHistory = [...priceHistory];
         updatedHistory[index] = updatedEntry;
         setPriceHistory(updatedHistory);
 
-        // ✅ 2. Update main product table
+        //2. Update main product table
         setSelectedVendorData((prevData) =>
           prevData.map((product) =>
             product.product_id === currentProductId
@@ -418,13 +414,16 @@ const VendorDetails = () => {
 
       if (response.ok) {
         const uploaded = await response.json();
-        const uploadedImagePaths = uploaded.map((item) => item.image);
+        const uploadedImages = uploaded.map((item) => ({
+          id: item.id,
+          image: item.image,
+        }));
 
         setSelectedVendorData((prevState) => {
           const updated = [...prevState];
           updated[index] = {
             ...updated[index],
-            images: uploadedImagePaths, // Save new image URLs
+            images: [...(updated[index].images || []), ...uploadedImages], // append to existing
             newImages: [],
             isEditingImage: false,
           };
@@ -1561,8 +1560,3 @@ const VendorDetails = () => {
 };
 
 export default VendorDetails;
-
-// //  <button onClick={handleNewRequest}style={{marginTop: "10px",background: "transparent",border: "none",cursor: "pointer",padding: "4px",}}
-// //       title="New Request">
-// //       <img src= {Add} alt="New Request"style={{ width: "20px", height: "20px" }}/>
-// //       </button>

@@ -297,11 +297,6 @@ const POOrderMaster = ({ user }) => {
     }
   }, [poDetails]);
 
-  // useEffect(() => {
-  //   if (poData?.PO_id) {
-  //     fetchOrderedItems(poData.PO_id);
-  //   }
-  // }, [poData]);
 
   useEffect(() => {
     if (poDetails.length > 0) {
@@ -385,7 +380,7 @@ const POOrderMaster = ({ user }) => {
       parseFloat(po.cart_details.total_cost).toFixed(2),
     ]);
 
-    // ➤ Add totals row
+    // Add totals row
     rows.push([
       "Totals",
       "",
@@ -591,7 +586,6 @@ const POOrderMaster = ({ user }) => {
 
     let payload = {};
 
-    // SHIPMENT case
     // SHIPMENT case
     const hasShippedDate = field === "shipping_date" || item.shipping_date;
     const hasShippedQty =
@@ -1088,16 +1082,6 @@ const POOrderMaster = ({ user }) => {
               >
                 Place Order
               </button>
-              {/* <button
-              style={{
-                marginRight: "10px",
-                backgroundColor: "red",
-                color: "white",
-                padding: "8px 16px",
-              }}
-            >
-              Cancel Order
-            </button> */}
             </>
           )}
 
@@ -1148,27 +1132,6 @@ const POOrderMaster = ({ user }) => {
           <div className="popup">
             <h3>Send Email for PO ID: {poId}</h3>
             <form style={{ marginTop: "5px" }}>
-              {/* <div>
-              <label>Sender:</label>
-              <input
-                type="email"
-                name="sender"
-                value={formData.sender}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div>
-              <label>Recipient:</label>
-              <input
-                type="email"
-                name="recipient"
-                value={formData.recipient}
-                onChange={handleChange}
-                required
-              />
-            </div> */}
 
               <div
                 style={{
@@ -1261,106 +1224,6 @@ const POOrderMaster = ({ user }) => {
           </div>
         </div>
       )}
-
-      {/* {showModal && (
-        <div className="popup">
-          <h3>Send Email for PO ID: {poId}</h3>
-          <form style={{ marginTop: "5px" }}>
-            <div
-              style={{
-                padding: 5,
-                display: "flex",
-                justifyContent: "space-between",
-              }}
-            >
-              <label>Recipient:</label>
-              <input
-                type="text"
-                name="recipient"
-                value={formData.recipient}
-                onChange={handleChange}
-                placeholder="Enter multiple emails separated by commas"
-                required
-              />
-            </div>
-
-            <div
-              style={{
-                padding: 5,
-                display: "flex",
-                justifyContent: "space-between",
-              }}
-            >
-              <label>CC:</label>
-              <input
-                type="text"
-                name="cc"
-                value={formData.cc}
-                onChange={handleChange}
-                placeholder="Enter multiple emails separated by commas"
-              />
-            </div>
-
-            <div
-              style={{
-                padding: 5,
-                display: "flex",
-                justifyContent: "space-between",
-              }}
-            >
-              <label>BCC:</label>
-              <input
-                type="text"
-                name="bcc"
-                value={formData.bcc}
-                onChange={handleChange}
-                placeholder="Enter multiple emails separated by commas"
-              />
-            </div>
-
-            <div
-              style={{
-                padding: 5,
-                display: "flex",
-                justifyContent: "space-between",
-              }}
-            >
-              <label>Body:</label>
-              <textarea
-                name="body"
-                value={formData.body}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div style={{ marginTop: "20px", textAlign: "center" }}>
-              <button
-                type="button"
-                onClick={handleSendEmail}
-                style={{
-                  backgroundColor: "#f7931e",
-                  color: "white",
-                  marginRight: 10,
-                  padding: "8px 20px",
-                }}
-              >
-                Send Email
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowModal(false)}
-                style={{
-                  backgroundColor: "gray",
-                  color: "white",
-                  padding: "8px 20px",
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      )} */}
 
       {/* Naveen Added */}
 

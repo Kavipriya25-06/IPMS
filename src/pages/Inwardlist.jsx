@@ -184,85 +184,93 @@ const InwardList = () => {
     }
   };
 
-const generateInwardReport = () => {
-  if (!filteredData || filteredData.length === 0) {
-    showInfoToast("No data available to export.");
-    return;
-  }
+  const generateInwardReport = () => {
+    if (!filteredData || filteredData.length === 0) {
+      showInfoToast("No data available to export.");
+      return;
+    }
 
-  const formatDate = (val) =>
-    val ? new Date(val).toLocaleDateString("en-GB") : "-";
+    const formatDate = (val) =>
+      val ? new Date(val).toLocaleDateString("en-GB") : "-";
 
-  const formatCurrency = (value) =>
-    value ? `₹${parseFloat(value).toFixed(2)}` : "-";
+    const formatCurrency = (value) =>
+      value ? `₹${parseFloat(value).toFixed(2)}` : "-";
 
-  const formatGST = (gst) =>
-    gst % 1 === 0 ? `${parseInt(gst)}%` : `${parseFloat(gst)}%`;
+    const formatGST = (gst) =>
+      gst % 1 === 0 ? `${parseInt(gst)}%` : `${parseFloat(gst)}%`;
 
-  const calculateGrandTotal = (unitPrice, qty, gst) => {
-    const total = (parseFloat(unitPrice) || 0) * (parseInt(qty) || 0);
-    const gstAmount = (total * (parseFloat(gst) || 0)) / 100;
-    return total + gstAmount;
-  };
-
-  const getNestedValue = (obj, path, defaultVal = "-") => {
-    return path.split(".").reduce((acc, part) => acc?.[part], obj) ?? defaultVal;
-  };
-
-  const formattedData = filteredData.map((item, index) => {
-    const price = item.price || 0;
-    const quantity = item.quantity || 0;
-    const gst = item.gst || 0;
-
-    return {
-     "S.No": index + 1,
-      "PO_ID": getNestedValue(item, "po_master.PO_id"),
-      "Component ID": getNestedValue(item, "po_master.cart.component_id"),
-      "Component Specification": getNestedValue(item, "po_master.cart.component_specification"),
-      "Vendor Name": getNestedValue(item, "po_master.cart.vendor_name"),
-      "Date": formatDate(item.date),
-      "Invoice No": item.invoice_number || "-",
-      "Invoice Date": formatDate(item.invoice_date),
-      "Quantity": quantity,
-      "Unit Price": formatCurrency(price),
-      "GST": formatGST(gst),
-      "Grand Total": formatCurrency(calculateGrandTotal(price, quantity, gst)),
+    const calculateGrandTotal = (unitPrice, qty, gst) => {
+      const total = (parseFloat(unitPrice) || 0) * (parseInt(qty) || 0);
+      const gstAmount = (total * (parseFloat(gst) || 0)) / 100;
+      return total + gstAmount;
     };
-  });
 
-  generateCSV(formattedData, "Inward_Report");
-};
+    const getNestedValue = (obj, path, defaultVal = "-") => {
+      return (
+        path.split(".").reduce((acc, part) => acc?.[part], obj) ?? defaultVal
+      );
+    };
 
-const generateCSV = (data, filename) => {
-  const headers = Object.keys(data[0]).join(",");
-  const rows = data.map((row) =>
-    Object.values(row)
-      .map((val) => `"${val}"`)
-      .join(",")
-  );
-  const csvContent = [headers, ...rows].join("\n");
+    const formattedData = filteredData.map((item, index) => {
+      const price = item.price || 0;
+      const quantity = item.quantity || 0;
+      const gst = item.gst || 0;
 
-  // Add UTF-8 BOM for Excel to recognize ₹ and other characters correctly
-  const BOM = "\uFEFF";
-  const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
+      return {
+        "S.No": index + 1,
+        PO_ID: getNestedValue(item, "po_master.PO_id"),
+        "Component ID": getNestedValue(item, "po_master.cart.component_id"),
+        "Component Specification": getNestedValue(
+          item,
+          "po_master.cart.component_specification"
+        ),
+        "Vendor Name": getNestedValue(item, "po_master.cart.vendor_name"),
+        Date: formatDate(item.date),
+        "Invoice No": item.invoice_number || "-",
+        "Invoice Date": formatDate(item.invoice_date),
+        Quantity: quantity,
+        "Unit Price": formatCurrency(price),
+        GST: formatGST(gst),
+        "Grand Total": formatCurrency(
+          calculateGrandTotal(price, quantity, gst)
+        ),
+      };
+    });
 
-  const url = window.URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.setAttribute("download", `${filename}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-};
+    generateCSV(formattedData, "Inward_Report");
+  };
 
+  const generateCSV = (data, filename) => {
+    const headers = Object.keys(data[0]).join(",");
+    const rows = data.map((row) =>
+      Object.values(row)
+        .map((val) => `"${val}"`)
+        .join(",")
+    );
+    const csvContent = [headers, ...rows].join("\n");
 
+    // Add UTF-8 BOM for Excel to recognize ₹ and other characters correctly
+    const BOM = "\uFEFF";
+    const blob = new Blob([BOM + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
 
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `${filename}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  };
 
   return (
     <div>
       <div className="header">
         <h2>Inward</h2>
-        <button className="generate-report-btn" onClick={generateInwardReport}>Generate Report</button>
+        <button className="generate-report-btn" onClick={generateInwardReport}>
+          Generate Report
+        </button>
       </div>
 
       <div className="table-container">

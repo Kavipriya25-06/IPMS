@@ -255,13 +255,6 @@ const BOM = () => {
         }}
       >
         <h2>BOM List</h2>
-
-        {/* <button style={{marginTop: "10px",background: "transparent",border: "none",cursor: "pointer"}}
-                title="AddBOM"   onClick={() => setShowForm(!showForm)}>
-                  <img src={AddIcon} alt="" style={{width:"20px",height:"20px"}}/>
-                </button> */}
-
-
         <button
           style={{
             cursor: "pointer",
