@@ -14,6 +14,7 @@ const Mrf = () => {
   const [projectName, setProjectName] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const datePickerRef = React.useRef(null);
+  const [originalMRFData, setOriginalMRFData] = useState([]);
 
   // Filter states
   const [dateFilter, setDateFilter] = useState("");
@@ -46,6 +47,8 @@ const Mrf = () => {
     try {
       const response = await fetch(`${config.apiBaseURL}/create_MRF/`);
       const data = await response.json();
+      setOriginalMRFData(data); // ← full dataset
+
       setMrfData(data);
     } catch (err) {
       console.error("Error fetching MRFs:", err);
@@ -70,27 +73,24 @@ const Mrf = () => {
     return project ? project.project_details.project_name : "N/A";
   };
 
-  const handleSearch = async (query) => {
+  const handleSearch = (query) => {
     setSearchQuery(query);
 
     if (query.trim() === "") {
-      fetchMRFs(); // Reset to full data
+      setMrfData(originalMRFData); // Reset if empty search
       return;
     }
 
-    try {
-      const response = await fetch(
-        `${config.apiBaseURL}/create_MRF/?search=${query}`
+    const filtered = originalMRFData.filter((item) => {
+      const mrfId = item.MRF_id?.toLowerCase() || "";
+      const projectName = item.project?.project_name?.toLowerCase() || "";
+      return (
+        mrfId.includes(query.toLowerCase()) ||
+        projectName.includes(query.toLowerCase())
       );
-      if (response.ok) {
-        const results = await response.json();
-        setMrfData(results);
-      } else {
-        console.error("Error fetching MRF search results");
-      }
-    } catch (err) {
-      console.error("Search fetch error:", err);
-    }
+    });
+
+    setMrfData(filtered);
   };
 
   const filteredData = mrfData.filter((item) => {
@@ -117,6 +117,63 @@ const Mrf = () => {
     }
   }, [statusDropdownOpen]);
 
+  // Add this helper at the top (if not already present)
+  const formatDate = (value) =>
+    value ? format(new Date(value), "dd-MM-yyyy") : "N/A";
+
+  const handleGenerateReport = () => {
+    if (filteredData.length === 0) {
+      alert("No data available to generate the report.");
+      return;
+    }
+
+    const formattedData = filteredData.map((item, index) => ({
+      "S.No": index + 1, 
+      "MRF ID": item.MRF_id || "N/A",
+      Name: item.name || "N/A",
+      "Create Date": formatDate(item.create_date),
+      "Request ID": item.Request_id_assign || "N/A",
+      "Project Name": getProjectName(item.Request_id_assign),
+      Status: item.approval ? "Approved" : "Pending",
+    }));
+
+    generateCSV(formattedData, "MRF_Report");
+  };
+
+  const generateCSV = (data, filename) => {
+    const headers = Object.keys(data[0]);
+    const csvRows = [
+      headers.join(","), // header row
+      ...data.map((row) =>
+        headers
+          .map(
+            (field) => `"${(row[field] || "").toString().replace(/"/g, '""')}"`
+          )
+          .join(",")
+      ),
+    ];
+
+    const blob = new Blob([csvRows.join("\n")], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `${filename}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const [currentUserRole, setCurrentUserRole] = useState("");
+
+  // Load role from localStorage (or replace with your actual role-fetching logic)
+  useEffect(() => {
+    const role = localStorage.getItem("userRole"); // Default to 'User'
+    console.log("Normalized role:", role);
+    setCurrentUserRole(role);
+  }, []);
+
   return (
     <div>
       <div
@@ -130,9 +187,7 @@ const Mrf = () => {
         <h2>Material Requests (MRF)</h2>
       </div>
 
-
       <div className="search-wrapper-container">
-        {/* Centered search bar */}
         <div className="search-wrapper">
           <div className="search-bar-container">
             <input
@@ -148,13 +203,40 @@ const Mrf = () => {
           </div>
         </div>
 
-        {/* Add Vendor Button */}
+        {searchQuery.trim() !== "" && mrfData.length === 0 && (
+          <div
+            style={{ textAlign: "center", marginTop: "20px", color: "gray" }}
+          >
+            No data available
+          </div>
+        )}
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: "10px",
+          marginBottom: "10px",
+          marginTop: "-45px",
+        }}
+      >
+        {currentUserRole === "Inventory" ||
+          (currentUserRole === "Admin" && (
+            <button
+              className="generate-report-btn"
+              onClick={handleGenerateReport}
+            >
+              Generate Report
+            </button>
+          ))}
+
         <button
           className="plus-button"
           title="Create MRF"
           onClick={() => navigate("/MRFCreate")}
         >
-          <img src={Add} alt="Add Vendor" />
+          <img src={Add} alt="Create MRF" />
         </button>
       </div>
       <div className="table-container">

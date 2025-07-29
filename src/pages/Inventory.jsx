@@ -389,42 +389,53 @@ const Inventory = () => {
   };
 
   const handleGenerateReport = () => {
-    // Filter based on selected tab/status
-    const reportData = filteredInventory.filter(
-      (item) => item.status === statusFilter
-    );
+    let reportData;
+    let status = statusFilter;
 
-    if (reportData.length === 0) {
-      showInfoToast(`No inventory items found for status: ${statusFilter}`);
+    if (status === "Tool") {
+      reportData = toolInventory; // ✅ from state
+    } else {
+      reportData = filteredInventory.filter((item) => item.status === status);
+    }
+
+    if (!reportData || reportData.length === 0) {
+      showInfoToast(`No inventory items found for status: ${status}`);
       return;
     }
 
-    const formatPrice = (value) =>
-      value !== undefined && value !== null && value !== ""
-        ? `₹${parseFloat(value).toFixed(2)}`
-        : "N/A";
+    const formattedData =
+      status === "Tool"
+        ? reportData.map((item, index) => ({
+            "S.No": index + 1,
+            "Component ID": item.component_id || "N/A",
+            "Tool Name": item.tool_name || "N/A",
+            Quantity: item.quantity ?? 0,
+            "In Inventory": item.in_inventory ?? 0,
+            Team: item.team || "N/A",
+            Remarks: item.remarks || "N/A",
+          }))
+        : reportData.map((item, index) => ({
+            "S.No": index + 1,
+            "Component ID": item.component_id || "N/A",
+            "Serial Number": item.serial_number || "N/A",
+            "SKU Number Inventory": item.sku_number_inventory || "N/A",
+            Category: item.category || "N/A",
+            "Component Type": item.component_type || "N/A",
+            Specification: item.specification || "N/A",
+            UOM: item.UOM || "N/A",
+            "Vendor Name": item.vendor_name || "N/A",
+            "Created Date": item.create_date || "N/A",
+            Price:
+              item.price !== undefined && item.price !== null
+                ? `₹${parseFloat(item.price).toLocaleString("en-IN", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}`
+                : "N/A",
+            Status: item.status || "N/A",
+          }));
 
-    const formatPercentage = (value) =>
-      value !== undefined && value !== null && value !== ""
-        ? `${parseFloat(value).toFixed(2)}%`
-        : "N/A";
-
-    const formattedData = reportData.map((item) => ({
-      Serial_Number: item.serial_number || "N/A",
-      Component_ID: item.component_id || "N/A",
-      Component_Type: item.component_type || "N/A",
-      Vendor_Name: item.vendor_name || "N/A",
-      Category: item.category || "N/A",
-      Specification: item.specification || "N/A",
-      UOM: item.UOM || "N/A",
-      Create_Date: item.create_date || "N/A",
-      Status: item.status || "N/A",
-      Price: formatPrice(item.price),
-      SKU_Number_Inventory: item.sku_number_inventory || "N/A",
-      Request_ID_Assign: item.Request_id_assign || "N/A",
-    }));
-
-    generateCSV(formattedData, statusFilter);
+    generateCSV(formattedData, status);
   };
 
   // Function to format price values (₹, commas, two decimal places)
@@ -443,16 +454,41 @@ const Inventory = () => {
   };
 
   const generateCSV = (data, selectedStatus = "") => {
-    let csvContent =
-      "Serial Number,Component ID,Component Type,Vendor Name,Category,Specification,UOM,Created Date,Status,Price,SKU Number Inventory,Request ID Assign\n";
+    let headers;
 
-    data.forEach((row) => {
-      csvContent += `${Object.values(row)
-        .map((value) => `"${value}"`)
-        .join(",")}\n`;
-    });
+    if (selectedStatus?.trim().toLowerCase() === "tool") {
+      headers = [
+        "S.No",
+        "Component ID",
+        "Tool Name",
+        "Quantity",
+        "In Inventory",
+        "Team",
+        "Remarks",
+      ];
+    } else {
+      headers = [
+        "S.No",
+        "Component ID",
+        "Serial Number",
+        "SKU Number Inventory",
+        "Category",
+        "Component Type",
+        "Specification",
+        "UOM",
+        "Vendor Name",
+        "Created Date",
+        "Price",
+        "Status",
+      ];
+    }
 
-    let statusForFileName = selectedStatus?.trim() || "All";
+    const rows = data.map((row) =>
+      headers.map((header) => `"${row[header] || ""}"`).join(",")
+    );
+
+    const csvContent = [headers.join(","), ...rows].join("\n");
+    const BOM = "\uFEFF";
 
     const indianTime = new Date().toLocaleString("en-IN", {
       timeZone: "Asia/Kolkata",
@@ -469,11 +505,15 @@ const Inventory = () => {
       .replace(/, /g, "_")
       .toLowerCase();
 
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
+    const filename = `Inventory_Report_${selectedStatus}_${formattedTime}.csv`;
+
+    const blob = new Blob([BOM + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `Inventory_Report_${statusForFileName}_${formattedTime}.csv`;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

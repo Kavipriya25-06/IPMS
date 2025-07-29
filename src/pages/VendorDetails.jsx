@@ -761,7 +761,9 @@ const VendorDetails = () => {
 
       // Step 3: Prevent activation if vendor is inactive
       if (matchedVendor.active === false && updatedStatus === true) {
-        showInfoToast("Cannot activate product because the vendor is inactive.");
+        showInfoToast(
+          "Cannot activate product because the vendor is inactive."
+        );
         return;
       }
 
@@ -921,47 +923,47 @@ const VendorDetails = () => {
       {/* // Inside your JSX return block */}
       {showAddProductForm && (
         <div className="modal-overlay">
-        <div className="popup">
-          <h3>Add New Product</h3>
+          <div className="popup">
+            <h3>Add New Product</h3>
 
-          {/* Component ID Dropdown */}
-          <select
-            value={newProduct.component}
-            onChange={(e) => {
-              const selectedComponentId = e.target.value;
-              const selectedComponent = componentList.find(
-                (comp) => comp.component_id === selectedComponentId
-              );
+            {/* Component ID Dropdown */}
+            <select
+              value={newProduct.component}
+              onChange={(e) => {
+                const selectedComponentId = e.target.value;
+                const selectedComponent = componentList.find(
+                  (comp) => comp.component_id === selectedComponentId
+                );
 
-              setNewProduct({
-                ...newProduct,
-                component_id: selectedComponentId,
-                category: selectedComponent?.category || "",
-                component_type: selectedComponent?.component_type || "",
-                component_specification:
-                  selectedComponent?.component_specification || "",
-                unit_of_measurement:
-                  selectedComponent?.unit_of_measurement || "",
-              });
-            }}
-          >
-            <option value="">Select Component ID</option>
-            {componentList.map((comp) => (
-              <option key={comp.component_id} value={comp.component_id}>
-                {comp.component_id}
-              </option>
-            ))}
-          </select>
+                setNewProduct({
+                  ...newProduct,
+                  component_id: selectedComponentId,
+                  category: selectedComponent?.category || "",
+                  component_type: selectedComponent?.component_type || "",
+                  component_specification:
+                    selectedComponent?.component_specification || "",
+                  unit_of_measurement:
+                    selectedComponent?.unit_of_measurement || "",
+                });
+              }}
+            >
+              <option value="">Select Component ID</option>
+              {componentList.map((comp) => (
+                <option key={comp.component_id} value={comp.component_id}>
+                  {comp.component_id}
+                </option>
+              ))}
+            </select>
 
-          <input
-            type="text"
-            placeholder="Product Description"
-            value={newProduct.product_description}
-            onChange={(e) =>
-              handleInputChange("product_description", e.target.value)
-            }
-          />
-          {/* <input
+            <input
+              type="text"
+              placeholder="Product Description"
+              value={newProduct.product_description}
+              onChange={(e) =>
+                handleInputChange("product_description", e.target.value)
+              }
+            />
+            {/* <input
             type="number"
             placeholder="Price"
             value={newProduct.last_price}
@@ -974,288 +976,289 @@ const VendorDetails = () => {
             onChange={(e) => handleInputChange("tax", e.target.value)}
           /> */}
 
-          {/* Auto-filled category (readonly) */}
-          <input
-            type="text"
-            placeholder="Category"
-            value={newProduct.category}
-            readOnly
-          />
+            {/* Auto-filled category (readonly) */}
+            <input
+              type="text"
+              placeholder="Category"
+              value={newProduct.category}
+              readOnly
+            />
 
-          {/* Auto-filled component type (readonly) */}
-          <input
-            type="text"
-            placeholder="Component Type"
-            value={newProduct.component_type}
-            readOnly
-          />
+            {/* Auto-filled component type (readonly) */}
+            <input
+              type="text"
+              placeholder="Component Type"
+              value={newProduct.component_type}
+              readOnly
+            />
 
-          {/* Auto-filled component specification (readonly) */}
-          <input
-            type="text"
-            placeholder="Component Specification"
-            value={newProduct.component_specification}
-            readOnly
-          />
+            {/* Auto-filled component specification (readonly) */}
+            <input
+              type="text"
+              placeholder="Component Specification"
+              value={newProduct.component_specification}
+              readOnly
+            />
 
-          <input
-            type="text"
-            placeholder="Unit of Measurement"
-            value={newProduct.unit_of_measurement}
-            readOnly
-          />
+            <input
+              type="text"
+              placeholder="Unit of Measurement"
+              value={newProduct.unit_of_measurement}
+              readOnly
+            />
 
-          <input
-            type="file"
-            onChange={(e) => handleInputChange("img", e.target.files[0])}
-          />
-          <input
-            type="file"
-            onChange={(e) =>
-              handleInputChange("attachments", e.target.files[0])
-            }
-          />
+            <input
+              type="file"
+              onChange={(e) => handleInputChange("img", e.target.files[0])}
+            />
+            <input
+              type="file"
+              onChange={(e) =>
+                handleInputChange("attachments", e.target.files[0])
+              }
+            />
 
-          <div className="popup-actions">
-            <button onClick={handleAddNewProduct}>Save Product</button>
-            <button onClick={() => setShowAddProductForm(false)}>Cancel</button>
+            <div className="popup-actions">
+              <button onClick={handleAddNewProduct}>Save Product</button>
+              <button onClick={() => setShowAddProductForm(false)}>
+                Cancel
+              </button>
+            </div>
           </div>
-        </div>
         </div>
       )}
 
       {/* Price History Modal */}
       {showPriceHistory && (
-                <div className="modal-overlay">
+        <div className="modal-overlay">
+          <div className="popup" style={{ width: "40%" }}>
+            <span className="x-button" onClick={handleClosePriceHistory}>
+              &times;
+            </span>
+            <h3>Price History</h3>
+            <div className="button-wrapper">
+              <button
+                onClick={() => setShowAddPriceEntryForm(true)}
+                className="price-entry-button"
+              >
+                Add Price Entry
+              </button>
+            </div>
 
-        <div className="popup">
-          <span className="x-button" onClick={handleClosePriceHistory}>
-            &times;
-          </span>
-          <h3>Price History</h3>
-          <div className="button-wrapper">
-            <button
-              onClick={() => setShowAddPriceEntryForm(true)}
-              className="price-entry-button"
-            >
-              Add Price Entry
-            </button>
-          </div>
-
-          <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Price</th>
-                  <th>Tax %</th>
-                  <th>Delivery Days</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {priceHistory.map((entry, index) => (
-                  <tr key={index}>
-                    <td>
-                      {isEditingPriceEntry === index ? (
+            <div className="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Price</th>
+                    <th>Tax %</th>
+                    <th>Delivery Days</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {priceHistory.map((entry, index) => (
+                    <tr key={index}>
+                      <td>
+                        {isEditingPriceEntry === index ? (
+                          <input
+                            type="date"
+                            value={editPriceEntry.date}
+                            onChange={(e) =>
+                              setEditPriceEntry({
+                                ...editPriceEntry,
+                                date: e.target.value,
+                              })
+                            }
+                          />
+                        ) : (
+                          new Date(entry.current_time).toLocaleDateString()
+                        )}
+                      </td>
+                      <td style={{ textAlign: "right" }}>
+                        {isEditingPriceEntry === index ? (
+                          <input
+                            type="number"
+                            value={editPriceEntry.price}
+                            onChange={(e) =>
+                              setEditPriceEntry({
+                                ...editPriceEntry,
+                                price: e.target.value,
+                              })
+                            }
+                            style={{ width: "100px" }}
+                          />
+                        ) : (
+                          `₹${parseFloat(entry.price).toLocaleString("en-IN", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}`
+                        )}
+                      </td>
+                      <td style={{ textAlign: "right" }}>
+                        {isEditingPriceEntry === index ? (
+                          <input
+                            type="number"
+                            value={editPriceEntry.tax}
+                            onChange={(e) =>
+                              setEditPriceEntry({
+                                ...editPriceEntry,
+                                tax: e.target.value,
+                              })
+                            }
+                            style={{ width: "100px" }}
+                          />
+                        ) : (
+                          `${parseFloat(entry.tax).toLocaleString("en-IN", {
+                            // minimumFractionDigits: 2,
+                            // maximumFractionDigits: 2
+                          })}%`
+                        )}
+                      </td>
+                      <td style={{ textAlign: "right" }}>
+                        {isEditingPriceEntry === index ? (
+                          <input
+                            type="number"
+                            value={editPriceEntry.delivery_days}
+                            onChange={(e) =>
+                              setEditPriceEntry({
+                                ...editPriceEntry,
+                                delivery_days: e.target.value,
+                              })
+                            }
+                            style={{ width: "100px" }}
+                          />
+                        ) : (
+                          `${parseFloat(entry.delivery_days).toLocaleString(
+                            "en-IN"
+                          )}`
+                        )}
+                      </td>
+                      <td>
+                        {isEditingPriceEntry === index ? (
+                          <div className="actions-button">
+                            <button
+                              className="edit-btn"
+                              onClick={() => handleSavePriceEntry(index)}
+                            >
+                              Save
+                            </button>
+                            <button
+                              className="cancel-btn"
+                              onClick={() => setIsEditingPriceEntry(null)}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="actions-button">
+                            <button
+                              className="edit-btn"
+                              onClick={() => handleEditPriceEntry(index, entry)}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className="cancel-btn"
+                              onClick={() => handleDeletePriceEntry(index)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {showAddPriceEntryForm && (
+                    <tr>
+                      <td>
                         <input
                           type="date"
-                          value={editPriceEntry.date}
+                          value={newPriceEntry.date}
                           onChange={(e) =>
-                            setEditPriceEntry({
-                              ...editPriceEntry,
+                            setNewPriceEntry({
+                              ...newPriceEntry,
                               date: e.target.value,
                             })
                           }
                         />
-                      ) : (
-                        new Date(entry.current_time).toLocaleDateString()
-                      )}
-                    </td>
-                    <td style={{ textAlign: "right" }}>
-                      {isEditingPriceEntry === index ? (
+                      </td>
+                      <td>
                         <input
                           type="number"
-                          value={editPriceEntry.price}
+                          placeholder="Add Price"
+                          style={{
+                            width: "100px",
+                            padding: "8px",
+                            fontSize: "14px",
+                          }}
+                          value={newPriceEntry.price} //  Fix here
                           onChange={(e) =>
-                            setEditPriceEntry({
-                              ...editPriceEntry,
-                              price: e.target.value,
+                            setNewPriceEntry({
+                              ...newPriceEntry,
+                              price: e.target.value, //  Fix here
                             })
                           }
-                          style={{ width: "100px" }}
                         />
-                      ) : (
-                        `₹${parseFloat(entry.price).toLocaleString("en-IN", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}`
-                      )}
-                    </td>
-                    <td style={{ textAlign: "right" }}>
-                      {isEditingPriceEntry === index ? (
+                      </td>
+                      <td>
                         <input
                           type="number"
-                          value={editPriceEntry.tax}
+                          placeholder="Add Tax%"
+                          style={{
+                            width: "100px",
+                            padding: "8px",
+                            fontSize: "14px",
+                          }}
+                          value={newPriceEntry.tax}
                           onChange={(e) =>
-                            setEditPriceEntry({
-                              ...editPriceEntry,
+                            setNewPriceEntry({
+                              ...newPriceEntry,
                               tax: e.target.value,
                             })
                           }
-                          style={{ width: "100px" }}
                         />
-                      ) : (
-                        `${parseFloat(entry.tax).toLocaleString("en-IN", {
-                          // minimumFractionDigits: 2,
-                          // maximumFractionDigits: 2
-                        })}%`
-                      )}
-                    </td>
-                    <td style={{ textAlign: "right" }}>
-                      {isEditingPriceEntry === index ? (
+                      </td>
+                      <td>
                         <input
                           type="number"
-                          value={editPriceEntry.delivery_days}
+                          placeholder="Delivery Days"
+                          style={{
+                            width: "100px",
+                            padding: "8px",
+                            fontSize: "14px",
+                          }}
+                          value={newPriceEntry.delivery_days}
                           onChange={(e) =>
-                            setEditPriceEntry({
-                              ...editPriceEntry,
+                            setNewPriceEntry({
+                              ...newPriceEntry,
                               delivery_days: e.target.value,
                             })
                           }
-                          style={{ width: "100px" }}
                         />
-                      ) : (
-                        `${parseFloat(entry.delivery_days).toLocaleString(
-                          "en-IN"
-                        )}`
-                      )}
-                    </td>
-                    <td>
-                      {isEditingPriceEntry === index ? (
+                      </td>
+                      <td>
                         <div className="actions-button">
                           <button
                             className="edit-btn"
-                            onClick={() => handleSavePriceEntry(index)}
+                            onClick={handleAddPriceEntry}
                           >
                             Save
                           </button>
                           <button
                             className="cancel-btn"
-                            onClick={() => setIsEditingPriceEntry(null)}
+                            onClick={() => setShowAddPriceEntryForm(false)}
                           >
                             Cancel
                           </button>
                         </div>
-                      ) : (
-                        <div className="actions-button">
-                          <button
-                            className="edit-btn"
-                            onClick={() => handleEditPriceEntry(index, entry)}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            className="cancel-btn"
-                            onClick={() => handleDeletePriceEntry(index)}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-                {showAddPriceEntryForm && (
-                  <tr>
-                    <td>
-                      <input
-                        type="date"
-                        value={newPriceEntry.date}
-                        onChange={(e) =>
-                          setNewPriceEntry({
-                            ...newPriceEntry,
-                            date: e.target.value,
-                          })
-                        }
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="number"
-                        placeholder="Add Price"
-                        style={{
-                          width: "100px",
-                          padding: "8px",
-                          fontSize: "14px",
-                        }}
-                        value={newPriceEntry.price} //  Fix here
-                        onChange={(e) =>
-                          setNewPriceEntry({
-                            ...newPriceEntry,
-                            price: e.target.value, //  Fix here
-                          })
-                        }
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="number"
-                        placeholder="Add Tax%"
-                        style={{
-                          width: "100px",
-                          padding: "8px",
-                          fontSize: "14px",
-                        }}
-                        value={newPriceEntry.tax}
-                        onChange={(e) =>
-                          setNewPriceEntry({
-                            ...newPriceEntry,
-                            tax: e.target.value,
-                          })
-                        }
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="number"
-                        placeholder="Delivery Days"
-                        style={{
-                          width: "100px",
-                          padding: "8px",
-                          fontSize: "14px",
-                        }}
-                        value={newPriceEntry.delivery_days}
-                        onChange={(e) =>
-                          setNewPriceEntry({
-                            ...newPriceEntry,
-                            delivery_days: e.target.value,
-                          })
-                        }
-                      />
-                    </td>
-                    <td>
-                      <div className="actions-button">
-                        <button
-                          className="edit-btn"
-                          onClick={handleAddPriceEntry}
-                        >
-                          Save
-                        </button>
-                        <button
-                          className="cancel-btn"
-                          onClick={() => setIsAdding(false)}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
         </div>
       )}
 
