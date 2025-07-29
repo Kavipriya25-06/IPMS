@@ -253,15 +253,7 @@ const handleRejectRequest = (item) => {
     <div>
       <div className="header">
         <h2>New Component</h2>
-        {/* <div className="button-group">
-          <button className="create-tag-button" onClick={handleTagIconClick}>
-            <img src="src/assets/tags.png" alt="icon" />
-          </button>
-        </div> */}
         <div className="button-group">
-          {/* <button className="create-tag-button" onClick={handleTagIconClick}>
-            <img src="src/assets/tags.png" alt="icon" />
-          </button> */}
           <button className="add-comp" onClick={() => setShowModal(true)}>
             Request Component
           </button>
@@ -269,8 +261,6 @@ const handleRejectRequest = (item) => {
             <div className="modal-overlays">
               <div className="modals" ref={modalRef}>
                 <h2>Request Component</h2>
-                {/* <p>Name:Gk</p>
-                <p>Date:5.5.25</p> */}
                 <form onSubmit={handleSubmit}>
                   <div className="forms-group">
                     <label htmlFor="">Category</label>
@@ -349,19 +339,6 @@ const handleRejectRequest = (item) => {
             </div>
           )}
         </div>
-
-        {/* <img
-          src={tagIcon}
-          alt="Tag Icon"
-          title="Add tags"
-          style={{
-            width: "39px",
-            height: "39px",
-            cursor: "pointer",
-            marginLeft: "auto",
-          }}
-          onClick={handleTagIconClick}
-        /> */}
       </div>
       <div class="center-wrapper">
         <div className="search-bar-container">
@@ -396,8 +373,6 @@ const handleRejectRequest = (item) => {
 
                 <th>Specification</th>
                 <th>Product Link</th>
-
-                {/* <th>Tally Reference</th> */}
                 <th>UOM</th>
 
                 <th>Date</th>
@@ -518,8 +493,6 @@ const handleRejectRequest = (item) => {
           </table>
         </div>
       </div>
-      {/* {loading && <p>Loading...</p>}
-      {!hasMore && <p>No more data available</p>} */}
 
       {showScrollTop && (
         <button
