@@ -1,6 +1,3 @@
-// import React, { useState, useEffect } from "react";
-// src\pages\Inventory.jsx
-
 import React, { useState, useEffect, useRef } from "react";
 import config from "../Config"; // Import config for API endpoints
 import {
@@ -165,20 +162,6 @@ const Inventory = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // useEffect(() => {
-  //   filterInventory();
-  // }, [selectedTag, inventoryData, componentData, metaTags, selectedStatus]);
-
-  // const fetchInventoryData = async () => {
-  //   try {
-  //     const response = await fetch(`${config.apiBaseURL}/inventory/?status=`);
-  //     const data = await response.json();
-  //     setInventoryData(data);
-  //   } catch (error) {
-  //     console.error("Error fetching inventory data:", error);
-  //   }
-  // };
-
   // Fetch inventory data from API (filtered by status)
   const fetchInventoryData = async (status = "Available") => {
     try {
@@ -214,37 +197,35 @@ const Inventory = () => {
     }
   };
 
-const handleUpdateToolRow = async () => {
-  try {
-    const response = await fetch(
-      `${config.apiBaseURL}/tool_inventory/${editingToolRow}/`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(editToolRowData),
+  const handleUpdateToolRow = async () => {
+    try {
+      const response = await fetch(
+        `${config.apiBaseURL}/tool_inventory/${editingToolRow}/`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(editToolRowData),
+        }
+      );
+
+      if (response.ok) {
+        showSuccessToast("Tool updated successfully.");
+        setEditingToolRow(null); // exit edit mode
+        await fetchToolInventoryData(); // Refresh data
+      } else {
+        showErrorToast("Failed to update tool.");
       }
-    );
-
-    if (response.ok) {
-      showSuccessToast("Tool updated successfully.");
-      setEditingToolRow(null); // exit edit mode
-      await fetchToolInventoryData(); // Refresh data
-    } else {
-      showErrorToast("Failed to update tool.");
+    } catch (error) {
+      console.error("Error updating tool:", error);
+      showErrorToast("Something went wrong.");
     }
-  } catch (error) {
-    console.error("Error updating tool:", error);
-    showErrorToast("Something went wrong.");
-  }
-};
+  };
 
-useEffect(() => {
-  fetchToolInventoryData();
-}, []);
-
-
+  useEffect(() => {
+    fetchToolInventoryData();
+  }, []);
 
   const scrollToTop = () => {
     window.scrollTo({
@@ -264,9 +245,6 @@ useEffect(() => {
 
     let filtered = [...inventoryData];
 
-    // if (statusFilter && statusFilter !== "Tool") {
-    //   filtered = filtered.filter((item) => item.status === statusFilter);
-    // }
 
     if (fromDate && toDate) {
       filtered = filtered.filter((item) => {
@@ -329,12 +307,6 @@ useEffect(() => {
     }
   };
 
-  // const groupedData = filteredInventory.reduce((acc, item) => {
-  //   acc[item.component_id] = acc[item.component_id] || [];
-  //   acc[item.component_id].push(item);
-  //   return acc;
-  // }, {});
-
   const fetchMetaTags = async () => {
     try {
       const response = await fetch(`${config.apiBaseURL}/meta_tags/`);
@@ -347,11 +319,7 @@ useEffect(() => {
 
   const filterInventory = () => {
     let filtered = inventoryData;
-    // console.log("Filtered inventory data", filtered);
 
-    // console.log("Selected tag", selectedTag);
-
-    // Filter by selected meta tag
     if (selectedTag) {
       filtered = filtered.filter((item) => {
         const component = componentData[item.component_id];
@@ -511,83 +479,6 @@ useEffect(() => {
     document.body.removeChild(a);
   };
 
-  // const openReturnModal = (item) => {
-  //   console.log("Opening return modal for:", item);
-  //   setReturnItem(item);
-  //   setRemarks("");
-  //   setReportedBy("");
-  //   setSelectedStatus("Damaged"); // Default to "Damaged" when modal opens
-  //   setReturnModal(true);
-  // };
-
-  // const closeReturnModal = () => {
-  //   setReturnModal(false);
-  //   setReturnItem(null);
-  // };
-
-  // const handleReturn = async () => {
-  //   if (!remarks || !reportedBy) {
-  //     alert("Please enter Remarks and Reported By.");
-  //     return;
-  //   }
-
-  //   try {
-  //     // POST request to report the item as damaged
-  //     const response = await fetch(`${config.apiBaseURL}/damaged/${returnItem.serial_number}/`, {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify({
-  //         serial_number: returnItem.serial_number,
-  //         remarks,
-  //         reported_by: reportedBy,
-  //         status: selectedStatus, // Use selectedStatus from dropdown
-  //       }),
-  //     });
-
-  //     if (!response.ok) {
-  //       console.error("Failed to report damaged item:", response.statusText);
-  //       alert("Failed to report damaged item.");
-  //       return;
-  //     }
-
-  //     alert(`Item ${returnItem.serial_number} reported as damaged successfully!`);
-
-  //       // Step 2: Update inventory status to true
-  //     const patchResponse = await fetch(`${config.apiBaseURL}/inventory/${returnItem.serial_number}/`, {
-  //       method: "PATCH",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify({
-  //         status: true,
-  //       }),
-  //     });
-
-  //     if (!patchResponse.ok) {
-  //       console.error("Failed to update inventory status:", patchResponse.statusText);
-  //       alert("Failed to update inventory status.");
-  //       return;
-  //     }
-
-  //     alert(`Inventory status for ${returnItem.serial_number} updated successfully!`);
-
-  //     // Update UI state to reflect the change
-  //     setFilteredInventory((prev) =>
-  //       prev.map((row) =>
-  //         row.serial_number === returnItem.serial_number ? { ...row, status: true } : row
-  //       )
-  //     );
-
-  //     closeReturnModal();
-
-  //   } catch (error) {
-  //     console.error("Error reporting damaged item:", error);
-  //     alert("Error reporting damaged item.");
-  //   }
-  // };
-
   const clearDateFilter = () => {
     setFromDate(null);
     setToDate(null);
@@ -669,35 +560,28 @@ useEffect(() => {
     filterByDate();
   }, [statusFilter]);
 
-  // const groupedData = filteredStatusInventory.reduce((acc, item) => {
-  //   acc[item.component_id] = acc[item.component_id] || [];
-  //   acc[item.component_id].push(item);
-  //   return acc;
-  // }, {});
-
   const handleSaveToolRow = async () => {
-  try {
-    const response = await fetch(`${config.apiBaseURL}/tool_inventory/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(newToolRow),
-    });
+    try {
+      const response = await fetch(`${config.apiBaseURL}/tool_inventory/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newToolRow),
+      });
 
-    if (response.ok) {
-      showSuccessToast("Tool saved successfully.");
-      setNewToolRow(null); // clear input
-      await fetchToolInventoryData(); // Refresh data
-    } else {
-      showErrorToast("Failed to save tool.");
+      if (response.ok) {
+        showSuccessToast("Tool saved successfully.");
+        setNewToolRow(null); // clear input
+        await fetchToolInventoryData(); // Refresh data
+      } else {
+        showErrorToast("Failed to save tool.");
+      }
+    } catch (error) {
+      console.error("Error saving tool:", error);
+      showErrorToast("Something went wrong.");
     }
-  } catch (error) {
-    console.error("Error saving tool:", error);
-    showErrorToast("Something went wrong.");
-  }
-};
-
+  };
 
   return (
     <div className="inventory-container">
@@ -732,7 +616,7 @@ useEffect(() => {
           In Drone
         </button>
         <button
-          className={`tab-btn ${statusFilter === "Scrap" ? "active" : ""}`}
+          className={`tab-btn ${statusFilter === "Damaged" ? "active" : ""}`}
           onClick={() => setStatusFilter("Damaged")}
         >
           Scrap
@@ -1164,14 +1048,6 @@ useEffect(() => {
                             <td>{row.component_id}</td>
                             <td>
                               {row.serial_number}{" "}
-                              {/* {!row.status && (
-                            <button
-                              className="return-button"
-                              onClick={() => openReturnModal(row)}
-                            >
-                              Return
-                            </button>
-                          )} */}
                             </td>
                             <td
                               onDoubleClick={() =>
@@ -1430,8 +1306,16 @@ useEffect(() => {
                           />
                         </td>
                         <td className="event-buttons">
-                          <button onClick={handleUpdateToolRow} className="edit-btn">Save</button>
-                          <button onClick={() => setEditingToolRow(null)} className="delete-btn">
+                          <button
+                            onClick={handleUpdateToolRow}
+                            className="edit-btn"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={() => setEditingToolRow(null)}
+                            className="delete-btn"
+                          >
                             Cancel
                           </button>
                         </td>

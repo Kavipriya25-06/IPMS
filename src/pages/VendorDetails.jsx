@@ -1,7 +1,3 @@
-// Second set of code
-
-// src/pages/VendorDetails.jsx
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import CustomMessagebox from "./CustomMessageBox.jsx";
@@ -295,12 +291,12 @@ const VendorDetails = () => {
       if (response.ok) {
         const updatedEntry = await response.json();
 
-        // ✅ 1. Update priceHistory table
+        //  1. Update priceHistory table
         const updatedHistory = [...priceHistory];
         updatedHistory[index] = updatedEntry;
         setPriceHistory(updatedHistory);
 
-        // ✅ 2. Update main product table
+        //2. Update main product table
         setSelectedVendorData((prevData) =>
           prevData.map((product) =>
             product.product_id === currentProductId
@@ -1558,8 +1554,3 @@ const VendorDetails = () => {
 };
 
 export default VendorDetails;
-
-// //  <button onClick={handleNewRequest}style={{marginTop: "10px",background: "transparent",border: "none",cursor: "pointer",padding: "4px",}}
-// //       title="New Request">
-// //       <img src= {Add} alt="New Request"style={{ width: "20px", height: "20px" }}/>
-// //       </button>

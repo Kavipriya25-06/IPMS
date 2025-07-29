@@ -722,33 +722,32 @@ const Vendors = () => {
 
         <div></div>
       </div>
-    <div className="search-wrapper-container">
-  {/* Centered search bar */}
-  <div className="search-wrapper">
-    <div className="search-bar-container">
-      <input
-        type="text"
-        className="search-bar"
-        placeholder="Search by Vendor Name or Component Type"
-        value={searchQuery}
-        onChange={(e) => handleSearch(e.target.value)}
-      />
-      <span className="search-icon">
-        <i className="fa fa-search" aria-hidden="true"></i>
-      </span>
-    </div>
-  </div>
+      <div className="search-wrapper-container">
+        {/* Centered search bar */}
+        <div className="search-wrapper">
+          <div className="search-bar-container">
+            <input
+              type="text"
+              className="search-bar"
+              placeholder="Search by Vendor Name or Component Type"
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+            />
+            <span className="search-icon">
+              <i className="fa fa-search" aria-hidden="true"></i>
+            </span>
+          </div>
+        </div>
 
-  {/* Add Vendor Button */}
-  <button
-    className="plus-button"
-    title="Add Vendor"
-    onClick={() => setShowAddVendorPopup(true)}
-  >
-    <img src={Add} alt="Add Vendor" />
-  </button>
-</div>
-
+        {/* Add Vendor Button */}
+        <button
+          className="plus-button"
+          title="Add Vendor"
+          onClick={() => setShowAddVendorPopup(true)}
+        >
+          <img src={Add} alt="Add Vendor" />
+        </button>
+      </div>
 
       <div className="table-container">
         <table>
