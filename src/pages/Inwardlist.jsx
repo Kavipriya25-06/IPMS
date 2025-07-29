@@ -49,10 +49,10 @@ const InwardList = () => {
     try {
       const response = await fetch(`${config.apiBaseURL}/inward/`);
       const data = await response.json();
-      const result = data.filter((item) => item.mode_to_inventory === true);
+      // const result = data.filter((item) => item.mode_to_inventory === true);
 
       const grouped = {};
-      result.forEach((item) => {
+      data.forEach((item) => {
         const poId = getNestedValue(item, "po_master.PO_id", "");
         const componentId = getNestedValue(
           item,
