@@ -44,6 +44,7 @@ const Vendors = () => {
     gstn: "",
   });
   const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
+  const [tempEditPoc, setTempEditPoc] = useState(null);
 
   const navigate = useNavigate();
   const [newVendor, setNewVendor] = useState({
@@ -137,32 +138,34 @@ const Vendors = () => {
     setPocData(updatedPocData);
   };
 
-  const handleSavePoc = async (pocId) => {
-    const updatedPoc = pocData.find((poc) => poc.id === pocId); // Find POC by ID
-    if (!updatedPoc) {
-      console.error("POC not found for the provided ID:", pocId);
-      return;
-    }
-    try {
-      const response = await fetch(
-        `${config.apiBaseURL}/vendor_sub_list/${pocId}/`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(updatedPoc),
-        }
-      );
-      if (response.ok) {
-        setIsEditing(null); // Exit editing mode after saving
-      } else {
-        console.error("Error updating POC:", response.statusText);
+ const handleSavePoc = async (pocId) => {
+  if (!tempEditPoc) return;
+  try {
+    const response = await fetch(
+      `${config.apiBaseURL}/vendor_sub_list/${pocId}/`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(tempEditPoc),
       }
-    } catch (error) {
-      console.error("Error updating POC:", error);
+    );
+    if (response.ok) {
+      // Replace old entry with updated one
+      setPocData((prev) =>
+        prev.map((p) => (p.id === pocId ? tempEditPoc : p))
+      );
+      showSuccessToast("POC updated successfully");
+      setIsEditing(null);
+      setTempEditPoc(null);
+    } else {
+      showErrorToast("Failed to update POC");
     }
-  };
+  } catch (error) {
+    console.error("Update error:", error);
+    showErrorToast("Error occurred while updating");
+  }
+};
+
 
   const scrollToTop = () => {
     window.scrollTo({
@@ -270,6 +273,7 @@ const Vendors = () => {
           default_poc: isFirstPoc,
         });
         setIsAdding(false);
+        showSuccessToast("POC Added successfully");
       } else {
         console.error("Error adding POC:", response.statusText);
       }
@@ -402,14 +406,18 @@ const Vendors = () => {
       );
       if (response.ok) {
         // Remove deleted POC from state
+        showSuccessToast("POC deleted successfully");
+
         setPocData((prevPocData) =>
           prevPocData.filter((poc) => poc.id !== pocId)
         );
       } else {
         console.error("Error deleting POC:", response.statusText);
+        showErrorToast("Failed to delete POC");
       }
     } catch (error) {
       console.error("Error deleting POC:", error);
+      showErrorToast("Error occurred while deleting");
     }
   };
 
@@ -952,51 +960,54 @@ const Vendors = () => {
                         <td>
                           <input
                             type="radio"
-                            name={`primaryPoc-${selectedVendorId}`} // Scoped to the vendor
+                            name={`primaryPoc-${selectedVendorId}`}
                             checked={poc.default_poc}
                             onChange={() => handleDefaultPocChange(poc.id)}
                           />
                         </td>
+
+                        {/* POC Name */}
                         <td>
                           {isEditing === poc.id ? (
                             <input
                               type="text"
-                              value={poc.point_of_contact}
                               style={{
                                 width: "200px",
                                 padding: "8px",
                                 fontSize: "14px",
                               }}
+                              value={tempEditPoc?.point_of_contact || ""}
                               onChange={(e) =>
-                                handleEditPocChange(
-                                  poc.id,
-                                  "point_of_contact",
-                                  e.target.value
-                                )
+                                setTempEditPoc({
+                                  ...tempEditPoc,
+                                  point_of_contact: e.target.value,
+                                })
                               }
                             />
                           ) : (
                             poc.point_of_contact
                           )}
                         </td>
+
+                        {/* Email */}
                         <td>
                           {isEditing === poc.id ? (
                             <input
                               type="email"
-                              value={poc.email}
                               style={{
                                 width: "200px",
                                 padding: "8px",
                                 fontSize: "14px",
                               }}
+                              value={tempEditPoc?.email || ""}
                               onChange={(e) => {
-                                handleEditPocChange(
-                                  poc.id,
-                                  "email",
-                                  e.target.value
-                                );
-                                setErrors((prevErrors) => ({
-                                  ...prevErrors,
+                                const value = e.target.value;
+                                setTempEditPoc({
+                                  ...tempEditPoc,
+                                  email: value,
+                                });
+                                setErrors((prev) => ({
+                                  ...prev,
                                   email: validateEmail(value)
                                     ? ""
                                     : "Invalid email address",
@@ -1007,24 +1018,26 @@ const Vendors = () => {
                             poc.email
                           )}
                         </td>
+
+                        {/* Phone */}
                         <td>
                           {isEditing === poc.id ? (
                             <input
                               type="text"
-                              value={poc.phone_number}
                               style={{
                                 width: "200px",
                                 padding: "8px",
                                 fontSize: "14px",
                               }}
+                              value={tempEditPoc?.phone_number || ""}
                               onChange={(e) => {
-                                handleEditPocChange(
-                                  poc.id,
-                                  "phone_number",
-                                  e.target.value
-                                );
-                                setErrors((prevErrors) => ({
-                                  ...prevErrors,
+                                const value = e.target.value;
+                                setTempEditPoc({
+                                  ...tempEditPoc,
+                                  phone_number: value,
+                                });
+                                setErrors((prev) => ({
+                                  ...prev,
                                   phone_number: validatePhoneNumber(value)
                                     ? ""
                                     : "Phone number must be 10 digits",
@@ -1035,52 +1048,31 @@ const Vendors = () => {
                             poc.phone_number
                           )}
                         </td>
+
+                        {/* Location */}
                         <td>
                           {isEditing === poc.id ? (
                             <input
                               type="text"
-                              value={poc.location}
                               style={{
                                 width: "200px",
                                 padding: "8px",
                                 fontSize: "14px",
                               }}
+                              value={tempEditPoc?.location || ""}
                               onChange={(e) =>
-                                handleEditPocChange(
-                                  poc.id,
-                                  "location",
-                                  e.target.value
-                                )
+                                setTempEditPoc({
+                                  ...tempEditPoc,
+                                  location: e.target.value,
+                                })
                               }
                             />
                           ) : (
                             poc.location
                           )}
                         </td>
-                        {/* <td>
-                    {isEditing === poc.id ? (
-                      <select
-                        value={poc.category}
-                        onChange={(e) =>
-                          handleEditPocChange(
-                            poc.id,
-                            "category",
-                            e.target.value
-                          )
-                        }
-                      >
-                        <option value="">Select Category</option>
-                        <option value="Airframe">Airframe</option>
-                        <option value="Communication">Communication</option>
-                        <option value="Electricals">Electricals</option>
-                        <option value="Electronics">Electronics</option>
-                        <option value="Payload">Payload</option>
-                      </select>
-                    ) : (
-                      poc.category
-                    )}
-                  </td> */}
 
+                        {/* Actions */}
                         <td>
                           {isEditing === poc.id ? (
                             <>
@@ -1092,7 +1084,10 @@ const Vendors = () => {
                               </button>
                               <button
                                 className="delete-button"
-                                onClick={() => setIsEditing(null)}
+                                onClick={() => {
+                                  setIsEditing(null);
+                                  setTempEditPoc(null); // discard edits
+                                }}
                               >
                                 Cancel
                               </button>
@@ -1100,7 +1095,10 @@ const Vendors = () => {
                           ) : (
                             <button
                               className="edit-button"
-                              onClick={() => setIsEditing(poc.id)}
+                              onClick={() => {
+                                setIsEditing(poc.id);
+                                setTempEditPoc({ ...poc }); // capture editable copy
+                              }}
                             >
                               Edit
                             </button>
