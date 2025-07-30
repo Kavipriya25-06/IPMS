@@ -1067,7 +1067,7 @@ const VendorDetails = () => {
         <div className="modal-overlay">
           <div className="popup-wrapper">
             <div
-              className={`popup ${
+              className={`popups ${
                 showAddPriceEntryForm ? "popup-expanded" : ""
               }`}
             >
@@ -1088,6 +1088,7 @@ const VendorDetails = () => {
                     setShowAddPriceEntryForm(true);
                   }}
                   className="price-entry-button"
+                  style={{ marginBottom: "10px" }}
                 >
                   Add Price Entry
                 </button>
@@ -1215,7 +1216,14 @@ const VendorDetails = () => {
                               <button
                                 className="cancel-btn"
                                 onClick={() => {
-                                  setShowAddPriceEntryForm(false);
+                                  setIsEditingPriceEntry(null); // Exit editing mode
+                                  setEditPriceEntry({
+                                    // Clear edit form values
+                                    date: null,
+                                    price: "",
+                                    tax: "",
+                                    delivery_days: "",
+                                  });
                                 }}
                               >
                                 Cancel

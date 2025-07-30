@@ -924,7 +924,7 @@ const Vendors = () => {
       {showPocPopup && (
         <div className="modal-overlay">
           <div className="popup-wrapper">
-            <div className={`popup ${isAdding ? "popup-expanded" : ""}`}>
+            <div className={`popups ${isAdding ? "popup-expanded" : ""}`} >
               {" "}
               <span className="x-button" onClick={handleClosePriceHistory}>
                 &times;
@@ -940,6 +940,7 @@ const Vendors = () => {
                 <button
                   className="action-button add-button"
                   onClick={() => setIsAdding(true)}
+                  style={{marginBottom:"10px"}}
                 >
                   Add POC
                 </button>

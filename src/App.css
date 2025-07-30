@@ -4503,7 +4503,7 @@ ul {
   overflow-x: auto;
 }
 
-.popup {
+.popups {
   background: #fff;
   border-radius: 8px;
   padding: 20px;
@@ -4512,9 +4512,36 @@ ul {
   width: fit-content;
   transition: width 0.3s ease;
   overflow-x: auto;
+   position: relative;
 }
 
-.popup-expanded {
+.popups h3{
+  text-align: center;
+}
+
+.popups .x-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 1.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #333;
+}
+
+
+.popups input,
+.popups select {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.popupS-expanded {
   width: fit-content;
 }
 
