@@ -137,9 +137,9 @@ const ProjectList = () => {
         </button>
       </div>
 
-      <div className="search-wrapper-container">
+      <div className="search-wrapper-container" style={{ marginBottom: "10px" }}>
         <div className="search-wrapper">
-          <div className="search-bar-container" style={{ marginTop: "-8px" }}>
+          <div className="search-bar-container">
             <input
               type="text"
               className="search-bar"

@@ -190,8 +190,8 @@ const Requests = () => {
         />
       </button>
       </div>
-      <div className="search-wrapper-container">
-        <div className="search-wrapper" style={{ marginTop: "-8px" }}>
+      <div className="search-wrapper-container" style={{ marginBottom: "10px" }}>
+        <div className="search-wrapper">
           <div className="search-bar-container">
             <input
               type="text"

@@ -580,7 +580,7 @@ const Vendors = () => {
         }}
       >
         <h2>Vendors</h2>
-
+ 
         {/* <button
           style={{
             cursor: "pointer",
@@ -726,8 +726,21 @@ const Vendors = () => {
             </div>
           </div>
         </Modal>
-
-        <div></div>
+ <button
+          className="plus-button"
+          title="Add Vendor"
+          onClick={() => setShowAddVendorPopup(true)}
+          style={{
+            cursor: "pointer",
+            background: "transparent",
+            border: "none",
+            padding: "6px",
+            marginBottom: "-10px",
+          }}
+          
+        >
+          <img src={Add} alt="Add Vendor" />
+        </button>
       </div>
       <div className="search-wrapper-container">
         {/* Centered search bar */}
@@ -747,13 +760,7 @@ const Vendors = () => {
         </div>
 
         {/* Add Vendor Button */}
-        <button
-          className="plus-button"
-          title="Add Vendor"
-          onClick={() => setShowAddVendorPopup(true)}
-        >
-          <img src={Add} alt="Add Vendor" />
-        </button>
+      
       </div>
 
       <div className="table-container">
