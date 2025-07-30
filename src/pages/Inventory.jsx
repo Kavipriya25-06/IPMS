@@ -168,24 +168,37 @@ const Inventory = () => {
 
   // Fetch inventory data from API (filtered by status)
   const fetchInventoryData = async (status = "Available") => {
-    try {
-      let apiUrl = `${config.apiBaseURL}/inventory/`;
-      if (status && status !== "Tool") {
-        apiUrl += `?status=${status}`;
-      }
+  try {
+    let data = [];
 
-      const response = await fetch(apiUrl);
-      if (!response.ok) throw new Error("Failed to fetch inventory data");
+    if (status === "Available") {
+      // Fetch both Available and Reserved
+      const [availableRes, reservedRes] = await Promise.all([
+        fetch(`${config.apiBaseURL}/inventory/?status=Available`),
+        fetch(`${config.apiBaseURL}/inventory/?status=Reserved`),
+      ]);
 
-      const data = await response.json();
-      setInventoryData(data);
-      setFilteredInventory(data); // direct from backend
-      console.log("Fetched inventory data:", data);
-    } catch (error) {
-      console.error("Error fetching inventory data:", error);
-      showErrorToast("Failed to fetch inventory data");
+      if (!availableRes.ok || !reservedRes.ok) throw new Error("Failed to fetch Available or Reserved");
+
+      const available = await availableRes.json();
+      const reserved = await reservedRes.json();
+
+      data = [...available, ...reserved]; // merge both
+    } else {
+      const response = await fetch(`${config.apiBaseURL}/inventory/?status=${status}`);
+      if (!response.ok) throw new Error("Failed to fetch inventory");
+      data = await response.json();
     }
-  };
+
+    setInventoryData(data);
+    setFilteredInventory(data);
+    console.log("Fetched inventory data:", data);
+  } catch (error) {
+    console.error("Error fetching inventory data:", error);
+    showErrorToast("Failed to fetch inventory data");
+  }
+};
+
 
   const fetchToolInventoryData = async () => {
     try {
@@ -1005,7 +1018,9 @@ const Inventory = () => {
                       (row) =>
                         row.status === "Available" ||
                         row.status === "Reserved" ||
-                        row.status === "In_drone"
+                        row.status === "In_drone" ||
+                        row.status === "Repair" ||
+                        row.status === "Damaged"
                     ).length || 0;
                   const firstRow = componentRows[0];
                   const component = componentData[componentId] || {};
@@ -1014,7 +1029,7 @@ const Inventory = () => {
                   return (
                     <React.Fragment key={componentId}>
                       <tr
-                        onClick={() => toggleExpand(componentId)}
+                        onClick={() => toggleExpand(componentId)}     
                         className="clickable-row"
                         style={{
                           cursor: "pointer",
