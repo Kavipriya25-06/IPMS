@@ -128,7 +128,7 @@ const Mrf = () => {
     }
 
     const formattedData = filteredData.map((item, index) => ({
-      "S.No": index + 1, 
+      "S.No": index + 1,
       "MRF ID": item.MRF_id || "N/A",
       Name: item.name || "N/A",
       "Create Date": formatDate(item.create_date),
@@ -193,7 +193,7 @@ const Mrf = () => {
             <input
               type="text"
               className="search-bar"
-              placeholder="Search by Project Name, MRF ID"
+              placeholder="Search by MRF ID"
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
             />
@@ -344,7 +344,7 @@ const Mrf = () => {
                     fontStyle: "italic",
                   }}
                 >
-                  No data available for this date
+                  No data available for this search
                 </td>
               </tr>
             ) : (

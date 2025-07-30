@@ -138,34 +138,33 @@ const Vendors = () => {
     setPocData(updatedPocData);
   };
 
- const handleSavePoc = async (pocId) => {
-  if (!tempEditPoc) return;
-  try {
-    const response = await fetch(
-      `${config.apiBaseURL}/vendor_sub_list/${pocId}/`,
-      {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(tempEditPoc),
-      }
-    );
-    if (response.ok) {
-      // Replace old entry with updated one
-      setPocData((prev) =>
-        prev.map((p) => (p.id === pocId ? tempEditPoc : p))
+  const handleSavePoc = async (pocId) => {
+    if (!tempEditPoc) return;
+    try {
+      const response = await fetch(
+        `${config.apiBaseURL}/vendor_sub_list/${pocId}/`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(tempEditPoc),
+        }
       );
-      showSuccessToast("POC updated successfully");
-      setIsEditing(null);
-      setTempEditPoc(null);
-    } else {
-      showErrorToast("Failed to update POC");
+      if (response.ok) {
+        // Replace old entry with updated one
+        setPocData((prev) =>
+          prev.map((p) => (p.id === pocId ? tempEditPoc : p))
+        );
+        showSuccessToast("POC updated successfully");
+        setIsEditing(null);
+        setTempEditPoc(null);
+      } else {
+        showErrorToast("Failed to update POC");
+      }
+    } catch (error) {
+      console.error("Update error:", error);
+      showErrorToast("Error occurred while updating");
     }
-  } catch (error) {
-    console.error("Update error:", error);
-    showErrorToast("Error occurred while updating");
-  }
-};
-
+  };
 
   const scrollToTop = () => {
     window.scrollTo({
@@ -737,7 +736,7 @@ const Vendors = () => {
             <input
               type="text"
               className="search-bar"
-              placeholder="Search by Vendor Name or Component Type"
+              placeholder="Search by Component Type or Spec"
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
             />
@@ -773,31 +772,64 @@ const Vendors = () => {
             </tr>
           </thead>
           <tbody>
-            {vendorData.map((vendor) => {
-              const vendorPocs = getVendorPocs(vendor.vendor_id);
-              const selectedPocId = primaryPocSelection[vendor.vendor_id];
-              const defaultPoc =
-                vendorPocs.find((poc) => poc.default_poc) || {};
-              const defaultPocDetails = pocData.find(
-                (poc) => poc.vendor === vendor.vendor_id && poc.default_poc
-              );
-              const primaryPoc =
-                vendorPocs.find((poc) => poc.id === selectedPocId) ||
-                vendorPocs[0] ||
-                {};
+            {vendorData.length > 0 ? (
+              vendorData.map((vendor) => {
+                const vendorPocs = getVendorPocs(vendor.vendor_id);
+                const selectedPocId = primaryPocSelection[vendor.vendor_id];
+                const defaultPoc =
+                  vendorPocs.find((poc) => poc.default_poc) || {};
+                const defaultPocDetails = pocData.find(
+                  (poc) => poc.vendor === vendor.vendor_id && poc.default_poc
+                );
+                const primaryPoc =
+                  vendorPocs.find((poc) => poc.id === selectedPocId) ||
+                  vendorPocs[0] ||
+                  {};
 
-              // const primaryPoc = vendorPocs[0] || {}; // Use the first POC as the primary one
-              return (
-                <tr key={vendor.vendor_id}>
-                  <td
-                    className="specification-cell"
-                    title={vendor.vendor_name || ""}
-                  >
-                    {isEditingVendor === vendor.vendor_id ? (
-                      <div>
+                return (
+                  <tr key={vendor.vendor_id}>
+                    <td
+                      className="specification-cell"
+                      title={vendor.vendor_name || ""}
+                    >
+                      {isEditingVendor === vendor.vendor_id ? (
+                        <div>
+                          <input
+                            type="text"
+                            value={editedVendorName.vendor_name}
+                            style={{
+                              width: "150px",
+                              padding: "3px",
+                              borderRadius: "5px",
+                            }}
+                            onChange={(e) =>
+                              setEditedVendorName({
+                                ...editedVendorName,
+                                vendor_name: e.target.value,
+                              })
+                            }
+                            autoFocus
+                          />
+                        </div>
+                      ) : (
+                        <span
+                          onClick={() =>
+                            handleVendorNameClick(vendor.vendor_id)
+                          }
+                          style={{
+                            cursor: "pointer",
+                            textDecoration: "underline",
+                          }}
+                        >
+                          {vendor.vendor_name}
+                        </span>
+                      )}
+                    </td>
+                    <td>
+                      {isEditingVendor === vendor.vendor_id ? (
                         <input
                           type="text"
-                          value={editedVendorName.vendor_name}
+                          value={editedVendorName.gstn}
                           style={{
                             width: "150px",
                             padding: "3px",
@@ -806,102 +838,79 @@ const Vendors = () => {
                           onChange={(e) =>
                             setEditedVendorName({
                               ...editedVendorName,
-                              vendor_name: e.target.value,
+                              gstn: e.target.value,
                             })
                           }
-                          autoFocus
                         />
-                      </div>
-                    ) : (
-                      <span
-                        onClick={() => handleVendorNameClick(vendor.vendor_id)}
+                      ) : (
+                        vendor.gstn
+                      )}
+                    </td>
+                    <td
+                      onClick={() => handlePocClick(vendor.vendor_id)}
+                      style={{ cursor: "pointer", textDecoration: "underline" }}
+                    >
+                      {defaultPoc.point_of_contact || "N/A"}
+                    </td>
+                    <td>{defaultPoc.email || "N/A"}</td>
+                    <td>{defaultPoc.phone_number || "N/A"}</td>
+                    <td>{defaultPoc.location || "N/A"}</td>
+                    <td>
+                      {isEditingVendor === vendor.vendor_id ? (
+                        <>
+                          <button
+                            className="edit-button"
+                            onClick={() =>
+                              handleSaveVendorName(vendor.vendor_id)
+                            }
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            className="cancel-button"
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => handleEditVendorName(vendor)}
+                          className="vendor-button"
+                          aria-label="Edit vendor"
+                          style={{ border: "none", cursor: "pointer" }}
+                        >
+                          <PencilSquareIcon className="text-black" />
+                        </button>
+                      )}
+                    </td>
+                    <td>
+                      <button
+                        onClick={() =>
+                          toggleVendorStatus(vendor.vendor_id, vendor.active)
+                        }
                         style={{
+                          backgroundColor: vendor.active ? "#b1afaf" : "grey",
+                          color: "white",
+                          padding: "5px 10px",
+                          border: "none",
                           cursor: "pointer",
-                          textDecoration: "underline",
-                        }}
-                      >
-                        {vendor.vendor_name}
-                      </span>
-                    )}
-                  </td>
-                  <td>
-                    {isEditingVendor === vendor.vendor_id ? (
-                      <input
-                        type="text"
-                        value={editedVendorName.gstn}
-                        style={{
-                          width: "150px",
-                          padding: "3px",
                           borderRadius: "5px",
                         }}
-                        onChange={(e) =>
-                          setEditedVendorName({
-                            ...editedVendorName,
-                            gstn: e.target.value,
-                          })
-                        }
-                      />
-                    ) : (
-                      vendor.gstn
-                    )}
-                  </td>
-                  <td
-                    onClick={() => handlePocClick(vendor.vendor_id)}
-                    style={{ cursor: "pointer", textDecoration: "underline" }}
-                  >
-                    {defaultPoc.point_of_contact || "N/A"}
-                  </td>
-                  <td>{defaultPoc.email || "N/A"}</td>
-                  <td>{defaultPoc.phone_number || "N/A"}</td>
-                  <td>{defaultPoc.location || "N/A"}</td>
-                  {/* <td>{primaryPoc.category || "N/A"}</td> */}
-                  <td>
-                    {isEditingVendor === vendor.vendor_id ? (
-                      <>
-                        <button
-                          className="edit-button"
-                          onClick={() => handleSaveVendorName(vendor.vendor_id)}
-                        >
-                          Save
-                        </button>
-                        <button
-                          onClick={handleCancelEdit}
-                          className="cancel-button"
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        onClick={() => handleEditVendorName(vendor)}
-                        className="vendor-button"
-                        aria-label="Edit vendor"
-                        style={{ border: "none", cursor: "pointer" }}
                       >
-                        <PencilSquareIcon className="text-black" />
+                        {vendor.active ? "Active" : "Inactive"}
                       </button>
-                    )}
-                  </td>
-                  <td>
-                    <button
-                      onClick={() =>
-                        toggleVendorStatus(vendor.vendor_id, vendor.active)
-                      }
-                      style={{
-                        backgroundColor: vendor.active ? "#b1afaf" : "grey",
-                        color: "white",
-                        padding: "5px 10px",
-                        border: "none",
-                        cursor: "pointer",
-                        borderRadius: "5px",
-                      }}
-                    >
-                      {vendor.active ? "Active" : "Inactive"}
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
+                    </td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td colSpan="8" style={{ textAlign: "center", color: "gray" }}>
+                  No vendor data found.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -1190,7 +1199,7 @@ const Vendors = () => {
                         <td>
                           <input
                             type="text"
-                            placeholder="Location"
+                            placeholder="Address"
                             value={newPOC.location}
                             style={{
                               width: "200px",

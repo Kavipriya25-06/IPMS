@@ -709,6 +709,10 @@ const handleGenerateReport = () => {
             >
               Show Latest Price Info
             </button>
+            
+            <button className="generate-report-btn" onClick={handleGenerateReport}>
+  Generate Report
+</button>
           </div>
 
           {/* <h4>Components:</h4> */}
@@ -886,11 +890,7 @@ const handleGenerateReport = () => {
         </>
       )}
 
-      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "20px" }}>
-<button className="generate-report-btn" onClick={handleGenerateReport}>
-  Generate Report
-</button>
-      </div>
+
 
       <ToastContainerComponent />
     </div>

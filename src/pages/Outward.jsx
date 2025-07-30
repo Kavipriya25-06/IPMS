@@ -703,7 +703,7 @@ const Outward = () => {
                       <td>{row.vendor || "-"}</td>
                       <td>{row.specification || "-"}</td>
                       <td>{row.quantity || "-"}</td>
-                      <td>{row.project || "-"}</td>
+                      <td>{getProjectName(row.project) || "-"}</td>
                       <td>{row.type_of_outward || "-"}</td>
                       <td>{row.remarks || "-"}</td>
                     </>
@@ -750,7 +750,7 @@ const Outward = () => {
                       <td>{row.component_id || "-"}</td>
                       <td>{row.vendor || "-"}</td>
                       <td>{row.quantity || "-"}</td>
-                      <td>{getProjectName(row.project)}</td>
+                      <td>{getProjectName(row.project) || "-"}</td>
                       <td>{row.type_of_outward || "-"}</td>
                       <td>{row.remarks || "-"}</td>
 
@@ -788,7 +788,7 @@ const Outward = () => {
                       </td>
                       <td>{row.invoice_no || "-"}</td>
                       <td>{row.event_name || "-"}</td>
-                      <td>{row.project || "-"}</td>
+                      <td>{getProjectName(row.project) || "-"}</td>
                       <td>{row.type_of_outward || "-"}</td>
                       <td>{row.quantity || "-"}</td>
                       <td>

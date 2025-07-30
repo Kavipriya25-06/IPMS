@@ -162,6 +162,10 @@ const Inventory = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    filterInventory();
+  }, [selectedTag, inventoryData, componentData, metaTags, selectedStatus]);
+
   // Fetch inventory data from API (filtered by status)
   const fetchInventoryData = async (status = "Available") => {
     try {
@@ -680,11 +684,13 @@ const Inventory = () => {
           gap: "10px",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "4px", }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
           <span style={{ fontWeight: "bold", margin: 0, fontSize: "20px" }}>
             Total Inventory Count:
           </span>
-          <span style={{ fontWeight: "bold",marginTop: 4,fontSize: "20px" }}>{filteredInventory.length || 0}</span>
+          <span style={{ fontWeight: "bold", marginTop: 4, fontSize: "20px" }}>
+            {filteredInventory.length || 0}
+          </span>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -1163,7 +1169,12 @@ const Inventory = () => {
                     colSpan="11"
                     style={{ textAlign: "center", color: "gray" }}
                   >
-                    {fromDate && toDate ? (
+                    {selectedTag.trim() ? (
+                      <>
+                        No results found for tag "<strong>{selectedTag}</strong>
+                        "
+                      </>
+                    ) : fromDate && toDate ? (
                       <>
                         No data available from{" "}
                         <strong>{formatDate(fromDate)}</strong> to{" "}

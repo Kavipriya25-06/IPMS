@@ -257,7 +257,6 @@ const POOrderList = ({ user }) => {
       const uploadData = await uploadResponse.json();
       const uploadedFilePath = uploadData.file_path; // Extract the file path from the response
 
-     
       // Append email lists as JSON strings
       formDataUpload.append("recipient", JSON.stringify(recipientList));
       formDataUpload.append("cc", JSON.stringify(ccList));
@@ -390,7 +389,6 @@ const POOrderList = ({ user }) => {
       if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
       return 0;
     });
-
 
   // Close Status Popup
   const handleClosePopup = () => {
@@ -560,34 +558,46 @@ const POOrderList = ({ user }) => {
               </tr>
             </thead>
             <tbody>
-              {filteredPOOrders.map((order) => {
-                const { status } = getAggregatedStatus(order.id);
-                const finalPrice = finalCost(order.id);
-                return (
-                  <tr key={order.id}>
-                    <td
-                      style={{
-                        cursor: "pointer",
-                        textDecoration: "underline",
-                      }}
-                      onClick={() => navigate(`/po-details/${order.id}`)}
-                    >
-                      {order.id}
-                    </td>
-                    <td>{order.cart_details.vendor_name}</td>
-                    <td>{status}</td>
-                    <td style={{ textAlign: "right" }}>
-                      {" "}
-                      ₹
-                      {parseFloat(finalPrice).toLocaleString("en-IN", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </td>
-                    <td>{format(new Date(order.date), "dd-MM-yyyy")}</td>
-                  </tr>
-                );
-              })}
+              {filteredPOOrders.length > 0 ? (
+                filteredPOOrders.map((order) => {
+                  const { status } = getAggregatedStatus(order.id);
+                  const finalPrice = finalCost(order.id);
+                  return (
+                    <tr key={order.id}>
+                      <td
+                        style={{
+                          cursor: "pointer",
+                          textDecoration: "underline",
+                        }}
+                        onClick={() => navigate(`/po-details/${order.id}`)}
+                      >
+                        {order.id}
+                      </td>
+                      <td>{order.cart_details.vendor_name}</td>
+                      <td>{status}</td>
+                      <td style={{ textAlign: "right" }}>
+                        ₹
+                        {parseFloat(finalPrice).toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </td>
+                      <td>{format(new Date(order.date), "dd-MM-yyyy")}</td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td
+                    colSpan="5"
+                    style={{ textAlign: "center", color: "gray" }}
+                  >
+                    {nameFilter.trim()
+                      ? `No data found for name "${nameFilter}"`
+                      : "No purchase orders available."}
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         )}
@@ -598,7 +608,6 @@ const POOrderList = ({ user }) => {
           <div className="popup">
             <h3>Send Email for PO ID: {currentPO?.id}</h3>
             <form style={{ marginTop: "5px" }}>
-
               <div
                 style={{
                   padding: 5,
