@@ -1507,47 +1507,49 @@ const RequestDetails = ({ user }) => {
           )}
 
           {showSerialPopup && (
-            <div className="popup">
-              <div className="serial-modal">
-                <div className="modal-header">
-                  <h3 className="modal-title">Select Serial Numbers</h3>
-                  <button
-                    className="x-button"
-                    onClick={() => setShowSerialPopup(false)}
-                  >
-                    &times;
-                  </button>
-                </div>
+            <div className="modal-overlay">
+              <div className="popup">
+                <div className="serial-modal">
+                  <div>
+                    <h3 >Select Serial Numbers</h3>
+                    <button
+                      className="x-button"
+                      onClick={() => setShowSerialPopup(false)}
+                    >
+                      &times;
+                    </button>
+                  </div>
 
-                <ul className="serial-list">
-                  {serialNumbers.map((serial, index) => (
-                    <li key={index}>
-                      <button
-                        className={`serial-button ${
-                          selectedSerialNumbers.includes(serial)
-                            ? "selected"
-                            : ""
-                        }`}
-                        onClick={() => handleSerialSelection(serial)}
-                      >
-                        {serial}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                  <ul className="serial-list">
+                    {serialNumbers.map((serial, index) => (
+                      <li key={index}>
+                        <button
+                          className={`serial-button ${
+                            selectedSerialNumbers.includes(serial)
+                              ? "selected"
+                              : ""
+                          }`}
+                          onClick={() => handleSerialSelection(serial)}
+                        >
+                          {serial}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
 
-                <div className="modal-actions">
-                  <button
-                    className={`confirm-button ${
-                      selectedSerialNumbers.length === requiredQty
-                        ? ""
-                        : "disabled"
-                    }`}
-                    onClick={handleConfirmAssignment}
-                    disabled={selectedSerialNumbers.length !== requiredQty}
-                  >
-                    Confirm Assignment
-                  </button>
+                  <div className="modal-actions">
+                    <button
+                      className={`confirm-button ${
+                        selectedSerialNumbers.length === requiredQty
+                          ? ""
+                          : "disabled"
+                      }`}
+                      onClick={handleConfirmAssignment}
+                      disabled={selectedSerialNumbers.length !== requiredQty}
+                    >
+                      Confirm Assignment
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

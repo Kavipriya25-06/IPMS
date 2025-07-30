@@ -203,6 +203,7 @@ const Outward = () => {
       "Project",
       "Type of Outward",
       "Remarks",
+      "Attachements",
     ],
     Event: [
       "Out Date",
@@ -538,48 +539,74 @@ const Outward = () => {
     link.remove();
   };
 
-  const generateManufacturePDF = (row) => {
-    const doc = new jsPDF();
+  const generateManufacturePDF = async (row) => {
+    try {
+      // Fetch vendor details from API
+      const vendorResponse = await axios.get(
+        `${config.apiBaseURL}/vendor_sub_list/`
+      );
+      const vendorData = vendorResponse.data;
 
-    // Header
-    doc.setFontSize(16);
-    doc.text("DELIVERY NOTE", 80, 20);
+      // Find vendor address
+      const vendorDetails = vendorData.find(
+        (v) => v.vendor_name === row.vendor
+      );
+      const vendorAddress = vendorDetails
+        ? vendorDetails.location
+        : "Address not found";
 
-    // Company Details
-    doc.setFontSize(10);
-    doc.text("Dronix Technologies Pvt Ltd", 15, 30);
-    doc.text("133, Gandhi Rd, Alappakam,New Perungalathur,", 15, 35);
-    doc.text(" Chennai, Sadhanathapuram, Tamil Nadu 600063", 15, 40);
-    doc.text("GSTIN/UIN: 33AACGD1081K1ZS", 15, 45);
+      const doc = new jsPDF();
 
-    // Delivery Info
-    doc.text(`Delivery Note No: ${row.gatepass || "-"}`, 140, 30);
-    doc.text(`Date: ${row.date || "-"}`, 140, 35);
+      // Header
+      doc.setFontSize(16);
+      doc.text("DELIVERY NOTE", 80, 20);
 
-    // Table using autoTable plugin
-    autoTable(doc, {
-      startY: 55,
-      head: [
-        ["Sl No", "Description of Goods", "HSN/SAC", "Quantity", "Remarks"],
-      ],
-      body: [
-        [
-          "1",
-          row.specification || "-",
-          row.component_id || "-",
-          row.quantity || "-",
-          row.remarks || "-",
+      // Company Details
+      doc.setFontSize(10);
+      doc.text("Dronix Technologies Pvt Ltd", 15, 30);
+      doc.text("133, Gandhi Rd, Alappakam,New Perungalathur,", 15, 35);
+      doc.text("Chennai, Sadhanathapuram, Tamil Nadu 600063", 15, 40);
+      doc.text("GSTIN/UIN: 33AACGD1081K1ZS", 15, 45);
+
+      // Delivery Info
+      doc.text(`Delivery Note No: ${row.gatepass || "-"}`, 140, 30);
+      doc.text(`Date: ${row.date || "-"}`, 140, 35);
+
+      // Vendor Info
+      doc.setFontSize(11);
+      doc.text(`Consignee (Ship to):`, 15, 55);
+      doc.setFontSize(10);
+      doc.text(`${row.vendor || "-"}`, 15, 60);
+      doc.text(`${vendorAddress}`, 15, 65);
+
+      // Table using autoTable plugin
+      autoTable(doc, {
+        startY: 75,
+        head: [
+          ["Sl No", "Description of Goods", "HSN/SAC", "Quantity", "Remarks"],
         ],
-      ],
-    });
+        body: [
+          [
+            "1",
+            row.specification || "-",
+            row.component_id || "-",
+            row.quantity || "-",
+            row.remarks || "-",
+          ],
+        ],
+      });
 
-    // Footer
-    const finalY = doc.lastAutoTable.finalY || 90;
-    doc.text("Recd. in Good Condition", 15, finalY + 20);
-    doc.text("for Dronix Technologies Pvt Ltd", 140, finalY + 20);
+      // Footer
+      const finalY = doc.lastAutoTable.finalY || 100;
+      doc.text("Recd. in Good Condition", 15, finalY + 20);
+      doc.text("for Dronix Technologies Pvt Ltd", 140, finalY + 20);
 
-    // Download
-    doc.save(`DeliveryNote_${row.gatepass || "NA"}.pdf`);
+      // Download
+      doc.save(`DeliveryNote_${row.gatepass || "NA"}.pdf`);
+    } catch (error) {
+      console.error("Error generating PDF with vendor address:", error);
+      showErrorToast("Failed to fetch vendor details for PDF");
+    }
   };
 
   return (

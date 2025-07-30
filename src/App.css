@@ -2640,35 +2640,33 @@ main {
 }
 
 .serial-list {
-  list-style: none;
+  display: flex;
+  flex-wrap: wrap; 
+  justify-content: center; 
+  align-items: center; 
+  list-style-type: none;
   padding: 0;
-  margin-bottom: 20px;
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-.serial-list li {
-  margin-bottom: 8px;
+  margin: 0;
+  gap: 10px;
+  height: 10vh; 
+  max-height: 30vh;
 }
 
 .serial-button {
-  background: none;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  color: black;
-  padding: 6px 12px;
+  padding: 10px 20px;
+  border: none;
   cursor: pointer;
-  transition: all 0.3s ease;
+  background: #f0f0f0;
+  border-radius: 4px;
 }
 
-.serial-button:hover {
-  background-color: #f0f0f0;
+.serial-button:hover{
+  background-color: #dad8d8 !important;
 }
 
 .serial-button.selected {
   color: white;
-  background-color: gray;
-  font-weight: bold;
+  background-color: #a09e9e;
 }
 
 .modal-actions {
