@@ -8,6 +8,9 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { format, parseISO } from "date-fns";
 
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
 import {
   showSuccessToast,
   showErrorToast,
@@ -535,6 +538,50 @@ const Outward = () => {
     link.remove();
   };
 
+  const generateManufacturePDF = (row) => {
+    const doc = new jsPDF();
+
+    // Header
+    doc.setFontSize(16);
+    doc.text("DELIVERY NOTE", 80, 20);
+
+    // Company Details
+    doc.setFontSize(10);
+    doc.text("Dronix Technologies Pvt Ltd", 15, 30);
+    doc.text("133, Gandhi Rd, Alappakam,New Perungalathur,", 15, 35);
+    doc.text(" Chennai, Sadhanathapuram, Tamil Nadu 600063", 15, 40);
+    doc.text("GSTIN/UIN: 33AACGD1081K1ZS", 15, 45);
+
+    // Delivery Info
+    doc.text(`Delivery Note No: ${row.gatepass || "-"}`, 140, 30);
+    doc.text(`Date: ${row.date || "-"}`, 140, 35);
+
+    // Table using autoTable plugin
+    autoTable(doc, {
+      startY: 55,
+      head: [
+        ["Sl No", "Description of Goods", "HSN/SAC", "Quantity", "Remarks"],
+      ],
+      body: [
+        [
+          "1",
+          row.specification || "-",
+          row.component_id || "-",
+          row.quantity || "-",
+          row.remarks || "-",
+        ],
+      ],
+    });
+
+    // Footer
+    const finalY = doc.lastAutoTable.finalY || 90;
+    doc.text("Recd. in Good Condition", 15, finalY + 20);
+    doc.text("for Dronix Technologies Pvt Ltd", 140, finalY + 20);
+
+    // Download
+    doc.save(`DeliveryNote_${row.gatepass || "NA"}.pdf`);
+  };
+
   return (
     <div>
       <div
@@ -706,8 +753,24 @@ const Outward = () => {
                       <td>{getProjectName(row.project) || "-"}</td>
                       <td>{row.type_of_outward || "-"}</td>
                       <td>{row.remarks || "-"}</td>
+
+                      {/* New Column - PDF Button */}
+                      <td>
+                        <button
+                          style={{
+                            cursor: "pointer",
+                            background: "transparent",
+                            border: "none",
+                          }}
+                          title="Generate PDF"
+                          onClick={() => generateManufacturePDF(row)}
+                        >
+                          📄
+                        </button>
+                      </td>
                     </>
                   )}
+
                   {reportType === "Event" && (
                     <>
                       <td>
@@ -725,7 +788,7 @@ const Outward = () => {
                       </td>
                       <td>{row.invoice_no || "-"}</td>
                       <td>{row.event_name || "-"}</td>
-                      <td>{getProjectName(row.project)|| "-"}</td>
+                      <td>{getProjectName(row.project) || "-"}</td>
                       <td>{row.type_of_outward || "-"}</td>
                       <td>{row.quantity || "-"}</td>
                       <td>

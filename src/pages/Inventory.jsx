@@ -396,7 +396,7 @@ const Inventory = () => {
     let status = statusFilter;
 
     if (status === "Tool") {
-      reportData = toolInventory; // ✅ from state
+      reportData = toolInventory; //  from state
     } else {
       reportData = filteredInventory.filter((item) => item.status === status);
     }
@@ -657,6 +657,12 @@ const Inventory = () => {
           onClick={() => setStatusFilter("In_drone")}
         >
           In Drone
+        </button>
+        <button
+          className={`tab-btn ${statusFilter === "Repair" ? "active" : ""}`}
+          onClick={() => setStatusFilter("Repair")}
+        >
+          Repair
         </button>
         <button
           className={`tab-btn ${statusFilter === "Damaged" ? "active" : ""}`}
