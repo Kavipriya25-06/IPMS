@@ -8,6 +8,9 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { format, parseISO } from "date-fns";
 
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+
 import {
   showSuccessToast,
   showErrorToast,
@@ -280,6 +283,8 @@ const Outward = () => {
 
       if (res.ok) {
         showSuccessToast("Outward entry saved!");
+        generateManufacturePDF(payload); // <-- Generate PDF here
+
         setShowServiceForm(false);
         setServiceForm({
           outDate: new Date(),
@@ -533,6 +538,67 @@ const Outward = () => {
     document.body.appendChild(link);
     link.click();
     link.remove();
+  };
+
+  const generateManufacturePDF = (data) => {
+    const doc = new jsPDF();
+
+    // --- Header Title
+    doc.setFontSize(14);
+    doc.text("DELIVERY NOTE", 80, 15);
+
+    // --- Company Details
+    doc.setFontSize(10);
+    doc.text("Dronix Technologies Pvt Ltd", 14, 25);
+    doc.text("No.7, KRJ Building, 3rd Floor, Welders Street,", 14, 30);
+    doc.text("Mount Road, Chennai - 600002", 14, 35);
+    doc.text("GSTIN/UIN: 33AACGD1081K1ZS", 14, 40);
+    doc.text("Email: finance@aero360.co.in", 14, 45);
+
+    // --- Delivery Details
+    doc.text(`Delivery Note No: ${data.gatepass || "-"}`, 150, 25);
+    doc.text(`Date: ${new Date(data.date).toLocaleDateString()}`, 150, 30);
+
+    // --- Consignee
+    doc.setFontSize(10);
+    doc.text("Consignee (Ship To):", 14, 60);
+    doc.text(`${data.vendor}`, 14, 65);
+    doc.text(`Project: ${data.project}`, 14, 70);
+
+    // --- Table Data
+    const tableColumn = [
+      "Sl No",
+      "Description of Goods",
+      "HSN/SAC",
+      "Quantity",
+      "Rate",
+      "Amount",
+    ];
+    const tableRows = [
+      [
+        "1",
+        data.specification,
+        data.component_id || "-",
+        `${data.quantity} Nos`,
+        " ",
+        " ",
+      ],
+    ];
+    doc.autoTable({
+      startY: 80,
+      head: [tableColumn],
+      body: tableRows,
+    });
+
+    // --- Footer
+    const finalY = doc.lastAutoTable.finalY + 10;
+    doc.text("Remarks:", 14, finalY);
+    doc.text(data.remarks || "-", 35, finalY);
+
+    doc.text("Recd. in Good Condition", 14, finalY + 20);
+    doc.text("This is a Computer-Generated Document", 14, finalY + 30);
+
+    doc.save(`DeliveryNote_${data.gatepass || "temp"}.pdf`);
   };
 
   return (
