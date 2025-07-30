@@ -659,6 +659,12 @@ const Inventory = () => {
           In Drone
         </button>
         <button
+          className={`tab-btn ${statusFilter === "Repair" ? "active" : ""}`}
+          onClick={() => setStatusFilter("Repair")}
+        >
+          Repair
+        </button>
+        <button
           className={`tab-btn ${statusFilter === "Damaged" ? "active" : ""}`}
           onClick={() => setStatusFilter("Damaged")}
         >
