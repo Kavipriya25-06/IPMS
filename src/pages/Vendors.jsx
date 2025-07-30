@@ -1190,7 +1190,7 @@ const Vendors = () => {
                         <td>
                           <input
                             type="text"
-                            placeholder="Location"
+                            placeholder="Address"
                             value={newPOC.location}
                             style={{
                               width: "200px",
