@@ -4493,3 +4493,52 @@ ul {
   width: 50%; /* ensure it fills the dropdown width */
   font-size: 14px;
 }
+
+.popup-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 20px;
+  overflow-x: auto;
+}
+
+.popup {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  max-width: 95vw; /* Ensure it doesn't overflow screen */
+  min-width: 600px;
+  width: fit-content;
+  transition: width 0.3s ease;
+  overflow-x: auto;
+}
+
+.popup-expanded {
+  width: fit-content;
+}
+
+.fake-date-input {
+  border: 1px solid #ccc;
+  padding: 8px;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  width: 150px; 
+  background-color: white;
+  border-radius: 6px;
+}
+.calendar-icon {
+  margin-left: 8px;
+  color: #555;
+}
+
+.floating-datepicker {
+  position: absolute;
+  z-index: 9999;
+}
+
+
+

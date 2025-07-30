@@ -245,7 +245,6 @@ const Inventory = () => {
 
     let filtered = [...inventoryData];
 
-
     if (fromDate && toDate) {
       filtered = filtered.filter((item) => {
         const createdDate = new Date(item.create_date);
@@ -671,35 +670,48 @@ const Inventory = () => {
           Tool Inventory
         </button>
       </div>
+
       <div
         style={{
           display: "flex",
-          justifyContent: "flex-end",
+          justifyContent: "space-between",
+          alignItems: "center",
           margin: "10px 0",
           gap: "10px",
         }}
       >
-        <button
-          style={{
-            cursor: "pointer",
-            background: "transparent",
-            border: "none",
-          }}
-          title="Filter by Date"
-          onClick={() => setShowDateFilter(true)}
-        >
-          <img
-            src={Filter}
-            alt="Filter"
-            style={{ width: "25px", height: "30px" }}
-          />
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: "4px", }}>
+          <span style={{ fontWeight: "bold", margin: 0, fontSize: "20px" }}>
+            Total Inventory Count:
+          </span>
+          <span style={{ fontWeight: "bold",marginTop: 4,fontSize: "20px" }}>{filteredInventory.length || 0}</span>
+        </div>
 
-        <button onClick={handleGenerateReport} className="generate-report-btn">
-          Generate Report
-        </button>
-        {statusFilter === "Tool" && (
-          <>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <button
+            style={{
+              cursor: "pointer",
+              background: "transparent",
+              border: "none",
+            }}
+            title="Filter by Date"
+            onClick={() => setShowDateFilter(true)}
+          >
+            <img
+              src={Filter}
+              alt="Filter"
+              style={{ width: "25px", height: "30px" }}
+            />
+          </button>
+
+          <button
+            onClick={handleGenerateReport}
+            className="generate-report-btn"
+          >
+            Generate Report
+          </button>
+
+          {statusFilter === "Tool" && (
             <button
               style={{
                 cursor: "pointer",
@@ -718,11 +730,16 @@ const Inventory = () => {
                 })
               }
             >
-              <img src={Add} alt="" style={{ width: "20px", height: "20px" }} />
+              <img
+                src={Add}
+                alt="Add"
+                style={{ width: "20px", height: "20px" }}
+              />
             </button>
-          </>
-        )}
-      </div>{" "}
+          )}
+        </div>
+      </div>
+
       <div className="table-container">
         {statusFilter !== "Tool" ? (
           <table className="inventory-table">
@@ -1086,9 +1103,7 @@ const Inventory = () => {
                             }}
                           >
                             <td>{row.component_id}</td>
-                            <td>
-                              {row.serial_number}{" "}
-                            </td>
+                            <td>{row.serial_number} </td>
                             <td
                               onDoubleClick={() =>
                                 handleDoubleClick(row.id, row.sku_number)
@@ -1160,16 +1175,16 @@ const Inventory = () => {
                   </td>
                 </tr>
               )}
-              <tr>
+              {/* <tr>
                 <td style={{ fontWeight: "bold" }}>Total Inventory count</td>
                 <td>
-                  {/* {filteredInventory.filter(
+                   {filteredInventory.filter(
                 (row) => row.status === "Available" || row.status === "Reserved"
-              ).length || 0} */}
+              ).length || 0} 
                   {filteredInventory.length || 0}
                 </td>
                 <td colSpan="10" className="no-data"></td>
-              </tr>
+              </tr> */}
             </tbody>
           </table>
         ) : (

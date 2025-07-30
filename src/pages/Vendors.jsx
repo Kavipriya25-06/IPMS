@@ -684,7 +684,7 @@ const Vendors = () => {
             )}
             <input
               type="text"
-              placeholder="Address"
+              placeholder="Location"
               value={newSubVendor.location}
               onChange={(e) =>
                 handleSubVendorInputChange("location", e.target.value)
@@ -758,7 +758,7 @@ const Vendors = () => {
               <th>Primary POC</th>
               <th>Email</th>
               <th>Phone</th>
-              <th>Address</th>
+              <th>Location</th>
               {/* <th>Categosfbry</th> */}
               <th>Actions</th>
               <th>Status</th>
@@ -939,7 +939,7 @@ const Vendors = () => {
                     <th>POC Name</th>
                     <th>Email</th>
                     <th>Phone</th>
-                    <th>Address</th>
+                    <th>Location</th>
                     {/* <th>Category</th> */}
                     <th>Actions</th>
                   </tr>
@@ -1188,7 +1188,7 @@ const Vendors = () => {
                       <td>
                         <input
                           type="text"
-                          placeholder="Address"
+                          placeholder="Location"
                           value={newPOC.location}
                           style={{
                             width: "200px",
@@ -1200,6 +1200,21 @@ const Vendors = () => {
                           }
                         />
                       </td>
+                      {/* <td>
+                    <select
+                      value={newPOC.category}
+                      onChange={(e) =>
+                        handleInputChange("category", e.target.value)
+                      }
+                    >
+                      <option value="">Select Category</option>
+                      <option value="Airframe">Airframe</option>
+                      <option value="Communication">Communication</option>
+                      <option value="Electricals">Electricals</option>
+                      <option value="Electronics">Electronics</option>
+                      <option value="Payload">Payload</option>
+                    </select>
+                  </td> */}
                       <td>
                         <button className="edit-button" onClick={handleAddPOC}>
                           Save

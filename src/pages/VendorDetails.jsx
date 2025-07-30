@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import CustomMessagebox from "./CustomMessageBox.jsx";
 import config from "../Config"; // Import config for API endpoints
 import Add from "../assets/Add.png";
 import Cancel from "../assets/cancel.png";
 import Back from "../assets/Back.png";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 import {
   showSuccessToast,
@@ -62,6 +64,22 @@ const VendorDetails = () => {
     active: "",
   });
   const [componentList, setComponentList] = useState([]);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [calendarPosition, setCalendarPosition] = useState({ top: 0, left: 0 });
+  const dateInputRef = useRef(null);
+  const [showEditCalendar, setShowEditCalendar] = useState(false);
+  const [editCalendarPosition, setEditCalendarPosition] = useState({
+    top: 0,
+    left: 0,
+  });
+  const editDateInputRef = useRef(null);
+
+  const formatDateToYYYYMMDD = (date) => {
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, "0");
+    const day = `${date.getDate()}`.padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
 
   const fetchImagesForComponent = async (componentId) => {
     try {
@@ -216,6 +234,13 @@ const VendorDetails = () => {
   };
 
   const handleAddPriceEntry = async () => {
+    const { date, price, tax, delivery_days } = newPriceEntry; // ✅ Add this
+
+    if (!date || !price || !tax || !delivery_days) {
+      showInfoToast("Please fill all the fields");
+      return;
+    }
+
     const payload = {
       current_time: newPriceEntry.date,
       price: newPriceEntry.price,
@@ -249,6 +274,9 @@ const VendorDetails = () => {
         setPriceHistory([...priceHistory, addedEntry]);
         setNewPriceEntry({ date: "", price: "", tax: "", delivery_days: "" });
         setShowAddPriceEntryForm(false);
+        showSuccessToast("Price entry saved successfully");
+      } else {
+        showErrorToast("Failed to save price entry");
       }
     } catch (error) {
       console.error("Error adding price entry:", error);
@@ -310,6 +338,7 @@ const VendorDetails = () => {
           )
         );
         setIsEditingPriceEntry(null);
+        showSuccessToast("Price Details Updated Successfully");
       } else {
         console.error("Failed to update price entry:", response.statusText);
       }
@@ -331,6 +360,8 @@ const VendorDetails = () => {
 
       if (response.ok) {
         // 1. Remove from priceHistory
+        showSuccessToast("Deleted successfully");
+
         const updatedHistory = priceHistory.filter((_, i) => i !== index);
         setPriceHistory(updatedHistory);
 
@@ -1034,234 +1065,337 @@ const VendorDetails = () => {
       {/* Price History Modal */}
       {showPriceHistory && (
         <div className="modal-overlay">
-          <div className="popup" style={{ width: "40%" }}>
-            <span className="x-button" onClick={handleClosePriceHistory}>
-              &times;
-            </span>
-            <h3>Price History</h3>
-            <div className="button-wrapper">
-              <button
-                onClick={() => setShowAddPriceEntryForm(true)}
-                className="price-entry-button"
-              >
-                Add Price Entry
-              </button>
-            </div>
+          <div className="popup-wrapper">
+            <div
+              className={`popup ${
+                showAddPriceEntryForm ? "popup-expanded" : ""
+              }`}
+            >
+              {" "}
+              <span className="x-button" onClick={handleClosePriceHistory}>
+                &times;
+              </span>
+              <h3>Price History</h3>
+              <div className="button-wrapper">
+                <button
+                  onClick={() => {
+                    setNewPriceEntry({
+                      date: "",
+                      price: "",
+                      tax: "",
+                      delivery_days: "",
+                    });
+                    setShowAddPriceEntryForm(true);
+                  }}
+                  className="price-entry-button"
+                >
+                  Add Price Entry
+                </button>
+              </div>
+              <div className="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Price</th>
+                      <th>Tax %</th>
+                      <th>Delivery Days</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {priceHistory.map((entry, index) => (
+                      <tr key={index}>
+                        <td>
+                          {isEditingPriceEntry === index ? (
+                            <>
+                              <div
+                                ref={editDateInputRef}
+                                className="fake-date-input"
+                                onClick={() => {
+                                  if (editDateInputRef.current) {
+                                    const rect =
+                                      editDateInputRef.current.getBoundingClientRect();
+                                    setEditCalendarPosition({
+                                      top: rect.bottom + window.scrollY,
+                                      left: rect.left + window.scrollX,
+                                    });
+                                    setShowEditCalendar(true);
+                                  }
+                                }}
+                              >
+                                {editPriceEntry.date
+                                  ? new Date(
+                                      editPriceEntry.date
+                                    ).toLocaleDateString("en-GB")
+                                  : "dd-mm-yyyy"}
+                                <i className="fas fa-calendar-alt calendar-icon"></i>
+                              </div>
 
-            <div className="table-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Price</th>
-                    <th>Tax %</th>
-                    <th>Delivery Days</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {priceHistory.map((entry, index) => (
-                    <tr key={index}>
-                      <td>
-                        {isEditingPriceEntry === index ? (
+                              {/* Floating calendar rendered outside table */}
+                            </>
+                          ) : (
+                            new Date(entry.current_time).toLocaleDateString(
+                              "en-GB"
+                            )
+                          )}
+                        </td>
+
+                        <td style={{ textAlign: "right" }}>
+                          {isEditingPriceEntry === index ? (
+                            <input
+                              type="number"
+                              value={editPriceEntry.price}
+                              onChange={(e) =>
+                                setEditPriceEntry({
+                                  ...editPriceEntry,
+                                  price: e.target.value,
+                                })
+                              }
+                              style={{ width: "100px" }}
+                            />
+                          ) : (
+                            `₹${parseFloat(entry.price).toLocaleString(
+                              "en-IN",
+                              {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              }
+                            )}`
+                          )}
+                        </td>
+                        <td style={{ textAlign: "right" }}>
+                          {isEditingPriceEntry === index ? (
+                            <input
+                              type="number"
+                              value={editPriceEntry.tax}
+                              onChange={(e) =>
+                                setEditPriceEntry({
+                                  ...editPriceEntry,
+                                  tax: e.target.value,
+                                })
+                              }
+                              style={{ width: "100px" }}
+                            />
+                          ) : (
+                            `${parseFloat(entry.tax).toLocaleString("en-IN", {
+                              // minimumFractionDigits: 2,
+                              // maximumFractionDigits: 2
+                            })}%`
+                          )}
+                        </td>
+                        <td style={{ textAlign: "right" }}>
+                          {isEditingPriceEntry === index ? (
+                            <input
+                              type="number"
+                              value={editPriceEntry.delivery_days}
+                              onChange={(e) =>
+                                setEditPriceEntry({
+                                  ...editPriceEntry,
+                                  delivery_days: e.target.value,
+                                })
+                              }
+                              style={{ width: "100px" }}
+                            />
+                          ) : (
+                            `${parseFloat(entry.delivery_days).toLocaleString(
+                              "en-IN"
+                            )}`
+                          )}
+                        </td>
+                        <td>
+                          {isEditingPriceEntry === index ? (
+                            <div className="actions-button">
+                              <button
+                                className="edit-btn"
+                                onClick={() => handleSavePriceEntry(index)}
+                              >
+                                Save
+                              </button>
+                              <button
+                                className="cancel-btn"
+                                onClick={() => {
+                                  setShowAddPriceEntryForm(false);
+                                }}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="actions-button">
+                              <button
+                                className="edit-btn"
+                                onClick={() =>
+                                  handleEditPriceEntry(index, entry)
+                                }
+                              >
+                                Edit
+                              </button>
+                              <button
+                                className="cancel-btn"
+                                onClick={() => handleDeletePriceEntry(index)}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {showAddPriceEntryForm && (
+                      <tr>
+                        <td>
+                          <div
+                            ref={dateInputRef}
+                            className="fake-date-input"
+                            onClick={() => {
+                              if (dateInputRef.current) {
+                                const rect =
+                                  dateInputRef.current.getBoundingClientRect();
+                                setCalendarPosition({
+                                  top: rect.bottom + window.scrollY,
+                                  left: rect.left + window.scrollX,
+                                });
+                                setShowCalendar(true);
+                              }
+                            }}
+                          >
+                            {newPriceEntry.date
+                              ? new Date(newPriceEntry.date).toLocaleDateString(
+                                  "en-GB"
+                                )
+                              : "dd-mm-yyyy"}
+                            <i className="fas fa-calendar-alt calendar-icon"></i>
+                          </div>
+                        </td>
+
+                        <td>
                           <input
-                            type="date"
-                            value={editPriceEntry.date}
+                            type="number"
+                            placeholder="Add Price"
+                            style={{
+                              width: "100px",
+                              padding: "8px",
+                              fontSize: "14px",
+                            }}
+                            value={newPriceEntry.price} //  Fix here
                             onChange={(e) =>
-                              setEditPriceEntry({
-                                ...editPriceEntry,
-                                date: e.target.value,
+                              setNewPriceEntry({
+                                ...newPriceEntry,
+                                price: e.target.value, //  Fix here
                               })
                             }
                           />
-                        ) : (
-                          new Date(entry.current_time).toLocaleDateString()
-                        )}
-                      </td>
-                      <td style={{ textAlign: "right" }}>
-                        {isEditingPriceEntry === index ? (
+                        </td>
+                        <td>
                           <input
                             type="number"
-                            value={editPriceEntry.price}
+                            placeholder="Add Tax%"
+                            style={{
+                              width: "100px",
+                              padding: "8px",
+                              fontSize: "14px",
+                            }}
+                            value={newPriceEntry.tax}
                             onChange={(e) =>
-                              setEditPriceEntry({
-                                ...editPriceEntry,
-                                price: e.target.value,
-                              })
-                            }
-                            style={{ width: "100px" }}
-                          />
-                        ) : (
-                          `₹${parseFloat(entry.price).toLocaleString("en-IN", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}`
-                        )}
-                      </td>
-                      <td style={{ textAlign: "right" }}>
-                        {isEditingPriceEntry === index ? (
-                          <input
-                            type="number"
-                            value={editPriceEntry.tax}
-                            onChange={(e) =>
-                              setEditPriceEntry({
-                                ...editPriceEntry,
+                              setNewPriceEntry({
+                                ...newPriceEntry,
                                 tax: e.target.value,
                               })
                             }
-                            style={{ width: "100px" }}
                           />
-                        ) : (
-                          `${parseFloat(entry.tax).toLocaleString("en-IN", {
-                            // minimumFractionDigits: 2,
-                            // maximumFractionDigits: 2
-                          })}%`
-                        )}
-                      </td>
-                      <td style={{ textAlign: "right" }}>
-                        {isEditingPriceEntry === index ? (
+                        </td>
+                        <td>
                           <input
                             type="number"
-                            value={editPriceEntry.delivery_days}
+                            placeholder="Delivery Days"
+                            style={{
+                              width: "120px",
+                              padding: "8px",
+                              fontSize: "14px",
+                            }}
+                            value={newPriceEntry.delivery_days}
                             onChange={(e) =>
-                              setEditPriceEntry({
-                                ...editPriceEntry,
+                              setNewPriceEntry({
+                                ...newPriceEntry,
                                 delivery_days: e.target.value,
                               })
                             }
-                            style={{ width: "100px" }}
                           />
-                        ) : (
-                          `${parseFloat(entry.delivery_days).toLocaleString(
-                            "en-IN"
-                          )}`
-                        )}
-                      </td>
-                      <td>
-                        {isEditingPriceEntry === index ? (
+                        </td>
+                        <td>
                           <div className="actions-button">
                             <button
                               className="edit-btn"
-                              onClick={() => handleSavePriceEntry(index)}
+                              onClick={handleAddPriceEntry}
                             >
                               Save
                             </button>
                             <button
                               className="cancel-btn"
-                              onClick={() => setIsEditingPriceEntry(null)}
+                              onClick={() => setShowAddPriceEntryForm(false)}
                             >
                               Cancel
                             </button>
                           </div>
-                        ) : (
-                          <div className="actions-button">
-                            <button
-                              className="edit-btn"
-                              onClick={() => handleEditPriceEntry(index, entry)}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              className="cancel-btn"
-                              onClick={() => handleDeletePriceEntry(index)}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                  {showAddPriceEntryForm && (
-                    <tr>
-                      <td>
-                        <input
-                          type="date"
-                          value={newPriceEntry.date}
-                          onChange={(e) =>
-                            setNewPriceEntry({
-                              ...newPriceEntry,
-                              date: e.target.value,
-                            })
-                          }
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          placeholder="Add Price"
-                          style={{
-                            width: "100px",
-                            padding: "8px",
-                            fontSize: "14px",
-                          }}
-                          value={newPriceEntry.price} //  Fix here
-                          onChange={(e) =>
-                            setNewPriceEntry({
-                              ...newPriceEntry,
-                              price: e.target.value, //  Fix here
-                            })
-                          }
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          placeholder="Add Tax%"
-                          style={{
-                            width: "100px",
-                            padding: "8px",
-                            fontSize: "14px",
-                          }}
-                          value={newPriceEntry.tax}
-                          onChange={(e) =>
-                            setNewPriceEntry({
-                              ...newPriceEntry,
-                              tax: e.target.value,
-                            })
-                          }
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          placeholder="Delivery Days"
-                          style={{
-                            width: "100px",
-                            padding: "8px",
-                            fontSize: "14px",
-                          }}
-                          value={newPriceEntry.delivery_days}
-                          onChange={(e) =>
-                            setNewPriceEntry({
-                              ...newPriceEntry,
-                              delivery_days: e.target.value,
-                            })
-                          }
-                        />
-                      </td>
-                      <td>
-                        <div className="actions-button">
-                          <button
-                            className="edit-btn"
-                            onClick={handleAddPriceEntry}
-                          >
-                            Save
-                          </button>
-                          <button
-                            className="cancel-btn"
-                            onClick={() => setShowAddPriceEntryForm(false)}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
+        </div>
+      )}
+      {showCalendar && (
+        <div
+          className="floating-datepicker"
+          style={{
+            position: "absolute",
+            top: `${calendarPosition.top}px`,
+            left: `${calendarPosition.left}px`,
+            zIndex: 9999,
+          }}
+        >
+          <DatePicker
+            selected={newPriceEntry.date ? new Date(newPriceEntry.date) : null}
+            onChange={(date) => {
+              setNewPriceEntry({
+                ...newPriceEntry,
+                date: formatDateToYYYYMMDD(date),
+              });
+              setShowCalendar(false); // hide after selection
+            }}
+            onClickOutside={() => setShowCalendar(false)}
+            inline
+          />
+        </div>
+      )}
+      {showEditCalendar && (
+        <div
+          className="floating-datepicker"
+          style={{
+            position: "absolute",
+            top: `${editCalendarPosition.top}px`,
+            left: `${editCalendarPosition.left}px`,
+            zIndex: 9999,
+          }}
+        >
+          <DatePicker
+            selected={
+              editPriceEntry.date ? new Date(editPriceEntry.date) : null
+            }
+            onChange={(date) => {
+              setEditPriceEntry({
+                ...editPriceEntry,
+                date: formatDateToYYYYMMDD(date),
+              });
+              setShowEditCalendar(false);
+            }}
+            onClickOutside={() => setShowEditCalendar(false)}
+            inline
+          />
         </div>
       )}
 
