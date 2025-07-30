@@ -61,7 +61,9 @@ const InwardList = () => {
           "po_master.cart.component_id",
           ""
         );
-        const key = `${poId}_${componentId}`;
+        const inwardDate = item.date ? new Date(item.date).toISOString().split("T")[0] : "";
+
+        const key = `${poId}_${componentId}_${inwardDate}`;
 
         if (!grouped[key]) {
           grouped[key] = {
