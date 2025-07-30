@@ -1034,232 +1034,239 @@ const VendorDetails = () => {
       {/* Price History Modal */}
       {showPriceHistory && (
         <div className="modal-overlay">
-          <div className="popup" style={{ width: "40%" }}>
-            <span className="x-button" onClick={handleClosePriceHistory}>
-              &times;
-            </span>
-            <h3>Price History</h3>
-            <div className="button-wrapper">
-              <button
-                onClick={() => setShowAddPriceEntryForm(true)}
-                className="price-entry-button"
-              >
-                Add Price Entry
-              </button>
-            </div>
-
-            <div className="table-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Price</th>
-                    <th>Tax %</th>
-                    <th>Delivery Days</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {priceHistory.map((entry, index) => (
-                    <tr key={index}>
-                      <td>
-                        {isEditingPriceEntry === index ? (
+          <div className="popup-wrapper">
+            <div className={`popup ${showAddPriceEntryForm ? "popup-expanded" : ""}`}>
+              {" "}
+              <span className="x-button" onClick={handleClosePriceHistory}>
+                &times;
+              </span>
+              <h3>Price History</h3>
+              <div className="button-wrapper">
+                <button
+                  onClick={() => setShowAddPriceEntryForm(true)}
+                  className="price-entry-button"
+                >
+                  Add Price Entry
+                </button>
+              </div>
+              <div className="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Price</th>
+                      <th>Tax %</th>
+                      <th>Delivery Days</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {priceHistory.map((entry, index) => (
+                      <tr key={index}>
+                        <td>
+                          {isEditingPriceEntry === index ? (
+                            <input
+                              type="date"
+                              value={editPriceEntry.date}
+                              onChange={(e) =>
+                                setEditPriceEntry({
+                                  ...editPriceEntry,
+                                  date: e.target.value,
+                                })
+                              }
+                            />
+                          ) : (
+                            new Date(entry.current_time).toLocaleDateString()
+                          )}
+                        </td>
+                        <td style={{ textAlign: "right" }}>
+                          {isEditingPriceEntry === index ? (
+                            <input
+                              type="number"
+                              value={editPriceEntry.price}
+                              onChange={(e) =>
+                                setEditPriceEntry({
+                                  ...editPriceEntry,
+                                  price: e.target.value,
+                                })
+                              }
+                              style={{ width: "100px" }}
+                            />
+                          ) : (
+                            `₹${parseFloat(entry.price).toLocaleString(
+                              "en-IN",
+                              {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              }
+                            )}`
+                          )}
+                        </td>
+                        <td style={{ textAlign: "right" }}>
+                          {isEditingPriceEntry === index ? (
+                            <input
+                              type="number"
+                              value={editPriceEntry.tax}
+                              onChange={(e) =>
+                                setEditPriceEntry({
+                                  ...editPriceEntry,
+                                  tax: e.target.value,
+                                })
+                              }
+                              style={{ width: "100px" }}
+                            />
+                          ) : (
+                            `${parseFloat(entry.tax).toLocaleString("en-IN", {
+                              // minimumFractionDigits: 2,
+                              // maximumFractionDigits: 2
+                            })}%`
+                          )}
+                        </td>
+                        <td style={{ textAlign: "right" }}>
+                          {isEditingPriceEntry === index ? (
+                            <input
+                              type="number"
+                              value={editPriceEntry.delivery_days}
+                              onChange={(e) =>
+                                setEditPriceEntry({
+                                  ...editPriceEntry,
+                                  delivery_days: e.target.value,
+                                })
+                              }
+                              style={{ width: "100px" }}
+                            />
+                          ) : (
+                            `${parseFloat(entry.delivery_days).toLocaleString(
+                              "en-IN"
+                            )}`
+                          )}
+                        </td>
+                        <td>
+                          {isEditingPriceEntry === index ? (
+                            <div className="actions-button">
+                              <button
+                                className="edit-btn"
+                                onClick={() => handleSavePriceEntry(index)}
+                              >
+                                Save
+                              </button>
+                              <button
+                                className="cancel-btn"
+                                onClick={() => setIsEditingPriceEntry(null)}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="actions-button">
+                              <button
+                                className="edit-btn"
+                                onClick={() =>
+                                  handleEditPriceEntry(index, entry)
+                                }
+                              >
+                                Edit
+                              </button>
+                              <button
+                                className="cancel-btn"
+                                onClick={() => handleDeletePriceEntry(index)}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {showAddPriceEntryForm && (
+                      <tr>
+                        <td>
                           <input
                             type="date"
-                            value={editPriceEntry.date}
+                            value={newPriceEntry.date}
                             onChange={(e) =>
-                              setEditPriceEntry({
-                                ...editPriceEntry,
+                              setNewPriceEntry({
+                                ...newPriceEntry,
                                 date: e.target.value,
                               })
                             }
                           />
-                        ) : (
-                          new Date(entry.current_time).toLocaleDateString()
-                        )}
-                      </td>
-                      <td style={{ textAlign: "right" }}>
-                        {isEditingPriceEntry === index ? (
+                        </td>
+                        <td>
                           <input
                             type="number"
-                            value={editPriceEntry.price}
+                            placeholder="Add Price"
+                            style={{
+                              width: "100px",
+                              padding: "8px",
+                              fontSize: "14px",
+                            }}
+                            value={newPriceEntry.price} //  Fix here
                             onChange={(e) =>
-                              setEditPriceEntry({
-                                ...editPriceEntry,
-                                price: e.target.value,
+                              setNewPriceEntry({
+                                ...newPriceEntry,
+                                price: e.target.value, //  Fix here
                               })
                             }
-                            style={{ width: "100px" }}
                           />
-                        ) : (
-                          `₹${parseFloat(entry.price).toLocaleString("en-IN", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}`
-                        )}
-                      </td>
-                      <td style={{ textAlign: "right" }}>
-                        {isEditingPriceEntry === index ? (
+                        </td>
+                        <td>
                           <input
                             type="number"
-                            value={editPriceEntry.tax}
+                            placeholder="Add Tax%"
+                            style={{
+                              width: "100px",
+                              padding: "8px",
+                              fontSize: "14px",
+                            }}
+                            value={newPriceEntry.tax}
                             onChange={(e) =>
-                              setEditPriceEntry({
-                                ...editPriceEntry,
+                              setNewPriceEntry({
+                                ...newPriceEntry,
                                 tax: e.target.value,
                               })
                             }
-                            style={{ width: "100px" }}
                           />
-                        ) : (
-                          `${parseFloat(entry.tax).toLocaleString("en-IN", {
-                            // minimumFractionDigits: 2,
-                            // maximumFractionDigits: 2
-                          })}%`
-                        )}
-                      </td>
-                      <td style={{ textAlign: "right" }}>
-                        {isEditingPriceEntry === index ? (
+                        </td>
+                        <td>
                           <input
                             type="number"
-                            value={editPriceEntry.delivery_days}
+                            placeholder="Delivery Days"
+                            style={{
+                              width: "100px",
+                              padding: "8px",
+                              fontSize: "14px",
+                            }}
+                            value={newPriceEntry.delivery_days}
                             onChange={(e) =>
-                              setEditPriceEntry({
-                                ...editPriceEntry,
+                              setNewPriceEntry({
+                                ...newPriceEntry,
                                 delivery_days: e.target.value,
                               })
                             }
-                            style={{ width: "100px" }}
                           />
-                        ) : (
-                          `${parseFloat(entry.delivery_days).toLocaleString(
-                            "en-IN"
-                          )}`
-                        )}
-                      </td>
-                      <td>
-                        {isEditingPriceEntry === index ? (
+                        </td>
+                        <td>
                           <div className="actions-button">
                             <button
                               className="edit-btn"
-                              onClick={() => handleSavePriceEntry(index)}
+                              onClick={handleAddPriceEntry}
                             >
                               Save
                             </button>
                             <button
                               className="cancel-btn"
-                              onClick={() => setIsEditingPriceEntry(null)}
+                              onClick={() => setShowAddPriceEntryForm(false)}
                             >
                               Cancel
                             </button>
                           </div>
-                        ) : (
-                          <div className="actions-button">
-                            <button
-                              className="edit-btn"
-                              onClick={() => handleEditPriceEntry(index, entry)}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              className="cancel-btn"
-                              onClick={() => handleDeletePriceEntry(index)}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                  {showAddPriceEntryForm && (
-                    <tr>
-                      <td>
-                        <input
-                          type="date"
-                          value={newPriceEntry.date}
-                          onChange={(e) =>
-                            setNewPriceEntry({
-                              ...newPriceEntry,
-                              date: e.target.value,
-                            })
-                          }
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          placeholder="Add Price"
-                          style={{
-                            width: "100px",
-                            padding: "8px",
-                            fontSize: "14px",
-                          }}
-                          value={newPriceEntry.price} //  Fix here
-                          onChange={(e) =>
-                            setNewPriceEntry({
-                              ...newPriceEntry,
-                              price: e.target.value, //  Fix here
-                            })
-                          }
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          placeholder="Add Tax%"
-                          style={{
-                            width: "100px",
-                            padding: "8px",
-                            fontSize: "14px",
-                          }}
-                          value={newPriceEntry.tax}
-                          onChange={(e) =>
-                            setNewPriceEntry({
-                              ...newPriceEntry,
-                              tax: e.target.value,
-                            })
-                          }
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          placeholder="Delivery Days"
-                          style={{
-                            width: "100px",
-                            padding: "8px",
-                            fontSize: "14px",
-                          }}
-                          value={newPriceEntry.delivery_days}
-                          onChange={(e) =>
-                            setNewPriceEntry({
-                              ...newPriceEntry,
-                              delivery_days: e.target.value,
-                            })
-                          }
-                        />
-                      </td>
-                      <td>
-                        <div className="actions-button">
-                          <button
-                            className="edit-btn"
-                            onClick={handleAddPriceEntry}
-                          >
-                            Save
-                          </button>
-                          <button
-                            className="cancel-btn"
-                            onClick={() => setShowAddPriceEntryForm(false)}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
