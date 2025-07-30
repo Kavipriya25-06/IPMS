@@ -19,7 +19,8 @@ const ProjectList = () => {
   const navigate = useNavigate();
   const [sortField, setSortField] = useState("");
   const [sortOrder, setSortOrder] = useState("asc");
-  const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchProjects();
@@ -119,10 +120,10 @@ const ProjectList = () => {
         <button
           style={{
             cursor: "pointer",
-            marginLeft: "auto",
-            marginRight: 20,
             background: "transparent",
             border: "none",
+            padding: "6px",
+            marginBottom: "-10px",
           }}
           className="plus-button"
           title={showAddForm ? "Cancel" : "Add Project"}
@@ -131,9 +132,26 @@ const ProjectList = () => {
           <img
             src={showAddForm ? CancelIcon : AddIcon}
             alt={showAddForm ? "Cancel" : "Add Project"}
-            style={{ width: "20px", height: "20px",marginBottom:"5px"}}
-          />{" "}
+            style={{ width: "20px", height: "20px", marginBottom: "5px" }}
+          />
         </button>
+      </div>
+
+      <div className="search-wrapper-container">
+        <div className="search-wrapper">
+          <div className="search-bar-container" style={{ marginTop: "-8px" }}>
+            <input
+              type="text"
+              className="search-bar"
+              placeholder="Search by Project Name"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <span className="search-icon">
+              <i className="fa fa-search" aria-hidden="true"></i>
+            </span>
+          </div>
+        </div>
       </div>
 
       {showAddForm && (
@@ -215,7 +233,7 @@ const ProjectList = () => {
         </div>
       )}
 
-      <div className="table-container" style={{ marginTop:"-15px" }}>
+      <div className="table-container" style={{ marginTop: "-15px" }}>
         <table
           style={{
             width: "100%",
@@ -267,40 +285,49 @@ const ProjectList = () => {
             </tr>
           </thead>
           <tbody>
-            {projects.length > 0 ? (
-              projects.map((project) => (
-                <tr
-                  key={project.project_id}
-                  style={{ borderBottom: "1px solid #ddd" }}
-                >
-                  <td
-                    onClick={() => navigate(`/projects/${project.project_id}`)}
-                    style={{
-                      cursor: "pointer",
-                      color: "black",
-                      textDecoration: "underline",
-                      padding: "10px",
-                    }}
+            {projects.filter((project) =>
+              project.project_name
+                ?.toLowerCase()
+                .includes(searchQuery.toLowerCase())
+            ).length > 0 ? (
+              projects
+                .filter((project) =>
+                  project.project_name
+                    ?.toLowerCase()
+                    .includes(searchQuery.toLowerCase())
+                )
+                .map((project) => (
+                  <tr
+                    key={project.project_id}
+                    style={{ borderBottom: "1px solid #ddd" }}
                   >
-                    {project.project_id}
-                  </td>
-                  <td style={{ padding: "10px" }}>{project.project_name}</td>
-                  <td style={{ padding: "10px" }}>{project.description}</td>
-                  <td style={{ padding: "10px" }}>
-                    {project.start_date
-                      ? format(parseISO(project.start_date), "dd-MM-yyyy")
-                      : "--"}
-                  </td>
-                  <td style={{ padding: "10px" }}>{project.project_type}</td>
-                </tr>
-              ))
+                    <td
+                      onClick={() =>
+                        navigate(`/projects/${project.project_id}`)
+                      }
+                      style={{
+                        cursor: "pointer",
+                        color: "black",
+                        textDecoration: "underline",
+                        padding: "10px",
+                      }}
+                    >
+                      {project.project_id}
+                    </td>
+                    <td style={{ padding: "10px" }}>{project.project_name}</td>
+                    <td style={{ padding: "10px" }}>{project.description}</td>
+                    <td style={{ padding: "10px" }}>
+                      {project.start_date
+                        ? format(parseISO(project.start_date), "dd-MM-yyyy")
+                        : "--"}
+                    </td>
+                    <td style={{ padding: "10px" }}>{project.project_type}</td>
+                  </tr>
+                ))
             ) : (
               <tr>
-                <td
-                  colSpan="4"
-                  style={{ padding: "10px", textAlign: "center" }}
-                >
-                  No projects available
+                <td colSpan="5" style={{ textAlign: "center", color: "gray" }}>
+                  No projects found for "<strong>{searchQuery}</strong>"
                 </td>
               </tr>
             )}

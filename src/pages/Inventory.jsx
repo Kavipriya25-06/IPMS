@@ -706,12 +706,30 @@ const Inventory = () => {
           gap: "10px",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-          <span style={{ fontWeight: "bold", margin: 0, fontSize: "20px" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            marginBottom: "10px",
+          }}
+        >
+          <span style={{ fontWeight: "bold", fontSize: "20px" }}>
             Total Inventory Count:
           </span>
-          <span style={{ fontWeight: "bold", marginTop: 4, fontSize: "20px" }}>
-            {filteredInventory.length || 0}
+          <span style={{ fontWeight: "bold", fontSize: "20px" }}>
+            {(() => {
+              if (statusFilter === "Tool") return toolInventory.length || 0;
+              if (statusFilter === "Available") {
+                return filteredInventory.filter(
+                  (item) =>
+                    item.status === "Available" || item.status === "Reserved"
+                ).length;
+              }
+              return filteredInventory.filter(
+                (item) => item.status === statusFilter
+              ).length;
+            })()}
           </span>
         </div>
 
