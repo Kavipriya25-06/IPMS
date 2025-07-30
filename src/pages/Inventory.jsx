@@ -167,38 +167,41 @@ const Inventory = () => {
   }, [selectedTag, inventoryData, componentData, metaTags, selectedStatus]);
 
   // Fetch inventory data from API (filtered by status)
-const fetchInventoryData = async (status = "Available") => {
-  try {
-    let data = [];
 
-    if (status === "Available") {
-      // Fetch both Available and Reserved
-      const [availableRes, reservedRes] = await Promise.all([
-        fetch(`${config.apiBaseURL}/inventory/?status=Available`),
-        fetch(`${config.apiBaseURL}/inventory/?status=Reserved`),
-      ]);
+  const fetchInventoryData = async (status = "Available") => {
+    try {
+      let data = [];
 
-      if (!availableRes.ok || !reservedRes.ok) throw new Error("Failed to fetch Available or Reserved");
+      if (status === "Available") {
+        // Fetch both Available and Reserved
+        const [availableRes, reservedRes] = await Promise.all([
+          fetch(`${config.apiBaseURL}/inventory/?status=Available`),
+          fetch(`${config.apiBaseURL}/inventory/?status=Reserved`),
+        ]);
 
-      const available = await availableRes.json();
-      const reserved = await reservedRes.json();
+        if (!availableRes.ok || !reservedRes.ok)
+          throw new Error("Failed to fetch Available or Reserved");
 
-      data = [...available, ...reserved]; // merge both
-    } else {
-      const response = await fetch(`${config.apiBaseURL}/inventory/?status=${status}`);
-      if (!response.ok) throw new Error("Failed to fetch inventory");
-      data = await response.json();
+        const available = await availableRes.json();
+        const reserved = await reservedRes.json();
+
+        data = [...available, ...reserved]; // merge both
+      } else {
+        const response = await fetch(
+          `${config.apiBaseURL}/inventory/?status=${status}`
+        );
+        if (!response.ok) throw new Error("Failed to fetch inventory");
+        data = await response.json();
+      }
+
+      setInventoryData(data);
+      setFilteredInventory(data);
+      console.log("Fetched inventory data:", data);
+    } catch (error) {
+      console.error("Error fetching inventory data:", error);
+      showErrorToast("Failed to fetch inventory data");
     }
-
-    setInventoryData(data);
-    setFilteredInventory(data);
-    console.log("Fetched inventory data:", data);
-  } catch (error) {
-    console.error("Error fetching inventory data:", error);
-    showErrorToast("Failed to fetch inventory data");
-  }
-};
-
+  };
 
   const fetchToolInventoryData = async () => {
     try {
