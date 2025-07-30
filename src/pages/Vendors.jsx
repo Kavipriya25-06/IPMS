@@ -906,7 +906,7 @@ const Vendors = () => {
 
       {showPocPopup && (
         <div className="modal-overlay">
-          <div className="popup" style={{ width: "40%" }}>
+          <div className="popup" style={{ width: "60%" }}>
             <span className="x-button" onClick={handleClosePriceHistory}>
               &times;
             </span>
