@@ -9,7 +9,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { format, parseISO } from "date-fns";
 
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 
 import {
   showSuccessToast,
@@ -283,8 +283,6 @@ const Outward = () => {
 
       if (res.ok) {
         showSuccessToast("Outward entry saved!");
-        generateManufacturePDF(payload); // <-- Generate PDF here
-
         setShowServiceForm(false);
         setServiceForm({
           outDate: new Date(),
@@ -540,65 +538,48 @@ const Outward = () => {
     link.remove();
   };
 
-  const generateManufacturePDF = (data) => {
+  const generateManufacturePDF = (row) => {
     const doc = new jsPDF();
 
-    // --- Header Title
-    doc.setFontSize(14);
-    doc.text("DELIVERY NOTE", 80, 15);
+    // Header
+    doc.setFontSize(16);
+    doc.text("DELIVERY NOTE", 80, 20);
 
-    // --- Company Details
+    // Company Details
     doc.setFontSize(10);
-    doc.text("Dronix Technologies Pvt Ltd", 14, 25);
-    doc.text("No.7, KRJ Building, 3rd Floor, Welders Street,", 14, 30);
-    doc.text("Mount Road, Chennai - 600002", 14, 35);
-    doc.text("GSTIN/UIN: 33AACGD1081K1ZS", 14, 40);
-    doc.text("Email: finance@aero360.co.in", 14, 45);
+    doc.text("Dronix Technologies Pvt Ltd", 15, 30);
+    doc.text("133, Gandhi Rd, Alappakam,New Perungalathur,", 15, 35);
+    doc.text(" Chennai, Sadhanathapuram, Tamil Nadu 600063", 15, 40);
+    doc.text("GSTIN/UIN: 33AACGD1081K1ZS", 15, 45);
 
-    // --- Delivery Details
-    doc.text(`Delivery Note No: ${data.gatepass || "-"}`, 150, 25);
-    doc.text(`Date: ${new Date(data.date).toLocaleDateString()}`, 150, 30);
+    // Delivery Info
+    doc.text(`Delivery Note No: ${row.gatepass || "-"}`, 140, 30);
+    doc.text(`Date: ${row.date || "-"}`, 140, 35);
 
-    // --- Consignee
-    doc.setFontSize(10);
-    doc.text("Consignee (Ship To):", 14, 60);
-    doc.text(`${data.vendor}`, 14, 65);
-    doc.text(`Project: ${data.project}`, 14, 70);
-
-    // --- Table Data
-    const tableColumn = [
-      "Sl No",
-      "Description of Goods",
-      "HSN/SAC",
-      "Quantity",
-      "Rate",
-      "Amount",
-    ];
-    const tableRows = [
-      [
-        "1",
-        data.specification,
-        data.component_id || "-",
-        `${data.quantity} Nos`,
-        " ",
-        " ",
+    // Table using autoTable plugin
+    autoTable(doc, {
+      startY: 55,
+      head: [
+        ["Sl No", "Description of Goods", "HSN/SAC", "Quantity", "Remarks"],
       ],
-    ];
-    doc.autoTable({
-      startY: 80,
-      head: [tableColumn],
-      body: tableRows,
+      body: [
+        [
+          "1",
+          row.specification || "-",
+          row.component_id || "-",
+          row.quantity || "-",
+          row.remarks || "-",
+        ],
+      ],
     });
 
-    // --- Footer
-    const finalY = doc.lastAutoTable.finalY + 10;
-    doc.text("Remarks:", 14, finalY);
-    doc.text(data.remarks || "-", 35, finalY);
+    // Footer
+    const finalY = doc.lastAutoTable.finalY || 90;
+    doc.text("Recd. in Good Condition", 15, finalY + 20);
+    doc.text("for Dronix Technologies Pvt Ltd", 140, finalY + 20);
 
-    doc.text("Recd. in Good Condition", 14, finalY + 20);
-    doc.text("This is a Computer-Generated Document", 14, finalY + 30);
-
-    doc.save(`DeliveryNote_${data.gatepass || "temp"}.pdf`);
+    // Download
+    doc.save(`DeliveryNote_${row.gatepass || "NA"}.pdf`);
   };
 
   return (
@@ -772,8 +753,24 @@ const Outward = () => {
                       <td>{getProjectName(row.project)}</td>
                       <td>{row.type_of_outward || "-"}</td>
                       <td>{row.remarks || "-"}</td>
+
+                      {/* New Column - PDF Button */}
+                      <td>
+                        <button
+                          style={{
+                            cursor: "pointer",
+                            background: "transparent",
+                            border: "none",
+                          }}
+                          title="Generate PDF"
+                          onClick={() => generateManufacturePDF(row)}
+                        >
+                          📄
+                        </button>
+                      </td>
                     </>
                   )}
+
                   {reportType === "Event" && (
                     <>
                       <td>

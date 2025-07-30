@@ -234,7 +234,7 @@ const VendorDetails = () => {
   };
 
   const handleAddPriceEntry = async () => {
-    const { date, price, tax, delivery_days } = newPriceEntry; // ✅ Add this
+    const { date, price, tax, delivery_days } = newPriceEntry; // Add this
 
     if (!date || !price || !tax || !delivery_days) {
       showInfoToast("Please fill all the fields");

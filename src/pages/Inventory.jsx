@@ -392,7 +392,7 @@ const Inventory = () => {
     let status = statusFilter;
 
     if (status === "Tool") {
-      reportData = toolInventory; // ✅ from state
+      reportData = toolInventory; //  from state
     } else {
       reportData = filteredInventory.filter((item) => item.status === status);
     }
