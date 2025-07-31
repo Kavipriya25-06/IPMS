@@ -742,7 +742,7 @@ const Outward = () => {
                       <td>{row.quantity || "-"}</td>
                       <td>{getProjectName(row.project) || "-"}</td>
                       <td>{row.type_of_outward || "-"}</td>
-                      <td>{row.remarks || "-"}</td>
+                      <td className="specification-cell" title={row.remarks}>{row.remarks || "-"}</td>
                     </>
                   )}
                   {reportType === "Sales" && (
@@ -764,7 +764,7 @@ const Outward = () => {
                       <td>{row.specification || "-"}</td>
                       <td>{row.client || "-"}</td>
                       <td>{row.type_of_outward || "-"}</td>
-                      <td>{row.remarks || "-"}</td>
+                      <td className="specification-cell" title={row.remarks}>{row.remarks || "-"}</td>
                     </>
                   )}
                   {reportType === "Manufacture" && (
@@ -789,7 +789,7 @@ const Outward = () => {
                       <td>{row.quantity || "-"}</td>
                       <td>{getProjectName(row.project) || "-"}</td>
                       <td>{row.type_of_outward || "-"}</td>
-                      <td>{row.remarks || "-"}</td>
+                      <td className="specification-cell" title={row.remarks}>{row.remarks || "-"}</td>
 
                       {/* New Column - PDF Button */}
                       <td>
@@ -833,7 +833,7 @@ const Outward = () => {
                           ? format(new Date(row.return_date), "dd-MM-yyyy")
                           : "-"}
                       </td>{" "}
-                      <td>{row.remarks || "-"}</td>
+                      <td className="specification-cell" title={row.remarks}>{row.remarks || "-"}</td>
                     </>
                   )}
                 </tr>
