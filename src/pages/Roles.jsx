@@ -223,6 +223,7 @@ const Roles = () => {
                   <td key={role}>
                     <input
                       type="radio"
+                      className="custom-radios"
                       name={`role-${user.id}`}
                       value={role}
                       checked={user.role === role}
@@ -261,7 +262,7 @@ const Roles = () => {
       </div>
       {showPopup && (
         <div className="modal-overlay" onClick={() => setShowPopup(false)}>
-          <div className="popup" onClick={(e) => e.stopPropagation()}>
+          <div className="popup">
             <h3 className="popup-title">Add New User</h3>
             <form
               className="popup-form"

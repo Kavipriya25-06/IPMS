@@ -591,9 +591,11 @@ const Component = () => {
                     className="category-dropdown"
                     onClick={() => setDropdownOpen(!dropdownOpen)}
                   >
-                    {selectedCategory.length > 0
-                      ? `Selected (${selectedCategory.length})`
-                      : "Category"}
+                    {selectedCategory.length === 0
+                      ? "Category"
+                      : selectedCategory.length === 1
+                      ? selectedCategory[0]
+                      : `Selected (${selectedCategory.length})`}
                   </div>
 
                   {dropdownOpen && (
@@ -607,34 +609,23 @@ const Component = () => {
                         width: "150px",
                       }}
                     >
-                      <label className="category-dropdown-option">
-                        <input
-                          type="checkbox"
-                          checked={selectedCategory.length === 0}
-                          onChange={() => setSelectedCategory([])}
-                        />
+                      <div
+                        className="category-dropdown-option"
+                        onClick={() => setSelectedCategory([])}
+                        style={{ padding: "6px 12px", cursor: "pointer" }}
+                      >
                         All
-                      </label>
+                      </div>
 
                       {getFilteredCategories().map((category) => (
-                        <label
+                        <div
                           key={category}
                           className="category-dropdown-option"
+                          onClick={() => setSelectedCategory([category])}
+                          style={{ padding: "6px 12px", cursor: "pointer" }}
                         >
-                          <input
-                            type="checkbox"
-                            checked={selectedCategory.includes(category)}
-                            onChange={(e) => {
-                              const isChecked = e.target.checked;
-                              setSelectedCategory((prev) =>
-                                isChecked
-                                  ? [...prev, category]
-                                  : prev.filter((c) => c !== category)
-                              );
-                            }}
-                          />
                           {category}
-                        </label>
+                        </div>
                       ))}
                     </div>
                   )}
@@ -650,9 +641,11 @@ const Component = () => {
                       setComponentTypeDropdownOpen(!componentTypeDropdownOpen)
                     }
                   >
-                    {selectedComponentType.length > 0
-                      ? `Selected (${selectedComponentType.length})`
-                      : "Component Type"}
+                    {selectedComponentType.length === 0
+                      ? "Component Type"
+                      : selectedComponentType.length === 1
+                      ? selectedComponentType[0]
+                      : `Selected (${selectedComponentType.length})`}
                   </div>
 
                   {componentTypeDropdownOpen && (
@@ -666,34 +659,23 @@ const Component = () => {
                         width: "150px",
                       }}
                     >
-                      <label className="component-type-dropdown-option">
-                        <input
-                          type="checkbox"
-                          checked={selectedComponentType.length === 0}
-                          onChange={() => setSelectedComponentType([])}
-                        />
+                      <div
+                        className="component-type-dropdown-option"
+                        onClick={() => setSelectedComponentType([])}
+                        style={{ padding: "6px 12px", cursor: "pointer" }}
+                      >
                         All
-                      </label>
+                      </div>
 
                       {getFilteredComponentTypes().map((type) => (
-                        <label
+                        <div
                           key={type}
                           className="component-type-dropdown-option"
+                          onClick={() => setSelectedComponentType([type])}
+                          style={{ padding: "6px 12px", cursor: "pointer" }}
                         >
-                          <input
-                            type="checkbox"
-                            checked={selectedComponentType.includes(type)}
-                            onChange={(e) => {
-                              const isChecked = e.target.checked;
-                              setSelectedComponentType((prev) =>
-                                isChecked
-                                  ? [...prev, type]
-                                  : prev.filter((t) => t !== type)
-                              );
-                            }}
-                          />
                           {type}
-                        </label>
+                        </div>
                       ))}
                     </div>
                   )}
