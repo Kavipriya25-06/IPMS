@@ -1070,7 +1070,10 @@ const Vendors = () => {
                         </td>
 
                         {/* Location */}
-                        <td>
+                        <td
+                          className="specification-cell"
+                          title={poc.location || ""}
+                        >
                           {isEditing === poc.id ? (
                             <input
                               type="text"
