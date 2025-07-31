@@ -261,7 +261,7 @@ const Roles = () => {
       </div>
       {showPopup && (
         <div className="modal-overlay" onClick={() => setShowPopup(false)}>
-          <div className="popup">
+          <div className="popup" onClick={(e) => e.stopPropagation()}>
             <h3 className="popup-title">Add New User</h3>
             <form
               className="popup-form"

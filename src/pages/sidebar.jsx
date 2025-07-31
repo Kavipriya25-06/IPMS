@@ -29,12 +29,12 @@ export default function Sidebar() {
     {
       label: "Components",
       path: "/components",
-      roles: ["Admin", "Sub-Admin", "Procurement", "Inventory"],
+      roles: ["Admin", "Sub-Admin", "Procurement", "Inventory", "Finance","User"],
     },
     {
       label: "Inventory",
       path: "/inventory",
-      roles: ["Admin", "Sub-Admin", "Inventory", "Finance"],
+      roles: ["Admin", "Sub-Admin", "Inventory", "Finance","Procurement"],
     },
     {
       label: "Vendor",
@@ -44,7 +44,7 @@ export default function Sidebar() {
     {
       label: "Bom",
       path: "/bom",
-      roles: ["Admin", "Sub-Admin", "Procurement"],
+      roles: ["Admin", "Sub-Admin", "Procurement","Inventory","Finance","User"],
     },
     {
       label: "Projects",
