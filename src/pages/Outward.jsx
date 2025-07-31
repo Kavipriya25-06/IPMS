@@ -1,709 +1,3 @@
-// import React, { useState, useEffect } from "react";
-// import { useNavigate } from "react-router-dom";
-// import config from "../Config"; // Import config for API endpoints
-// import { sortData, toggleSortDirection, renderSortArrow } from "../Sort";
-// import AddIcon from "../assets/Add.png";
-// import Delete from "../assets/Delete.png";
-// import {
-//   showSuccessToast,
-//   showErrorToast,
-//   showInfoToast,
-//   showWarningToast,
-//   showMessageToast,
-//   ToastContainerComponent,
-// } from "./Toastify.jsx";
-// import { format, parseISO } from "date-fns";
-// import DatePicker from "react-datepicker";
-// import "react-datepicker/dist/react-datepicker.css";
-
-// const Outward = () => {
-//   const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
-//   const [showEventForm, setShowEventForm] = useState(false);
-//   const [showServiceForm, setShowServiceForm] = useState(false);
-//   const [showSalesForm, setShowSalesForm] = useState(false);
-
-//   const [showPopup, setShowPopup] = useState(false);
-//   const [currentTime, setCurrentTime] = useState("");
-//   const [selectedDate, setSelectedDate] = useState(null);
-//   const [reportType, setReportType] = useState("Defects");
-
-//   useEffect(() => {
-//     const handleScroll = () => {
-//       if (window.scrollY > 300) {
-//         setShowScrollTop(true);
-//       } else {
-//         setShowScrollTop(false);
-//       }
-//     };
-
-//     window.addEventListener("scroll", handleScroll);
-//     return () => window.removeEventListener("scroll", handleScroll);
-//   }, []);
-
-//   const handlePopupClose = () => {
-//     setShowPopup(false); // Close the pop-up when clicking outside
-//   };
-
-//   const scrollToTop = () => {
-//     window.scrollTo({
-//       top: 0,
-//       behavior: "smooth", // Smooth scroll effect
-//     });
-//   };
-
-//   // On component mount, set time
-//   useEffect(() => {
-//     const now = new Date();
-//     const formattedTime = now.toLocaleTimeString([], {
-//       hour: "2-digit",
-//       minute: "2-digit",
-//     });
-//     setCurrentTime(formattedTime);
-//   }, []);
-
-//   const navigate = useNavigate();
-
-//   const handleAddEventClick = () => {
-//     navigate("/outward/add-event-list");
-//   };
-
-//   const handleAddServiceClick = () => {
-//     navigate("/outward/add-service-list");
-//   };
-
-//     const handleAddSalesClick = () => {
-//     navigate("/outward/add-sales-list");
-//   };
-
-//   const handleReportChange = (e) => {
-//     setReportType(e.target.value);
-//   };
-
-//   const tableHeaders = {
-//     Defects: [
-//       "Date",
-//       "Time",
-//       "Invoice Number",
-//       "Vendor",
-//       "Specification",
-//       "Quantity",
-//       "Project",
-//       "Type of Outward",
-//       "Remarks",
-//     ],
-//     Sales: [
-//       "Date",
-//       "Time",
-//       "Invoice Number",
-//       "Description",
-//       "Client",
-//       "Type of Outward",
-//       "Remarks",
-//     ],
-//     Manufacture: [
-//       "Out Date",
-//       "Time",
-//       "Gate Pass",
-//       "Component Spec",
-//       "Comp id",
-//       "Vendor",
-//       "Quantity",
-//       "Project",
-//       "Type of Outward",
-//       "Remarks",
-//     ],
-//     Event: [
-//       "Out Date",
-//       "Time",
-//       "Invoice Number",
-//       "Event Name",
-//       "Project",
-//       "Type of Outward",
-//       "No. of Components",
-//       "Return Date",
-//       "Remarks",
-//     ],
-//   };
-
-//   const tableDataByType = {
-//     Defects: [
-//       {
-//         Date: "01-07-2024",
-//         Time: "10:00 AM",
-//         "Invoice Number": "INV-D001",
-//         Vendor: "Vendor A",
-//         Specification: "Spec 1",
-//         Quantity: 5,
-//         Project: "Project X",
-//         "Type of Outward": "Return",
-//         Remarks: "Defective item",
-//       },
-//       {
-//         Date: "02-07-2024",
-//         Time: "11:30 AM",
-//         "Invoice Number": "INV-D002",
-//         Vendor: "Vendor B",
-//         Specification: "Spec 2",
-//         Quantity: 3,
-//         Project: "Project Y",
-//         "Type of Outward": "Repair",
-//         Remarks: "Minor defect",
-//       },
-//     ],
-
-//     Sales: [
-//       {
-//         Date: "03-07-2024",
-//         Time: "12:00 PM",
-//         "Invoice Number": "INV-S001",
-//         Description: "Camera Lens",
-//         Client: "Client A",
-//         "Type of Outward": "Sale",
-//         Remarks: "Delivered on time",
-//       },
-//       {
-//         Date: "04-07-2024",
-//         Time: "02:00 PM",
-//         "Invoice Number": "INV-S002",
-//         Description: "Tripod",
-//         Client: "Client B",
-//         "Type of Outward": "Sale",
-//         Remarks: "COD",
-//       },
-//     ],
-
-//     Manufacture: [
-//       {
-//         "Out Date": "01-07-2024",
-//         Time: "09:00 AM",
-//         "Gate Pass": "GP001",
-//         "Component Spec": "Metal Frame",
-//         "Comp id": "C-101",
-//         Vendor: "Vendor X",
-//         Quantity: 10,
-//         Project: "Alpha",
-//         "Type of Outward": "Manufacture",
-//         Remarks: "Urgent",
-//       },
-//       {
-//         "Out Date": "05-07-2024",
-//         Time: "03:00 PM",
-//         "Gate Pass": "GP002",
-//         "Component Spec": "Plastic Body",
-//         "Comp id": "C-102",
-//         Vendor: "Vendor Y",
-//         Quantity: 15,
-//         Project: "Beta",
-//         "Type of Outward": "Manufacture",
-//         Remarks: "Normal",
-//       },
-//     ],
-
-//     Event: [
-//       {
-//         "Out Date": "01-07-2024",
-//         Time: "08:00 AM",
-//         "Invoice Number": "EVT001",
-//         "Event Name": "Product Launch",
-//         Project: "EventX",
-//         "Type of Outward": "Event",
-//         "No. of Components": 50,
-//         "Return Date": "2024-07-03",
-//         Remarks: "Successful",
-//       },
-//       {
-//         "Out Date": "06-07-2024",
-//         Time: "10:30 AM",
-//         "Invoice Number": "EVT002",
-//         "Event Name": "Tech Fair",
-//         Project: "EventY",
-//         "Type of Outward": "Event",
-//         "No. of Components": 30,
-//         "Return Date": "2024-07-08",
-//         Remarks: "Pending return",
-//       },
-//     ],
-//   };
-
-//   const currentHeaders = tableHeaders[reportType] || [];
-//   const currentData = tableDataByType[reportType] || [];
-
-//   return (
-//     <div>
-//       <div
-//         className="header"
-//         style={{
-//           display: "flex",
-//           alignItems: "center",
-//           justifyContent: "space-between",
-//         }}
-//       >
-//         <h2>Outward List</h2>
-//         <select className="report-select" onChange={handleReportChange}>
-//           <option value="Defects">Defects</option>
-//           <option value="Sales">Sales</option>
-//           <option value="Manufacture">Manufacture</option>
-//           <option value="Event">Event</option>
-//         </select>
-//         <div className="table-action-buttons">
-//           <button className="generate-report-btn">Generate Report</button>
-//           {reportType === "Sales" && (
-//             <button
-//               className="add-sales-btn"
-//               onClick={() => setShowSalesForm(true)}
-//             >
-//               Add Sales List
-//             </button>
-//           )}
-//           {reportType === "Manufacture" && (
-//             <button
-//               className="add-sales-btn"
-//               onClick={() => setShowServiceForm(true)}
-//             >
-//               Add Service List
-//             </button>
-//           )}
-//           {reportType === "Event" && (
-//             <button
-//               className="add-sales-btn"
-//               onClick={() => setShowEventForm(true)}
-//             >
-//               Add Event List
-//             </button>
-//           )}
-//         </div>
-//       </div>
-//       <table>{/* your table here */}</table>
-//       <div className="table-container">
-//         <table>
-//           <thead>
-//             <tr>
-//               <th>S.No</th>
-//               {currentHeaders.map((header, index) => (
-//                 <th key={index}>{header}</th>
-//               ))}
-//             </tr>
-//           </thead>
-//           <tbody>
-//             {currentData.map((row, rowIndex) => (
-//               <tr key={rowIndex}>
-//                 <td>{rowIndex + 1}</td>
-//                 {currentHeaders.map((header, colIndex) => {
-//                   const value = row[header] || "-";
-
-//                   // If it's the Event Name column, render as a link
-//                   if (header === "Event Name") {
-//                     return (
-//                       <td
-//                         key={colIndex}
-//                         onClick={handleAddEventClick}
-//                         style={{
-//                           color: "#1976d2",
-//                           cursor: "pointer",
-//                           textDecoration: "underline",
-//                         }}
-//                       >
-//                         {value}
-//                       </td>
-//                     );
-//                   }
-
-//                   // If it's the Component Spec column, render as a link
-//                   if (header === "Component Spec") {
-//                     return (
-//                       <td
-//                         key={colIndex}
-//                         onClick={handleAddServiceClick}
-//                         style={{
-//                           color: "#1976d2",
-//                           cursor: "pointer",
-//                           textDecoration: "underline",
-//                         }}
-//                       >
-//                         {value}
-//                       </td>
-//                     );
-//                   }
-
-//                     if (header === "Description") {
-//                     return (
-//                       <td
-//                         key={colIndex}
-//                         onClick={handleAddSalesClick}
-//                         style={{
-//                           color: "#1976d2",
-//                           cursor: "pointer",
-//                           textDecoration: "underline",
-//                         }}
-//                       >
-//                         {value}
-//                       </td>
-//                     );
-//                   }
-
-//                   // Default rendering
-//                   return <td key={colIndex}>{value}</td>;
-//                 })}
-//               </tr>
-//             ))}
-//           </tbody>
-//         </table>
-//       </div>
-
-//        {showSalesForm && (
-//         <div
-//           className="modal-overlay"
-//           onClick={() => setShowSalesForm(false)}
-//         >
-//           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-//             <h2>Add Sales List</h2>
-
-//             {/* Your form fields go here */}
-//             <div className="form-grid">
-//               <label htmlFor="">Out Date</label>
-
-//               <div className="date-input-container">
-//                 <DatePicker
-//                   selected={new Date()} //
-//                   dateFormat="dd-MM-yyyy"
-//                   placeholderText="dd-mm-yyyy"
-//                   className="input1"
-//                   showMonthDropdown
-//                   showYearDropdown
-//                   dropdownMode="select"
-//                   readOnly
-//                 />
-//                 <i className="fas fa-calendar-alt calendar-icon"></i>{" "}
-//               </div>
-//               <label htmlFor="">Time</label>
-
-//               <input
-//                 type="text"
-//                 name="Time"
-//                 value={currentTime}
-//                 readOnly
-//                 placeholder="Time"
-//               />
-//               <label htmlFor="">Invoice/Gate Pass</label>
-
-//               <input
-//                 type="text"
-//                 name="gate pass"
-//                 // value={newProject.description}
-//                 // onChange={handleInputChange}
-//                 required
-//                 placeholder="gate pass"
-//               />
-//               <label htmlFor="">Component Name</label>
-//               <select name="project_type" required>
-//                 <option value="">Select Component</option>
-//                 <option value="R&D">R&D</option>
-//                 <option value="OPS">OPS</option>
-//                 <option value="SER">SER</option>
-//                 <option value="MISC">MISC</option>
-//                 <option value="U/D">U/D</option>
-//               </select>
-
-//               <label htmlFor="">BOM</label>
-//               <select name="project_type" required>
-//                 <option value="">Select BOM</option>
-//                 <option value="R&D">R&D</option>
-//                 <option value="OPS">OPS</option>
-//                 <option value="SER">SER</option>
-//                 <option value="MISC">MISC</option>
-//                 <option value="U/D">U/D</option>
-//               </select>
-
-//               <label htmlFor="">Client</label>
-//               <select name="project_type" required>
-//                 <option value="">Select your client</option>
-//                 <option value="R&D">R&D</option>
-//                 <option value="OPS">OPS</option>
-//                 <option value="SER">SER</option>
-//                 <option value="MISC">MISC</option>
-//                 <option value="U/D">U/D</option>
-//               </select>
-
-//               <label htmlFor="">Type Of Outward</label>
-//               <select name="project_type" required>
-//                 <option value="">Select Type</option>
-//                 <option value="R&D">R&D</option>
-//                 <option value="OPS">OPS</option>
-//                 <option value="SER">SER</option>
-//                 <option value="MISC">MISC</option>
-//                 <option value="U/D">U/D</option>
-//               </select>
-
-//               <label htmlFor="">Remarks</label>
-
-//               <input
-//                 type="text"
-//                 name="remarks"
-//                 // value={newProject.description}
-//                 // onChange={handleInputChange}
-//                 required
-//                 placeholder="remarks"
-//               />
-//             </div>
-//             <div className="modal-actions">
-//               <button>Create</button>
-//               <button onClick={() => setShowSalesForm(false)}>Cancel</button>
-//             </div>
-//           </div>
-//         </div>
-//       )}
-
-//       {showEventForm && (
-//         <div
-//           className="modal-overlay"
-//           onClick={() => setShowEventForm(false)} // Close on outside click
-//         >
-//           <div
-//             className="modal-content"
-//             onClick={(e) => e.stopPropagation()} // Prevent modal close on inner click
-//           >
-//             <h2>Add Event List</h2>
-
-//             <div className="form-grid">
-//               <label>Out Date</label>
-//               <div className="date-input-container">
-//                 <DatePicker
-//                   selected={new Date()}
-//                   dateFormat="dd-MM-yyyy"
-//                   placeholderText="dd-mm-yyyy"
-//                   className="input1"
-//                   showMonthDropdown
-//                   showYearDropdown
-//                   dropdownMode="select"
-//                   readOnly
-//                 />
-//                 <i className="fas fa-calendar-alt calendar-icon"></i>
-//               </div>
-
-//               <label>Time</label>
-//               <input
-//                 type="text"
-//                 value={currentTime}
-//                 readOnly
-//                 placeholder="Time"
-//               />
-
-//               <label>Event Name</label>
-//               <input type="text" placeholder="Event Name" required />
-
-//               <label>Project</label>
-//               <input type="text" placeholder="Project Name" required />
-
-//               <label>Type of Outward</label>
-//               <select required>
-//                 <option value="">Select Type</option>
-//                 <option value="R&D">R&D</option>
-//                 <option value="OPS">OPS</option>
-//                 <option value="SER">SER</option>
-//                 <option value="MISC">MISC</option>
-//                 <option value="U/D">U/D</option>
-//               </select>
-
-//               <label>Return Date</label>
-//               <div className="date-input-container">
-//                 <DatePicker
-//                   selected={selectedDate}
-//                   onChange={(date) => setSelectedDate(date)}
-//                   dateFormat="dd-MM-yyyy"
-//                   placeholderText="dd-mm-yyyy"
-//                   className="input1"
-//                   showMonthDropdown
-//                   showYearDropdown
-//                   dropdownMode="select"
-//                   required
-//                 />
-//                 <i className="fas fa-calendar-alt calendar-icon"></i>
-//               </div>
-
-//               <label>Remarks</label>
-//               <input type="text" placeholder="Remarks" required />
-//             </div>
-
-//             <div className="modal-actions">
-//               <button className="modal-button save">Create</button>
-//               <button
-//                 className="modal-button cancel"
-//                 onClick={() => setShowEventForm(false)}
-//               >
-//                 Cancel
-//               </button>
-//             </div>
-//           </div>
-//         </div>
-//       )}
-
-//       {showServiceForm && (
-//         <div
-//           className="modal-overlay"
-//           onClick={() => setShowServiceForm(false)}
-//         >
-//           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-//             <h2>Add Service List</h2>
-
-//             {/* Your form fields go here */}
-//             <div className="form-grid">
-//               <label htmlFor="">Out Date</label>
-
-//               <div className="date-input-container">
-//                 <DatePicker
-//                   selected={new Date()} //
-//                   dateFormat="dd-MM-yyyy"
-//                   placeholderText="dd-mm-yyyy"
-//                   className="input1"
-//                   showMonthDropdown
-//                   showYearDropdown
-//                   dropdownMode="select"
-//                   readOnly
-//                 />
-//                 <i className="fas fa-calendar-alt calendar-icon"></i>{" "}
-//               </div>
-//               <label htmlFor="">Time</label>
-
-//               <input
-//                 type="text"
-//                 name="Time"
-//                 value={currentTime}
-//                 readOnly
-//                 placeholder="Time"
-//               />
-//               <label htmlFor="">Gate Pass</label>
-
-//               <input
-//                 type="text"
-//                 name="gate pass"
-//                 // value={newProject.description}
-//                 // onChange={handleInputChange}
-//                 required
-//                 placeholder="gate pass"
-//               />
-//               <label htmlFor="">Component Spec</label>
-//               <select name="project_type" required>
-//                 <option value="">Select Component</option>
-//                 <option value="R&D">R&D</option>
-//                 <option value="OPS">OPS</option>
-//                 <option value="SER">SER</option>
-//                 <option value="MISC">MISC</option>
-//                 <option value="U/D">U/D</option>
-//               </select>
-
-//               <label htmlFor="">Component ID</label>
-
-//               <input
-//                 type="text"
-//                 name="compoenent_id"
-//                 // value={newProject.description}
-//                 // onChange={handleInputChange}
-//                 required
-//                 placeholder="component id"
-//               />
-
-//               <label htmlFor="">Vendor</label>
-//               <select name="project_type" required>
-//                 <option value="">Select Vendor</option>
-//                 <option value="R&D">R&D</option>
-//                 <option value="OPS">OPS</option>
-//                 <option value="SER">SER</option>
-//                 <option value="MISC">MISC</option>
-//                 <option value="U/D">U/D</option>
-//               </select>
-
-//               <label htmlFor="">Project</label>
-//               <select name="project_type" required>
-//                 <option value="">Select Project Type</option>
-//                 <option value="R&D">R&D</option>
-//                 <option value="OPS">OPS</option>
-//                 <option value="SER">SER</option>
-//                 <option value="MISC">MISC</option>
-//                 <option value="U/D">U/D</option>
-//               </select>
-
-//               <label htmlFor="">Type Of Outward</label>
-//               <select name="project_type" required>
-//                 <option value="">Select Type</option>
-//                 <option value="R&D">R&D</option>
-//                 <option value="OPS">OPS</option>
-//                 <option value="SER">SER</option>
-//                 <option value="MISC">MISC</option>
-//                 <option value="U/D">U/D</option>
-//               </select>
-
-//               <label htmlFor="">Quantity</label>
-
-//               <input
-//                 type="number"
-//                 name="quantity"
-//                 // value={newProject.description}
-//                 // onChange={handleInputChange}
-//                 required
-//                 placeholder="quantity"
-//               />
-
-//               <label htmlFor="">Return Date</label>
-
-//               <div className="date-input-container">
-//                 <DatePicker
-//                   selected={selectedDate}
-//                   onChange={(date) => setSelectedDate(date)}
-//                   dateFormat="dd-MM-yyyy"
-//                   placeholderText="dd-mm-yyyy"
-//                   className="input1"
-//                   showMonthDropdown
-//                   showYearDropdown
-//                   dropdownMode="select"
-//                   required
-//                 />
-//                 <i className="fas fa-calendar-alt calendar-icon"></i>{" "}
-//               </div>
-//               <label htmlFor="">Remarks</label>
-
-//               <input
-//                 type="text"
-//                 name="description"
-//                 // value={newProject.description}
-//                 // onChange={handleInputChange}
-//                 required
-//                 placeholder="Remarks"
-//               />
-//             </div>
-//             <div className="modal-actions">
-//               <button>Create</button>
-//               <button onClick={() => setShowServiceForm(false)}>Cancel</button>
-//             </div>
-//           </div>
-//         </div>
-//       )}
-
-//       {showScrollTop && (
-//         <button
-//           style={{
-//             position: "fixed",
-//             bottom: "20px",
-//             right: "20px",
-//             padding: "10px 15px",
-//             fontSize: "18px",
-//             backgroundColor: "#f57c00",
-//             color: "white",
-//             border: "none",
-//             borderRadius: "5px",
-//             cursor: "pointer",
-//             zIndex: 1000,
-//           }}
-//           onClick={scrollToTop}
-//         >
-//           ↑
-//         </button>
-//       )}
-//       <ToastContainerComponent position="top-right" autoClose={3000} />
-//     </div>
-//   );
-// };
-// export default Outward;
-
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import config from "../Config.js";
@@ -713,6 +7,9 @@ import CancelIcon from "../assets/cancel.png";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { format, parseISO } from "date-fns";
+
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 import {
   showSuccessToast,
@@ -736,6 +33,7 @@ const Outward = () => {
   const [serialNumberList, setSerialNumberList] = useState([]);
   const [showSerialDropdown, setShowSerialDropdown] = useState(false);
   const dropdownRef = useRef(null);
+  const [allVendors, setAllVendors] = useState([]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -808,39 +106,24 @@ const Outward = () => {
     setServiceForm((prev) => ({ ...prev, specification: selectedSpec }));
 
     try {
+      // Fetch component_id based on selected specification
       const resVendor = await fetch(`${config.apiBaseURL}/vendor_master/`);
       const vendorData = await resVendor.json();
-
       const filtered = vendorData.filter(
         (item) => item.component_specification === selectedSpec
       );
 
-      if (filtered.length === 0) {
-        setAvailableVendors([]);
-        setServiceForm((prev) => ({
-          ...prev,
-          componentId: "",
-          vendor: "",
-          serialNumbers: [],
-        }));
-        setSerialNumberList([]);
-        return;
-      }
-
-      const componentId = filtered[0].component_id;
-      const vendors = [...new Set(filtered.map((item) => item.vendor_name))];
-
+      const componentId = filtered.length > 0 ? filtered[0].component_id : "";
       setServiceForm((prev) => ({
         ...prev,
         componentId,
-        vendor: vendors.length === 1 ? vendors[0] : "",
+        // Don't auto-select vendor
+        vendor: "",
       }));
-      setAvailableVendors(vendors);
 
-      // Fetch from inventory
+      // Fetch serial numbers for selected component
       const resInventory = await fetch(`${config.apiBaseURL}/inventory/`);
       const inventoryData = await resInventory.json();
-
       const availableSerials = inventoryData
         .filter(
           (item) =>
@@ -906,6 +189,7 @@ const Outward = () => {
       "Project",
       "Type of Outward",
       "Remarks",
+      "Attachements",
     ],
     Event: [
       "Out Date",
@@ -950,7 +234,20 @@ const Outward = () => {
       }
     };
 
+    const fetchVendors = async () => {
+      try {
+        const res = await fetch(`${config.apiBaseURL}/vendor_list/`);
+        const data = await res.json();
+        // Get unique vendor names
+        const vendors = [...new Set(data.map((item) => item.vendor_name))];
+        setAllVendors(vendors);
+      } catch (err) {
+        console.error("Failed to fetch all vendors", err);
+      }
+    };
+
     fetchProjects();
+    fetchVendors();
   }, []);
 
   // To display project name in table
@@ -1034,7 +331,20 @@ const Outward = () => {
       if (res.ok) {
         showSuccessToast("Sales entry saved!");
         setShowSalesForm(false);
-        fetchData(); // refresh table
+
+        // Reset form values just like you do in manufacture
+        setSalesForm({
+          outDate: new Date(),
+          time: format(new Date(), "hh:mm a"),
+          invoice: "",
+          specification: "",
+          bom: "",
+          client: "",
+          typeOfOutward: "",
+          remarks: "",
+        });
+
+        fetchData(); // Refresh table after save
       } else {
         const err = await res.json();
         console.error("Save failed:", err);
@@ -1066,13 +376,246 @@ const Outward = () => {
       if (res.ok) {
         showSuccessToast("Event saved!");
         setShowEventForm(false);
-        fetchData();
+
+        //  Reset the form after save
+        setEventForm({
+          outDate: new Date(),
+          time: format(new Date(), "hh:mm a"),
+          eventName: "",
+          project: "",
+          typeOfOutward: "",
+          returnDate: null,
+          remarks: "",
+        });
+
+        fetchData(); // Refresh list
       } else {
         const err = await res.json();
         console.error("Save error:", err);
       }
     } catch (error) {
       console.error("Error submitting event:", error);
+    }
+  };
+
+  const generateReport = async () => {
+    const endpoints = {
+      Sales: "/outward/sales/",
+      Manufacture: "/outward/manufacture/",
+      Event: "/outward/event/",
+      Defects: "/outward/defects/",
+    };
+
+    const headers = tableHeaders[reportType];
+    const endpoint = endpoints[reportType];
+
+    if (!headers || !endpoint) {
+      console.error("Invalid report type:", reportType);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${config.apiBaseURL}${endpoint}`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error("Backend error:", errText);
+        throw new Error("Failed to fetch report data");
+      }
+
+      const data = await response.json();
+
+      if (!Array.isArray(data) || data.length === 0) {
+        showInfoToast(`No data found for ${reportType}`);
+        return;
+      }
+
+      const formatDate = (val) =>
+        val ? new Date(val).toLocaleDateString("en-GB") : "N/A";
+
+      const formatTime = (val) =>
+        val
+          ? new Date(`1970-01-01T${val}`).toLocaleTimeString("en-US", {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            })
+          : "N/A";
+
+      // Map fields dynamically based on reportType
+      const formattedData = data.map((item, index) => {
+        const row = {
+          "S.No": index + 1, // Add serial number here
+        };
+
+        headers.forEach((header) => {
+          switch (header) {
+            case "Date":
+            case "Out Date":
+              row[header] = formatDate(item.date);
+              break;
+            case "Time":
+              row[header] = formatTime(item.time || item.date);
+              break;
+            case "Return Date":
+              row[header] = formatDate(item.return_date);
+              break;
+            case "Invoice Number":
+              row[header] = item.invoice_no || "N/A";
+              break;
+            case "Gate Pass":
+              row[header] = item.gatepass || "N/A";
+              break;
+            case "Component Spec":
+              row[header] = item.specification || "N/A";
+              break;
+            case "Comp id":
+              row[header] = item.component_id || "N/A";
+              break;
+            case "Vendor":
+              row[header] = item.vendor || item.vendor_name || "N/A";
+              break;
+            case "Client":
+              row[header] = item.client || "N/A";
+              break;
+            case "Description":
+              row[header] = item.specification || "N/A";
+              break;
+            case "Event Name":
+              row[header] = item.event_name || "N/A";
+              break;
+            case "Quantity":
+            case "No. of Components":
+              row[header] = item.quantity ?? "N/A";
+              break;
+            case "Project":
+              row[header] = item.project || "N/A";
+              break;
+            case "Type of Outward":
+              row[header] = item.type || item.type_of_outward || "N/A";
+              break;
+            case "Remarks":
+              row[header] = item.remarks || "N/A";
+              break;
+            default:
+              row[header] = "N/A";
+          }
+        });
+
+        return row;
+      });
+
+      generateCSV(formattedData, `${reportType}_Report`);
+    } catch (err) {
+      console.error("Download failed:", err);
+    }
+  };
+
+  const generateCSV = (data, filename) => {
+    if (!data || data.length === 0) return;
+
+    const headers = Object.keys(data[0]).join(",");
+    const rows = data.map((row) =>
+      Object.values(row)
+        .map((val) => `"${val}"`)
+        .join(",")
+    );
+
+    const csvContent = [headers, ...rows].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `${filename}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  };
+
+  const generateManufacturePDF = async (row) => {
+    try {
+      const vendorResponse = await axios.get(
+        `${config.apiBaseURL}/vendor_sub_list/`
+      );
+      const vendorData = vendorResponse.data;
+
+      // Find vendor details by name
+      const vendorDetails = vendorData.find(
+        (v) => v.vendor.vendor_name === row.vendor
+      );
+
+      const vendorAddress = vendorDetails
+        ? vendorDetails.location
+        : "Address not found";
+      const vendorGSTIN = vendorDetails
+        ? vendorDetails.vendor.gstn
+        : "GSTIN Not found";
+
+      const doc = new jsPDF();
+
+      // Header
+      doc.setFontSize(16);
+      doc.text("DELIVERY NOTE", 80, 20);
+
+      // Company (Our) Details
+      doc.setFontSize(10);
+      doc.text("Dronix Technologies Pvt Ltd", 15, 30);
+      doc.text("133, Gandhi Rd, Alappakam,New Perungalathur,", 15, 35);
+      doc.text("Chennai, Sadhanathapuram, Tamil Nadu 600063", 15, 40);
+      doc.text("GSTIN/UIN: 33AACGD1081K1ZS", 15, 45);
+
+      // Delivery Info
+      doc.text(`Delivery Note No: ${row.gatepass || "-"}`, 140, 30);
+      doc.text(`Date: ${row.date || "-"}`, 140, 35);
+
+      // Ship To
+      doc.setFontSize(11);
+      doc.text("Consignee (Ship to):", 15, 55);
+      doc.setFontSize(10);
+      doc.text(`${row.vendor || "-"}`, 15, 60);
+      doc.text(`${vendorAddress}`, 15, 65);
+      doc.text(`GSTIN/UIN: ${vendorGSTIN}`, 15, 70);
+
+      // Bill To
+      doc.setFontSize(11);
+      doc.text("Buyer (Bill to):", 15, 80);
+      doc.setFontSize(10);
+      doc.text(`${row.vendor || "-"}`, 15, 85);
+      doc.text(`${vendorAddress}`, 15, 90);
+      doc.text(`GSTIN/UIN: ${vendorGSTIN}`, 15, 95);
+
+      // Table using autoTable plugin
+      autoTable(doc, {
+        startY: 105,
+        head: [
+          ["Sl No", "Description of Goods", "HSN/SAC", "Quantity", "Remarks"],
+        ],
+        body: [
+          [
+            "1",
+            row.specification || "-",
+            row.component_id || "-",
+            row.quantity || "-",
+            row.remarks || "-",
+          ],
+        ],
+      });
+
+      // Footer
+      const finalY = doc.lastAutoTable.finalY || 120;
+      doc.text("Recd. in Good Condition", 15, finalY + 20);
+      doc.text("for Dronix Technologies Pvt Ltd", 140, finalY + 20);
+
+      doc.save(`DeliveryNote_${row.gatepass || "NA"}.pdf`);
+    } catch (error) {
+      console.error("Error generating PDF with vendor address:", error);
+      showErrorToast("Failed to fetch vendor details for PDF");
     }
   };
 
@@ -1094,7 +637,9 @@ const Outward = () => {
           <option value="Event">Event</option>
         </select>
         <div className="table-action-buttons">
-          <button className="generate-report-btn">Generate Report</button>
+          <button className="generate-report-btn" onClick={generateReport}>
+            Generate Report
+          </button>
           {reportType === "Sales" && (
             <button
               style={{
@@ -1126,12 +671,12 @@ const Outward = () => {
                 border: "none",
               }}
               className="plus-button"
-              title={showSalesForm ? "Cancel" : "Add Sales List"}
+              title={showSalesForm ? "Cancel" : "Add Service List"}
               onClick={() => setShowServiceForm(true)}
             >
               <img
                 src={showServiceForm ? CancelIcon : AddIcon}
-                alt={showServiceForm ? "Cancel" : "Add Sales List"}
+                alt={showServiceForm ? "Cancel" : "Add Service List"}
                 style={{ width: "20px", height: "20px" }}
               />
             </button>
@@ -1147,12 +692,12 @@ const Outward = () => {
                 border: "none",
               }}
               className="plus-button"
-              title={showSalesForm ? "Cancel" : "Add Sales List"}
+              title={showSalesForm ? "Cancel" : "Add Event List"}
               onClick={() => setShowEventForm(true)}
             >
               <img
                 src={showEventForm ? CancelIcon : AddIcon}
-                alt={showEventForm ? "Cancel" : "Add Sales List"}
+                alt={showEventForm ? "Cancel" : "Add Event List"}
                 style={{ width: "20px", height: "20px" }}
               />
             </button>
@@ -1195,7 +740,7 @@ const Outward = () => {
                       <td>{row.vendor || "-"}</td>
                       <td>{row.specification || "-"}</td>
                       <td>{row.quantity || "-"}</td>
-                      <td>{row.project || "-"}</td>
+                      <td>{getProjectName(row.project) || "-"}</td>
                       <td>{row.type_of_outward || "-"}</td>
                       <td>{row.remarks || "-"}</td>
                     </>
@@ -1242,11 +787,27 @@ const Outward = () => {
                       <td>{row.component_id || "-"}</td>
                       <td>{row.vendor || "-"}</td>
                       <td>{row.quantity || "-"}</td>
-                      <td>{getProjectName(row.project)}</td>
+                      <td>{getProjectName(row.project) || "-"}</td>
                       <td>{row.type_of_outward || "-"}</td>
                       <td>{row.remarks || "-"}</td>
+
+                      {/* New Column - PDF Button */}
+                      <td>
+                        <button
+                          style={{
+                            cursor: "pointer",
+                            background: "transparent",
+                            border: "none",
+                          }}
+                          title="Generate PDF"
+                          onClick={() => generateManufacturePDF(row)}
+                        >
+                          📄
+                        </button>
+                      </td>
                     </>
                   )}
+
                   {reportType === "Event" && (
                     <>
                       <td>
@@ -1264,7 +825,7 @@ const Outward = () => {
                       </td>
                       <td>{row.invoice_no || "-"}</td>
                       <td>{row.event_name || "-"}</td>
-                      <td>{row.project || "-"}</td>
+                      <td>{getProjectName(row.project) || "-"}</td>
                       <td>{row.type_of_outward || "-"}</td>
                       <td>{row.quantity || "-"}</td>
                       <td>
@@ -1344,7 +905,7 @@ const Outward = () => {
                 value={salesForm.client}
                 onChange={handleSalesChange}
                 required
-                placeholder="remarks"
+                placeholder="client"
               />
 
               <label htmlFor="">Type Of Outward</label>
@@ -1605,7 +1166,7 @@ const Outward = () => {
                 required
               >
                 <option value="">Select Vendor</option>
-                {availableVendors.map((v, i) => (
+                {allVendors.map((v, i) => (
                   <option key={i} value={v}>
                     {v}
                   </option>

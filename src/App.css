@@ -662,6 +662,27 @@ tbody tr:hover {
   margin-top: 10px;
 } */
 
+.btn-added:disabled {
+  background-color: rgb(184, 183, 183); /* green */
+  color: #fff;
+  border: none;
+  padding: 5px;
+  opacity: 0.6;
+  cursor: not-allowed;
+  border-radius: 5px;
+}
+
+/* Optional: style for .btn-reject when disabled */
+.btn-reject:disabled {
+  background-color: rgb(184, 183, 183); /* green */
+  color: #fff;
+  border: none;
+  padding: 5px;
+  opacity: 0.6;
+  cursor: not-allowed;
+  border-radius: 5px;
+}
+
 /* Popup Styles */
 /* Styles for the popup container */
 .popup {
@@ -670,7 +691,7 @@ tbody tr:hover {
   left: 50%;
   transform: translate(-50%, -50%);
   width: 400px; /* Fixed width */
-  max-height: 90vh; /* Adjust to prevent overflow */
+  max-height: 100vh; /* Adjust to prevent overflow */
   overflow-y: auto;
   background: #fff;
   border-radius: 8px;
@@ -792,6 +813,7 @@ tbody tr:hover {
   display: flex;
   justify-content: flex-end;
   margin-bottom: 10px;
+  gap: 10px;
 }
 
 .show-latest-price-btn {
@@ -1054,7 +1076,7 @@ table td {
   margin-left: 10px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   min-width: 150px;
-  max-width: 400px; 
+  max-width: 400px;
 }
 
 .category-dropdown-option {
@@ -2618,35 +2640,33 @@ main {
 }
 
 .serial-list {
-  list-style: none;
+  display: flex;
+  flex-wrap: wrap; 
+  justify-content: center; 
+  align-items: center; 
+  list-style-type: none;
   padding: 0;
-  margin-bottom: 20px;
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-.serial-list li {
-  margin-bottom: 8px;
+  margin: 0;
+  gap: 10px;
+  height: 10vh; 
+  max-height: 30vh;
 }
 
 .serial-button {
-  background: none;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  color: black;
-  padding: 6px 12px;
+  padding: 10px 20px;
+  border: none;
   cursor: pointer;
-  transition: all 0.3s ease;
+  background: #f0f0f0;
+  border-radius: 4px;
 }
 
-.serial-button:hover {
-  background-color: #f0f0f0;
+.serial-button:hover{
+  background-color: #dad8d8 !important;
 }
 
 .serial-button.selected {
   color: white;
-  background-color: gray;
-  font-weight: bold;
+  background-color: #a09e9e;
 }
 
 .modal-actions {
@@ -2696,7 +2716,7 @@ main {
 }
 
 .popup {
-  overflow: visible; /* ✅ VERY IMPORTANT */
+  overflow: visible; /*  VERY IMPORTANT */
   z-index: 1050;
 }
 
@@ -3007,8 +3027,8 @@ main {
   }
 
   .header-controls {
-    flex-direction: column; /* ✅ Keep them side by side */
-    flex-wrap: wrap; /* ✅ Allow wrapping if screen is too small */
+    flex-direction: column; /*  Keep them side by side */
+    flex-wrap: wrap; /*  Allow wrapping if screen is too small */
     justify-content: center;
     gap: 20px;
   }
@@ -3099,7 +3119,7 @@ main {
   align-items: center;
   justify-content: center;
   padding: 10px 20px;
-  margin-top: -60px;
+  margin-top: -65px;
   gap: 16px;
 }
 
@@ -4438,10 +4458,9 @@ ul {
   padding: 8px;
   background-color: white;
   cursor: pointer;
-    border-radius: 5px;
-    font-size: 14px;
-    text-align: left;
-
+  border-radius: 5px;
+  font-size: 14px;
+  text-align: left;
 }
 
 .dropdown-display .arrow {
@@ -4459,12 +4478,11 @@ ul {
   margin-top: 2px;
   border-radius: 5px;
   text-align: left;
-
 }
 
 .dropdown-option {
   display: flex;
-  align-items:center;
+  align-items: center;
   justify-content: flex-start;
   padding: 1px 3px;
   cursor: pointer;
@@ -4473,6 +4491,79 @@ ul {
   text-align: left !important;
   width: 50%; /* ensure it fills the dropdown width */
   font-size: 14px;
+}
+
+.popup-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 20px;
+  overflow-x: auto;
+}
+
+.popups {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  max-width: 95vw; /* Ensure it doesn't overflow screen */
+  min-width: 600px;
+  width: fit-content;
+  transition: width 0.3s ease;
+  overflow-x: auto;
+   position: relative;
+}
+
+.popups h3{
+  text-align: center;
+}
+
+.popups .x-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 1.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #333;
+}
+
+
+.popups input,
+.popups select {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.popupS-expanded {
+  width: fit-content;
+}
+
+.fake-date-input {
+  border: 1px solid #ccc;
+  padding: 8px;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  width: 150px; 
+  background-color: white;
+  border-radius: 6px;
+}
+.calendar-icon {
+  margin-left: 8px;
+  color: #555;
+}
+
+.floating-datepicker {
+  position: absolute;
+  z-index: 9999;
 }
 
 

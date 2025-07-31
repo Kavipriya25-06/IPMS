@@ -12,6 +12,7 @@ import {
   showInfoToast,
   showWarningToast,
   ToastContainerComponent,
+  showTextToast,
 } from "./Toastify.jsx"; // Import Toastify utilities
 import { th } from "date-fns/locale";
 
@@ -77,16 +78,6 @@ const RequestComponent = () => {
       .catch((err) => console.error("Error fetching request data:", err));
   }, [user]);
 
-  // useEffect(() => {
-  //   const handleOutsideClick = (e) => {
-  //     if (modalRef.current && !modalRef.current.contains(e.target)) {
-  //       setShowModal(false);
-  //     }
-  //   };
-  //   document.addEventListener("mousedown", handleOutsideClick);
-  //   return () => document.removeEventListener("mousedown", handleOutsideClick);
-  // }, []);
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -108,7 +99,7 @@ const RequestComponent = () => {
       });
 
       if (response.ok) {
-        alert("Component request submitted!");
+        showSuccessToast("Component request submitted!");
         setShowModal(false);
         setFormData({
           name: "Dronix",
@@ -124,11 +115,11 @@ const RequestComponent = () => {
         ).then((res) => res.json());
         setComponentList(updatedList);
       } else {
-        alert("Submission failed");
+        showErrorToast("Submission failed");
       }
     } catch (error) {
       console.error("Submission error:", error);
-      alert("Network error");
+      showErrorToast("Network error");
     }
   };
 
@@ -200,42 +191,87 @@ const RequestComponent = () => {
     }
   };
 
-  const handleRejectRequest = async (item) => {
-    const componentId = prompt("Enter Component ID for rejection:");
-    if (!componentId) return;
+  const handleRejectRequest = (item) => {
+    let componentId = item.component_id || "";
 
-    try {
-      // Update status and component ID
-      await fetch(`${config.apiBaseURL}/request_component/${item.id}/`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "Rejected", component_id: componentId }),
-      });
+    showTextToast({
+      message: ({ closeToast }) => (
+        <div>
+          <p>Enter Component ID for rejection:</p>
+          <input
+            type="text"
+            defaultValue={componentId}
+            onChange={(e) => {
+              componentId = e.target.value.trim();
+            }}
+            style={{
+              marginTop: "8px",
+              padding: "6px",
+              width: "100%",
+              border: "1px solid #ccc",
+              borderRadius: "4px",
+            }}
+          />
+        </div>
+      ),
+      confirmText: "Reject",
+      cancelText: "Cancel",
+      onConfirm: async () => {
+        if (!componentId) {
+          showErrorToast("Component ID is required for rejection.");
+          return;
+        }
 
-      showWarningToast(`Component ${componentId} rejected.`);
-      const updatedList = await fetch(
-        `${config.apiBaseURL}/request_component/`
-      ).then((res) => res.json());
-      setComponentList(updatedList);
-    } catch (error) {
-      showErrorToast("Failed to reject");
-      console.error("Reject error:", error);
-    }
+        try {
+          // --- 1. Fetch Component Master data ---
+          const response = await fetch(`${config.apiBaseURL}/component/`);
+          const componentMasterData = await response.json();
+
+          // --- 2. Check if entered componentId exists in Component Master ---
+          const componentExists = componentMasterData.some(
+            (comp) => comp.component_id === componentId
+          );
+
+          if (!componentExists) {
+            showErrorToast(
+              `Component ID "${componentId}" does not exist in Component Master.`
+            );
+            return; // stop rejection
+          }
+
+          //  3. Proceed with rejection ---
+          await fetch(`${config.apiBaseURL}/request_component/${item.id}/`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              status: "Rejected",
+              component_id: componentId,
+            }),
+          });
+
+          showWarningToast(`Component ${componentId} rejected.`);
+
+          const updatedList = await fetch(
+            `${config.apiBaseURL}/request_component/`
+          ).then((res) => res.json());
+
+          setComponentList(updatedList);
+        } catch (error) {
+          showErrorToast("Failed to reject request.");
+          console.error("Reject error:", error);
+        }
+      },
+      onCancel: () => {
+        showWarningToast("Rejection cancelled.");
+      },
+    });
   };
 
   return (
     <div>
       <div className="header">
         <h2>New Component</h2>
-        {/* <div className="button-group">
-          <button className="create-tag-button" onClick={handleTagIconClick}>
-            <img src="src/assets/tags.png" alt="icon" />
-          </button>
-        </div> */}
         <div className="button-group">
-          {/* <button className="create-tag-button" onClick={handleTagIconClick}>
-            <img src="src/assets/tags.png" alt="icon" />
-          </button> */}
           <button className="add-comp" onClick={() => setShowModal(true)}>
             Request Component
           </button>
@@ -243,8 +279,6 @@ const RequestComponent = () => {
             <div className="modal-overlays">
               <div className="modals" ref={modalRef}>
                 <h2>Request Component</h2>
-                {/* <p>Name:Gk</p>
-                <p>Date:5.5.25</p> */}
                 <form onSubmit={handleSubmit}>
                   <div className="forms-group">
                     <label htmlFor="">Category</label>
@@ -323,19 +357,6 @@ const RequestComponent = () => {
             </div>
           )}
         </div>
-
-        {/* <img
-          src={tagIcon}
-          alt="Tag Icon"
-          title="Add tags"
-          style={{
-            width: "39px",
-            height: "39px",
-            cursor: "pointer",
-            marginLeft: "auto",
-          }}
-          onClick={handleTagIconClick}
-        /> */}
       </div>
       <div class="center-wrapper">
         <div className="search-bar-container">
@@ -370,8 +391,6 @@ const RequestComponent = () => {
 
                 <th>Specification</th>
                 <th>Product Link</th>
-
-                {/* <th>Tally Reference</th> */}
                 <th>UOM</th>
 
                 <th>Date</th>
@@ -492,8 +511,6 @@ const RequestComponent = () => {
           </table>
         </div>
       </div>
-      {/* {loading && <p>Loading...</p>}
-      {!hasMore && <p>No more data available</p>} */}
 
       {showScrollTop && (
         <button

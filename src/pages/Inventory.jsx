@@ -1,6 +1,3 @@
-// import React, { useState, useEffect } from "react";
-// src\pages\Inventory.jsx
-
 import React, { useState, useEffect, useRef } from "react";
 import config from "../Config"; // Import config for API endpoints
 import {
@@ -165,34 +162,40 @@ const Inventory = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // useEffect(() => {
-  //   filterInventory();
-  // }, [selectedTag, inventoryData, componentData, metaTags, selectedStatus]);
-
-  // const fetchInventoryData = async () => {
-  //   try {
-  //     const response = await fetch(`${config.apiBaseURL}/inventory/?status=`);
-  //     const data = await response.json();
-  //     setInventoryData(data);
-  //   } catch (error) {
-  //     console.error("Error fetching inventory data:", error);
-  //   }
-  // };
+  useEffect(() => {
+    filterInventory();
+  }, [selectedTag, inventoryData, componentData, metaTags, selectedStatus]);
 
   // Fetch inventory data from API (filtered by status)
+
   const fetchInventoryData = async (status = "Available") => {
     try {
-      let apiUrl = `${config.apiBaseURL}/inventory/`;
-      if (status && status !== "Tool") {
-        apiUrl += `?status=${status}`;
+      let data = [];
+
+      if (status === "Available") {
+        // Fetch both Available and Reserved
+        const [availableRes, reservedRes] = await Promise.all([
+          fetch(`${config.apiBaseURL}/inventory/?status=Available`),
+          fetch(`${config.apiBaseURL}/inventory/?status=Reserved`),
+        ]);
+
+        if (!availableRes.ok || !reservedRes.ok)
+          throw new Error("Failed to fetch Available or Reserved");
+
+        const available = await availableRes.json();
+        const reserved = await reservedRes.json();
+
+        data = [...available, ...reserved]; // merge both
+      } else {
+        const response = await fetch(
+          `${config.apiBaseURL}/inventory/?status=${status}`
+        );
+        if (!response.ok) throw new Error("Failed to fetch inventory");
+        data = await response.json();
       }
 
-      const response = await fetch(apiUrl);
-      if (!response.ok) throw new Error("Failed to fetch inventory data");
-
-      const data = await response.json();
       setInventoryData(data);
-      setFilteredInventory(data); // direct from backend
+      setFilteredInventory(data);
       console.log("Fetched inventory data:", data);
     } catch (error) {
       console.error("Error fetching inventory data:", error);
@@ -219,24 +222,30 @@ const Inventory = () => {
       const response = await fetch(
         `${config.apiBaseURL}/tool_inventory/${editingToolRow}/`,
         {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify(editToolRowData),
         }
       );
 
       if (response.ok) {
-        showSuccessToast("Tool inventory updated successfully!");
-        fetchToolInventoryData();
-        setEditingToolRow(null);
+        showSuccessToast("Tool updated successfully.");
+        setEditingToolRow(null); // exit edit mode
+        await fetchToolInventoryData(); // Refresh data
       } else {
-        throw new Error("Failed to update tool");
+        showErrorToast("Failed to update tool.");
       }
     } catch (error) {
-      console.error(error);
-      showErrorToast("Error updating tool inventory.");
+      console.error("Error updating tool:", error);
+      showErrorToast("Something went wrong.");
     }
   };
+
+  useEffect(() => {
+    fetchToolInventoryData();
+  }, []);
 
   const scrollToTop = () => {
     window.scrollTo({
@@ -255,10 +264,6 @@ const Inventory = () => {
     }
 
     let filtered = [...inventoryData];
-
-    // if (statusFilter && statusFilter !== "Tool") {
-    //   filtered = filtered.filter((item) => item.status === statusFilter);
-    // }
 
     if (fromDate && toDate) {
       filtered = filtered.filter((item) => {
@@ -321,12 +326,6 @@ const Inventory = () => {
     }
   };
 
-  // const groupedData = filteredInventory.reduce((acc, item) => {
-  //   acc[item.component_id] = acc[item.component_id] || [];
-  //   acc[item.component_id].push(item);
-  //   return acc;
-  // }, {});
-
   const fetchMetaTags = async () => {
     try {
       const response = await fetch(`${config.apiBaseURL}/meta_tags/`);
@@ -339,11 +338,7 @@ const Inventory = () => {
 
   const filterInventory = () => {
     let filtered = inventoryData;
-    // console.log("Filtered inventory data", filtered);
 
-    // console.log("Selected tag", selectedTag);
-
-    // Filter by selected meta tag
     if (selectedTag) {
       filtered = filtered.filter((item) => {
         const component = componentData[item.component_id];
@@ -413,42 +408,53 @@ const Inventory = () => {
   };
 
   const handleGenerateReport = () => {
-    // Filter based on selected tab/status
-    const reportData = filteredInventory.filter(
-      (item) => item.status === statusFilter
-    );
+    let reportData;
+    let status = statusFilter;
 
-    if (reportData.length === 0) {
-      showInfoToast(`No inventory items found for status: ${statusFilter}`);
+    if (status === "Tool") {
+      reportData = toolInventory; //  from state
+    } else {
+      reportData = filteredInventory.filter((item) => item.status === status);
+    }
+
+    if (!reportData || reportData.length === 0) {
+      showInfoToast(`No inventory items found for status: ${status}`);
       return;
     }
 
-    const formatPrice = (value) =>
-      value !== undefined && value !== null && value !== ""
-        ? `₹${parseFloat(value).toFixed(2)}`
-        : "N/A";
+    const formattedData =
+      status === "Tool"
+        ? reportData.map((item, index) => ({
+            "S.No": index + 1,
+            "Component ID": item.component_id || "N/A",
+            "Tool Name": item.tool_name || "N/A",
+            Quantity: item.quantity ?? 0,
+            "In Inventory": item.in_inventory ?? 0,
+            Team: item.team || "N/A",
+            Remarks: item.remarks || "N/A",
+          }))
+        : reportData.map((item, index) => ({
+            "S.No": index + 1,
+            "Component ID": item.component_id || "N/A",
+            "Serial Number": item.serial_number || "N/A",
+            "SKU Number Inventory": item.sku_number_inventory || "N/A",
+            Category: item.category || "N/A",
+            "Component Type": item.component_type || "N/A",
+            Specification: item.specification || "N/A",
+            UOM: item.UOM || "N/A",
+            "Vendor Name": item.vendor_name || "N/A",
+            "Created Date": item.create_date || "N/A",
+            Price:
+              item.price !== undefined && item.price !== null
+                ? `₹${parseFloat(item.price).toLocaleString("en-IN", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}`
+                : "N/A",
+            Status: item.status || "N/A",
+          }));
 
-    const formatPercentage = (value) =>
-      value !== undefined && value !== null && value !== ""
-        ? `${parseFloat(value).toFixed(2)}%`
-        : "N/A";
-
-    const formattedData = reportData.map((item) => ({
-      Serial_Number: item.serial_number || "N/A",
-      Component_ID: item.component_id || "N/A",
-      Component_Type: item.component_type || "N/A",
-      Vendor_Name: item.vendor_name || "N/A",
-      Category: item.category || "N/A",
-      Specification: item.specification || "N/A",
-      UOM: item.UOM || "N/A",
-      Create_Date: item.create_date || "N/A",
-      Status: item.status || "N/A",
-      Price: formatPrice(item.price),
-      SKU_Number_Inventory: item.sku_number_inventory || "N/A",
-      Request_ID_Assign: item.Request_id_assign || "N/A",
-    }));
-
-    generateCSV(formattedData, statusFilter);
+    generateCSV(formattedData, status);
   };
 
   // Function to format price values (₹, commas, two decimal places)
@@ -467,16 +473,41 @@ const Inventory = () => {
   };
 
   const generateCSV = (data, selectedStatus = "") => {
-    let csvContent =
-      "Serial Number,Component ID,Component Type,Vendor Name,Category,Specification,UOM,Created Date,Status,Price,SKU Number Inventory,Request ID Assign\n";
+    let headers;
 
-    data.forEach((row) => {
-      csvContent += `${Object.values(row)
-        .map((value) => `"${value}"`)
-        .join(",")}\n`;
-    });
+    if (selectedStatus?.trim().toLowerCase() === "tool") {
+      headers = [
+        "S.No",
+        "Component ID",
+        "Tool Name",
+        "Quantity",
+        "In Inventory",
+        "Team",
+        "Remarks",
+      ];
+    } else {
+      headers = [
+        "S.No",
+        "Component ID",
+        "Serial Number",
+        "SKU Number Inventory",
+        "Category",
+        "Component Type",
+        "Specification",
+        "UOM",
+        "Vendor Name",
+        "Created Date",
+        "Price",
+        "Status",
+      ];
+    }
 
-    let statusForFileName = selectedStatus?.trim() || "All";
+    const rows = data.map((row) =>
+      headers.map((header) => `"${row[header] || ""}"`).join(",")
+    );
+
+    const csvContent = [headers.join(","), ...rows].join("\n");
+    const BOM = "\uFEFF";
 
     const indianTime = new Date().toLocaleString("en-IN", {
       timeZone: "Asia/Kolkata",
@@ -493,92 +524,19 @@ const Inventory = () => {
       .replace(/, /g, "_")
       .toLowerCase();
 
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
+    const filename = `Inventory_Report_${selectedStatus}_${formattedTime}.csv`;
+
+    const blob = new Blob([BOM + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `Inventory_Report_${statusForFileName}_${formattedTime}.csv`;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
   };
-
-  // const openReturnModal = (item) => {
-  //   console.log("Opening return modal for:", item);
-  //   setReturnItem(item);
-  //   setRemarks("");
-  //   setReportedBy("");
-  //   setSelectedStatus("Damaged"); // Default to "Damaged" when modal opens
-  //   setReturnModal(true);
-  // };
-
-  // const closeReturnModal = () => {
-  //   setReturnModal(false);
-  //   setReturnItem(null);
-  // };
-
-  // const handleReturn = async () => {
-  //   if (!remarks || !reportedBy) {
-  //     alert("Please enter Remarks and Reported By.");
-  //     return;
-  //   }
-
-  //   try {
-  //     // POST request to report the item as damaged
-  //     const response = await fetch(`${config.apiBaseURL}/damaged/${returnItem.serial_number}/`, {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify({
-  //         serial_number: returnItem.serial_number,
-  //         remarks,
-  //         reported_by: reportedBy,
-  //         status: selectedStatus, // Use selectedStatus from dropdown
-  //       }),
-  //     });
-
-  //     if (!response.ok) {
-  //       console.error("Failed to report damaged item:", response.statusText);
-  //       alert("Failed to report damaged item.");
-  //       return;
-  //     }
-
-  //     alert(`Item ${returnItem.serial_number} reported as damaged successfully!`);
-
-  //       // Step 2: Update inventory status to true
-  //     const patchResponse = await fetch(`${config.apiBaseURL}/inventory/${returnItem.serial_number}/`, {
-  //       method: "PATCH",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify({
-  //         status: true,
-  //       }),
-  //     });
-
-  //     if (!patchResponse.ok) {
-  //       console.error("Failed to update inventory status:", patchResponse.statusText);
-  //       alert("Failed to update inventory status.");
-  //       return;
-  //     }
-
-  //     alert(`Inventory status for ${returnItem.serial_number} updated successfully!`);
-
-  //     // Update UI state to reflect the change
-  //     setFilteredInventory((prev) =>
-  //       prev.map((row) =>
-  //         row.serial_number === returnItem.serial_number ? { ...row, status: true } : row
-  //       )
-  //     );
-
-  //     closeReturnModal();
-
-  //   } catch (error) {
-  //     console.error("Error reporting damaged item:", error);
-  //     alert("Error reporting damaged item.");
-  //   }
-  // };
 
   const clearDateFilter = () => {
     setFromDate(null);
@@ -661,12 +619,6 @@ const Inventory = () => {
     filterByDate();
   }, [statusFilter]);
 
-  // const groupedData = filteredStatusInventory.reduce((acc, item) => {
-  //   acc[item.component_id] = acc[item.component_id] || [];
-  //   acc[item.component_id].push(item);
-  //   return acc;
-  // }, {});
-
   const handleSaveToolRow = async () => {
     try {
       const response = await fetch(`${config.apiBaseURL}/tool_inventory/`, {
@@ -674,19 +626,19 @@ const Inventory = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ ...newToolRow, status: "Tool" }),
+        body: JSON.stringify(newToolRow),
       });
 
       if (response.ok) {
-        setNewToolRow(null);
-        fetchInventoryData(); // Re-fetch inventory
-        showSuccessToast("Tool inventory added.");
+        showSuccessToast("Tool saved successfully.");
+        setNewToolRow(null); // clear input
+        await fetchToolInventoryData(); // Refresh data
       } else {
-        throw new Error("Failed to save tool.");
+        showErrorToast("Failed to save tool.");
       }
     } catch (error) {
-      console.error(error);
-      showErrorToast("Error saving tool inventory.");
+      console.error("Error saving tool:", error);
+      showErrorToast("Something went wrong.");
     }
   };
 
@@ -723,8 +675,14 @@ const Inventory = () => {
           In Drone
         </button>
         <button
-          className={`tab-btn ${statusFilter === "Scrap" ? "active" : ""}`}
-          onClick={() => setStatusFilter("Scrap")}
+          className={`tab-btn ${statusFilter === "Repair" ? "active" : ""}`}
+          onClick={() => setStatusFilter("Repair")}
+        >
+          Repair
+        </button>
+        <button
+          className={`tab-btn ${statusFilter === "Damaged" ? "active" : ""}`}
+          onClick={() => setStatusFilter("Damaged")}
         >
           Scrap
         </button>
@@ -738,35 +696,68 @@ const Inventory = () => {
           Tool Inventory
         </button>
       </div>
+
       <div
         style={{
           display: "flex",
-          justifyContent: "flex-end",
+          justifyContent: "space-between",
+          alignItems: "center",
           margin: "10px 0",
           gap: "10px",
         }}
       >
-        <button
+        <div
           style={{
-            cursor: "pointer",
-            background: "transparent",
-            border: "none",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            marginBottom: "10px",
           }}
-          title="Filter by Date"
-          onClick={() => setShowDateFilter(true)}
         >
-          <img
-            src={Filter}
-            alt="Filter"
-            style={{ width: "25px", height: "30px" }}
-          />
-        </button>
+          <span style={{ fontWeight: "bold", fontSize: "20px" }}>
+            Total Inventory Count:
+          </span>
+          <span style={{ fontWeight: "bold", fontSize: "20px" }}>
+            {(() => {
+              if (statusFilter === "Tool") return toolInventory.length || 0;
+              if (statusFilter === "Available") {
+                return filteredInventory.filter(
+                  (item) =>
+                    item.status === "Available" || item.status === "Reserved"
+                ).length;
+              }
+              return filteredInventory.filter(
+                (item) => item.status === statusFilter
+              ).length;
+            })()}
+          </span>
+        </div>
 
-        <button onClick={handleGenerateReport} className="generate-report-btn">
-          Generate Report
-        </button>
-        {statusFilter === "Tool" && (
-          <>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <button
+            style={{
+              cursor: "pointer",
+              background: "transparent",
+              border: "none",
+            }}
+            title="Filter by Date"
+            onClick={() => setShowDateFilter(true)}
+          >
+            <img
+              src={Filter}
+              alt="Filter"
+              style={{ width: "25px", height: "30px" }}
+            />
+          </button>
+
+          <button
+            onClick={handleGenerateReport}
+            className="generate-report-btn"
+          >
+            Generate Report
+          </button>
+
+          {statusFilter === "Tool" && (
             <button
               style={{
                 cursor: "pointer",
@@ -785,11 +776,16 @@ const Inventory = () => {
                 })
               }
             >
-              <img src={Add} alt="" style={{ width: "20px", height: "20px" }} />
+              <img
+                src={Add}
+                alt="Add"
+                style={{ width: "20px", height: "20px" }}
+              />
             </button>
-          </>
-        )}
-      </div>{" "}
+          )}
+        </div>
+      </div>
+
       <div className="table-container">
         {statusFilter !== "Tool" ? (
           <table className="inventory-table">
@@ -1043,6 +1039,8 @@ const Inventory = () => {
                       (row) =>
                         row.status === "Available" ||
                         row.status === "Reserved" ||
+                        row.status === "Repair" ||
+                        row.status === "Damaged" ||
                         row.status === "In_drone"
                     ).length || 0;
                   const firstRow = componentRows[0];
@@ -1153,17 +1151,7 @@ const Inventory = () => {
                             }}
                           >
                             <td>{row.component_id}</td>
-                            <td>
-                              {row.serial_number}{" "}
-                              {/* {!row.status && (
-                            <button
-                              className="return-button"
-                              onClick={() => openReturnModal(row)}
-                            >
-                              Return
-                            </button>
-                          )} */}
-                            </td>
+                            <td>{row.serial_number} </td>
                             <td
                               onDoubleClick={() =>
                                 handleDoubleClick(row.id, row.sku_number)
@@ -1223,7 +1211,12 @@ const Inventory = () => {
                     colSpan="11"
                     style={{ textAlign: "center", color: "gray" }}
                   >
-                    {fromDate && toDate ? (
+                    {selectedTag.trim() ? (
+                      <>
+                        No results found for tag "<strong>{selectedTag}</strong>
+                        "
+                      </>
+                    ) : fromDate && toDate ? (
                       <>
                         No data available from{" "}
                         <strong>{formatDate(fromDate)}</strong> to{" "}
@@ -1235,16 +1228,16 @@ const Inventory = () => {
                   </td>
                 </tr>
               )}
-              <tr>
+              {/* <tr>
                 <td style={{ fontWeight: "bold" }}>Total Inventory count</td>
                 <td>
-                  {/* {filteredInventory.filter(
+                   {filteredInventory.filter(
                 (row) => row.status === "Available" || row.status === "Reserved"
-              ).length || 0} */}
+              ).length || 0} 
                   {filteredInventory.length || 0}
                 </td>
                 <td colSpan="10" className="no-data"></td>
-              </tr>
+              </tr> */}
             </tbody>
           </table>
         ) : (
@@ -1420,9 +1413,17 @@ const Inventory = () => {
                             }
                           />
                         </td>
-                        <td>
-                          <button onClick={handleUpdateToolRow}>Save</button>
-                          <button onClick={() => setEditingToolRow(null)}>
+                        <td className="event-buttons">
+                          <button
+                            onClick={handleUpdateToolRow}
+                            className="edit-btn"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={() => setEditingToolRow(null)}
+                            className="delete-btn"
+                          >
                             Cancel
                           </button>
                         </td>
@@ -1441,6 +1442,7 @@ const Inventory = () => {
                               setEditingToolRow(tool.id);
                               setEditToolRowData(tool);
                             }}
+                            className="edit-btn"
                           >
                             Edit
                           </button>

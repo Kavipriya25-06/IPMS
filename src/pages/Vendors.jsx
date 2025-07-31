@@ -44,6 +44,7 @@ const Vendors = () => {
     gstn: "",
   });
   const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
+  const [tempEditPoc, setTempEditPoc] = useState(null);
 
   const navigate = useNavigate();
   const [newVendor, setNewVendor] = useState({
@@ -138,29 +139,30 @@ const Vendors = () => {
   };
 
   const handleSavePoc = async (pocId) => {
-    const updatedPoc = pocData.find((poc) => poc.id === pocId); // Find POC by ID
-    if (!updatedPoc) {
-      console.error("POC not found for the provided ID:", pocId);
-      return;
-    }
+    if (!tempEditPoc) return;
     try {
       const response = await fetch(
         `${config.apiBaseURL}/vendor_sub_list/${pocId}/`,
         {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(updatedPoc),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(tempEditPoc),
         }
       );
       if (response.ok) {
-        setIsEditing(null); // Exit editing mode after saving
+        // Replace old entry with updated one
+        setPocData((prev) =>
+          prev.map((p) => (p.id === pocId ? tempEditPoc : p))
+        );
+        showSuccessToast("POC updated successfully");
+        setIsEditing(null);
+        setTempEditPoc(null);
       } else {
-        console.error("Error updating POC:", response.statusText);
+        showErrorToast("Failed to update POC");
       }
     } catch (error) {
-      console.error("Error updating POC:", error);
+      console.error("Update error:", error);
+      showErrorToast("Error occurred while updating");
     }
   };
 
@@ -270,6 +272,7 @@ const Vendors = () => {
           default_poc: isFirstPoc,
         });
         setIsAdding(false);
+        showSuccessToast("POC Added successfully");
       } else {
         console.error("Error adding POC:", response.statusText);
       }
@@ -402,14 +405,18 @@ const Vendors = () => {
       );
       if (response.ok) {
         // Remove deleted POC from state
+        showSuccessToast("POC deleted successfully");
+
         setPocData((prevPocData) =>
           prevPocData.filter((poc) => poc.id !== pocId)
         );
       } else {
         console.error("Error deleting POC:", response.statusText);
+        showErrorToast("Failed to delete POC");
       }
     } catch (error) {
       console.error("Error deleting POC:", error);
+      showErrorToast("Error occurred while deleting");
     }
   };
 
@@ -573,7 +580,7 @@ const Vendors = () => {
         }}
       >
         <h2>Vendors</h2>
-
+ 
         {/* <button
           style={{
             cursor: "pointer",
@@ -684,7 +691,7 @@ const Vendors = () => {
             )}
             <input
               type="text"
-              placeholder="Location"
+              placeholder="Address"
               value={newSubVendor.location}
               onChange={(e) =>
                 handleSubVendorInputChange("location", e.target.value)
@@ -719,36 +726,42 @@ const Vendors = () => {
             </div>
           </div>
         </Modal>
-
-        <div></div>
+ <button
+          className="plus-button"
+          title="Add Vendor"
+          onClick={() => setShowAddVendorPopup(true)}
+          style={{
+            cursor: "pointer",
+            background: "transparent",
+            border: "none",
+            padding: "6px",
+            marginBottom: "-10px",
+          }}
+          
+        >
+          <img src={Add} alt="Add Vendor" />
+        </button>
       </div>
-    <div className="search-wrapper-container">
-  {/* Centered search bar */}
-  <div className="search-wrapper">
-    <div className="search-bar-container">
-      <input
-        type="text"
-        className="search-bar"
-        placeholder="Search by Vendor Name or Component Type"
-        value={searchQuery}
-        onChange={(e) => handleSearch(e.target.value)}
-      />
-      <span className="search-icon">
-        <i className="fa fa-search" aria-hidden="true"></i>
-      </span>
-    </div>
-  </div>
+      <div className="search-wrapper-container">
+        {/* Centered search bar */}
+        <div className="search-wrapper">
+          <div className="search-bar-container">
+            <input
+              type="text"
+              className="search-bar"
+              placeholder="Search by Component Type or Spec"
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+            />
+            <span className="search-icon">
+              <i className="fa fa-search" aria-hidden="true"></i>
+            </span>
+          </div>
+        </div>
 
-  {/* Add Vendor Button */}
-  <button
-    className="plus-button"
-    title="Add Vendor"
-    onClick={() => setShowAddVendorPopup(true)}
-  >
-    <img src={Add} alt="Add Vendor" />
-  </button>
-</div>
-
+        {/* Add Vendor Button */}
+      
+      </div>
 
       <div className="table-container">
         <table>
@@ -759,38 +772,71 @@ const Vendors = () => {
               <th>Primary POC</th>
               <th>Email</th>
               <th>Phone</th>
-              <th>Location</th>
+              <th>Address</th>
               {/* <th>Categosfbry</th> */}
               <th>Actions</th>
               <th>Status</th>
             </tr>
           </thead>
           <tbody>
-            {vendorData.map((vendor) => {
-              const vendorPocs = getVendorPocs(vendor.vendor_id);
-              const selectedPocId = primaryPocSelection[vendor.vendor_id];
-              const defaultPoc =
-                vendorPocs.find((poc) => poc.default_poc) || {};
-              const defaultPocDetails = pocData.find(
-                (poc) => poc.vendor === vendor.vendor_id && poc.default_poc
-              );
-              const primaryPoc =
-                vendorPocs.find((poc) => poc.id === selectedPocId) ||
-                vendorPocs[0] ||
-                {};
+            {vendorData.length > 0 ? (
+              vendorData.map((vendor) => {
+                const vendorPocs = getVendorPocs(vendor.vendor_id);
+                const selectedPocId = primaryPocSelection[vendor.vendor_id];
+                const defaultPoc =
+                  vendorPocs.find((poc) => poc.default_poc) || {};
+                const defaultPocDetails = pocData.find(
+                  (poc) => poc.vendor === vendor.vendor_id && poc.default_poc
+                );
+                const primaryPoc =
+                  vendorPocs.find((poc) => poc.id === selectedPocId) ||
+                  vendorPocs[0] ||
+                  {};
 
-              // const primaryPoc = vendorPocs[0] || {}; // Use the first POC as the primary one
-              return (
-                <tr key={vendor.vendor_id}>
-                  <td
-                    className="specification-cell"
-                    title={vendor.vendor_name || ""}
-                  >
-                    {isEditingVendor === vendor.vendor_id ? (
-                      <div>
+                return (
+                  <tr key={vendor.vendor_id}>
+                    <td
+                      className="specification-cell"
+                      title={vendor.vendor_name || ""}
+                    >
+                      {isEditingVendor === vendor.vendor_id ? (
+                        <div>
+                          <input
+                            type="text"
+                            value={editedVendorName.vendor_name}
+                            style={{
+                              width: "150px",
+                              padding: "3px",
+                              borderRadius: "5px",
+                            }}
+                            onChange={(e) =>
+                              setEditedVendorName({
+                                ...editedVendorName,
+                                vendor_name: e.target.value,
+                              })
+                            }
+                            autoFocus
+                          />
+                        </div>
+                      ) : (
+                        <span
+                          onClick={() =>
+                            handleVendorNameClick(vendor.vendor_id)
+                          }
+                          style={{
+                            cursor: "pointer",
+                            textDecoration: "underline",
+                          }}
+                        >
+                          {vendor.vendor_name}
+                        </span>
+                      )}
+                    </td>
+                    <td>
+                      {isEditingVendor === vendor.vendor_id ? (
                         <input
                           type="text"
-                          value={editedVendorName.vendor_name}
+                          value={editedVendorName.gstn}
                           style={{
                             width: "150px",
                             padding: "3px",
@@ -799,102 +845,79 @@ const Vendors = () => {
                           onChange={(e) =>
                             setEditedVendorName({
                               ...editedVendorName,
-                              vendor_name: e.target.value,
+                              gstn: e.target.value,
                             })
                           }
-                          autoFocus
                         />
-                      </div>
-                    ) : (
-                      <span
-                        onClick={() => handleVendorNameClick(vendor.vendor_id)}
+                      ) : (
+                        vendor.gstn
+                      )}
+                    </td>
+                    <td
+                      onClick={() => handlePocClick(vendor.vendor_id)}
+                      style={{ cursor: "pointer", textDecoration: "underline" }}
+                    >
+                      {defaultPoc.point_of_contact || "N/A"}
+                    </td>
+                    <td>{defaultPoc.email || "N/A"}</td>
+                    <td>{defaultPoc.phone_number || "N/A"}</td>
+                    <td>{defaultPoc.location || "N/A"}</td>
+                    <td>
+                      {isEditingVendor === vendor.vendor_id ? (
+                        <>
+                          <button
+                            className="edit-button"
+                            onClick={() =>
+                              handleSaveVendorName(vendor.vendor_id)
+                            }
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            className="cancel-button"
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => handleEditVendorName(vendor)}
+                          className="vendor-button"
+                          aria-label="Edit vendor"
+                          style={{ border: "none", cursor: "pointer" }}
+                        >
+                          <PencilSquareIcon className="text-black" />
+                        </button>
+                      )}
+                    </td>
+                    <td>
+                      <button
+                        onClick={() =>
+                          toggleVendorStatus(vendor.vendor_id, vendor.active)
+                        }
                         style={{
+                          backgroundColor: vendor.active ? "#b1afaf" : "grey",
+                          color: "white",
+                          padding: "5px 10px",
+                          border: "none",
                           cursor: "pointer",
-                          textDecoration: "underline",
-                        }}
-                      >
-                        {vendor.vendor_name}
-                      </span>
-                    )}
-                  </td>
-                  <td>
-                    {isEditingVendor === vendor.vendor_id ? (
-                      <input
-                        type="text"
-                        value={editedVendorName.gstn}
-                        style={{
-                          width: "150px",
-                          padding: "3px",
                           borderRadius: "5px",
                         }}
-                        onChange={(e) =>
-                          setEditedVendorName({
-                            ...editedVendorName,
-                            gstn: e.target.value,
-                          })
-                        }
-                      />
-                    ) : (
-                      vendor.gstn
-                    )}
-                  </td>
-                  <td
-                    onClick={() => handlePocClick(vendor.vendor_id)}
-                    style={{ cursor: "pointer", textDecoration: "underline" }}
-                  >
-                    {defaultPoc.point_of_contact || "N/A"}
-                  </td>
-                  <td>{defaultPoc.email || "N/A"}</td>
-                  <td>{defaultPoc.phone_number || "N/A"}</td>
-                  <td>{defaultPoc.location || "N/A"}</td>
-                  {/* <td>{primaryPoc.category || "N/A"}</td> */}
-                  <td>
-                    {isEditingVendor === vendor.vendor_id ? (
-                      <>
-                        <button
-                          className="edit-button"
-                          onClick={() => handleSaveVendorName(vendor.vendor_id)}
-                        >
-                          Save
-                        </button>
-                        <button
-                          onClick={handleCancelEdit}
-                          className="cancel-button"
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        onClick={() => handleEditVendorName(vendor)}
-                        className="vendor-button"
-                        aria-label="Edit vendor"
-                        style={{ border: "none", cursor: "pointer" }}
                       >
-                        <PencilSquareIcon className="text-black" />
+                        {vendor.active ? "Active" : "Inactive"}
                       </button>
-                    )}
-                  </td>
-                  <td>
-                    <button
-                      onClick={() =>
-                        toggleVendorStatus(vendor.vendor_id, vendor.active)
-                      }
-                      style={{
-                        backgroundColor: vendor.active ? "#b1afaf" : "grey",
-                        color: "white",
-                        padding: "5px 10px",
-                        border: "none",
-                        cursor: "pointer",
-                        borderRadius: "5px",
-                      }}
-                    >
-                      {vendor.active ? "Active" : "Inactive"}
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
+                    </td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td colSpan="8" style={{ textAlign: "center", color: "gray" }}>
+                  No vendor data found.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -907,93 +930,239 @@ const Vendors = () => {
 
       {showPocPopup && (
         <div className="modal-overlay">
-          <div className="popup">
-            <span className="x-button" onClick={handleClosePriceHistory}>
-              &times;
-            </span>
-            <h3>Point of Contacts</h3>
-            <div className="button-wrapper">
-              {/* <button
+          <div className="popup-wrapper">
+            <div className={`popups ${isAdding ? "popup-expanded" : ""}`} >
+              {" "}
+              <span className="x-button" onClick={handleClosePriceHistory}>
+                &times;
+              </span>
+              <h3>Point of Contacts</h3>
+              <div className="button-wrapper">
+                {/* <button
               onClick={() => setShowAddPriceEntryForm(true)}
               className="price-entry-button"
             >
               Add Price Entry
             </button> */}
-              <button
-                className="action-button add-button"
-                onClick={() => setIsAdding(true)}
-              >
-                Add POC
-              </button>
-              {/* <button
+                <button
+                  className="action-button add-button"
+                  onClick={() => setIsAdding(true)}
+                  style={{marginBottom:"10px"}}
+                >
+                  Add POC
+                </button>
+                {/* <button
               className="action-button close-button"
               onClick={() => setShowPocPopup(false)}
             >
               Close
             </button> */}
-            </div>
-            <div className="table-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Default</th>
-                    <th>POC Name</th>
-                    <th>Email</th>
-                    <th>Phone</th>
-                    <th>Location</th>
-                    {/* <th>Category</th> */}
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {getVendorPocs(selectedVendorId).map((poc, index) => (
-                    <tr key={poc.id}>
-                      <td>
-                        <input
-                          type="radio"
-                          name={`primaryPoc-${selectedVendorId}`} // Scoped to the vendor
-                          checked={poc.default_poc}
-                          onChange={() => handleDefaultPocChange(poc.id)}
-                        />
-                      </td>
-                      <td>
-                        {isEditing === poc.id ? (
+              </div>
+              <div className="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Default</th>
+                      <th>POC Name</th>
+                      <th>Email</th>
+                      <th>Phone</th>
+                      <th>Address</th>
+                      {/* <th>Category</th> */}
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {getVendorPocs(selectedVendorId).map((poc, index) => (
+                      <tr key={poc.id}>
+                        <td>
+                          <input
+                            type="radio"
+                            name={`primaryPoc-${selectedVendorId}`}
+                            checked={poc.default_poc}
+                            onChange={() => handleDefaultPocChange(poc.id)}
+                          />
+                        </td>
+
+                        {/* POC Name */}
+                        <td>
+                          {isEditing === poc.id ? (
+                            <input
+                              type="text"
+                              style={{
+                                width: "200px",
+                                padding: "8px",
+                                fontSize: "14px",
+                              }}
+                              value={tempEditPoc?.point_of_contact || ""}
+                              onChange={(e) =>
+                                setTempEditPoc({
+                                  ...tempEditPoc,
+                                  point_of_contact: e.target.value,
+                                })
+                              }
+                            />
+                          ) : (
+                            poc.point_of_contact
+                          )}
+                        </td>
+
+                        {/* Email */}
+                        <td>
+                          {isEditing === poc.id ? (
+                            <input
+                              type="email"
+                              style={{
+                                width: "200px",
+                                padding: "8px",
+                                fontSize: "14px",
+                              }}
+                              value={tempEditPoc?.email || ""}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setTempEditPoc({
+                                  ...tempEditPoc,
+                                  email: value,
+                                });
+                                setErrors((prev) => ({
+                                  ...prev,
+                                  email: validateEmail(value)
+                                    ? ""
+                                    : "Invalid email address",
+                                }));
+                              }}
+                            />
+                          ) : (
+                            poc.email
+                          )}
+                        </td>
+
+                        {/* Phone */}
+                        <td>
+                          {isEditing === poc.id ? (
+                            <input
+                              type="text"
+                              style={{
+                                width: "200px",
+                                padding: "8px",
+                                fontSize: "14px",
+                              }}
+                              value={tempEditPoc?.phone_number || ""}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setTempEditPoc({
+                                  ...tempEditPoc,
+                                  phone_number: value,
+                                });
+                                setErrors((prev) => ({
+                                  ...prev,
+                                  phone_number: validatePhoneNumber(value)
+                                    ? ""
+                                    : "Phone number must be 10 digits",
+                                }));
+                              }}
+                            />
+                          ) : (
+                            poc.phone_number
+                          )}
+                        </td>
+
+                        {/* Location */}
+                        <td>
+                          {isEditing === poc.id ? (
+                            <input
+                              type="text"
+                              style={{
+                                width: "200px",
+                                padding: "8px",
+                                fontSize: "14px",
+                              }}
+                              value={tempEditPoc?.location || ""}
+                              onChange={(e) =>
+                                setTempEditPoc({
+                                  ...tempEditPoc,
+                                  location: e.target.value,
+                                })
+                              }
+                            />
+                          ) : (
+                            poc.location
+                          )}
+                        </td>
+
+                        {/* Actions */}
+                        <td>
+                          {isEditing === poc.id ? (
+                            <>
+                              <button
+                                className="edit-button"
+                                onClick={() => handleSavePoc(poc.id)}
+                              >
+                                Save
+                              </button>
+                              <button
+                                className="delete-button"
+                                onClick={() => {
+                                  setIsEditing(null);
+                                  setTempEditPoc(null); // discard edits
+                                }}
+                              >
+                                Cancel
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              className="edit-button"
+                              onClick={() => {
+                                setIsEditing(poc.id);
+                                setTempEditPoc({ ...poc }); // capture editable copy
+                              }}
+                            >
+                              Edit
+                            </button>
+                          )}
+                          <button
+                            className="delete-button"
+                            onClick={() => handleDeletePoc(poc.id)}
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {isAdding && (
+                      <tr>
+                        <td></td>
+                        <td>
                           <input
                             type="text"
-                            value={poc.point_of_contact}
+                            placeholder="POC Name"
+                            value={newPOC.point_of_contact}
                             style={{
                               width: "200px",
                               padding: "8px",
                               fontSize: "14px",
                             }}
                             onChange={(e) =>
-                              handleEditPocChange(
-                                poc.id,
+                              handleInputChange(
                                 "point_of_contact",
                                 e.target.value
                               )
                             }
                           />
-                        ) : (
-                          poc.point_of_contact
-                        )}
-                      </td>
-                      <td>
-                        {isEditing === poc.id ? (
+                        </td>
+                        <td>
                           <input
                             type="email"
-                            value={poc.email}
+                            placeholder="Email"
+                            value={newPOC.email}
                             style={{
                               width: "200px",
                               padding: "8px",
                               fontSize: "14px",
                             }}
                             onChange={(e) => {
-                              handleEditPocChange(
-                                poc.id,
-                                "email",
-                                e.target.value
-                              );
+                              const value = e.target.value;
+                              handleInputChange("email", value);
                               setErrors((prevErrors) => ({
                                 ...prevErrors,
                                 email: validateEmail(value)
@@ -1002,26 +1171,25 @@ const Vendors = () => {
                               }));
                             }}
                           />
-                        ) : (
-                          poc.email
-                        )}
-                      </td>
-                      <td>
-                        {isEditing === poc.id ? (
+                          {errors.email && (
+                            <span className="error-message">
+                              {errors.email}
+                            </span>
+                          )}
+                        </td>
+                        <td>
                           <input
                             type="text"
-                            value={poc.phone_number}
+                            placeholder="Phone"
+                            value={newPOC.phone_number}
                             style={{
                               width: "200px",
                               padding: "8px",
                               fontSize: "14px",
                             }}
                             onChange={(e) => {
-                              handleEditPocChange(
-                                poc.id,
-                                "phone_number",
-                                e.target.value
-                              );
+                              const value = e.target.value;
+                              handleInputChange("phone_number", value);
                               setErrors((prevErrors) => ({
                                 ...prevErrors,
                                 phone_number: validatePhoneNumber(value)
@@ -1030,178 +1198,28 @@ const Vendors = () => {
                               }));
                             }}
                           />
-                        ) : (
-                          poc.phone_number
-                        )}
-                      </td>
-                      <td>
-                        {isEditing === poc.id ? (
+                          {errors.phone_number && (
+                            <span className="error-message">
+                              {errors.phone_number}
+                            </span>
+                          )}
+                        </td>
+                        <td>
                           <input
                             type="text"
-                            value={poc.location}
+                            placeholder="Address"
+                            value={newPOC.location}
                             style={{
                               width: "200px",
                               padding: "8px",
                               fontSize: "14px",
                             }}
                             onChange={(e) =>
-                              handleEditPocChange(
-                                poc.id,
-                                "location",
-                                e.target.value
-                              )
+                              handleInputChange("location", e.target.value)
                             }
                           />
-                        ) : (
-                          poc.location
-                        )}
-                      </td>
-                      {/* <td>
-                    {isEditing === poc.id ? (
-                      <select
-                        value={poc.category}
-                        onChange={(e) =>
-                          handleEditPocChange(
-                            poc.id,
-                            "category",
-                            e.target.value
-                          )
-                        }
-                      >
-                        <option value="">Select Category</option>
-                        <option value="Airframe">Airframe</option>
-                        <option value="Communication">Communication</option>
-                        <option value="Electricals">Electricals</option>
-                        <option value="Electronics">Electronics</option>
-                        <option value="Payload">Payload</option>
-                      </select>
-                    ) : (
-                      poc.category
-                    )}
-                  </td> */}
-
-                      <td>
-                        {isEditing === poc.id ? (
-                          <>
-                            <button
-                              className="edit-button"
-                              onClick={() => handleSavePoc(poc.id)}
-                            >
-                              Save
-                            </button>
-                            <button
-                              className="delete-button"
-                              onClick={() => setIsEditing(null)}
-                            >
-                              Cancel
-                            </button>
-                          </>
-                        ) : (
-                          <button
-                            className="edit-button"
-                            onClick={() => setIsEditing(poc.id)}
-                          >
-                            Edit
-                          </button>
-                        )}
-                        <button
-                          className="delete-button"
-                          onClick={() => handleDeletePoc(poc.id)}
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {isAdding && (
-                    <tr>
-                      <td></td>
-                      <td>
-                        <input
-                          type="text"
-                          placeholder="POC Name"
-                          value={newPOC.point_of_contact}
-                          style={{
-                            width: "200px",
-                            padding: "8px",
-                            fontSize: "14px",
-                          }}
-                          onChange={(e) =>
-                            handleInputChange(
-                              "point_of_contact",
-                              e.target.value
-                            )
-                          }
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="email"
-                          placeholder="Email"
-                          value={newPOC.email}
-                          style={{
-                            width: "200px",
-                            padding: "8px",
-                            fontSize: "14px",
-                          }}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            handleInputChange("email", value);
-                            setErrors((prevErrors) => ({
-                              ...prevErrors,
-                              email: validateEmail(value)
-                                ? ""
-                                : "Invalid email address",
-                            }));
-                          }}
-                        />
-                        {errors.email && (
-                          <span className="error-message">{errors.email}</span>
-                        )}
-                      </td>
-                      <td>
-                        <input
-                          type="text"
-                          placeholder="Phone"
-                          value={newPOC.phone_number}
-                          style={{
-                            width: "200px",
-                            padding: "8px",
-                            fontSize: "14px",
-                          }}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            handleInputChange("phone_number", value);
-                            setErrors((prevErrors) => ({
-                              ...prevErrors,
-                              phone_number: validatePhoneNumber(value)
-                                ? ""
-                                : "Phone number must be 10 digits",
-                            }));
-                          }}
-                        />
-                        {errors.phone_number && (
-                          <span className="error-message">
-                            {errors.phone_number}
-                          </span>
-                        )}
-                      </td>
-                      <td>
-                        <input
-                          type="text"
-                          placeholder="Location"
-                          value={newPOC.location}
-                          style={{
-                            width: "200px",
-                            padding: "8px",
-                            fontSize: "14px",
-                          }}
-                          onChange={(e) =>
-                            handleInputChange("location", e.target.value)
-                          }
-                        />
-                      </td>
-                      {/* <td>
+                        </td>
+                        {/* <td>
                     <select
                       value={newPOC.category}
                       onChange={(e) =>
@@ -1216,21 +1234,25 @@ const Vendors = () => {
                       <option value="Payload">Payload</option>
                     </select>
                   </td> */}
-                      <td>
-                        <button className="edit-button" onClick={handleAddPOC}>
-                          Save
-                        </button>
-                        <button
-                          className="delete-button"
-                          onClick={() => setIsAdding(false)}
-                        >
-                          Cancel
-                        </button>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                        <td>
+                          <button
+                            className="edit-button"
+                            onClick={handleAddPOC}
+                          >
+                            Save
+                          </button>
+                          <button
+                            className="delete-button"
+                            onClick={() => setIsAdding(false)}
+                          >
+                            Cancel
+                          </button>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>

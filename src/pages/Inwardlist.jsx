@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import CustomMessagebox from "./CustomMessageBox.jsx";
-import config from "../Config.js";
+import config from "../Config";
 import { useNavigate } from "react-router-dom";
 import { FaEdit } from "react-icons/fa";
 import { format } from "date-fns";
@@ -162,7 +162,7 @@ const Inwardlist = () => {
         throw new Error(`${failed.length} updates failed`);
       }
 
-      //  Update state locally to reflect changes without refresh
+      // ✅ Update state locally to reflect changes without refresh
       const updatedData = inwardData.map((item) => {
         if (item.po_master?.PO_id === poId) {
           return {
@@ -336,8 +336,7 @@ const Inwardlist = () => {
                   %
                 </td>
                 <td style={{ textAlign: "right" }}>
-                  ₹
-                  {calculateGrandTotal(
+                  ₹{calculateGrandTotal(
                     item.price,
                     item.quantity,
                     item.gst

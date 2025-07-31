@@ -24,8 +24,8 @@ import POOrderList from "./pages/POList";
 import Inward from "./pages/Inward";
 
 // import InwardList from "./pages/InwardList";
-// import InwardList from "./pages/InwardList";
-import Inwardlist from "./pages/InwardList";
+import InwardList from "./pages/Inwardlist";
+// import Inwardlist from "./pages/Inwardlist";
 import PurchaseOrder from "./pages/POTemplate";
 import Login from "./pages/Login";
 import ProtectedRoute from "./ProtectedRoute";
@@ -360,7 +360,13 @@ function App() {
               path="request-form"
               element={
                 <ProtectedRoute
-                  allowedRoles={["Admin", "Sub-Admin", "User", "Procurement"]}
+                  allowedRoles={[
+                    "Admin",
+                    "Sub-Admin",
+                    "User",
+                    "Procurement",
+                    "Inventory",
+                  ]}
                 >
                   <RequestForm />
                 </ProtectedRoute>
@@ -428,7 +434,7 @@ function App() {
                 <ProtectedRoute
                   allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
                 >
-                  <Inwardlist />
+                  <InwardList />
                 </ProtectedRoute>
               }
             />
@@ -441,7 +447,7 @@ function App() {
                   <Outward />
                 </ProtectedRoute>
               }
-            /> 
+            />
             <Route
               path="outward/add-sales-list"
               element={
@@ -462,7 +468,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-             <Route
+            <Route
               path="outward/add-service-list"
               element={
                 <ProtectedRoute

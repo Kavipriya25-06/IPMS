@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
 import CustomMessagebox from "./CustomMessageBox.jsx";
+import { useParams, useNavigate } from "react-router-dom";
+import Back from "../assets/Back.png";
 import config from "../Config"; // Import config for API endpoints
 //////////////////////////////////////////////////////////////////////
 import {
@@ -29,7 +30,7 @@ const RequestDetails = ({ user }) => {
   const [showMessageBox, setShowMessageBox] = useState(false);
   const [messageBoxContent, setMessageBoxContent] = useState("");
   const [priceViewData, setPriceViewData] = useState([]);
-
+  const navigate = useNavigate(); // Initialize useNavigate
   const [showVendorPopup, setShowVendorPopup] = useState(false); // Popup visibility state
   const [selectedComponentId, setSelectedComponentId] = useState(null); // Track the selected component
   const [vendorPopupData, setVendorPopupData] = useState([]); // Store vendors for the popup
@@ -193,225 +194,231 @@ const RequestDetails = ({ user }) => {
     }
   };
 
-const handleOrder = async (detail) => {
-  if (!detail.vendor_name) {
-    setMessageBoxContent("Please select a vendor for this component.");
-    setShowMessageBox(true);
-    return;
-  }
+  const handleOrder = async (detail) => {
+    if (!detail.vendor_name) {
+      setMessageBoxContent("Please select a vendor for this component.");
+      setShowMessageBox(true);
+      return;
+    }
 
-  const selectedVendor = vendorNames.find(
-    (vendor) => vendor.vendor_name === detail.vendor_name
-  );
+    const selectedVendor = vendorNames.find(
+      (vendor) => vendor.vendor_name === detail.vendor_name
+    );
 
-  const vendor_id = selectedVendor?.vendor_id;
-  const vendor_gstn = selectedVendor?.gstn;
+    const vendor_id = selectedVendor?.vendor_id;
+    const vendor_gstn = selectedVendor?.gstn;
 
-  if (!vendor_id) {
-    showErrorToast("Invalid vendor selected.");
-    return;
-  }
+    if (!vendor_id) {
+      showErrorToast("Invalid vendor selected.");
+      return;
+    }
 
-  const qtyRef = { current: detail.qty };
+    const qtyRef = { current: detail.qty };
 
-  showTextToast({
-    message: ({ closeToast }) => (
-      <div>
-        <p>Enter the quantity (Max: {detail.qty}):</p>
-        <input
-          type="number"
-          min={1}
-          max={detail.qty}
-          defaultValue={detail.qty}
-          onChange={(e) => {
-            qtyRef.current = parseInt(e.target.value, 10);
-          }}
-          style={{
-            marginTop: "0px",
-            padding: "6px",
-            width: "100%",
-            border: "1px solid #ccc",
-            borderRadius: "4px",
-          }}
-        />
-      </div>
-    ),
-    confirmText: "Add to Cart",
-    cancelText: "Cancel",
-    onConfirm: async () => {
-      const enteredQuantity = qtyRef.current;
+    showTextToast({
+      message: ({ closeToast }) => (
+        <div>
+          <p>Enter the quantity (Max: {detail.qty}):</p>
+          <input
+            type="number"
+            min={1}
+            max={detail.qty}
+            defaultValue={detail.qty}
+            onChange={(e) => {
+              qtyRef.current = parseInt(e.target.value, 10);
+            }}
+            style={{
+              marginTop: "0px",
+              padding: "6px",
+              width: "100%",
+              border: "1px solid #ccc",
+              borderRadius: "4px",
+            }}
+          />
+        </div>
+      ),
+      confirmText: "Add to Cart",
+      cancelText: "Cancel",
+      onConfirm: async () => {
+        const enteredQuantity = qtyRef.current;
 
-      if (!enteredQuantity || isNaN(enteredQuantity) || enteredQuantity <= 0) {
-        showErrorToast("Invalid quantity entered.");
-        return;
-      }
-
-      if (enteredQuantity > detail.qty) {
-        showWarningToast(`The entered quantity exceeds available quantity (${detail.qty}).`);
-        return;
-      }
-
-      const price = detail.price;
-      const tax = detail.tax;
-      const gstAmount = (price * tax) / 100;
-      const totalCost = Math.round((price + gstAmount) * enteredQuantity * 100) / 100;
-
-      try {
-        if (enteredQuantity === detail.qty) {
-          const orderData = {
-            component_id: detail.component_id,
-            component_type: detail.component_type,
-            component_specification: detail.component_specification,
-            quantity: enteredQuantity,
-            request_id: detail.id,
-            vendor_name: detail.vendor_name,
-            vendor_id,
-            category: detail.category,
-            unit_of_measurement: detail.unit_of_measurement,
-            unit_price: price,
-            GST: tax,
-            total_cost: totalCost,
-            assign: true,
-            gstn: vendor_gstn,
-            request_list_id: detail.request_id,
-            parent_id: null,
-          };
-
-          const cartResponse = await fetch(`${config.apiBaseURL}/cart/`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(orderData),
-          });
-
-          if (!cartResponse.ok) {
-            const error = await cartResponse.json();
-            console.error("Failed to add full to cart:", error);
-            showErrorToast("Failed to add to cart.");
-            return;
-          }
-
-          await fetch(
-            `${config.apiBaseURL}/request_master/${detail.request_id}/${detail.id}/`,
-            {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                cart_assign: true,
-                assign: false,
-                status: "Assigned",
-                vendor: vendor_id,
-              }),
-            }
-          );
-        } else {
-          // SPLIT flow
-          const newRequestPayload = {
-            request: detail.request_id,
-            component: detail.component_id,
-            vendor: vendor_id,
-            project_id: detail.project_id,
-            component_type: detail.component_type,
-            component_specification: detail.component_specification,
-            unit_of_measurement: detail.unit_of_measurement,
-            category: detail.category,
-            qty: enteredQuantity,
-            remaining_qty: 0,
-            approve: true,
-            assign: false,
-            cart_assign: true,
-            status: "Assigned",
-          };
-
-          const requestMasterResponse = await fetch(
-            `${config.apiBaseURL}/request_master/${detail.request_id}/`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(newRequestPayload),
-            }
-          );
-
-          if (!requestMasterResponse.ok) {
-            const error = await requestMasterResponse.json();
-            console.error("Failed to create request_master:", error);
-            showErrorToast("Failed to create request_master entry.");
-            return;
-          }
-
-          const requestMasterData = await requestMasterResponse.json();
-          const newRequestMasterId = requestMasterData.id;
-
-          const orderData = {
-            component_id: detail.component_id,
-            component_type: detail.component_type,
-            component_specification: detail.component_specification,
-            quantity: enteredQuantity,
-            request_id: newRequestMasterId,
-            vendor_name: detail.vendor_name,
-            vendor_id,
-            category: detail.category,
-            unit_of_measurement: detail.unit_of_measurement,
-            unit_price: price,
-            GST: tax,
-            total_cost: totalCost,
-            assign: true,
-            gstn: vendor_gstn,
-            request_list_id: requestMasterData.request,
-            parent_id: detail.id,
-          };
-
-          const cartResponse = await fetch(`${config.apiBaseURL}/cart/`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(orderData),
-          });
-
-          if (!cartResponse.ok) {
-            const cartError = await cartResponse.json();
-            console.error("Failed to POST to cart:", cartError);
-            showErrorToast("Failed to add to cart.");
-            return;
-          }
-// <<<<<<< HEAD
-//         );
-//       }
-//       ``;
-// =======
-// >>>>>>> 51e9f20ca36afde5da76e6dd49c870cfb3d9b9c6
-
-          const remainingQty = detail.qty - enteredQuantity;
-
-          await fetch(
-            `${config.apiBaseURL}/request_master/${detail.request_id}/${detail.id}/`,
-            {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                qty: remainingQty,
-                status: remainingQty > 0 ? "pending" : "completed",
-                cart_assign: false,
-                assign: false,
-              }),
-            }
-          );
+        if (
+          !enteredQuantity ||
+          isNaN(enteredQuantity) ||
+          enteredQuantity <= 0
+        ) {
+          showErrorToast("Invalid quantity entered.");
+          return;
         }
 
-        if (typeof fetchRequestDetails === "function") fetchRequestDetails();
-        if (typeof fetchPriceViewData === "function") fetchPriceViewData();
-        if (typeof fetchCartItems === "function") fetchCartItems();
+        if (enteredQuantity > detail.qty) {
+          showWarningToast(
+            `The entered quantity exceeds available quantity (${detail.qty}).`
+          );
+          return;
+        }
 
-        showSuccessToast(`Successfully added ${enteredQuantity} to cart.`);
-      } catch (error) {
-        console.error("Error during order process:", error);
-        showErrorToast("An error occurred while processing the order.");
-      }
-    },
-    onCancel: () => {
-      showWarningToast("Order cancelled.");
-    },
-  });
-};
+        const price = detail.price;
+        const tax = detail.tax;
+        const gstAmount = (price * tax) / 100;
+        const totalCost =
+          Math.round((price + gstAmount) * enteredQuantity * 100) / 100;
 
+        try {
+          if (enteredQuantity === detail.qty) {
+            const orderData = {
+              component_id: detail.component_id,
+              component_type: detail.component_type,
+              component_specification: detail.component_specification,
+              quantity: enteredQuantity,
+              request_id: detail.id,
+              vendor_name: detail.vendor_name,
+              vendor_id,
+              category: detail.category,
+              unit_of_measurement: detail.unit_of_measurement,
+              unit_price: price,
+              GST: tax,
+              total_cost: totalCost,
+              assign: true,
+              gstn: vendor_gstn,
+              request_list_id: detail.request_id,
+              parent_id: null,
+            };
+
+            const cartResponse = await fetch(`${config.apiBaseURL}/cart/`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(orderData),
+            });
+
+            if (!cartResponse.ok) {
+              const error = await cartResponse.json();
+              console.error("Failed to add full to cart:", error);
+              showErrorToast("Failed to add to cart.");
+              return;
+            }
+
+            await fetch(
+              `${config.apiBaseURL}/request_master/${detail.request_id}/${detail.id}/`,
+              {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  cart_assign: true,
+                  assign: false,
+                  status: "Assigned",
+                  vendor: vendor_id,
+                }),
+              }
+            );
+          } else {
+            // SPLIT flow
+            const newRequestPayload = {
+              request: detail.request_id,
+              component: detail.component_id,
+              vendor: vendor_id,
+              project_id: detail.project_id,
+              component_type: detail.component_type,
+              component_specification: detail.component_specification,
+              unit_of_measurement: detail.unit_of_measurement,
+              category: detail.category,
+              qty: enteredQuantity,
+              remaining_qty: 0,
+              approve: true,
+              assign: false,
+              cart_assign: true,
+              status: "Assigned",
+            };
+
+            const requestMasterResponse = await fetch(
+              `${config.apiBaseURL}/request_master/${detail.request_id}/`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(newRequestPayload),
+              }
+            );
+
+            if (!requestMasterResponse.ok) {
+              const error = await requestMasterResponse.json();
+              console.error("Failed to create request_master:", error);
+              showErrorToast("Failed to create request_master entry.");
+              return;
+            }
+
+            const requestMasterData = await requestMasterResponse.json();
+            const newRequestMasterId = requestMasterData.id;
+
+            const orderData = {
+              component_id: detail.component_id,
+              component_type: detail.component_type,
+              component_specification: detail.component_specification,
+              quantity: enteredQuantity,
+              request_id: newRequestMasterId,
+              vendor_name: detail.vendor_name,
+              vendor_id,
+              category: detail.category,
+              unit_of_measurement: detail.unit_of_measurement,
+              unit_price: price,
+              GST: tax,
+              total_cost: totalCost,
+              assign: true,
+              gstn: vendor_gstn,
+              request_list_id: requestMasterData.request,
+              parent_id: detail.id,
+            };
+
+            const cartResponse = await fetch(`${config.apiBaseURL}/cart/`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(orderData),
+            });
+
+            if (!cartResponse.ok) {
+              const cartError = await cartResponse.json();
+              console.error("Failed to POST to cart:", cartError);
+              showErrorToast("Failed to add to cart.");
+              return;
+            }
+            // <<<<<<< HEAD
+            //         );
+            //       }
+            //       ``;
+            // =======
+            // >>>>>>> 51e9f20ca36afde5da76e6dd49c870cfb3d9b9c6
+
+            const remainingQty = detail.qty - enteredQuantity;
+
+            await fetch(
+              `${config.apiBaseURL}/request_master/${detail.request_id}/${detail.id}/`,
+              {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  qty: remainingQty,
+                  status: remainingQty > 0 ? "pending" : "completed",
+                  cart_assign: false,
+                  assign: false,
+                }),
+              }
+            );
+          }
+
+          if (typeof fetchRequestDetails === "function") fetchRequestDetails();
+          if (typeof fetchPriceViewData === "function") fetchPriceViewData();
+          if (typeof fetchCartItems === "function") fetchCartItems();
+
+          showSuccessToast(`Successfully added ${enteredQuantity} to cart.`);
+        } catch (error) {
+          console.error("Error during order process:", error);
+          showErrorToast("An error occurred while processing the order.");
+        }
+      },
+      onCancel: () => {
+        showWarningToast("Order cancelled.");
+      },
+    });
+  };
 
   const handleAssign = async (componentId, qty, requestDetailId) => {
     const componentData = inventoryData[componentId];
@@ -556,7 +563,9 @@ const handleOrder = async (detail) => {
       if (!requestMasterResponse.ok) {
         const errorDetails = await requestMasterResponse.json();
         console.error("Request Master Error:", errorDetails);
-        showErrorToast("Error updating request master: " + JSON.stringify(errorDetails));
+        showErrorToast(
+          "Error updating request master: " + JSON.stringify(errorDetails)
+        );
         return;
       }
 
@@ -618,7 +627,9 @@ const handleOrder = async (detail) => {
           console.error(
             `Error fetching inventory data for serial: ${serialNumber}`
           );
-          showWarningToast(`Could not fetch data for serial number ${serialNumber}`);
+          showWarningToast(
+            `Could not fetch data for serial number ${serialNumber}`
+          );
           return;
         }
 
@@ -653,7 +664,9 @@ const handleOrder = async (detail) => {
 
         if (!updateResponse.ok) {
           console.error(`Error updating inventory for serial: ${serialNumber}`);
-          showInfoToast(`Could not update inventory for serial number ${serialNumber}`);
+          showInfoToast(
+            `Could not update inventory for serial number ${serialNumber}`
+          );
           return;
         }
       }
@@ -692,7 +705,9 @@ const handleOrder = async (detail) => {
       if (!requestMasterResponse.ok) {
         const errorDetails = await requestMasterResponse.json();
         console.error("Request Master Error:", errorDetails);
-        showErrorToast("Error updating request master: " + JSON.stringify(errorDetails));
+        showErrorToast(
+          "Error updating request master: " + JSON.stringify(errorDetails)
+        );
         return;
       }
 
@@ -1021,6 +1036,22 @@ const handleOrder = async (detail) => {
   return (
     <div>
       <h2>Request Details for {requestId}</h2>
+      <button
+        onClick={() => navigate("/requests")}
+        style={{
+          background: "transparent",
+          border: "none",
+          cursor: "pointer",
+          padding: "4px",
+        }}
+        title="Back to BOM List"
+      >
+        <img
+          src={Back}
+          alt="Back to BOM list "
+          style={{ width: "20px", height: "20px" }}
+        />
+      </button>
 
       {/* Render CustomMessagebox when showMessageBox is true */}
       {showMessageBox && (
@@ -1339,9 +1370,12 @@ const handleOrder = async (detail) => {
 
           {showPricePopup && pricePopupData && (
             <div className="popup">
-               <span className="x-button" onClick={() => setShowPricePopup(false)}>
-            &times;
-          </span>
+              <span
+                className="x-button"
+                onClick={() => setShowPricePopup(false)}
+              >
+                &times;
+              </span>
               <div className="popup-content">
                 <h3>Vendor Details</h3>
                 <table>
@@ -1473,47 +1507,49 @@ const handleOrder = async (detail) => {
           )}
 
           {showSerialPopup && (
-            <div className="popup">
-              <div className="serial-modal">
-                <div className="modal-header">
-                  <h3 className="modal-title">Select Serial Numbers</h3>
-                  <button
-                    className="x-button"
-                    onClick={() => setShowSerialPopup(false)}
-                  >
-                    &times;
-                  </button>
-                </div>
+            <div className="modal-overlay">
+              <div className="popup">
+                <div className="serial-modal">
+                  <div>
+                    <h3 >Select Serial Numbers</h3>
+                    <button
+                      className="x-button"
+                      onClick={() => setShowSerialPopup(false)}
+                    >
+                      &times;
+                    </button>
+                  </div>
 
-                <ul className="serial-list">
-                  {serialNumbers.map((serial, index) => (
-                    <li key={index}>
-                      <button
-                        className={`serial-button ${
-                          selectedSerialNumbers.includes(serial)
-                            ? "selected"
-                            : ""
-                        }`}
-                        onClick={() => handleSerialSelection(serial)}
-                      >
-                        {serial}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                  <ul className="serial-list">
+                    {serialNumbers.map((serial, index) => (
+                      <li key={index}>
+                        <button
+                          className={`serial-button ${
+                            selectedSerialNumbers.includes(serial)
+                              ? "selected"
+                              : ""
+                          }`}
+                          onClick={() => handleSerialSelection(serial)}
+                        >
+                          {serial}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
 
-                <div className="modal-actions">
-                  <button
-                    className={`confirm-button ${
-                      selectedSerialNumbers.length === requiredQty
-                        ? ""
-                        : "disabled"
-                    }`}
-                    onClick={handleConfirmAssignment}
-                    disabled={selectedSerialNumbers.length !== requiredQty}
-                  >
-                    Confirm Assignment
-                  </button>
+                  <div className="modal-actions">
+                    <button
+                      className={`confirm-button ${
+                        selectedSerialNumbers.length === requiredQty
+                          ? ""
+                          : "disabled"
+                      }`}
+                      onClick={handleConfirmAssignment}
+                      disabled={selectedSerialNumbers.length !== requiredQty}
+                    >
+                      Confirm Assignment
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

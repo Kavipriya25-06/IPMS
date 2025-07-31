@@ -14,7 +14,8 @@ const Requests = () => {
 
   const [sortField, setSortField] = useState("");
   const [sortOrder, setSortOrder] = useState("asc");
-  const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetch(`${config.apiBaseURL}/request_list/`)
@@ -170,25 +171,8 @@ const Requests = () => {
         }}
       >
         <h2>Request List</h2>
-        <button
-          style={{
-            cursor: "pointer",
-            marginLeft: "auto",
-            marginRight: 20,
-            background: "transparent",
-            border: "none",
-          }}
-          title="New Request"
-          onClick={handleNewRequest}
-        >
-          <img
-            src={Add}
-            alt="New Request"
-            style={{ width: "20px", height: "20px",marginBottom:"5px" }}
-          />
-        </button>
 
-        {/* <button
+        <button
         onClick={handleNewRequest}
         style={{
           marginTop: "10px",
@@ -204,7 +188,23 @@ const Requests = () => {
           alt="New Request"
           style={{ width: "20px", height: "20px" }}
         />
-      </button> */}
+      </button>
+      </div>
+      <div className="search-wrapper-container" style={{ marginBottom: "10px" }}>
+        <div className="search-wrapper">
+          <div className="search-bar-container">
+            <input
+              type="text"
+              className="search-bar"
+              placeholder="Search by Requester Name"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <span className="search-icon">
+              <i className="fa fa-search" aria-hidden="true"></i>
+            </span>
+          </div>
+        </div>
       </div>
 
       <div className="table-container" style={{ marginTop: "-15px" }}>
@@ -240,38 +240,55 @@ const Requests = () => {
             </tr>
           </thead>
           <tbody>
-            {sortedRequests.map((request) => {
-              const { status, mixed } = getAggregatedStatus(request.request_id);
-              return (
-                <tr key={request.request_id}>
-                  <td
-                    onClick={() => handleRequestClick(request.request_id)}
-                    style={{
-                      cursor: "pointer",
-                      textDecoration: "underline",
-                    }}
-                  >
-                    {request.request_id}
-                  </td>
-                  {/* <td>{request.bom_id}</td> */}
-                  <td>{request.requester_name}</td>
-                  <td>
-                    {" "}
-                    {request.date
-                      ? format(parseISO(request.date), "dd-MM-yyyy")
-                      : "--"}
-                  </td>
-                  {/* <td>{request.status}</td> */}
-                  <td
-                    onClick={() => statusPopup(request.request_id)}
-                    style={{ cursor: "pointer", textDecoration: "underline" }}
-                  >
-                    {status}
-                  </td>
-                  <td>{request.last_modified_by}</td>
-                </tr>
-              );
-            })}
+            {sortedRequests
+              .filter((request) =>
+                request.requester_name
+                  ?.toLowerCase()
+                  .includes(searchQuery.toLowerCase())
+              )
+              .map((request) => {
+                const { status } = getAggregatedStatus(request.request_id);
+                return (
+                  <tr key={request.request_id}>
+                    <td
+                      onClick={() => handleRequestClick(request.request_id)}
+                      style={{
+                        cursor: "pointer",
+                        textDecoration: "underline",
+                      }}
+                    >
+                      {request.request_id}
+                    </td>
+                    <td>{request.requester_name}</td>
+                    <td>
+                      {request.date
+                        ? format(parseISO(request.date), "dd-MM-yyyy")
+                        : "--"}
+                    </td>
+                    <td
+                      onClick={() => statusPopup(request.request_id)}
+                      style={{ cursor: "pointer", textDecoration: "underline" }}
+                    >
+                      {status}
+                    </td>
+                    <td>{request.last_modified_by}</td>
+                  </tr>
+                );
+              })}
+
+            {/* Show message if no matching data */}
+            {sortedRequests.filter((request) =>
+              request.requester_name
+                ?.toLowerCase()
+                .includes(searchQuery.toLowerCase())
+            ).length === 0 && (
+              <tr>
+                <td colSpan="5" style={{ textAlign: "center", color: "gray" }}>
+                  No data found for requester name "
+                  <strong>{searchQuery}</strong>"
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

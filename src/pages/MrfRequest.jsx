@@ -387,6 +387,16 @@ const Mrfrequest = () => {
     }
   };
 
+    const [currentUserRole, setCurrentUserRole] = useState("");
+  
+    // Load role from localStorage (or replace with your actual role-fetching logic)
+    useEffect(() => {
+      const role = localStorage.getItem("userRole"); // Default to 'User'
+      console.log("Normalized role:", role);
+      setCurrentUserRole(role);
+    }, []);
+
+
   return (
     <div>
       <h2>Material Request Data for {MRF_id}</h2>
@@ -430,9 +440,6 @@ const Mrfrequest = () => {
         <table>
           <thead>
             <tr>
-              {/* <th>MRF ID</th> */}
-              {/* <th>Create Date</th>
-            <th>Name</th> */}
               <th>Component Type</th>
               <th>Component Specification</th>
               <th>Unit of Measurement</th>
@@ -451,9 +458,6 @@ const Mrfrequest = () => {
             ) : (
               mrfListData.map((item) => (
                 <tr key={item.serial_number}>
-                  {/* <td>{item.MRF_id}</td> */}
-                  {/* <td>{item.create_date}</td>
-                <td>{item.name}</td> */}
                   <td>{item.component_type}</td>
                   <td>{item.component_specification}</td>
                   <td>{item.unit_of_measurement}</td>
@@ -461,7 +465,7 @@ const Mrfrequest = () => {
                   <td>{item.action === false ? item.serial_number : "-"}</td>
 
                   {canSeeActions && (
-                    <td>
+                    <td className="action-buttons">
                       {item.returns ? (
                         <button
                           disabled
@@ -481,14 +485,11 @@ const Mrfrequest = () => {
                             handleAssign(item.serial_number, item.id, item)
                           }
                           disabled={!approvalStatus}
-                          style={{
-                            padding: "5px 10px",
-                            backgroundColor: approvalStatus ? "gray" : "grey",
-                            color: "white",
-                            border: "none",
-                            cursor: "pointer",
-                            borderRadius: "5px",
-                          }}
+                           className="cancel-btn"
+                           style={{
+                              padding: "5px 10px",
+                              backgroundColor: approvalStatus ? "gray" : "grey",
+                              }}
                         >
                           Assign
                         </button>
@@ -496,13 +497,10 @@ const Mrfrequest = () => {
                         <>
                           <button
                             disabled
-                            style={{
+                           className="cancel-btn"
+                           style={{
                               padding: "5px 10px",
-                              backgroundColor: "grey",
-                              color: "white",
-                              border: "none",
-                              borderRadius: "5px",
-                            }}
+                              }}
                           >
                             Assigned
                           </button>
@@ -514,15 +512,7 @@ const Mrfrequest = () => {
                                 item
                               )
                             }
-                            style={{
-                              padding: "5px 10px",
-                              backgroundColor: "orange",
-                              color: "white",
-                              border: "none",
-                              cursor: "pointer",
-                              marginLeft: "5px",
-                              borderRadius: "5px",
-                            }}
+                            className="edit-btn"
                           >
                             Return
                           </button>
@@ -537,88 +527,162 @@ const Mrfrequest = () => {
         </table>
       </div>
       {showPopup && (
-        <div className="popup">
-          <h3>Return Details</h3>
-          <label>Reported By:</label>
-          <input
-            type="text"
-            value={reportedBy}
-            onChange={(e) => setReportedBy(e.target.value)}
-          />
-          <label>Remarks:</label>
-          <input
-            type="text"
-            value={remarks}
-            onChange={(e) => setRemarks(e.target.value)}
-          />
-          <div style={{ paddingTop: 10, paddingBottom: 10 }}>
-            <button onClick={() => setShowQCPopup(true)}>
-              QC for return item
-            </button>
+        <div className="modal-overlay">
+          <div className="popup">
+            <h3>Return Details</h3>
+            <label>Reported By:</label>
+            <input
+              type="text"
+              value={reportedBy}
+              onChange={(e) => setReportedBy(e.target.value)}
+            />
+            <label>Remarks:</label>
+            <input
+              type="text"
+              value={remarks}
+              onChange={(e) => setRemarks(e.target.value)}
+            />
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                paddingTop: 10,
+                paddingBottom: 10,
+              }}
+            >
+              <button onClick={() => setShowQCPopup(true)} className="edit-btn">
+                QC for return item
+              </button>
+            </div>
+
+            <div className="qc-question-inline">
+              <label className="custom-radio">
+                <input
+                  type="radio"
+                  name="returnStatus"
+                  value="Move to Inventory"
+                  onChange={(e) => setReturnStatus(e.target.value)}
+                />{" "}
+                Move to Inventory
+                <span className="checkmark">✓</span>
+              </label>
+              <label className="custom-radio">
+                <input
+                  type="radio"
+                  name="returnStatus"
+                  value="Repair"
+                  onChange={(e) => setReturnStatus(e.target.value)}
+                />{" "}
+                Repair
+                <span className="checkmark">✓</span>
+              </label>
+              <label className="custom-radio">
+                <input
+                  type="radio"
+                  name="returnStatus"
+                  value="Damaged"
+                  onChange={(e) => setReturnStatus(e.target.value)}
+                />{" "}
+                Damaged
+                <span className="checkmark">✓</span>
+              </label>
+              *
+            </div>
+            <div className="modal-actions">
+              <button className="edit-btn" onClick={handleReturnSubmit}>
+                Submit
+              </button>
+              <button
+                className="cancel-btn"
+                onClick={() => setShowPopup(false)}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
-          <div>
-            <label>
-              <input
-                type="radio"
-                name="returnStatus"
-                value="Move to Inventory"
-                onChange={(e) => setReturnStatus(e.target.value)}
-              />{" "}
-              Move to Inventory
-            </label>
-            <label>
-              <input
-                type="radio"
-                name="returnStatus"
-                value="Repair"
-                onChange={(e) => setReturnStatus(e.target.value)}
-              />{" "}
-              Repair
-            </label>
-            <label>
-              <input
-                type="radio"
-                name="returnStatus"
-                value="Damaged"
-                onChange={(e) => setReturnStatus(e.target.value)}
-              />{" "}
-              Damaged
-            </label>
-            *
-          </div>
-          <button onClick={handleReturnSubmit}>Submit</button>
-          <button onClick={() => setShowPopup(false)}>Cancel</button>
         </div>
       )}
 
       {showQCPopup && selectedItem && (
-        <div className="popup">
-          <h3>Quality Check for {selectedItem.serial_number}</h3>
-          <div>
-            {/* Render QC Questions */}
-            {newQuestion.qcQuestions?.map((q) => (
-              <div key={q.id}>
-                <p>{q.question}</p>
-                <label>
-                  Yes
-                  <input
-                    type="radio"
-                    name={`question-${q.id}`}
-                    onChange={() => handleQuestionAnswer(q.id, "Yes")}
-                  />
-                </label>
-                <label>
-                  No
-                  <input
-                    type="radio"
-                    name={`question-${q.id}`}
-                    onChange={() => handleQuestionAnswer(q.id, "No")}
-                  />
-                </label>
+        <div className="modal-overlay">
+          <div className="popup">
+            <h3>Quality Check for {selectedItem.serial_number}</h3>
+            <div>
+              {/* Render QC Questions */}
+              {newQuestion.qcQuestions?.map((q) => (
+                <div key={q.id} className="qc-question-inline">
+                  <p className="qc-question-text" style={{ fontSize: "15px" }}>
+                    {q.question}
+                  </p>
+                  <label className="custom-radio">
+                    <input
+                      type="radio"
+                      name={`question-${q.id}`}
+                      value="Yes"
+                      onChange={() => handleQuestionAnswer(q.id, "Yes")}
+                    />
+                    <span className="checkmark">✓</span>
+                    Yes
+                  </label>
+                  <label className="custom-radio">
+                    <input
+                      type="radio"
+                      name={`question-${q.id}`}
+                      value="No"
+                      onChange={() => handleQuestionAnswer(q.id, "No")}
+                    />
+                    <span className="checkmark">✓</span>
+                    No
+                  </label>
+                </div>
+              ))}
+            </div>
+            <div className="overall-status-block">
+              <h4>Overall Status</h4>
+              <div className="status-button-group">
+                <button
+                  type="button"
+                  className={`status-button ${
+                    newQuestion.overallStatus === "Pass" ? "active-pass" : ""
+                  }`}
+                  onClick={() =>
+                    setNewQuestion((prev) => ({
+                      ...prev,
+                      overallStatus: "Pass",
+                    }))
+                  }
+                >
+                  Pass
+                </button>
+                <button
+                  type="button"
+                  className={`status-button ${
+                    newQuestion.overallStatus === "Fail" ? "active-fail" : ""
+                  }`}
+                  onClick={() =>
+                    setNewQuestion((prev) => ({
+                      ...prev,
+                      overallStatus: "Fail",
+                    }))
+                  }
+                >
+                  Fail
+                </button>
               </div>
-            ))}
-          </div>
-          <div>
+            </div>
+
+            <div className="modal-actions">
+              <button className="edit-btn" onClick={handleSubmitQC}>
+                Submit QC
+              </button>
+              <button
+                className="cancel-button"
+                onClick={() => setShowQCPopup(false)}
+              >
+                Close
+              </button>
+            </div>
+            {/* <div>
             <h4>Overall Status</h4>
             <label>
               Pass
@@ -642,84 +706,13 @@ const Mrfrequest = () => {
             </label>
           </div>
           <button onClick={handleSubmitQC}>Submit QC</button>
-          <button onClick={() => setShowQCPopup(false)}>Close</button>
+          <button onClick={() => setShowQCPopup(false)}>Close</button> */}
+          </div>
         </div>
       )}
-
-      {/* {showSerialPopup && selectedItemForAssign && (
-  <div className="popup">
-    <h3>Choose Available Serial Number</h3>
-    {alternativeSerials.length > 0 ? (
-      alternativeSerials.map((serial) => (
-        <div key={serial.serial_number} style={{ marginBottom: "8px" }}>
-          <span>{serial.serial_number}</span>
-          <button
-            style={{
-              marginLeft: "10px",
-              padding: "3px 8px",
-              backgroundColor: "green",
-              color: "white",
-              border: "none",
-              cursor: "pointer",
-            }}
-            onClick={() => assignSerial(serial.serial_number, selectedItemForAssign.MRFListId)}
-          >
-           Assign
-          </button>
-        </div>
-      ))
-    ) : (
-      <p>No available serial numbers found matching the criteria.</p>
-    )}
-    <button onClick={() => setShowSerialPopup(false)} style={{ marginTop: "10px" }}>
-      Close
-    </button>
-  </div>
-)} */}
       <ToastContainerComponent />
     </div>
   );
 };
 
 export default Mrfrequest;
-
-// const handleAssign = async (serialNumber, MRFListId, item) => {
-//   try {
-//     // Fetch all inventory data
-//     const response = await fetch(`${config.apiBaseURL}/inventory/`);
-//     if (!response.ok) {
-//       throw new Error("Failed to fetch inventory data");
-//     }
-//     const inventoryData = await response.json();
-
-//     // Get the current serial number record
-//     const inventoryItem = inventoryData.find(inv => inv.serial_number === serialNumber);
-
-//     if (!inventoryItem) {
-//       showErrorToast("Serial number not found in inventory.");
-//       return;
-//     }
-
-//     // If reserved (not available), follow normal assign flow
-//     if (inventoryItem.status !== "Available") {
-//       await assignSerial(serialNumber, MRFListId);
-//       return;
-//     }
-
-//     // If status is Available, fetch alternative serials
-//     const alternatives = inventoryData.filter(
-//       (inv) =>
-//         inv.component_type?.toLowerCase().trim() === item.component_type?.toLowerCase().trim() &&
-//         inv.specification?.toLowerCase().trim() ===
-//           (item.component_specification?.toLowerCase().trim() || item.specification?.toLowerCase().trim()) &&
-//         inv.status === "Available"
-//     );
-
-//     setAlternativeSerials(alternatives);
-//     setSelectedItemForAssign({ MRFListId });
-//     setShowSerialPopup(true);
-//   } catch (error) {
-//     console.error("Error during assign process:", error);
-//     showErrorToast("Error during assignment process");
-//   }
-// };

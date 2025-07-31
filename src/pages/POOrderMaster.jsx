@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+
 import config from "../Config"; // Import config for API endpoints
 import axios from "axios";
+import { useParams, useNavigate } from "react-router-dom";
+import Back from "../assets/Back.png";
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -29,7 +31,7 @@ const POOrderMaster = ({ user }) => {
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedStatus, setSelectedStatus] = useState(null);
   const [inwardLoadingIds, setInwardLoadingIds] = useState([]);
-
+  const navigate = useNavigate(); // Initialize useNavigate
   const [showPlaceOrderPopup, setShowPlaceOrderPopup] = useState(false);
   const [placeOrderDateTime, setPlaceOrderDateTime] = useState("");
 
@@ -295,11 +297,6 @@ const POOrderMaster = ({ user }) => {
     }
   }, [poDetails]);
 
-  // useEffect(() => {
-  //   if (poData?.PO_id) {
-  //     fetchOrderedItems(poData.PO_id);
-  //   }
-  // }, [poData]);
 
   useEffect(() => {
     if (poDetails.length > 0) {
@@ -383,7 +380,7 @@ const POOrderMaster = ({ user }) => {
       parseFloat(po.cart_details.total_cost).toFixed(2),
     ]);
 
-    // ➤ Add totals row
+    // Add totals row
     rows.push([
       "Totals",
       "",
@@ -589,7 +586,6 @@ const POOrderMaster = ({ user }) => {
 
     let payload = {};
 
-    // SHIPMENT case
     // SHIPMENT case
     const hasShippedDate = field === "shipping_date" || item.shipping_date;
     const hasShippedQty =
@@ -868,6 +864,93 @@ const POOrderMaster = ({ user }) => {
     }
   );
 
+  const generatePOCSV = (poDetails, totalquantity, totalcost) => {
+    const headers = [
+      "S.No",
+      "Component ID",
+      "Category",
+      "Type",
+      "Specification",
+      "UOM",
+      "Quantity",
+      "Unit Price",
+      "GST",
+      "Total Cost",
+    ];
+
+    const rows = poDetails.map((po, index) => [
+      index + 1,
+      po.cart_details.component_id || "",
+      po.cart_details.category || "",
+      po.cart_details.component_type || "",
+      po.cart_details.component_specification || "",
+      po.cart_details.unit_of_measurement || "",
+      po.cart_details.quantity || "",
+      `₹${parseFloat(po.cart_details.unit_price).toLocaleString("en-IN", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`,
+      `${parseFloat(po.cart_details.GST || 0).toLocaleString("en-IN")}%`,
+      `₹${parseFloat(po.cart_details.total_cost).toLocaleString("en-IN", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`,
+    ]);
+
+    // Add Totals Row
+    rows.push([
+      "",
+      "",
+      "",
+      "",
+      "",
+      "Totals",
+      totalquantity || "",
+      "",
+      "",
+      `₹${parseFloat(totalcost).toLocaleString("en-IN", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`,
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) => row.map((val) => `"${val}"`).join(",")),
+    ].join("\n");
+
+    // BOM to support ₹ symbol in Excel
+    const BOM = "\uFEFF";
+
+    const indianTime = new Date().toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+
+    const formattedTime = indianTime
+      .replace(/:/g, "-")
+      .replace(/, /g, "_")
+      .toLowerCase();
+
+    const filename = `PO_Report_${formattedTime}.csv`;
+
+    const blob = new Blob([BOM + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   return (
     <div>
       <h2>PO Details</h2>
@@ -880,6 +963,36 @@ const POOrderMaster = ({ user }) => {
           <h3>PO Number: {poId}</h3>
           <h3>Vendor Name: {vendorName}</h3>
           <h3>GSTIN: {vendor_gstn}</h3>
+          <button
+            onClick={() => navigate("/po-list")}
+            style={{
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              padding: "4px",
+            }}
+            title="Back to BOM List"
+          >
+            <img
+              src={Back}
+              alt="Back to BOM list "
+              style={{ width: "20px", height: "20px" }}
+            />
+          </button>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginBottom: "10px",
+            }}
+          >
+            <button
+              className="generate-report-btn"
+              onClick={() => generatePOCSV(poDetails, totalquantity, totalcost)}
+            >
+              Generate Report
+            </button>
+          </div>
           <div className="table-container">
             <table>
               <thead>
@@ -969,16 +1082,6 @@ const POOrderMaster = ({ user }) => {
               >
                 Place Order
               </button>
-              {/* <button
-              style={{
-                marginRight: "10px",
-                backgroundColor: "red",
-                color: "white",
-                padding: "8px 16px",
-              }}
-            >
-              Cancel Order
-            </button> */}
             </>
           )}
 
@@ -1029,27 +1132,6 @@ const POOrderMaster = ({ user }) => {
           <div className="popup">
             <h3>Send Email for PO ID: {poId}</h3>
             <form style={{ marginTop: "5px" }}>
-              {/* <div>
-              <label>Sender:</label>
-              <input
-                type="email"
-                name="sender"
-                value={formData.sender}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div>
-              <label>Recipient:</label>
-              <input
-                type="email"
-                name="recipient"
-                value={formData.recipient}
-                onChange={handleChange}
-                required
-              />
-            </div> */}
 
               <div
                 style={{
@@ -1142,106 +1224,6 @@ const POOrderMaster = ({ user }) => {
           </div>
         </div>
       )}
-
-      {/* {showModal && (
-        <div className="popup">
-          <h3>Send Email for PO ID: {poId}</h3>
-          <form style={{ marginTop: "5px" }}>
-            <div
-              style={{
-                padding: 5,
-                display: "flex",
-                justifyContent: "space-between",
-              }}
-            >
-              <label>Recipient:</label>
-              <input
-                type="text"
-                name="recipient"
-                value={formData.recipient}
-                onChange={handleChange}
-                placeholder="Enter multiple emails separated by commas"
-                required
-              />
-            </div>
-
-            <div
-              style={{
-                padding: 5,
-                display: "flex",
-                justifyContent: "space-between",
-              }}
-            >
-              <label>CC:</label>
-              <input
-                type="text"
-                name="cc"
-                value={formData.cc}
-                onChange={handleChange}
-                placeholder="Enter multiple emails separated by commas"
-              />
-            </div>
-
-            <div
-              style={{
-                padding: 5,
-                display: "flex",
-                justifyContent: "space-between",
-              }}
-            >
-              <label>BCC:</label>
-              <input
-                type="text"
-                name="bcc"
-                value={formData.bcc}
-                onChange={handleChange}
-                placeholder="Enter multiple emails separated by commas"
-              />
-            </div>
-
-            <div
-              style={{
-                padding: 5,
-                display: "flex",
-                justifyContent: "space-between",
-              }}
-            >
-              <label>Body:</label>
-              <textarea
-                name="body"
-                value={formData.body}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div style={{ marginTop: "20px", textAlign: "center" }}>
-              <button
-                type="button"
-                onClick={handleSendEmail}
-                style={{
-                  backgroundColor: "#f7931e",
-                  color: "white",
-                  marginRight: 10,
-                  padding: "8px 20px",
-                }}
-              >
-                Send Email
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowModal(false)}
-                style={{
-                  backgroundColor: "gray",
-                  color: "white",
-                  padding: "8px 20px",
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      )} */}
 
       {/* Naveen Added */}
 

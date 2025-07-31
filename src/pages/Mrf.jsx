@@ -1,178 +1,3 @@
-// import React, { useEffect, useState } from "react";
-// import { useNavigate } from "react-router-dom";
-// import config from "../Config"; // Ensure this file exists
-// import {
-//   showSuccessToast,
-//   showErrorToast,
-//   showWarningToast,
-// } from "./Toastify.jsx"; // Import Toastify utilities
-
-// const Mrf = () => {
-//   const navigate = useNavigate();
-//   const [requestData, setRequestData] = useState([]);
-//   const [data, setData] = useState({});
-
-//   useEffect(() => {
-//     fetchRequestData();
-//   }, []);
-
-//   const fetchRequestData = async () => {
-//     try {
-//       const response = await fetch(`${config.apiBaseURL}/create_MRF/`);
-//       const data = await response.json();
-//       setRequestData(data);
-//     } catch (error) {
-//       console.error("Error fetching data:", error);
-//     }
-//   };
-
-//   return (
-//     <div>
-//       <h2>Material requests</h2>
-
-//       {Object.keys(requestData).map((requestId) => (
-//         <div key={requestId}>
-//           <h3>Request ID - {requestId}</h3>
-//           <table border="1" width="100%">
-//             <thead>
-//               <tr style={{ backgroundColor: "orange", color: "white" }}>
-//                 <th>Component Type</th>
-//                 <th>Specification</th>
-//                 <th>Unit of Measurement</th>
-//                 <th>Category</th>
-//                 <th>Vendor Name</th>
-//                 <th>Serial Number</th>
-//                 <th>Actions</th>
-//               </tr>
-//             </thead>
-//             <tbody>
-//               {requestData[requestId].length === 0 ? (
-//                 <tr>
-//                   <td colSpan="7">No reserved products available.</td>
-//                 </tr>
-//               ) : (
-//                 requestData[requestId].map((item) => (
-//                   <tr key={item.serial_number}>
-//                     <td>{item.component_type}</td>
-//                     <td>{item.specification}</td>
-//                     <td>{item.UOM}</td>
-//                     <td>{item.category}</td>
-//                     <td>{item.vendor_name}</td>
-//                     <td>{item.serial_number}</td>
-//                     <td>
-//                       <button>Action</button>
-//                     </td>
-//                   </tr>
-//                 ))
-//               )}
-//             </tbody>
-//           </table>
-//         </div>
-//       ))}
-//     </div>
-//   );
-// };
-
-// export default Mrf;
-
-// import React, { useEffect, useState } from "react";
-// import { useNavigate } from "react-router-dom";
-// import config from "../Config";
-
-// const Mrf = () => {
-//   const navigate = useNavigate();
-//   const [mrfData, setMrfData] = useState([]);
-//   const [projectDetails, setProjectDetails] = useState([]);
-//   const [projectName, setProjectName] = useState("");
-
-//   useEffect(() => {
-//     fetchMRFs();
-//     fetchProjectDetails();
-//   }, []);
-
-//   const fetchMRFs = async () => {
-//     try {
-//       const response = await fetch(`${config.apiBaseURL}/create_MRF/`);
-//       const data = await response.json();
-//       setMrfData(data);
-//     } catch (err) {
-//       console.error("Error fetching MRFs:", err);
-//     }
-//   };
-
-//   const fetchProjectDetails = async () => {
-//     try {
-//       const response = await fetch(`${config.apiBaseURL}/request_inventory/`);
-//       const data = await response.json();
-//       setProjectDetails(data);
-//     } catch (err) {
-//       console.error("Error fetching project details: ", err);
-//     }
-//   };
-
-//   // Helper function to get Project Name by Request ID
-//   const getProjectName = (requestId) => {
-//     const project = projectDetails.find(
-//       (proj) => proj.request_id === requestId
-//     );
-//     return project ? project.project_details.project_name : "N/A";
-//   };
-
-//   return (
-//     <div>
-//       <h2>Material Requests (MRF)</h2>
-//       <button
-//         onClick={() => navigate("/MRFCreate")}
-//         style={{
-//           padding: "10px 15px",
-//           backgroundColor: "orange",
-//           color: "white",
-//           border: "none",
-//           cursor: "pointer",
-//           marginBottom: "20px",
-//         }}
-//       >
-//         Create Material Request Form
-//       </button>
-//       <table>
-//         <thead>
-//           <tr>
-//             <th>MRF ID</th>
-//             <th>Name</th>
-//             <th>Create Date</th>
-//             <th>Request ID</th>
-//             <th>Project name</th>
-//             <th>Approval</th>
-//           </tr>
-//         </thead>
-//         <tbody>
-//           {mrfData.map((item) => (
-//             <tr key={item.MRF_id}>
-//               <td
-//                 onClick={() => navigate(`/MrfRequest/${item.MRF_id}`)}
-//                 style={{
-//                   cursor: "pointer",
-//                   textDecoration: "underline",
-//                 }}
-//               >
-//                 {item.MRF_id}
-//               </td>
-//               <td>{item.name}</td>
-//               <td>{item.create_date}</td>
-//               <td>{item.Request_id_assign}</td>
-//               <td>{getProjectName(item.Request_id_assign)}</td>
-//               <td>{item.approval ? "Approved" : "Pending"}</td>
-//             </tr>
-//           ))}
-//         </tbody>
-//       </table>
-//     </div>
-//   );
-// };
-
-// export default Mrf;
-
-////////////////////////////////////////////////////////////  Filter by date and status | Approval status
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import config from "../Config";
@@ -189,6 +14,7 @@ const Mrf = () => {
   const [projectName, setProjectName] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const datePickerRef = React.useRef(null);
+  const [originalMRFData, setOriginalMRFData] = useState([]);
 
   // Filter states
   const [dateFilter, setDateFilter] = useState("");
@@ -221,6 +47,8 @@ const Mrf = () => {
     try {
       const response = await fetch(`${config.apiBaseURL}/create_MRF/`);
       const data = await response.json();
+      setOriginalMRFData(data); // ← full dataset
+
       setMrfData(data);
     } catch (err) {
       console.error("Error fetching MRFs:", err);
@@ -245,27 +73,24 @@ const Mrf = () => {
     return project ? project.project_details.project_name : "N/A";
   };
 
-  const handleSearch = async (query) => {
+  const handleSearch = (query) => {
     setSearchQuery(query);
 
     if (query.trim() === "") {
-      fetchMRFs(); // Reset to full data
+      setMrfData(originalMRFData); // Reset if empty search
       return;
     }
 
-    try {
-      const response = await fetch(
-        `${config.apiBaseURL}/create_MRF/?search=${query}`
+    const filtered = originalMRFData.filter((item) => {
+      const mrfId = item.MRF_id?.toLowerCase() || "";
+      const projectName = item.project?.project_name?.toLowerCase() || "";
+      return (
+        mrfId.includes(query.toLowerCase()) ||
+        projectName.includes(query.toLowerCase())
       );
-      if (response.ok) {
-        const results = await response.json();
-        setMrfData(results);
-      } else {
-        console.error("Error fetching MRF search results");
-      }
-    } catch (err) {
-      console.error("Search fetch error:", err);
-    }
+    });
+
+    setMrfData(filtered);
   };
 
   const filteredData = mrfData.filter((item) => {
@@ -292,6 +117,63 @@ const Mrf = () => {
     }
   }, [statusDropdownOpen]);
 
+  // Add this helper at the top (if not already present)
+  const formatDate = (value) =>
+    value ? format(new Date(value), "dd-MM-yyyy") : "N/A";
+
+  const handleGenerateReport = () => {
+    if (filteredData.length === 0) {
+      alert("No data available to generate the report.");
+      return;
+    }
+
+    const formattedData = filteredData.map((item, index) => ({
+      "S.No": index + 1,
+      "MRF ID": item.MRF_id || "N/A",
+      Name: item.name || "N/A",
+      "Create Date": formatDate(item.create_date),
+      "Request ID": item.Request_id_assign || "N/A",
+      "Project Name": getProjectName(item.Request_id_assign),
+      Status: item.approval ? "Approved" : "Pending",
+    }));
+
+    generateCSV(formattedData, "MRF_Report");
+  };
+
+  const generateCSV = (data, filename) => {
+    const headers = Object.keys(data[0]);
+    const csvRows = [
+      headers.join(","), // header row
+      ...data.map((row) =>
+        headers
+          .map(
+            (field) => `"${(row[field] || "").toString().replace(/"/g, '""')}"`
+          )
+          .join(",")
+      ),
+    ];
+
+    const blob = new Blob([csvRows.join("\n")], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `${filename}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const [currentUserRole, setCurrentUserRole] = useState("");
+
+  // Load role from localStorage (or replace with your actual role-fetching logic)
+  useEffect(() => {
+    const role = localStorage.getItem("userRole"); // Default to 'User'
+    console.log("Normalized role:", role);
+    setCurrentUserRole(role);
+  }, []);
+
   return (
     <div>
       <div
@@ -305,15 +187,13 @@ const Mrf = () => {
         <h2>Material Requests (MRF)</h2>
       </div>
 
-
       <div className="search-wrapper-container">
-        {/* Centered search bar */}
         <div className="search-wrapper">
           <div className="search-bar-container">
             <input
               type="text"
               className="search-bar"
-              placeholder="Search by Project Name, MRF ID"
+              placeholder="Search by MRF ID"
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
             />
@@ -323,13 +203,40 @@ const Mrf = () => {
           </div>
         </div>
 
-        {/* Add Vendor Button */}
+        {searchQuery.trim() !== "" && mrfData.length === 0 && (
+          <div
+            style={{ textAlign: "center", marginTop: "20px", color: "gray" }}
+          >
+            No data available
+          </div>
+        )}
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: "10px",
+          marginBottom: "10px",
+          marginTop: "-45px",
+        }}
+      >
+        {currentUserRole === "Inventory" ||
+          (currentUserRole === "Admin" && (
+            <button
+              className="generate-report-btn"
+              onClick={handleGenerateReport}
+            >
+              Generate Report
+            </button>
+          ))}
+
         <button
           className="plus-button"
           title="Create MRF"
           onClick={() => navigate("/MRFCreate")}
         >
-          <img src={Add} alt="Add Vendor" />
+          <img src={Add} alt="Create MRF" />
         </button>
       </div>
       <div className="table-container">
@@ -424,17 +331,6 @@ const Mrf = () => {
                   </div>
                 )}
               </th>
-              {/* <th>
-                Approval Status
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                  <option value="">All</option>
-                  <option value="Approved">Approved</option>
-                  <option value="Pending">Pending</option>
-                </select>
-              </th> */}
             </tr>
           </thead>
           <tbody>
@@ -448,7 +344,7 @@ const Mrf = () => {
                     fontStyle: "italic",
                   }}
                 >
-                  No data available for this date
+                  No data available for this search
                 </td>
               </tr>
             ) : (

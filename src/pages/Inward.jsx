@@ -82,13 +82,13 @@ const Inward = () => {
         `${config.apiBaseURL}/inward/?po_id=${po_id}&component_id=${component_id}`
       );
       const data = await response.json();
-      const result = data.filter((item) => item.mode_to_inventory === true);
 
-      if (Array.isArray(result)) {
-        setInwardData(result);
-        setFilteredData(result);
+      // remove filtering by mode_to_inventory
+      if (Array.isArray(data)) {
+        setInwardData(data);
+        setFilteredData(data);
       } else {
-        console.error("Unexpected API response format:", result);
+        console.error("Unexpected API response format:", data);
       }
     } catch (err) {
       console.error("Error fetching inward data:", err);
@@ -433,7 +433,6 @@ const Inward = () => {
       alert("An error occurred while moving to inventory.");
     }
   };
-
   const handleMoveToInventory = async (item) => {
     try {
       // Extract necessary values using getNestedValue and ensure data integrity
@@ -844,7 +843,7 @@ const Inward = () => {
                     <button
                       className="move-outward-button"
                       onClick={() => handleMoveToOutward(item)}
-                      // disabled={!item.mode_to_inventory}
+                      disabled={!item.mode_to_inventory}
                     >
                       Move to Outward
                     </button>
