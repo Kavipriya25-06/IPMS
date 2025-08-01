@@ -205,12 +205,23 @@ const Inventory = () => {
 
   const fetchToolInventoryData = async () => {
     try {
-      const response = await fetch(`${config.apiBaseURL}/tool_inventory/`); // <-- Tool inventory API endpoint
+      const response = await fetch(`${config.apiBaseURL}/tool_inventory/`);
       if (!response.ok) throw new Error("Failed to fetch tool inventory");
 
       const data = await response.json();
-      setToolInventory(data); // set tool inventory data separately
-      console.log("Fetched tool inventory data:", data);
+      setToolInventory(data); // full list
+
+      // Apply date filter
+      const filtered = data.filter((tool) => {
+        const createdAt = new Date(tool.created_at);
+        return (
+          (!toolFromDate || createdAt >= new Date(toolFromDate)) &&
+          (!toolToDate ||
+            createdAt <= new Date(toolToDate).setHours(23, 59, 59, 999))
+        );
+      });
+
+      setFilteredToolInventory(filtered);
     } catch (error) {
       console.error("Error fetching tool inventory:", error);
       showErrorToast("Failed to fetch tool inventory");
@@ -257,27 +268,36 @@ const Inventory = () => {
   const filterByDate = () => {
     if (fromDate && toDate && isAfter(fromDate, toDate)) {
       showWarningToast("From date cannot be after To date.");
-      // clear the fields
       setFromDate(null);
       setToDate(null);
       return;
     }
 
-    let filtered = [...inventoryData];
+    const from = fromDate ? new Date(fromDate.setHours(0, 0, 0, 0)) : null;
+    const to = toDate ? new Date(toDate.setHours(23, 59, 59, 999)) : null;
 
-    if (fromDate && toDate) {
-      filtered = filtered.filter((item) => {
-        const createdDate = new Date(item.create_date);
-        createdDate.setHours(0, 0, 0, 0);
-        return (
-          createdDate >= new Date(fromDate.setHours(0, 0, 0, 0)) &&
-          createdDate <= new Date(toDate.setHours(0, 0, 0, 0))
-        );
+    if (statusFilter === "Tool") {
+      // Tool Inventory filter
+      const filtered = toolInventory.filter((item) => {
+        const createdDate = new Date(item.created_at);
+        return (!from || createdDate >= from) && (!to || createdDate <= to);
       });
+      setFilteredToolInventory(filtered); // ✅ update tool inventory filtered state
+    } else {
+      // Normal inventory filter
+      const filtered = inventoryData.filter((item) => {
+        const createdDate = new Date(item.create_date);
+        return (!from || createdDate >= from) && (!to || createdDate <= to);
+      });
+      setFilteredInventory(filtered);
     }
-
-    setFilteredInventory(filtered);
   };
+
+  const [toolFromDate, setToolFromDate] = useState(null);
+  const [toolToDate, setToolToDate] = useState(null);
+  const [filteredToolInventory, setFilteredToolInventory] = useState([]);
+
+  // Then define:
 
   const fetchComponentMasterData = async () => {
     try {
@@ -538,12 +558,23 @@ const Inventory = () => {
     document.body.removeChild(a);
   };
 
+  // const clearDateFilter = () => {
+  //   setFromDate(null);
+  //   setToDate(null);
+  //   setFilteredInventory(
+  //     inventoryData.filter((item) => item.status === statusFilter)
+  //   );
+  // };
+
   const clearDateFilter = () => {
     setFromDate(null);
     setToDate(null);
-    setFilteredInventory(
-      inventoryData.filter((item) => item.status === statusFilter)
-    );
+
+    if (statusFilter === "Tool") {
+      setFilteredToolInventory(toolInventory);
+    } else {
+      setFilteredInventory(inventoryData);
+    }
   };
 
   const handleSaveSpecification = async (componentId) => {
@@ -620,13 +651,18 @@ const Inventory = () => {
   }, [statusFilter]);
 
   const handleSaveToolRow = async () => {
+    const toolToSave = {
+      ...newToolRow,
+      create_date: new Date().toISOString(), // Auto-set current timestamp
+    };
+
     try {
       const response = await fetch(`${config.apiBaseURL}/tool_inventory/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newToolRow),
+        body: JSON.stringify(toolToSave),
       });
 
       if (response.ok) {
@@ -1251,6 +1287,7 @@ const Inventory = () => {
                   <th>In Inventory</th>
                   <th>Team</th>
                   <th>Remarks</th>
+                  <th>Create Date</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -1327,6 +1364,8 @@ const Inventory = () => {
                         }
                       />
                     </td>
+                    <td style={{ textAlign: "center", color: "gray" }}>Auto</td>
+
                     <td className="event-buttons">
                       <button onClick={handleSaveToolRow}>Save</button>
                       <button onClick={() => setNewToolRow(null)}>
@@ -1337,8 +1376,8 @@ const Inventory = () => {
                 )}
 
                 {/* Existing tool rows with edit functionality */}
-                {toolInventory.length > 0 ? (
-                  toolInventory.map((tool, idx) =>
+                {filteredToolInventory.length > 0 ? (
+                  filteredToolInventory.map((tool, idx) =>
                     editingToolRow === tool.id ? (
                       <tr key={tool.id}>
                         <td>
@@ -1413,6 +1452,7 @@ const Inventory = () => {
                             }
                           />
                         </td>
+
                         <td className="event-buttons">
                           <button
                             onClick={handleUpdateToolRow}
@@ -1435,7 +1475,18 @@ const Inventory = () => {
                         <td>{tool.quantity || 0}</td>
                         <td>{tool.in_inventory || 0}</td>
                         <td>{tool.team || "0"}</td>
-                        <td>{tool.remarks || "null"}</td>
+                        <td
+                          className="specification-cell"
+                          title={tool.remarks || ""}
+                        >
+                          {tool.remarks || "null"}
+                        </td>
+                        <td>
+                          {tool.created_at
+                            ? format(new Date(tool.created_at), "dd-MM-yyyy")
+                            : "N/A"}
+                        </td>
+
                         <td>
                           <button
                             onClick={() => {
@@ -1453,10 +1504,18 @@ const Inventory = () => {
                 ) : (
                   <tr>
                     <td
-                      colSpan="7"
+                      colSpan="8"
                       style={{ textAlign: "center", color: "gray" }}
                     >
-                      No Tool Inventory found
+                      {fromDate && toDate ? (
+                        <>
+                          No Tool Inventory data available from{" "}
+                          <strong>{formatDate(fromDate)}</strong> to{" "}
+                          <strong>{formatDate(toDate)}</strong>.
+                        </>
+                      ) : (
+                        "No Tool Inventory data available."
+                      )}
                     </td>
                   </tr>
                 )}

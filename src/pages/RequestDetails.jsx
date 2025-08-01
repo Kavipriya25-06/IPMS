@@ -768,6 +768,9 @@ const RequestDetails = ({ user }) => {
           },
         };
       });
+      showSuccessToast(
+        "Selected serial numbers have been reserved successfully."
+      );
     } catch (error) {
       console.error("Error confirming assignment:", error);
       showErrorToast("An error occurred while confirming assignment.");
@@ -1406,63 +1409,67 @@ const RequestDetails = ({ user }) => {
           </div>
 
           {showPricePopup && pricePopupData && (
-            <div className="popup">
-              <span
-                className="x-button"
-                onClick={() => setShowPricePopup(false)}
-              >
-                &times;
-              </span>
-              <div className="popup-content">
-                <h3>Vendor Details</h3>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Vendor Name</th>
-                      <th>Price</th>
-                      <th>Tax %</th>
-                      <th>Select</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pricePopupData.map((vendor) => (
-                      <tr key={vendor.vendor_id}>
-                        <td>{vendor.vendor_name}</td>
-                        <td style={{ textAlign: "right" }}>
-                          {vendor.latest_price !== null
-                            ? `₹${parseFloat(
-                                vendor.latest_price
-                              ).toLocaleString("en-IN", {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })}`
-                            : "N/A"}
-                        </td>
-                        <td style={{ textAlign: "right" }}>
-                          {vendor.latest_tax ? `${vendor.latest_tax}%` : "N/A"}
-                        </td>
-                        <td>
-                          <input
-                            type="radio"
-                            name="vendorSelection"
-                            value={vendor.vendor_id}
-                            onChange={() => {
-                              handleVendorChange(
-                                vendor.component_id, // Component ID
-                                vendor.vendor_id,
-                                vendor.vendor_name,
-                                vendor.latest_price || 0, // Handle null price
-                                vendor.latest_tax || 0
-                              );
-                              setShowPricePopup(false); // Close the popup
-                            }}
-                          />
-                        </td>
+            <div className="modal-overlay">
+              <div className="popup">
+                <span
+                  className="x-button"
+                  onClick={() => setShowPricePopup(false)}
+                >
+                  &times;
+                </span>
+                <div className="popup-content">
+                  <h3>Vendor Details</h3>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Vendor Name</th>
+                        <th>Price</th>
+                        <th>Tax %</th>
+                        <th>Select</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {/* <button  onClick={() => setShowPricePopup(false)}>Close</button> */}
+                    </thead>
+                    <tbody>
+                      {pricePopupData.map((vendor) => (
+                        <tr key={vendor.vendor_id}>
+                          <td>{vendor.vendor_name}</td>
+                          <td style={{ textAlign: "right" }}>
+                            {vendor.latest_price !== null
+                              ? `₹${parseFloat(
+                                  vendor.latest_price
+                                ).toLocaleString("en-IN", {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}`
+                              : "N/A"}
+                          </td>
+                          <td style={{ textAlign: "right" }}>
+                            {vendor.latest_tax
+                              ? `${vendor.latest_tax}%`
+                              : "N/A"}
+                          </td>
+                          <td>
+                            <input
+                              type="radio"
+                              name="vendorSelection"
+                              value={vendor.vendor_id}
+                              onChange={() => {
+                                handleVendorChange(
+                                  vendor.component_id, // Component ID
+                                  vendor.vendor_id,
+                                  vendor.vendor_name,
+                                  vendor.latest_price || 0, // Handle null price
+                                  vendor.latest_tax || 0
+                                );
+                                setShowPricePopup(false); // Close the popup
+                              }}
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {/* <button  onClick={() => setShowPricePopup(false)}>Close</button> */}
+                </div>
               </div>
             </div>
           )}
@@ -1548,7 +1555,9 @@ const RequestDetails = ({ user }) => {
               <div className="popup">
                 <div className="serial-modal">
                   <div>
-                    <h3 style={{textAlign:"center"}}>Select Serial Numbers</h3>
+                    <h3 style={{ textAlign: "center" }}>
+                      Select Serial Numbers
+                    </h3>
                     <button
                       className="x-button"
                       onClick={() => setShowSerialPopup(false)}

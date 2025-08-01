@@ -259,6 +259,10 @@ const Outward = () => {
 
   //Submit the Manufacturer
   const handleManufactureSubmit = async () => {
+    if (!serviceForm.typeOfOutward) {
+      showWarningToast("Please select Type of Outward.");
+      return;
+    }
     const payload = {
       category: "Manufacture",
       date: serviceForm.outDate?.toISOString().split("T")[0],
@@ -310,6 +314,10 @@ const Outward = () => {
   };
 
   const handleSalesSubmit = async () => {
+    if (!serviceForm.typeOfOutward) {
+      showWarningToast("Please select Type of Outward.");
+      return;
+    }
     const payload = {
       category: "Sales",
       date: salesForm.outDate?.toISOString().split("T")[0],
@@ -356,6 +364,10 @@ const Outward = () => {
   };
 
   const handleEventSubmit = async () => {
+    if (!serviceForm.typeOfOutward) {
+      showWarningToast("Please select Type of Outward.");
+      return;
+    }
     const payload = {
       category: "Event",
       date: eventForm.outDate?.toISOString().split("T")[0],
@@ -756,7 +768,9 @@ const Outward = () => {
                       <td>{row.quantity || "-"}</td>
                       <td>{getProjectName(row.project) || "-"}</td>
                       <td>{row.type_of_outward || "-"}</td>
-                      <td className="specification-cell" title={row.remarks}>{row.remarks || "-"}</td>
+                      <td className="specification-cell" title={row.remarks}>
+                        {row.remarks || "-"}
+                      </td>
                     </>
                   )}
                   {reportType === "Sales" && (
@@ -778,7 +792,9 @@ const Outward = () => {
                       <td>{row.specification || "-"}</td>
                       <td>{row.client || "-"}</td>
                       <td>{row.type_of_outward || "-"}</td>
-                      <td className="specification-cell" title={row.remarks}>{row.remarks || "-"}</td>
+                      <td className="specification-cell" title={row.remarks}>
+                        {row.remarks || "-"}
+                      </td>
                     </>
                   )}
                   {reportType === "Manufacture" && (
@@ -804,7 +820,9 @@ const Outward = () => {
                       <td>{row.quantity || "-"}</td>
                       <td>{getProjectName(row.project) || "-"}</td>
                       <td>{row.type_of_outward || "-"}</td>
-                      <td className="specification-cell" title={row.remarks}>{row.remarks || "-"}</td>
+                      <td className="specification-cell" title={row.remarks}>
+                        {row.remarks || "-"}
+                      </td>
 
                       {/* New Column - PDF Button */}
                       <td>
@@ -848,7 +866,9 @@ const Outward = () => {
                           ? format(new Date(row.return_date), "dd-MM-yyyy")
                           : "-"}
                       </td>{" "}
-                      <td className="specification-cell" title={row.remarks}>{row.remarks || "-"}</td>
+                      <td className="specification-cell" title={row.remarks}>
+                        {row.remarks || "-"}
+                      </td>
                     </>
                   )}
                 </tr>
