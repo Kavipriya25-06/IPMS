@@ -1548,7 +1548,7 @@ const RequestDetails = ({ user }) => {
               <div className="popup">
                 <div className="serial-modal">
                   <div>
-                    <h3>Select Serial Numbers</h3>
+                    <h3 style={{textAlign:"center"}}>Select Serial Numbers</h3>
                     <button
                       className="x-button"
                       onClick={() => setShowSerialPopup(false)}
