@@ -1,12 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import CustomMessagebox from "./CustomMessageBox.jsx";
-import config from "../Config";
+import config from "../Config.js";
 import { useNavigate } from "react-router-dom";
 import { FaEdit } from "react-icons/fa";
 import { format } from "date-fns";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { FaCalendarAlt } from "react-icons/fa";
+import Filter from "../assets/Filter_icon.svg";
 
 import {
   showSuccessToast,
@@ -17,7 +18,7 @@ import {
 } from "./Toastify.jsx"; // Import Toastify utilities
 
 const Inwardlist = () => {
-  const [inwardData, setInwardData] = useState([]);
+const [inwardData, setInwardData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
@@ -29,7 +30,8 @@ const Inwardlist = () => {
   const [editingIndex, setEditingIndex] = useState(null);
   const [invoiceNumberInput, setInvoiceNumberInput] = useState("");
   const [invoiceDateInput, setInvoiceDateInput] = useState("");
-
+  const [filterDate, setFilterDate] = useState(null);
+  const [showDateFilter, setShowDateFilter] = useState(false);
   const navigate = useNavigate();
 
   // Utility function to safely access nested fields
@@ -49,17 +51,19 @@ const Inwardlist = () => {
     try {
       const response = await fetch(`${config.apiBaseURL}/inward/`);
       const data = await response.json();
-      const result = data.filter((item) => item.mode_to_inventory === true);
+      // const result = data.filter((item) => item.mode_to_inventory === true);
 
       const grouped = {};
-      result.forEach((item) => {
+      data.forEach((item) => {
         const poId = getNestedValue(item, "po_master.PO_id", "");
         const componentId = getNestedValue(
           item,
           "po_master.cart.component_id",
           ""
         );
-        const key = `${poId}_${componentId}`;
+        const inwardDate = item.date ? new Date(item.date).toISOString().split("T")[0] : "";
+
+        const key = `${poId}_${componentId}_${inwardDate}`;
 
         if (!grouped[key]) {
           grouped[key] = {
@@ -138,7 +142,7 @@ const Inwardlist = () => {
 
   const updateInvoiceForPO = async (poId, invoiceNumber, invoiceDate) => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/inward/");
+      const res = await fetch(`${config.apiBaseURL}/inward/`);
       const inwardList = await res.json();
 
       const matchingInwards = inwardList.filter(
@@ -146,7 +150,7 @@ const Inwardlist = () => {
       );
 
       const updatePromises = matchingInwards.map((item) =>
-        fetch(`http://127.0.0.1:8000/inward/${item.inward_id}/`, {
+        fetch(`${config.apiBaseURL}/inward/${item.inward_id}/`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -162,7 +166,7 @@ const Inwardlist = () => {
         throw new Error(`${failed.length} updates failed`);
       }
 
-      // ✅ Update state locally to reflect changes without refresh
+      //  Update state locally to reflect changes without refresh
       const updatedData = inwardData.map((item) => {
         if (item.po_master?.PO_id === poId) {
           return {
@@ -184,10 +188,156 @@ const Inwardlist = () => {
     }
   };
 
+  const generateInwardReport = () => {
+    if (!filteredData || filteredData.length === 0) {
+      showInfoToast("No data available to export.");
+      return;
+    }
+
+    const formatDate = (val) =>
+      val ? new Date(val).toLocaleDateString("en-GB") : "-";
+
+    const formatCurrency = (value) =>
+      value ? `₹${parseFloat(value).toFixed(2)}` : "-";
+
+    const formatGST = (gst) =>
+      gst % 1 === 0 ? `${parseInt(gst)}%` : `${parseFloat(gst)}%`;
+
+    const calculateGrandTotal = (unitPrice, qty, gst) => {
+      const total = (parseFloat(unitPrice) || 0) * (parseInt(qty) || 0);
+      const gstAmount = (total * (parseFloat(gst) || 0)) / 100;
+      return total + gstAmount;
+    };
+
+    const getNestedValue = (obj, path, defaultVal = "-") => {
+      return (
+        path.split(".").reduce((acc, part) => acc?.[part], obj) ?? defaultVal
+      );
+    };
+
+    const formattedData = filteredData.map((item, index) => {
+      const price = item.price || 0;
+      const quantity = item.quantity || 0;
+      const gst = item.gst || 0;
+
+      return {
+        "S.No": index + 1,
+        PO_ID: getNestedValue(item, "po_master.PO_id"),
+        "Component ID": getNestedValue(item, "po_master.cart.component_id"),
+        "Component Specification": getNestedValue(
+          item,
+          "po_master.cart.component_specification"
+        ),
+        "Vendor Name": getNestedValue(item, "po_master.cart.vendor_name"),
+        Date: formatDate(item.date),
+        "Invoice No": item.invoice_number || "-",
+        "Invoice Date": formatDate(item.invoice_date),
+        Quantity: quantity,
+        "Unit Price": formatCurrency(price),
+        GST: formatGST(gst),
+        "Grand Total": formatCurrency(
+          calculateGrandTotal(price, quantity, gst)
+        ),
+      };
+    });
+
+    generateCSV(formattedData, "Inward_Report");
+  };
+
+  const generateCSV = (data, filename) => {
+    const headers = Object.keys(data[0]).join(",");
+    const rows = data.map((row) =>
+      Object.values(row)
+        .map((val) => `"${val}"`)
+        .join(",")
+    );
+    const csvContent = [headers, ...rows].join("\n");
+
+    // Add UTF-8 BOM for Excel to recognize ₹ and other characters correctly
+    const BOM = "\uFEFF";
+    const blob = new Blob([BOM + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `${filename}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  };
+
+  const filteredByDate = filterDate
+    ? filteredData.filter(
+        (item) =>
+          item.date &&
+          new Date(item.date).toDateString() === filterDate.toDateString()
+      )
+    : filteredData;
+
+  useEffect(() => {
+    if (filterDate) window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [filterDate]);
+
   return (
     <div>
-      <div className="header">
+      <div
+        className="header"
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "10px",
+        }}
+      >
         <h2>Inward</h2>
+
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <div style={{ position: "relative", display: "inline-block" }}>
+            <button
+              style={{
+                cursor: "pointer",
+                background: "transparent",
+                border: "none",
+                padding: "0",
+              }}
+              title="Filter by Date"
+              onClick={() => setShowDateFilter((prev) => !prev)}
+            >
+              <img
+                src={Filter}
+                alt="Filter"
+                style={{ width: "25px", height: "30px" }}
+              />
+            </button>
+
+            <DatePicker
+              selected={filterDate}
+              onChange={(date) => {
+                setFilterDate(date);
+                setShowDateFilter(false); // Close calendar on select
+              }}
+              open={showDateFilter}
+              onClickOutside={() => setShowDateFilter(false)} // Close when clicked outside
+              dateFormat="dd-MM-yyyy"
+              showMonthDropdown
+              showYearDropdown
+              dropdownMode="select"
+              popperPlacement="bottom-start"
+              wrapperClassName="date-filter-datepicker"
+              customInput={<></>} // prevent showing an input at all
+            />
+          </div>
+
+          <button
+            className="generate-report-btn"
+            onClick={generateInwardReport}
+          >
+            Generate Report
+          </button>
+        </div>
       </div>
 
       <div className="table-container">
@@ -209,159 +359,184 @@ const Inwardlist = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredData.map((item, index) => (
-              <tr key={index}>
-                <td>{getNestedValue(item, "po_master.PO_id")}</td>
-                <td>{getNestedValue(item, "po_master.cart.component_id")}</td>
-                <td>
-                  {getNestedValue(
-                    item,
-                    "po_master.cart.component_specification"
-                  )}
-                </td>
-                <td>{getNestedValue(item, "po_master.cart.vendor_name")}</td>
-                <td>
-                  {item.date ? format(new Date(item.date), "dd-MM-yyyy") : "-"}
-                </td>
-                <td>
-                  {editingIndex === index ? (
-                    <input
-                      type="text"
-                      value={invoiceNumberInput}
-                      onChange={(e) => setInvoiceNumberInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
+            {filteredByDate.length > 0 ? (
+              filteredByDate.map((item, index) => (
+                <tr key={index}>
+                  <td>{getNestedValue(item, "po_master.PO_id")}</td>
+                  <td>{getNestedValue(item, "po_master.cart.component_id")}</td>
+                  <td>
+                    {getNestedValue(
+                      item,
+                      "po_master.cart.component_specification"
+                    )}
+                  </td>
+                  <td>{getNestedValue(item, "po_master.cart.vendor_name")}</td>
+                  <td>
+                    {item.date
+                      ? format(new Date(item.date), "dd-MM-yyyy")
+                      : "-"}
+                  </td>
+                  <td>
+                    {editingIndex === index ? (
+                      <input
+                        type="text"
+                        value={invoiceNumberInput}
+                        onChange={(e) => setInvoiceNumberInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            updateInvoiceForPO(
+                              item.po_master.PO_id,
+                              invoiceNumberInput,
+                              invoiceDateInput
+                            );
+                            setEditingIndex(null);
+                          }
+                        }}
+                        placeholder="Enter Invoice No"
+                        style={{
+                          width: "100%",
+                          border: "1px solid #ccc",
+                          borderRadius: "3px",
+                          padding: "3px",
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
+                        <span style={{ flex: 1 }}>
+                          {item.invoice_number || "-"}
+                        </span>
+                        <FaEdit
+                          onClick={() => {
+                            setEditingIndex(index);
+                            setInvoiceNumberInput(item.invoice_number || "");
+                            setInvoiceDateInput(
+                              item.invoice_date
+                                ? item.invoice_date.slice(0, 10)
+                                : ""
+                            );
+                          }}
+                          style={{ marginLeft: "8px", cursor: "pointer" }}
+                        />
+                      </div>
+                    )}
+                  </td>
+
+                  <td style={{ minWidth: "130px" }}>
+                    {editingIndex === index ? (
+                      <DatePicker
+                        selected={
+                          invoiceDateInput ? new Date(invoiceDateInput) : null
+                        }
+                        onChange={(date) => {
+                          const formattedDate = date
+                            .toISOString()
+                            .split("T")[0]; // Format to yyyy-MM-dd
+                          setInvoiceDateInput(formattedDate);
                           updateInvoiceForPO(
                             item.po_master.PO_id,
                             invoiceNumberInput,
-                            invoiceDateInput
+                            formattedDate
                           );
                           setEditingIndex(null);
-                        }
-                      }}
-                      placeholder="Enter Invoice No"
-                      style={{
-                        width: "100%",
-                        border: "1px solid #ccc",
-                        borderRadius: "3px",
-                        padding: "3px",
-                      }}
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <span style={{ flex: 1 }}>
-                        {item.invoice_number || "-"}
-                      </span>
-                      <FaEdit
-                        onClick={() => {
-                          setEditingIndex(index);
-                          setInvoiceNumberInput(item.invoice_number || "");
-                          setInvoiceDateInput(
-                            item.invoice_date
-                              ? item.invoice_date.slice(0, 10)
-                              : ""
-                          );
                         }}
-                        style={{ marginLeft: "8px", cursor: "pointer" }}
+                        dateFormat="dd-MM-yyyy"
+                        showMonthDropdown
+                        showYearDropdown
+                        dropdownMode="select"
+                        customInput={<CustomDateInput />}
+                        wrapperClassName="date-picker-wrapper"
                       />
-                    </div>
-                  )}
-                </td>
+                    ) : (
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          width: "100%",
+                        }}
+                      >
+                        <span>
+                          {item.invoice_date
+                            ? format(new Date(item.invoice_date), "dd-MM-yyyy")
+                            : "-"}
+                        </span>
+                        <FaEdit
+                          onClick={() => {
+                            setEditingIndex(index);
+                            setInvoiceNumberInput(item.invoice_number || "");
+                            setInvoiceDateInput(
+                              item.invoice_date
+                                ? item.invoice_date.slice(0, 10)
+                                : ""
+                            );
+                          }}
+                          style={{ cursor: "pointer" }}
+                        />
+                      </div>
+                    )}
+                  </td>
 
-                <td style={{ minWidth: "130px" }}>
-                  {editingIndex === index ? (
-                    <DatePicker
-                      selected={
-                        invoiceDateInput ? new Date(invoiceDateInput) : null
+                  <td style={{ textAlign: "right" }}>{item.quantity}</td>
+                  <td style={{ textAlign: "right" }}>₹{item.price || "-"}</td>
+                  <td style={{ textAlign: "right" }}>
+                    {item.gst % 1 === 0
+                      ? parseInt(item.gst)
+                      : parseFloat(item.gst)}
+                    %
+                  </td>
+                  <td style={{ textAlign: "right" }}>
+                    ₹
+                    {calculateGrandTotal(
+                      item.price,
+                      item.quantity,
+                      item.gst
+                    ).toFixed(2)}
+                  </td>
+                  <td className="action-buttons-cell">
+                    <button
+                      className="qc-button"
+                      onClick={() =>
+                        navigate(
+                          `/inward?po_id=${getNestedValue(
+                            item,
+                            "po_master.PO_id"
+                          )}&component_id=${getNestedValue(
+                            item,
+                            "po_master.cart.component_id"
+                          )}`
+                        )
                       }
-                      onChange={(date) => {
-                        const formattedDate = date.toISOString().split("T")[0]; // Format to yyyy-MM-dd
-                        setInvoiceDateInput(formattedDate);
-                        updateInvoiceForPO(
-                          item.po_master.PO_id,
-                          invoiceNumberInput,
-                          formattedDate
-                        );
-                        setEditingIndex(null);
-                      }}
-                      dateFormat="dd-MM-yyyy"
-                      showMonthDropdown
-                      showYearDropdown
-                      dropdownMode="select"
-                      customInput={<CustomDateInput />}
-                      wrapperClassName="date-picker-wrapper"
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        width: "100%",
-                      }}
                     >
-                      <span>
-                        {item.invoice_date
-                          ? format(new Date(item.invoice_date), "dd-MM-yyyy")
-                          : "-"}
-                      </span>
-                      <FaEdit
-                        onClick={() => {
-                          setEditingIndex(index);
-                          setInvoiceNumberInput(item.invoice_number || "");
-                          setInvoiceDateInput(
-                            item.invoice_date
-                              ? item.invoice_date.slice(0, 10)
-                              : ""
-                          );
-                        }}
-                        style={{ cursor: "pointer" }}
-                      />
-                    </div>
-                  )}
-                </td>
-
-                <td style={{ textAlign: "right" }}>{item.quantity}</td>
-                <td style={{ textAlign: "right" }}>₹{item.price || "-"}</td>
-                <td style={{ textAlign: "right" }}>
-                  {item.gst % 1 === 0
-                    ? parseInt(item.gst)
-                    : parseFloat(item.gst)}
-                  %
-                </td>
-                <td style={{ textAlign: "right" }}>
-                  ₹{calculateGrandTotal(
-                    item.price,
-                    item.quantity,
-                    item.gst
-                  ).toFixed(2)}
-                </td>
-                <td className="action-buttons-cell">
-                  <button
-                    className="qc-button"
-                    onClick={() =>
-                      navigate(
-                        `/inward?po_id=${getNestedValue(
-                          item,
-                          "po_master.PO_id"
-                        )}&component_id=${getNestedValue(
-                          item,
-                          "po_master.cart.component_id"
-                        )}`
-                      )
-                    }
-                  >
-                    QC
-                  </button>
+                      QC
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td
+                  colSpan="12"
+                  style={{
+                    textAlign: "center",
+                    padding: "10px",
+                    color: "#888",
+                  }}
+                >
+                  {filterDate
+                    ? `No data is present for the filter date: ${format(
+                        filterDate,
+                        "dd-MM-yyyy"
+                      )}.`
+                    : "No data available."}
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
