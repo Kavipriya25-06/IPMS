@@ -18,7 +18,7 @@ import {
 } from "./Toastify.jsx"; // Import Toastify utilities
 
 const Inwardlist = () => {
-const [inwardData, setInwardData] = useState([]);
+  const [inwardData, setInwardData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
@@ -61,7 +61,9 @@ const [inwardData, setInwardData] = useState([]);
           "po_master.cart.component_id",
           ""
         );
-        const inwardDate = item.date ? new Date(item.date).toISOString().split("T")[0] : "";
+        const inwardDate = item.date
+          ? new Date(item.date).toISOString().split("T")[0]
+          : "";
 
         const key = `${poId}_${componentId}_${inwardDate}`;
 

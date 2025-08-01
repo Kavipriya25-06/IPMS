@@ -287,8 +287,23 @@ const Outward = () => {
       });
 
       if (res.ok) {
-        showSuccessToast("Outward entry saved!");
+        // --- Update serial number status to Repair ---
+        for (const sn of serviceForm.serialNumbers) {
+          try {
+            await fetch(`${config.apiBaseURL}/inventory/${sn}/`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ status: "Repair" }),
+            });
+          } catch (err) {
+            console.error(`Failed to update serial ${sn} status:`, err);
+          }
+        }
+
+        showSuccessToast("Outward entry saved & serials moved to Repair!");
         setShowServiceForm(false);
+
+        // Reset form after submit
         setServiceForm({
           outDate: new Date(),
           time: format(new Date(), "hh:mm a"),
@@ -303,13 +318,16 @@ const Outward = () => {
           remarks: "",
           serialNumbers: [],
         });
+
         fetchData();
       } else {
         const err = await res.json();
         console.error("Error saving:", err);
+        showErrorToast("Failed to save outward entry");
       }
     } catch (err) {
       console.error("Save failed", err);
+      showErrorToast("Network error while saving");
     }
   };
 

@@ -678,6 +678,30 @@ const Inventory = () => {
     }
   };
 
+  const handleChangeStatusToAvailable = async (serialNumber) => {
+    try {
+      const response = await fetch(
+        `${config.apiBaseURL}/inventory/${serialNumber}/`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "Available" }),
+        }
+      );
+
+      if (response.ok) {
+        showSuccessToast(`Serial ${serialNumber} moved to Available`);
+        // Refresh inventory after update
+        fetchInventoryData("Repair");
+      } else {
+        showErrorToast("Failed to update status");
+      }
+    } catch (error) {
+      console.error("Error changing status:", error);
+      showErrorToast("Network error while updating status");
+    }
+  };
+
   return (
     <div className="inventory-container">
       <div className="header">
@@ -1179,7 +1203,7 @@ const Inventory = () => {
                             style={{
                               backgroundColor: !row.status
                                 ? "#e0e0e0"
-                                : "#ededed", // Highlight disabled items
+                                : "#ededed",
                               color:
                                 row.status !== "Available"
                                   ? "#a0a0a0"
@@ -1187,7 +1211,7 @@ const Inventory = () => {
                             }}
                           >
                             <td>{row.component_id}</td>
-                            <td>{row.serial_number} </td>
+                            <td>{row.serial_number}</td>
                             <td
                               onDoubleClick={() =>
                                 handleDoubleClick(row.id, row.sku_number)
@@ -1235,7 +1259,31 @@ const Inventory = () => {
                                 maximumFractionDigits: 2,
                               })}
                             </td>
-                            <td>{row.status}</td>
+                            <td>
+                              {row.status}
+                              {statusFilter === "Repair" &&
+                                row.status === "Repair" && (
+                                  <button
+                                    style={{
+                                      marginLeft: "10px",
+                                      padding: "4px 8px",
+                                      fontSize: "12px",
+                                      backgroundColor: "#4CAF50",
+                                      color: "#fff",
+                                      border: "none",
+                                      borderRadius: "4px",
+                                      cursor: "pointer",
+                                    }}
+                                    onClick={() =>
+                                      handleChangeStatusToAvailable(
+                                        row.serial_number
+                                      )
+                                    }
+                                  >
+                                    Make Available
+                                  </button>
+                                )}
+                            </td>
                           </tr>
                         ))}
                     </React.Fragment>
