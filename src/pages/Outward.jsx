@@ -184,6 +184,7 @@ const Outward = () => {
       "Gate Pass",
       "Component Spec",
       "Comp id",
+      "Serial Number",
       "Vendor",
       "Quantity",
       "Project",
@@ -502,6 +503,9 @@ const Outward = () => {
             case "Remarks":
               row[header] = item.remarks || "N/A";
               break;
+            case "Serial Number":
+              row[header] = item.serial_numbers || "N/A";
+              break;
             default:
               row[header] = "N/A";
           }
@@ -795,6 +799,7 @@ const Outward = () => {
                       <td>{row.gatepass || "-"}</td>
                       <td>{row.specification || "-"}</td>
                       <td>{row.component_id || "-"}</td>
+                      <td>{row.serial_numbers || "-"}</td>
                       <td>{row.vendor || "-"}</td>
                       <td>{row.quantity || "-"}</td>
                       <td>{getProjectName(row.project) || "-"}</td>
