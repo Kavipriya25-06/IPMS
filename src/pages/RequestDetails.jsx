@@ -1330,8 +1330,10 @@ const RequestDetails = ({ user }) => {
                 ) && (
                   <>
                     <tr style={{ fontWeight: "bold" }}>
-                      <td colSpan="6">Total Base Price:</td>
-                      <td style={{ textAlign: "right" }}>
+                      <td colSpan="6" style={{ textAlign: "right" }}>
+                        Total Base Price:
+                      </td>
+                      <td colSpan="1" style={{ textAlign: "right" }}>
                         ₹
                         {parseFloat(baseTotal).toLocaleString("en-IN", {
                           minimumFractionDigits: 2,
@@ -1340,9 +1342,12 @@ const RequestDetails = ({ user }) => {
                       </td>
                       <td colSpan="4"></td>
                     </tr>
+
                     <tr style={{ fontWeight: "bold" }}>
-                      <td colSpan="6">Total Tax (GST):</td>
-                      <td style={{ textAlign: "right" }}>
+                      <td colSpan="6" style={{ textAlign: "right" }}>
+                        Total Tax (GST):
+                      </td>
+                      <td colSpan="1" style={{ textAlign: "right" }}>
                         ₹
                         {parseFloat(taxTotal).toLocaleString("en-IN", {
                           minimumFractionDigits: 2,
@@ -1352,8 +1357,10 @@ const RequestDetails = ({ user }) => {
                       <td colSpan="4"></td>
                     </tr>
                     <tr style={{ fontWeight: "bold" }}>
-                      <td colSpan="6">Grand Total (Price + GST):</td>
-                      <td style={{ textAlign: "right" }}>
+                      <td colSpan="6" style={{ textAlign: "right" }}>
+                        Grand Total (Price + GST):
+                      </td>
+                      <td colSpan="1" style={{ textAlign: "right" }}>
                         ₹
                         {parseFloat(grandTotal).toLocaleString("en-IN", {
                           minimumFractionDigits: 2,
@@ -1511,7 +1518,7 @@ const RequestDetails = ({ user }) => {
               <div className="popup">
                 <div className="serial-modal">
                   <div>
-                    <h3 >Select Serial Numbers</h3>
+                    <h3>Select Serial Numbers</h3>
                     <button
                       className="x-button"
                       onClick={() => setShowSerialPopup(false)}

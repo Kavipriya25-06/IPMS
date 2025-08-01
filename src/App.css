@@ -2639,50 +2639,61 @@ main {
   margin: 0;
 }
 
-.serial-list {
-  display: flex;
-  flex-wrap: wrap; 
-  justify-content: center; 
-  align-items: center; 
-  list-style-type: none;
-  padding: 0;
+.serial-modal {
   margin: 0;
+}
+
+.serial-modal > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.x-button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.serial-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 15px 0;
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px;
-  height: 10vh; 
-  max-height: 30vh;
+}
+
+.serial-list li {
+  margin: 0;
 }
 
 .serial-button {
-  padding: 10px 20px;
-  border: none;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: #f5f5f5;
   cursor: pointer;
-  background: #f0f0f0;
-  border-radius: 4px;
-}
-
-.serial-button:hover{
-  background-color: #dad8d8 !important;
 }
 
 .serial-button.selected {
+  background-color: #969696;
   color: white;
-  background-color: #a09e9e;
 }
 
 .modal-actions {
-  display: flex;
-  justify-content: flex-end;
+  text-align: right;
 }
 
 .confirm-button {
-  padding: 10px 20px;
-  font-size: 14px;
-  border-radius: 5px;
-  border: none;
-  cursor: pointer;
-  background-color: #f58720;
+  padding: 8px 16px;
+  background-color: green;
   color: white;
-  transition: background-color 0.3s ease;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
 }
 
 .confirm-button.disabled {
@@ -4510,24 +4521,23 @@ ul {
   width: fit-content;
   transition: width 0.3s ease;
   overflow-x: auto;
-   position: relative;
+  position: relative;
 }
 
-.popups h3{
+.popups h3 {
   text-align: center;
 }
 
 .popups .x-button {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    font-size: 1.5rem;
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: #333;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 1.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #333;
 }
-
 
 .popups input,
 .popups select {
@@ -4552,7 +4562,7 @@ ul {
   justify-content: space-between;
   align-items: center;
   font-size: 14px;
-  width: 150px; 
+  width: 150px;
   background-color: white;
   border-radius: 6px;
 }
@@ -4593,8 +4603,3 @@ ul {
   background-color: #f58720;
   border-color: #f58720;
 }
-  
-
-
-
-
