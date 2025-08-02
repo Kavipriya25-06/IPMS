@@ -101,7 +101,7 @@ export default function Sidebar() {
 
   return (
     <div className="layout-container">
-      <aside className={`sidebar ${isMenuOpen ? "open" : "closed"}`}>
+      <aside className={`sidebar ${isMenuOpen ? "open" : "closed"}`} style={{  zIndex: 10 }}>
         <div className="hamburger-menu">
           <button
             className={`hamburger-button ${

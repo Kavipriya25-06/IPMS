@@ -188,6 +188,66 @@ const Inwardlist = () => {
     <div>
       <div className="header">
         <h2>Inward</h2>
+<<<<<<< HEAD
+=======
+
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          {filterDate && (
+            <div
+              style={{
+                fontSize: "14px",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              🗓️ <span>{format(filterDate, "dd-MM-yyyy")}</span>
+            </div>
+          )}
+          <div style={{ position: "relative", display: "inline-block" }}>
+            <button
+              style={{
+                cursor: "pointer",
+                background: "transparent",
+                border: "none",
+                padding: "0",
+              }}
+              title="Filter by Date"
+              onClick={() => setShowDateFilter((prev) => !prev)}
+            >
+              <img
+                src={Filter}
+                alt="Filter"
+                style={{ width: "25px", height: "30px" }}
+              />
+            </button>
+
+            <DatePicker
+              selected={filterDate}
+              onChange={(date) => {
+                setFilterDate(date);
+                setShowDateFilter(false); // Close calendar on select
+              }}
+              open={showDateFilter}
+              onClickOutside={() => setShowDateFilter(false)} // Close when clicked outside
+              dateFormat="dd-MM-yyyy"
+              showMonthDropdown
+              showYearDropdown
+              dropdownMode="select"
+              popperPlacement="bottom-start"
+              wrapperClassName="date-filter-datepicker"
+              customInput={<></>} // prevent showing an input at all
+            />
+          </div>
+
+          <button
+            className="generate-report-btn"
+            onClick={generateInwardReport}
+          >
+            Generate Report
+          </button>
+        </div>
+>>>>>>> c74195da9402685f2c943cffccafacacfcc27d0a
       </div>
 
       <div className="table-container">
@@ -209,6 +269,7 @@ const Inwardlist = () => {
             </tr>
           </thead>
           <tbody>
+<<<<<<< HEAD
             {filteredData.map((item, index) => (
               <tr key={index}>
                 <td>{getNestedValue(item, "po_master.PO_id")}</td>
@@ -231,6 +292,88 @@ const Inwardlist = () => {
                       onChange={(e) => setInvoiceNumberInput(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
+=======
+            
+            {filteredByDate.length > 0 ? (
+              filteredByDate.map((item, index) => (
+                <tr key={index}>
+                  <td>{getNestedValue(item, "po_master.PO_id")}</td>
+                  <td>{getNestedValue(item, "po_master.cart.component_id")}</td>
+                  <td>
+                    {getNestedValue(
+                      item,
+                      "po_master.cart.component_specification"
+                    )}
+                  </td>
+                  <td>{getNestedValue(item, "po_master.cart.vendor_name")}</td>
+                  <td>
+                    {item.date
+                      ? format(new Date(item.date), "dd-MM-yyyy")
+                      : "-"}
+                  </td>
+                  <td>
+                    {editingIndex === index ? (
+                      <input
+                        type="text"
+                        value={invoiceNumberInput}
+                        onChange={(e) => setInvoiceNumberInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            updateInvoiceForPO(
+                              item.po_master.PO_id,
+                              invoiceNumberInput,
+                              invoiceDateInput
+                            );
+                            setEditingIndex(null);
+                          }
+                        }}
+                        placeholder="Enter Invoice No"
+                        style={{
+                          width: "100%",
+                          border: "1px solid #ccc",
+                          borderRadius: "3px",
+                          padding: "3px",
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
+                        <span style={{ flex: 1 }}>
+                          {item.invoice_number || "-"}
+                        </span>
+                        <FaEdit
+                          onClick={() => {
+                            setEditingIndex(index);
+                            setInvoiceNumberInput(item.invoice_number || "");
+                            setInvoiceDateInput(
+                              item.invoice_date
+                                ? item.invoice_date.slice(0, 10)
+                                : ""
+                            );
+                          }}
+                          style={{ marginLeft: "8px", cursor: "pointer" }}
+                        />
+                      </div>
+                    )}
+                  </td>
+
+                  <td style={{ minWidth: "130px" }}>
+                    {editingIndex === index ? (
+                      <DatePicker
+                        selected={
+                          invoiceDateInput ? new Date(invoiceDateInput) : null
+                        }
+                        onChange={(date) => {
+                          const formattedDate = date
+                            .toISOString()
+                            .split("T")[0]; // Format to yyyy-MM-dd
+                          setInvoiceDateInput(formattedDate);
+>>>>>>> c74195da9402685f2c943cffccafacacfcc27d0a
                           updateInvoiceForPO(
                             item.po_master.PO_id,
                             invoiceNumberInput,

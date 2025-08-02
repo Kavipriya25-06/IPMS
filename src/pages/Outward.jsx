@@ -190,16 +190,15 @@ const Outward = () => {
       "Project",
       "Type of Outward",
       "Remarks",
-      "Attachements",
+      "Attachments",
     ],
     Event: [
       "Out Date",
       "Time",
-      "Invoice Number",
+      "Gate Pass",
       "Event Name",
       "Project",
       "Type of Outward",
-      "No. of Components",
       "Return Date",
       "Remarks",
     ],
@@ -332,7 +331,7 @@ const Outward = () => {
   };
 
   const handleSalesSubmit = async () => {
-    if (!serviceForm.typeOfOutward) {
+    if (!salesForm.typeOfOutward) {
       showWarningToast("Please select Type of Outward.");
       return;
     }
@@ -382,7 +381,7 @@ const Outward = () => {
   };
 
   const handleEventSubmit = async () => {
-    if (!serviceForm.typeOfOutward) {
+    if (!eventForm.typeOfOutward) {
       showWarningToast("Please select Type of Outward.");
       return;
     }
@@ -390,6 +389,7 @@ const Outward = () => {
       category: "Event",
       date: eventForm.outDate?.toISOString().split("T")[0],
       time: eventForm.time,
+      invoice_no: eventForm.invoice,
       event_name: eventForm.eventName,
       project: eventForm.project,
       type_of_outward: eventForm.typeOfOutward,
@@ -521,7 +521,6 @@ const Outward = () => {
               row[header] = item.event_name || "N/A";
               break;
             case "Quantity":
-            case "No. of Components":
               row[header] = item.quantity ?? "N/A";
               break;
             case "Project":
@@ -878,7 +877,6 @@ const Outward = () => {
                       <td>{row.event_name || "-"}</td>
                       <td>{getProjectName(row.project) || "-"}</td>
                       <td>{row.type_of_outward || "-"}</td>
-                      <td>{row.quantity || "-"}</td>
                       <td>
                         {row.return_date
                           ? format(new Date(row.return_date), "dd-MM-yyyy")
@@ -1024,6 +1022,15 @@ const Outward = () => {
                 value={eventForm.time}
                 readOnly
                 placeholder="Time"
+              />
+              <label htmlFor="">Invoice/Gate Pass</label>
+              <input
+                type="text"
+                name="invoice"
+                value={eventForm.invoice}
+                onChange={handleEventChange}
+                required
+                placeholder="gate pass"
               />
               <label>Event Name</label>
               <input

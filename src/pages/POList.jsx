@@ -520,38 +520,42 @@ const POOrderList = ({ user }) => {
                       : " 🔽"
                     : ""}
                 </th>
-                <th
-                  className="date-filter-inline"
-                  style={{ width: "100%", height: "26px" }}
-                >
-                  {!dateFilter && <span>Date</span>}
-                  <DatePicker
-                    selected={dateFilter}
-                    onChange={(date) => setDateFilter(date)}
-                    ref={datePickerRef}
-                    dateFormat="yyyy-MM-dd"
-                    customInput={<div />}
-                    popperPlacement="bottom-end"
-                    showMonthDropdown
-                    showYearDropdown
-                    dropdownMode="select"
-                  />
-
-                  {dateFilter && (
-                    <span style={{ fontSize: "16px", color: "White" }}>
-                      {format(dateFilter, "dd-MM-yyyy")}
-                    </span>
-                  )}
-
-                  <FaCalendarAlt
+                <th style={{ cursor: "pointer" }}>
+                  <div
                     style={{
-                      fontSize: "14px",
-                      cursor: "pointer",
-                      color: "#333",
-                      marginTop: "1px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
                     }}
-                    onClick={() => datePickerRef.current.setOpen(true)}
-                  />
+                  >
+                    {!dateFilter && <span style={{}}>Date</span>}
+                    <DatePicker
+                      selected={dateFilter}
+                      onChange={(date) => setDateFilter(date)}
+                      ref={datePickerRef}
+                      dateFormat="yyyy-MM-dd"
+                      customInput={<div />}
+                      popperPlacement="bottom-end"
+                      showMonthDropdown
+                      showYearDropdown
+                      dropdownMode="select"
+                    />
+
+                    {dateFilter && (
+                      <span style={{ fontSize: "16px", color: "White" }}>
+                        {format(dateFilter, "dd-MM-yyyy")}
+                      </span>
+                    )}
+
+                    <FaCalendarAlt
+                      style={{
+                        fontSize: "14px",
+                        cursor: "pointer",
+                        color: "#333",
+                      }}
+                      onClick={() => datePickerRef.current.setOpen(true)}
+                    />
+                  </div>
                 </th>
 
                 {/* {(isAdmin || isProcurement) && <th>Actions</th>} */}
