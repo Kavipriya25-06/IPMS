@@ -297,7 +297,6 @@ const POOrderMaster = ({ user }) => {
     }
   }, [poDetails]);
 
-
   useEffect(() => {
     if (poDetails.length > 0) {
       fetchOrderStatus();
@@ -1132,7 +1131,6 @@ const POOrderMaster = ({ user }) => {
           <div className="popup">
             <h3>Send Email for PO ID: {poId}</h3>
             <form style={{ marginTop: "5px" }}>
-
               <div
                 style={{
                   padding: 5,
@@ -1275,383 +1273,392 @@ const POOrderMaster = ({ user }) => {
           </div>
         </div>
       )}
+      <div className="po-order-wrapper">
+        {/* All your existing JSX including both tables */}
 
-      {orderedItems.length > 0 && (
-        <div className="table-container">
-          <h3 style={{ marginTop: "30px" }}>Ordered Items</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Component ID</th>
-                <th>Specification</th>
-                <th>Ordered Qty</th>
-                <th>Ordered Date</th>
-                <th>Shipping Qty</th>
-                <th>Shipping Date</th>
-                <th>Received Qty</th>
-                <th>Received Date</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orderedItems.map((item, index) => {
-                const isShippingSaved =
-                  item.shipped_quantity && item.shipped_date;
-                const isReceivedSaved =
-                  item.received_quantity && item.received_date;
-                const inwardEnabled = isReceivedSaved;
-                const isPOCancelled = poData?.status === "Cancelled";
+        {orderedItems.length > 0 && (
+          <div className="table-container">
+            <h3 style={{ marginTop: "30px" }}>Ordered Items</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Component ID</th>
+                  <th>Specification</th>
+                  <th>Ordered Qty</th>
+                  <th>Ordered Date</th>
+                  <th>Shipping Qty</th>
+                  <th>Shipping Date</th>
+                  <th>Received Qty</th>
+                  <th>Received Date</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orderedItems.map((item, index) => {
+                  const isShippingSaved =
+                    item.shipped_quantity && item.shipped_date;
+                  const isReceivedSaved =
+                    item.received_quantity && item.received_date;
+                  const inwardEnabled = isReceivedSaved;
+                  const isPOCancelled = poData?.status === "Cancelled";
 
-                return (
-                  <tr key={index}>
-                    <td>{item.component_id}</td>
-                    <td>{item.specification}</td>
-                    <td>{item.quantity}</td>
-                    <td>
-                      {item.order_placed_date_time &&
-                        format(
-                          new Date(item.order_placed_date_time),
-                          "dd-MM-yyyy"
-                        )}
-                    </td>
+                  return (
+                    <tr key={index}>
+                      <td>{item.component_id}</td>
+                      <td>{item.specification}</td>
+                      <td>{item.quantity}</td>
+                      <td>
+                        {item.order_placed_date_time &&
+                          format(
+                            new Date(item.order_placed_date_time),
+                            "dd-MM-yyyy"
+                          )}
+                      </td>
 
-                    {/* Shipping Quantity */}
-                    <td>
-                      <input
-                        type="number"
-                        name="shipping_qty"
-                        value={
-                          item.shipping_qty !== undefined
-                            ? item.shipping_qty
-                            : item.shipped_quantity !== undefined
-                            ? item.shipped_quantity
-                            : ""
-                        }
-                        className={
-                          !item.quantity ||
-                          !item.order_placed_date_time ||
-                          isPOCancelled ||
-                          isShippingSaved
-                            ? "input-disabled"
-                            : "input-enabled"
-                        }
-                        disabled={
-                          !item.quantity ||
-                          !item.order_placed_date_time ||
-                          isShippingSaved ||
-                          isPOCancelled
-                        }
-                        onChange={(e) => handleChange(e, index)}
-                        onBlur={(e) => {
-                          const { name, value } = e.target;
-                          const numericValue = Number(value);
-
-                          if (numericValue > item.quantity) {
-                            showWarningToast(
-                              "Shipped quantity cannot exceed ordered quantity."
-                            );
-                            setTimeout(() => e.target.focus(), 0);
-                            return;
+                      {/* Shipping Quantity */}
+                      <td>
+                        <input
+                          type="number"
+                          name="shipping_qty"
+                          value={
+                            item.shipping_qty !== undefined
+                              ? item.shipping_qty
+                              : item.shipped_quantity !== undefined
+                              ? item.shipped_quantity
+                              : ""
                           }
-
-                          if (value) {
-                            saveDeliveryUpdate(index, name, value); // only save qty here
+                          className={
+                            !item.quantity ||
+                            !item.order_placed_date_time ||
+                            isPOCancelled ||
+                            isShippingSaved
+                              ? "input-disabled"
+                              : "input-enabled"
                           }
-                        }}
-                      />
-                    </td>
-
-                    {/* Shipping Date */}
-                    <td>
-                      <div className="date-input-container">
-                        <DatePicker
-                          selected={
-                            item.shipping_date
-                              ? new Date(item.shipping_date)
-                              : item.shipped_date
-                              ? new Date(item.shipped_date)
-                              : null
+                          disabled={
+                            !item.quantity ||
+                            !item.order_placed_date_time ||
+                            isShippingSaved ||
+                            isPOCancelled
                           }
-                          onChange={(date) => {
-                            const now = new Date();
-                            const mergedDateTime = new Date(
-                              date.getFullYear(),
-                              date.getMonth(),
-                              date.getDate(),
-                              now.getHours(),
-                              now.getMinutes(),
-                              now.getSeconds()
-                            );
-                            const isoString = mergedDateTime.toISOString();
+                          onChange={(e) => handleChange(e, index)}
+                          onBlur={(e) => {
+                            const { name, value } = e.target;
+                            const numericValue = Number(value);
 
-                            // Fix: Compare only date parts
-                            const orderedDateTime = item.order_placed_date_time
-                              ? new Date(item.order_placed_date_time)
-                              : null;
+                            if (numericValue > item.quantity) {
+                              showWarningToast(
+                                "Shipped quantity cannot exceed ordered quantity."
+                              );
+                              setTimeout(() => e.target.focus(), 0);
+                              return;
+                            }
 
-                            if (orderedDateTime) {
-                              const shippingDateOnly = new Date(
+                            if (value) {
+                              saveDeliveryUpdate(index, name, value); // only save qty here
+                            }
+                          }}
+                        />
+                      </td>
+
+                      {/* Shipping Date */}
+                      <td>
+                        <div className="date-input-container">
+                          <DatePicker
+                            selected={
+                              item.shipping_date
+                                ? new Date(item.shipping_date)
+                                : item.shipped_date
+                                ? new Date(item.shipped_date)
+                                : null
+                            }
+                            onChange={(date) => {
+                              const now = new Date();
+                              const mergedDateTime = new Date(
                                 date.getFullYear(),
                                 date.getMonth(),
-                                date.getDate()
+                                date.getDate(),
+                                now.getHours(),
+                                now.getMinutes(),
+                                now.getSeconds()
                               );
-                              const orderedDateOnly = new Date(
-                                orderedDateTime.getFullYear(),
-                                orderedDateTime.getMonth(),
-                                orderedDateTime.getDate()
-                              );
+                              const isoString = mergedDateTime.toISOString();
 
-                              if (shippingDateOnly < orderedDateOnly) {
-                                showErrorToast(
-                                  "Shipping date cannot be before ordered date"
+                              // Fix: Compare only date parts
+                              const orderedDateTime =
+                                item.order_placed_date_time
+                                  ? new Date(item.order_placed_date_time)
+                                  : null;
+
+                              if (orderedDateTime) {
+                                const shippingDateOnly = new Date(
+                                  date.getFullYear(),
+                                  date.getMonth(),
+                                  date.getDate()
                                 );
-                                return;
+                                const orderedDateOnly = new Date(
+                                  orderedDateTime.getFullYear(),
+                                  orderedDateTime.getMonth(),
+                                  orderedDateTime.getDate()
+                                );
+
+                                if (shippingDateOnly < orderedDateOnly) {
+                                  showErrorToast(
+                                    "Shipping date cannot be before ordered date"
+                                  );
+                                  return;
+                                }
                               }
-                            }
 
-                            handleChange(
-                              {
-                                target: {
-                                  name: "shipping_date",
-                                  value: isoString,
+                              handleChange(
+                                {
+                                  target: {
+                                    name: "shipping_date",
+                                    value: isoString,
+                                  },
                                 },
-                              },
-                              index
-                            );
-                            saveDeliveryUpdate(
-                              index,
-                              "shipping_date",
-                              isoString
-                            );
-                          }}
-                          dateFormat="dd-MM-yyyy"
-                          placeholderText="dd-mm-yyyy"
-                          className="input2"
-                          showMonthDropdown
-                          showYearDropdown
-                          dropdownMode="select"
-                          popperPlacement="bottom"
-                          portalId="datepicker-portal-target"
-                          disabled={isShippingSaved || isPOCancelled}
-                          customInput={<CustomDateInput item={item} />}
-                          minDate={
-                            item.order_placed_date_time
-                              ? new Date(item.order_placed_date_time)
-                              : null
-                          }
-                        />
-
-                        {/* Hide the calendar icon when date is saved */}
-                        {!isShippingSaved && (
-                          <i className="fas fa-calendar-alt calendar-icons"></i>
-                        )}
-                      </div>
-                    </td>
-
-                    {/* Received Quantity */}
-                    <td>
-                      <input
-                        type="number"
-                        name="received_qty"
-                        value={
-                          item.received_qty !== undefined
-                            ? item.received_qty
-                            : item.received_quantity !== undefined
-                            ? item.received_quantity
-                            : item.shipping_qty !== undefined
-                            ? item.shipping_qty
-                            : item.shipped_quantity || 0
-                        }
-                        className="input-disabled"
-                        disabled
-                        readOnly
-                      />
-                    </td>
-
-                    {/* Received Date */}
-                    <td>
-                      <div className="date-input-container">
-                        <DatePicker
-                          selected={
-                            item.received_date
-                              ? new Date(item.received_date)
-                              : null
-                          }
-                          onChange={(date) => {
-                            const now = new Date();
-                            const mergedDateTime = new Date(
-                              date.getFullYear(),
-                              date.getMonth(),
-                              date.getDate(),
-                              now.getHours(),
-                              now.getMinutes(),
-                              now.getSeconds()
-                            );
-
-                            const isoString = mergedDateTime.toISOString();
-
-                            // Compare with shipping date (if exists)
-                            const shippingDate =
-                              item.shipping_date || item.shipped_date;
-                            if (
-                              shippingDate &&
-                              new Date(mergedDateTime) < new Date(shippingDate)
-                            ) {
-                              showWarningToast(
-                                "Received date must be after shipping date."
+                                index
                               );
-                              return; // prevent saving
+                              saveDeliveryUpdate(
+                                index,
+                                "shipping_date",
+                                isoString
+                              );
+                            }}
+                            dateFormat="dd-MM-yyyy"
+                            placeholderText="dd-mm-yyyy"
+                            className="input2"
+                            showMonthDropdown
+                            showYearDropdown
+                            dropdownMode="select"
+                            popperPlacement="bottom"
+                            portalId="datepicker-portal-target"
+                            disabled={isShippingSaved || isPOCancelled}
+                            customInput={<CustomDateInput item={item} />}
+                            minDate={
+                              item.order_placed_date_time
+                                ? new Date(item.order_placed_date_time)
+                                : null
                             }
+                          />
 
-                            //Save only if valid
-                            handleChange(
-                              {
-                                target: {
-                                  name: "received_date",
-                                  value: isoString,
-                                },
-                              },
-                              index
-                            );
-                            saveDeliveryUpdate(
-                              index,
-                              "received_date",
-                              isoString
-                            );
-                          }}
-                          dateFormat="dd-MM-yyyy"
-                          placeholderText="dd-mm-yyyy"
-                          className="input2"
-                          showMonthDropdown
-                          showYearDropdown
-                          dropdownMode="select"
-                          popperPlacement="bottom"
-                          portalId="datepicker-portal-target"
-                          disabled={
-                            isReceivedSaved || !isShippingSaved || isPOCancelled
+                          {/* Hide the calendar icon when date is saved */}
+                          {!isShippingSaved && (
+                            <i className="fas fa-calendar-alt calendar-icons"></i>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Received Quantity */}
+                      <td>
+                        <input
+                          type="number"
+                          name="received_qty"
+                          value={
+                            item.received_qty !== undefined
+                              ? item.received_qty
+                              : item.received_quantity !== undefined
+                              ? item.received_quantity
+                              : item.shipping_qty !== undefined
+                              ? item.shipping_qty
+                              : item.shipped_quantity || 0
                           }
-                          customInput={<CustomReceivedDateInput item={item} />}
-                          minDate={
-                            item.shipping_date || item.shipped_date
-                              ? new Date(
-                                  item.shipping_date || item.shipped_date
-                                )
-                              : null
-                          }
+                          className="input-disabled"
+                          disabled
+                          readOnly
                         />
+                      </td>
 
-                        {/*Hide icon if date is finalized */}
-                        {!isReceivedSaved && (
-                          <i className="fas fa-calendar-alt calendar-icons"></i>
-                        )}
-                      </div>
+                      {/* Received Date */}
+                      <td>
+                        <div className="date-input-container">
+                          <DatePicker
+                            selected={
+                              item.received_date
+                                ? new Date(item.received_date)
+                                : null
+                            }
+                            onChange={(date) => {
+                              const now = new Date();
+                              const mergedDateTime = new Date(
+                                date.getFullYear(),
+                                date.getMonth(),
+                                date.getDate(),
+                                now.getHours(),
+                                now.getMinutes(),
+                                now.getSeconds()
+                              );
+
+                              const isoString = mergedDateTime.toISOString();
+
+                              // Compare with shipping date (if exists)
+                              const shippingDate =
+                                item.shipping_date || item.shipped_date;
+                              if (
+                                shippingDate &&
+                                new Date(mergedDateTime) <
+                                  new Date(shippingDate)
+                              ) {
+                                showWarningToast(
+                                  "Received date must be after shipping date."
+                                );
+                                return; // prevent saving
+                              }
+
+                              //Save only if valid
+                              handleChange(
+                                {
+                                  target: {
+                                    name: "received_date",
+                                    value: isoString,
+                                  },
+                                },
+                                index
+                              );
+                              saveDeliveryUpdate(
+                                index,
+                                "received_date",
+                                isoString
+                              );
+                            }}
+                            dateFormat="dd-MM-yyyy"
+                            placeholderText="dd-mm-yyyy"
+                            className="input2"
+                            showMonthDropdown
+                            showYearDropdown
+                            dropdownMode="select"
+                            popperPlacement="bottom"
+                            portalId="datepicker-portal-target"
+                            disabled={
+                              isReceivedSaved ||
+                              !isShippingSaved ||
+                              isPOCancelled
+                            }
+                            customInput={
+                              <CustomReceivedDateInput item={item} />
+                            }
+                            minDate={
+                              item.shipping_date || item.shipped_date
+                                ? new Date(
+                                    item.shipping_date || item.shipped_date
+                                  )
+                                : null
+                            }
+                          />
+
+                          {/*Hide icon if date is finalized */}
+                          {!isReceivedSaved && (
+                            <i className="fas fa-calendar-alt calendar-icons"></i>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Inward Button */}
+                      <td>
+                        <button
+                          onClick={() => handleInward(item)}
+                          disabled={
+                            item.inward ||
+                            !item.received_date ||
+                            !item.received_quantity ||
+                            item.received_quantity <= 0 ||
+                            isPOCancelled
+                          }
+                          className={`edit-btn ${
+                            item.inward ||
+                            !item.received_date ||
+                            !item.received_quantity ||
+                            isPOCancelled ||
+                            item.received_quantity <= 0
+                              ? "disabled-btn"
+                              : ""
+                          }`}
+                        >
+                          {item.inward ? "Inwarded" : "Inward"}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {pendingItems.length > 0 && (
+          <div className="table-container" style={{ marginTop: "40px" }}>
+            <h3>Pending Items for PO</h3>
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                marginTop: "10px",
+                border: "1px solid #ddd",
+              }}
+            >
+              <thead>
+                <tr style={{ backgroundColor: "#fff7e6" }}>
+                  <th style={{ border: "1px solid #ddd", padding: "8px" }}>
+                    Component ID
+                  </th>
+                  <th style={{ border: "1px solid #ddd", padding: "8px" }}>
+                    Specification
+                  </th>
+                  <th style={{ border: "1px solid #ddd", padding: "8px" }}>
+                    Remaining Qty
+                  </th>
+                  <th style={{ border: "1px solid #ddd", padding: "8px" }}>
+                    Shipped Qty
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingItems.map((item, index) => (
+                  <tr key={index}>
+                    <td style={{ border: "1px solid #ddd", padding: "8px" }}>
+                      {item.component_id}
                     </td>
+                    <td style={{ border: "1px solid #ddd", padding: "8px" }}>
+                      {item.specification}
+                    </td>
+                    <td style={{ border: "1px solid #ddd", padding: "8px" }}>
+                      {item.pending_quantity}
+                    </td>
+                    <td
+                      style={{
+                        border: "1px solid #ddd",
+                        padding: "8px",
+                        cursor: isPOCancelled ? "not-allowed" : "pointer",
+                        color: isPOCancelled ? "gray" : "blue",
+                        textDecoration: isPOCancelled ? "none" : "underline",
+                        opacity: isPOCancelled ? 0.6 : 1,
+                      }}
+                      onClick={() => {
+                        if (isPOCancelled) return; // 🚫 Prevent action if cancelled
 
-                    {/* Inward Button */}
-                    <td>
-                      <button
-                        onClick={() => handleInward(item)}
-                        disabled={
-                          item.inward ||
-                          !item.received_date ||
-                          !item.received_quantity ||
-                          item.received_quantity <= 0 ||
-                          isPOCancelled
-                        }
-                        className={`edit-btn ${
-                          item.inward ||
-                          !item.received_date ||
-                          !item.received_quantity ||
-                          isPOCancelled ||
-                          item.received_quantity <= 0
-                            ? "disabled-btn"
-                            : ""
-                        }`}
-                      >
-                        {item.inward ? "Inwarded" : "Inward"}
-                      </button>
+                        setSelectedPendingItem((prev) => ({
+                          ...item,
+                          po_master:
+                            typeof item.po_master === "object"
+                              ? item.po_master
+                              : { id: item.po_master },
+                        }));
+                        setShippedInput({
+                          quantity: "",
+                          date: "", // fresh input
+                        });
+                        setShowShippedPopup(true);
+                      }}
+                    >
+                      {item.pending_quantity}
                     </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {pendingItems.length > 0 && (
-        <div style={{ marginTop: "40px" }}>
-          <h3>Pending Items for PO</h3>
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              marginTop: "10px",
-              border: "1px solid #ddd",
-            }}
-          >
-            <thead>
-              <tr style={{ backgroundColor: "#fff7e6" }}>
-                <th style={{ border: "1px solid #ddd", padding: "8px" }}>
-                  Component ID
-                </th>
-                <th style={{ border: "1px solid #ddd", padding: "8px" }}>
-                  Specification
-                </th>
-                <th style={{ border: "1px solid #ddd", padding: "8px" }}>
-                  Remaining Qty
-                </th>
-                <th style={{ border: "1px solid #ddd", padding: "8px" }}>
-                  Shipped Qty
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {pendingItems.map((item, index) => (
-                <tr key={index}>
-                  <td style={{ border: "1px solid #ddd", padding: "8px" }}>
-                    {item.component_id}
-                  </td>
-                  <td style={{ border: "1px solid #ddd", padding: "8px" }}>
-                    {item.specification}
-                  </td>
-                  <td style={{ border: "1px solid #ddd", padding: "8px" }}>
-                    {item.pending_quantity}
-                  </td>
-                  <td
-                    style={{
-                      border: "1px solid #ddd",
-                      padding: "8px",
-                      cursor: isPOCancelled ? "not-allowed" : "pointer",
-                      color: isPOCancelled ? "gray" : "blue",
-                      textDecoration: isPOCancelled ? "none" : "underline",
-                      opacity: isPOCancelled ? 0.6 : 1,
-                    }}
-                    onClick={() => {
-                      if (isPOCancelled) return; // 🚫 Prevent action if cancelled
-
-                      setSelectedPendingItem((prev) => ({
-                        ...item,
-                        po_master:
-                          typeof item.po_master === "object"
-                            ? item.po_master
-                            : { id: item.po_master },
-                      }));
-                      setShippedInput({
-                        quantity: "",
-                        date: "", // fresh input
-                      });
-                      setShowShippedPopup(true);
-                    }}
-                  >
-                    {item.pending_quantity}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
       {showShippedPopup && (
         <div className="modal-overlay">
           <div className="popup">
