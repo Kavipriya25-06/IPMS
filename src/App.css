@@ -2021,7 +2021,7 @@ table td {
   position: fixed; /* Fix sidebar position */
   top: 90px; /* Leave 20px space from top */
   left: 20px; /* Leave 20px space from left */
-  bottom: 10px; /* Leave 20px space from bottom */
+  bottom: 70px; /* Leave 20px space from bottom */
   width: 200px !important; /* Fixed width */
   background-color: rgb(244, 243, 243) !important;
   color: black;
