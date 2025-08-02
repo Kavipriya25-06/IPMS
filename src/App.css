@@ -4674,8 +4674,6 @@ ul {
 }
 
 .po-order-wrapper {
-  min-height: calc(100vh - 130px); /* header + footer space */
-  overflow-y: auto;
   padding-bottom: 40px; /* avoid touching footer */
   border-radius: 5px;
 }
