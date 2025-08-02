@@ -4674,6 +4674,6 @@ ul {
 }
 
 .po-order-wrapper {
-  padding-bottom: 40px;
+  padding-bottom: 40px; /* avoid touching footer */
   border-radius: 5px;
 }
