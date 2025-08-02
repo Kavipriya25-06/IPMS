@@ -670,6 +670,31 @@ const Inventory = () => {
     }
   };
 
+  const handleChangeStatusToAvailable = async (serialNumber) => {
+    try {
+      const response = await fetch(
+        `
+        ${config.apiBaseURL}/inventory/${serialNumber}/`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "Available" }),
+        }
+      );
+
+      if (response.ok) {
+        showSuccessToast("Serial ${serialNumber} moved to Available");
+        // Refresh inventory after update
+        fetchInventoryData("Repair");
+      } else {
+        showErrorToast("Failed to update status");
+      }
+    } catch (error) {
+      console.error("Error changing status:", error);
+      showErrorToast("Network error while updating status");
+    }
+  };
+
   return (
     <div className="inventory-container">
       <div className="header">
@@ -1248,7 +1273,22 @@ const Inventory = () => {
                                 maximumFractionDigits: 2,
                               })}
                             </td>
-                            <td>{row.status}</td>
+                            <td>
+                              {row.status}
+                              {statusFilter === "Repair" &&
+                                row.status === "Repair" && (
+                                  <button
+                                    className="make-available-btn"
+                                    onClick={() =>
+                                      handleChangeStatusToAvailable(
+                                        row.serial_number
+                                      )
+                                    }
+                                  >
+                                    Make Available
+                                  </button>
+                                )}
+                            </td>{" "}
                           </tr>
                         ))}
                     </React.Fragment>
@@ -1272,7 +1312,7 @@ const Inventory = () => {
                         <strong>{formatDate(toDate)}</strong>.
                       </>
                     ) : (
-                      "No inventory data eavailable."
+                      "No inventory data available."
                     )}
                   </td>
                 </tr>
