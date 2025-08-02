@@ -2025,7 +2025,7 @@ table td {
   position: fixed; /* Fix sidebar position */
   top: 90px; /* Leave 20px space from top */
   left: 20px; /* Leave 20px space from left */
-  bottom: 10px; /* Leave 20px space from bottom */
+  bottom: 70px; /* Leave 20px space from bottom */
   width: 200px !important; /* Fixed width */
   background-color: rgb(244, 243, 243) !important;
   color: black;
@@ -4490,6 +4490,7 @@ ul {
   margin-top: 2px;
   border-radius: 5px;
   text-align: left;
+  color: #45a049;
 }
 
 .dropdown-option {
@@ -4511,18 +4512,6 @@ ul {
   align-items: flex-start;
   padding: 20px;
   overflow-x: auto;
-}
-
-.popups {
-  background: #fff;
-  border-radius: 8px;
-  padding: 20px;
-  max-width: 95vw; /* Ensure it doesn't overflow screen */
-  min-width: 600px;
-  width: fit-content;
-  transition: width 0.3s ease;
-  overflow-x: auto;
-  position: relative;
 }
 
 .popups h3 {
@@ -4638,8 +4627,6 @@ ul {
 .forgot-password:hover {
   color: #0056b3;
 }
-
-
 
 .landing-container {
   display: flex;
