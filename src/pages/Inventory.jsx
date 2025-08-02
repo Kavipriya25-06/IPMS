@@ -1259,31 +1259,18 @@ const Inventory = () => {
                                 maximumFractionDigits: 2,
                               })}
                             </td>
-                            <td>
-                              {row.status}
-                              {statusFilter === "Repair" &&
-                                row.status === "Repair" && (
-                                  <button
-                                    style={{
-                                      marginLeft: "10px",
-                                      padding: "4px 8px",
-                                      fontSize: "12px",
-                                      backgroundColor: "#4CAF50",
-                                      color: "#fff",
-                                      border: "none",
-                                      borderRadius: "4px",
-                                      cursor: "pointer",
-                                    }}
-                                    onClick={() =>
-                                      handleChangeStatusToAvailable(
-                                        row.serial_number
-                                      )
-                                    }
-                                  >
-                                    Make Available
-                                  </button>
-                                )}
-                            </td>
+                           <td>
+  {row.status}
+  {statusFilter === "Repair" && row.status === "Repair" && (
+    <button
+      className="make-available-btn"
+      onClick={() => handleChangeStatusToAvailable(row.serial_number)}
+    >
+      Make Available
+    </button>
+  )}
+</td>
+
                           </tr>
                         ))}
                     </React.Fragment>
