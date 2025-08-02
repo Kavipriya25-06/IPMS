@@ -297,6 +297,18 @@ const Inwardlist = () => {
         <h2>Inward</h2>
 
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          {filterDate && (
+            <div
+              style={{
+                fontSize: "14px",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              🗓️ <span>{format(filterDate, "dd-MM-yyyy")}</span>
+            </div>
+          )}
           <div style={{ position: "relative", display: "inline-block" }}>
             <button
               style={{
