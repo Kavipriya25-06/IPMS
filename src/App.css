@@ -10,6 +10,7 @@ body {
   text-align: left;
   padding: 20px;
   margin: 0;
+  
 }
 
 h1 {
@@ -192,6 +193,8 @@ table {
   overflow-x: auto;
   margin-bottom: 20px; /* Add space before footer */
 }
+
+
 
 /* Optional: if you want the table to take full width when possible */
 .table-container table {
@@ -4668,4 +4671,11 @@ ul {
 
 .landing-buttons button:hover {
   background-color: #f1ba86;
+}
+
+.po-order-wrapper {
+  min-height: calc(100vh - 130px); /* header + footer space */
+  overflow-y: auto;
+  padding-bottom: 40px; /* avoid touching footer */
+  border-radius: 5px;
 }

@@ -8,6 +8,7 @@ import {
   Routes,
   NavLink,
 } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import Components from "./pages/Components";
 import ComponentsDetails from "./pages/ComponentDetailsPage";
 import Inventory from "./pages/Inventory";
@@ -74,6 +75,7 @@ function App() {
             Logout
           </button>
         )} */}
+
         <header
           style={{
             position: "fixed",
@@ -306,7 +308,6 @@ function App() {
                     "Procurement",
                     "Inventory",
                     "Finance",
-                    
                   ]}
                 >
                   <Inventory />
@@ -656,24 +657,24 @@ function App() {
             element={<ResetPassword />}
           />
         </Routes>
-<footer
-  style={{
-    width: "100vw",
-    backgroundColor: "#f5f5f5",
-    padding: "17px 0px",
-    textAlign: "center",
-    fontSize: "14px",
-    color: "#666",
-    borderTop: "1px solid #ddd",
-    position: "fixed",
-    left: 0,
-    bottom: 0,
-    top: "auto",
-  }}
->
-  © {new Date().getFullYear()} IPMS Inventory Management System. All rights reserved.
-</footer>
-
+        <footer
+          style={{
+            width: "100vw",
+            backgroundColor: "#f5f5f5",
+            padding: "17px 0px",
+            textAlign: "center",
+            fontSize: "14px",
+            color: "#666",
+            borderTop: "1px solid #ddd",
+            position: "fixed",
+            left: 0,
+            bottom: 0,
+            top: "auto",
+          }}
+        >
+          © {new Date().getFullYear()} IPMS Inventory Management System. All
+          rights reserved.
+        </footer>
       </div>
     </Router>
   );
