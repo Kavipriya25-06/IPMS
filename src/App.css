@@ -2021,7 +2021,7 @@ table td {
   position: fixed; /* Fix sidebar position */
   top: 90px; /* Leave 20px space from top */
   left: 20px; /* Leave 20px space from left */
-  bottom: 70px; /* Leave 20px space from bottom */
+  bottom: 10px; /* Leave 20px space from bottom */
   width: 200px !important; /* Fixed width */
   background-color: rgb(244, 243, 243) !important;
   color: black;
@@ -4486,7 +4486,6 @@ ul {
   margin-top: 2px;
   border-radius: 5px;
   text-align: left;
-  color: #45a049;
 }
 
 .dropdown-option {
@@ -4508,6 +4507,18 @@ ul {
   align-items: flex-start;
   padding: 20px;
   overflow-x: auto;
+}
+
+.popups {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  max-width: 95vw; /* Ensure it doesn't overflow screen */
+  min-width: 600px;
+  width: fit-content;
+  transition: width 0.3s ease;
+  overflow-x: auto;
+  position: relative;
 }
 
 .popups h3 {
@@ -4589,42 +4600,6 @@ ul {
   background-color: #f58720;
   border-color: #f58720;
 }
-
-.make-available-btn {
-  margin-left: 10px;
-  padding: 4px 8px;
-  font-size: 12px;
-  background-color: #4caf50;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.make-available-btn:hover {
-  background-color: #86d189;
-}
-
-.forgot-password {
-  background-color: transparent;
-  color: #007bff;
-  border: none;
-  padding: 10px 0;
-  margin-right: -20px;
-  font-size: 14px;
-  cursor: pointer;
-  text-decoration: underline;
-  transition: color 0.2s ease-in-out;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.forgot-password:hover {
-  color: #0056b3;
-}
-
-
 
 .landing-container {
   display: flex;
