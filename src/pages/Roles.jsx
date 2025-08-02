@@ -223,6 +223,7 @@ const Roles = () => {
                   <td key={role}>
                     <input
                       type="radio"
+                      className="custom-radios"
                       name={`role-${user.id}`}
                       value={role}
                       checked={user.role === role}

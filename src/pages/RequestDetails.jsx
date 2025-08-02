@@ -473,7 +473,7 @@ const RequestDetails = ({ user }) => {
         return;
       }
 
-      // Create a payload to update the inventory status for each serial number
+      // PATCH each serial to make status = "Available"
       for (const serial of reservedSerials) {
         const inventoryPayload = {
           component_id: componentId,
@@ -483,12 +483,11 @@ const RequestDetails = ({ user }) => {
           category: componentData.category,
           specification: componentData.specification,
           UOM: componentData.UOM,
-          status: "Available", // Revert status to Available
+          status: "Available",
           price: componentData.price,
-          Request_id_assign: "", // Remove request assignment
+          Request_id_assign: "", // Clear the assigned request
         };
 
-        // Send a PUT request to update the inventory
         const inventoryResponse = await fetch(
           `${config.apiBaseURL}/inventory/${serial.serialNumber}/`,
           {
@@ -501,9 +500,6 @@ const RequestDetails = ({ user }) => {
         );
 
         if (!inventoryResponse.ok) {
-          console.error(
-            `Error unassigning serial number: ${serial.serialNumber}`
-          );
           showErrorToast(
             `Could not unassign the serial number ${serial.serialNumber}. Please try again.`
           );
@@ -511,46 +507,56 @@ const RequestDetails = ({ user }) => {
         }
       }
 
-      // Get the request details for this component
+      // Update frontend state: details
+      setDetails((prevDetails) =>
+        prevDetails.map((detail) =>
+          detail.id === requestDetailId
+            ? {
+                ...detail,
+                assign: false,
+                qty: reservedSerials.length, // restore qty
+              }
+            : detail
+        )
+      );
+
+      // Update frontend state: inventoryData
+      setInventoryData((prevInventory) => {
+        const updatedSerials = componentData.serialNumbers.map((sn) =>
+          sn.status === "Reserved" ? { ...sn, status: "Available" } : sn
+        );
+
+        return {
+          ...prevInventory,
+          [componentId]: {
+            ...componentData,
+            qty: componentData.qty + reservedSerials.length,
+            serialNumbers: updatedSerials,
+          },
+        };
+      });
+
+      // Optional: Update backend request master
       const selectedDetail = details.find(
         (detail) =>
           detail.component_id === componentId && detail.id === requestDetailId
       );
 
       if (!selectedDetail || !selectedDetail.id) {
-        showErrorToast(
-          "Error: Unable to find the request ID for the selected component."
-        );
+        showErrorToast("Error: Unable to find request detail for update.");
         return;
       }
 
-      const { id } = selectedDetail;
       const requestId = selectedDetail.request_id;
+      const updatedStatus = "Unassigned";
 
-      // Fetch current request master data
-      const requestMasterFetchResponse = await fetch(
-        `${config.apiBaseURL}/request_master/${requestId}/${requestDetailId}/`
-      );
-
-      if (!requestMasterFetchResponse.ok) {
-        console.error("Error fetching request master data.");
-        showErrorToast("Could not fetch the current quantity for the request.");
-        return;
-      }
-
-      const newQty = selectedDetail.qty + reservedSerials.length; // Update quantity by adding back unassigned serials
-      const updatedStatus =
-        newQty === selectedDetail.qty ? "Assigned" : "Partially Assigned";
-
-      // Update the request master
       const requestMasterPayload = {
-        assign: false, // Set assign to false as items are being dereserved
-        // qty: newQty, // Update qty to reflect available quantity
+        assign: false,
         status: updatedStatus,
       };
 
       const requestMasterResponse = await fetch(
-        `${config.apiBaseURL}/request_master/${requestId}/${id}/`,
+        `${config.apiBaseURL}/request_master/${requestId}/${requestDetailId}/`,
         {
           method: "PATCH",
           headers: {
@@ -562,10 +568,8 @@ const RequestDetails = ({ user }) => {
 
       if (!requestMasterResponse.ok) {
         const errorDetails = await requestMasterResponse.json();
+        showErrorToast("Error updating request master.");
         console.error("Request Master Error:", errorDetails);
-        showErrorToast(
-          "Error updating request master: " + JSON.stringify(errorDetails)
-        );
         return;
       }
 
@@ -684,6 +688,13 @@ const RequestDetails = ({ user }) => {
 
       const newRequiredQty = requiredQty - selectedSerialNumbers.length;
 
+      const newAvailableQty =
+        (details.find(
+          (d) =>
+            d.component_id === selectedComponent &&
+            d.id === selectedRequestDetailId
+        )?.available_qty || 0) - selectedSerialNumbers.length;
+
       const requestMasterPayload = {
         assign: newRequiredQty > 0 ? false : true, // Keep assign false if more are needed
         // qty: newRequiredQty, // Update qty to match remaining required quantity
@@ -714,11 +725,13 @@ const RequestDetails = ({ user }) => {
       // Update the frontend state
       setDetails((prevDetails) =>
         prevDetails.map((detail) =>
-          detail.component_id === selectedComponent
+          detail.component_id === selectedComponent &&
+          detail.id === selectedRequestDetailId
             ? {
                 ...detail,
                 assign: newRequiredQty > 0 ? false : true,
                 qty: newRequiredQty,
+                available_qty: newAvailableQty,
               }
             : detail
         )
@@ -726,18 +739,38 @@ const RequestDetails = ({ user }) => {
 
       setInventoryData((prevData) => {
         const currentComponentData = prevData[selectedComponent] || {};
-        const updatedSerialNumbers = currentComponentData.serialNumbers.filter(
-          (sn) => !selectedSerialNumbers.includes(sn.serialNumber)
+        const updatedSerialNumbers = currentComponentData.serialNumbers.map(
+          (sn) =>
+            selectedSerialNumbers.includes(sn.serialNumber)
+              ? { ...sn, status: "Reserved" }
+              : sn
         );
+
+        const newAvailableQty = updatedSerialNumbers.filter(
+          (sn) => sn.status === "Available"
+        ).length;
+
+        setInventoryData((prevData) => ({
+          ...prevData,
+          [selectedComponent]: {
+            ...currentComponentData,
+            serialNumbers: updatedSerialNumbers,
+            qty: newAvailableQty,
+          },
+        }));
 
         return {
           ...prevData,
           [selectedComponent]: {
             ...currentComponentData,
             serialNumbers: updatedSerialNumbers,
+            qty: newAvailableQty,
           },
         };
       });
+      showSuccessToast(
+        "Selected serial numbers have been reserved successfully."
+      );
     } catch (error) {
       console.error("Error confirming assignment:", error);
       showErrorToast("An error occurred while confirming assignment.");
@@ -1330,8 +1363,10 @@ const RequestDetails = ({ user }) => {
                 ) && (
                   <>
                     <tr style={{ fontWeight: "bold" }}>
-                      <td colSpan="6">Total Base Price:</td>
-                      <td style={{ textAlign: "right" }}>
+                      <td colSpan="6" style={{ textAlign: "right" }}>
+                        Total Base Price:
+                      </td>
+                      <td colSpan="1" style={{ textAlign: "right" }}>
                         ₹
                         {parseFloat(baseTotal).toLocaleString("en-IN", {
                           minimumFractionDigits: 2,
@@ -1340,9 +1375,12 @@ const RequestDetails = ({ user }) => {
                       </td>
                       <td colSpan="4"></td>
                     </tr>
+
                     <tr style={{ fontWeight: "bold" }}>
-                      <td colSpan="6">Total Tax (GST):</td>
-                      <td style={{ textAlign: "right" }}>
+                      <td colSpan="6" style={{ textAlign: "right" }}>
+                        Total Tax (GST):
+                      </td>
+                      <td colSpan="1" style={{ textAlign: "right" }}>
                         ₹
                         {parseFloat(taxTotal).toLocaleString("en-IN", {
                           minimumFractionDigits: 2,
@@ -1352,8 +1390,10 @@ const RequestDetails = ({ user }) => {
                       <td colSpan="4"></td>
                     </tr>
                     <tr style={{ fontWeight: "bold" }}>
-                      <td colSpan="6">Grand Total (Price + GST):</td>
-                      <td style={{ textAlign: "right" }}>
+                      <td colSpan="6" style={{ textAlign: "right" }}>
+                        Grand Total (Price + GST):
+                      </td>
+                      <td colSpan="1" style={{ textAlign: "right" }}>
                         ₹
                         {parseFloat(grandTotal).toLocaleString("en-IN", {
                           minimumFractionDigits: 2,
@@ -1369,63 +1409,67 @@ const RequestDetails = ({ user }) => {
           </div>
 
           {showPricePopup && pricePopupData && (
-            <div className="popup">
-              <span
-                className="x-button"
-                onClick={() => setShowPricePopup(false)}
-              >
-                &times;
-              </span>
-              <div className="popup-content">
-                <h3>Vendor Details</h3>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Vendor Name</th>
-                      <th>Price</th>
-                      <th>Tax %</th>
-                      <th>Select</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pricePopupData.map((vendor) => (
-                      <tr key={vendor.vendor_id}>
-                        <td>{vendor.vendor_name}</td>
-                        <td style={{ textAlign: "right" }}>
-                          {vendor.latest_price !== null
-                            ? `₹${parseFloat(
-                                vendor.latest_price
-                              ).toLocaleString("en-IN", {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })}`
-                            : "N/A"}
-                        </td>
-                        <td style={{ textAlign: "right" }}>
-                          {vendor.latest_tax ? `${vendor.latest_tax}%` : "N/A"}
-                        </td>
-                        <td>
-                          <input
-                            type="radio"
-                            name="vendorSelection"
-                            value={vendor.vendor_id}
-                            onChange={() => {
-                              handleVendorChange(
-                                vendor.component_id, // Component ID
-                                vendor.vendor_id,
-                                vendor.vendor_name,
-                                vendor.latest_price || 0, // Handle null price
-                                vendor.latest_tax || 0
-                              );
-                              setShowPricePopup(false); // Close the popup
-                            }}
-                          />
-                        </td>
+            <div className="modal-overlay">
+              <div className="popup">
+                <span
+                  className="x-button"
+                  onClick={() => setShowPricePopup(false)}
+                >
+                  &times;
+                </span>
+                <div className="popup-content">
+                  <h3>Vendor Details</h3>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Vendor Name</th>
+                        <th>Price</th>
+                        <th>Tax %</th>
+                        <th>Select</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {/* <button  onClick={() => setShowPricePopup(false)}>Close</button> */}
+                    </thead>
+                    <tbody>
+                      {pricePopupData.map((vendor) => (
+                        <tr key={vendor.vendor_id}>
+                          <td>{vendor.vendor_name}</td>
+                          <td style={{ textAlign: "right" }}>
+                            {vendor.latest_price !== null
+                              ? `₹${parseFloat(
+                                  vendor.latest_price
+                                ).toLocaleString("en-IN", {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}`
+                              : "N/A"}
+                          </td>
+                          <td style={{ textAlign: "right" }}>
+                            {vendor.latest_tax
+                              ? `${vendor.latest_tax}%`
+                              : "N/A"}
+                          </td>
+                          <td>
+                            <input
+                              type="radio"
+                              name="vendorSelection"
+                              value={vendor.vendor_id}
+                              onChange={() => {
+                                handleVendorChange(
+                                  vendor.component_id, // Component ID
+                                  vendor.vendor_id,
+                                  vendor.vendor_name,
+                                  vendor.latest_price || 0, // Handle null price
+                                  vendor.latest_tax || 0
+                                );
+                                setShowPricePopup(false); // Close the popup
+                              }}
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {/* <button  onClick={() => setShowPricePopup(false)}>Close</button> */}
+                </div>
               </div>
             </div>
           )}
@@ -1511,7 +1555,9 @@ const RequestDetails = ({ user }) => {
               <div className="popup">
                 <div className="serial-modal">
                   <div>
-                    <h3 >Select Serial Numbers</h3>
+                    <h3 style={{ textAlign: "center" }}>
+                      Select Serial Numbers
+                    </h3>
                     <button
                       className="x-button"
                       onClick={() => setShowSerialPopup(false)}

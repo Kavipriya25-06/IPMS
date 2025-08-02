@@ -580,7 +580,7 @@ const Vendors = () => {
         }}
       >
         <h2>Vendors</h2>
- 
+
         {/* <button
           style={{
             cursor: "pointer",
@@ -726,7 +726,7 @@ const Vendors = () => {
             </div>
           </div>
         </Modal>
- <button
+        <button
           className="plus-button"
           title="Add Vendor"
           onClick={() => setShowAddVendorPopup(true)}
@@ -737,7 +737,6 @@ const Vendors = () => {
             padding: "6px",
             marginBottom: "-10px",
           }}
-          
         >
           <img src={Add} alt="Add Vendor" />
         </button>
@@ -760,7 +759,6 @@ const Vendors = () => {
         </div>
 
         {/* Add Vendor Button */}
-      
       </div>
 
       <div className="table-container">
@@ -861,7 +859,12 @@ const Vendors = () => {
                     </td>
                     <td>{defaultPoc.email || "N/A"}</td>
                     <td>{defaultPoc.phone_number || "N/A"}</td>
-                    <td>{defaultPoc.location || "N/A"}</td>
+                    <td
+                      className="specification-cell"
+                      title={defaultPoc.location || ""}
+                    >
+                      {defaultPoc.location || "N/A"}
+                    </td>
                     <td>
                       {isEditingVendor === vendor.vendor_id ? (
                         <>
@@ -931,7 +934,7 @@ const Vendors = () => {
       {showPocPopup && (
         <div className="modal-overlay">
           <div className="popup-wrapper">
-            <div className={`popups ${isAdding ? "popup-expanded" : ""}`} >
+            <div className={`popups ${isAdding ? "popup-expanded" : ""}`}>
               {" "}
               <span className="x-button" onClick={handleClosePriceHistory}>
                 &times;
@@ -947,7 +950,7 @@ const Vendors = () => {
                 <button
                   className="action-button add-button"
                   onClick={() => setIsAdding(true)}
-                  style={{marginBottom:"10px"}}
+                  style={{ marginBottom: "10px" }}
                 >
                   Add POC
                 </button>
@@ -1067,7 +1070,10 @@ const Vendors = () => {
                         </td>
 
                         {/* Location */}
-                        <td>
+                        <td
+                          className="specification-cell"
+                          title={poc.location || ""}
+                        >
                           {isEditing === poc.id ? (
                             <input
                               type="text"

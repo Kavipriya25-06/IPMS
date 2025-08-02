@@ -45,6 +45,8 @@ const Inventory = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [dropdownCoords, setDropdownCoords] = useState({ top: 0, left: 0 });
   const dropdownRef = useRef();
+  const [editingToolRow, setEditingToolRow] = useState(null);
+  const [editToolRowData, setEditToolRowData] = useState({});
 
   const [componentTypeDropdownOpen, setComponentTypeDropdownOpen] =
     useState(false);
@@ -135,8 +137,10 @@ const Inventory = () => {
     return acc;
   }, {});
 
-  const [editingToolRow, setEditingToolRow] = useState(null);
-  const [editToolRowData, setEditToolRowData] = useState({});
+  const resetDateFilter = () => {
+    setFromDate(null);
+    setToDate(null);
+  };
 
   useEffect(() => {
     if (statusFilter === "Tool") {
@@ -257,26 +261,40 @@ const Inventory = () => {
   const filterByDate = () => {
     if (fromDate && toDate && isAfter(fromDate, toDate)) {
       showWarningToast("From date cannot be after To date.");
-      // clear the fields
       setFromDate(null);
       setToDate(null);
       return;
     }
 
-    let filtered = [...inventoryData];
+    let filtered;
 
-    if (fromDate && toDate) {
-      filtered = filtered.filter((item) => {
-        const createdDate = new Date(item.create_date);
-        createdDate.setHours(0, 0, 0, 0);
-        return (
-          createdDate >= new Date(fromDate.setHours(0, 0, 0, 0)) &&
-          createdDate <= new Date(toDate.setHours(0, 0, 0, 0))
-        );
-      });
+    if (statusFilter === "Tool") {
+      filtered = [...toolInventory];
+      if (fromDate && toDate) {
+        filtered = filtered.filter((item) => {
+          const createdDate = new Date(item.created_at);
+          createdDate.setHours(0, 0, 0, 0);
+          return (
+            createdDate >= new Date(fromDate.setHours(0, 0, 0, 0)) &&
+            createdDate <= new Date(toDate.setHours(0, 0, 0, 0))
+          );
+        });
+      }
+      setToolInventory(filtered);
+    } else {
+      filtered = [...inventoryData];
+      if (fromDate && toDate) {
+        filtered = filtered.filter((item) => {
+          const createdDate = new Date(item.create_date);
+          createdDate.setHours(0, 0, 0, 0);
+          return (
+            createdDate >= new Date(fromDate.setHours(0, 0, 0, 0)) &&
+            createdDate <= new Date(toDate.setHours(0, 0, 0, 0))
+          );
+        });
+      }
+      setFilteredInventory(filtered);
     }
-
-    setFilteredInventory(filtered);
   };
 
   const fetchComponentMasterData = async () => {
@@ -541,9 +559,14 @@ const Inventory = () => {
   const clearDateFilter = () => {
     setFromDate(null);
     setToDate(null);
-    setFilteredInventory(
-      inventoryData.filter((item) => item.status === statusFilter)
-    );
+
+    if (statusFilter === "Tool") {
+      fetchToolInventoryData(); // reset to full list
+    } else {
+      setFilteredInventory(
+        inventoryData.filter((item) => item.status === statusFilter)
+      );
+    }
   };
 
   const handleSaveSpecification = async (componentId) => {
@@ -620,13 +643,18 @@ const Inventory = () => {
   }, [statusFilter]);
 
   const handleSaveToolRow = async () => {
+    const toolToSave = {
+      ...newToolRow,
+      create_date: new Date().toISOString(), // Auto-set current timestamp
+    };
+
     try {
       const response = await fetch(`${config.apiBaseURL}/tool_inventory/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newToolRow),
+        body: JSON.stringify(toolToSave),
       });
 
       if (response.ok) {
@@ -639,6 +667,31 @@ const Inventory = () => {
     } catch (error) {
       console.error("Error saving tool:", error);
       showErrorToast("Something went wrong.");
+    }
+  };
+
+  const handleChangeStatusToAvailable = async (serialNumber) => {
+    try {
+      const response = await fetch(
+        `
+        ${config.apiBaseURL}/inventory/${serialNumber}/`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "Available" }),
+        }
+      );
+
+      if (response.ok) {
+        showSuccessToast("Serial ${serialNumber} moved to Available");
+        // Refresh inventory after update
+        fetchInventoryData("Repair");
+      } else {
+        showErrorToast("Failed to update status");
+      }
+    } catch (error) {
+      console.error("Error changing status:", error);
+      showErrorToast("Network error while updating status");
     }
   };
 
@@ -664,31 +717,45 @@ const Inventory = () => {
       <div className="tab-selector">
         <button
           className={`tab-btn ${statusFilter === "Available" ? "active" : ""}`}
-          onClick={() => setStatusFilter("Available")}
+          onClick={() => {
+            resetDateFilter(); // <-- clear date
+            setStatusFilter("Available");
+          }}
         >
           Available
         </button>
         <button
           className={`tab-btn ${statusFilter === "In_drone" ? "active" : ""}`}
-          onClick={() => setStatusFilter("In_drone")}
+          onClick={() => {
+            resetDateFilter();
+            setStatusFilter("In_drone");
+          }}
         >
           In Drone
         </button>
         <button
           className={`tab-btn ${statusFilter === "Repair" ? "active" : ""}`}
-          onClick={() => setStatusFilter("Repair")}
+          onClick={() => {
+            resetDateFilter();
+            setStatusFilter("Repair");
+          }}
         >
           Repair
         </button>
         <button
           className={`tab-btn ${statusFilter === "Damaged" ? "active" : ""}`}
-          onClick={() => setStatusFilter("Damaged")}
+          onClick={() => {
+            resetDateFilter();
+            setStatusFilter("Damaged");
+          }}
         >
           Scrap
         </button>
         <button
           className={`tab-btn ${statusFilter === "Tool" ? "active" : ""}`}
           onClick={() => {
+            resetDateFilter();
+
             setStatusFilter("Tool");
             setSelectedStatus("");
           }}
@@ -732,6 +799,13 @@ const Inventory = () => {
             })()}
           </span>
         </div>
+        {(fromDate || toDate) && (
+          <div style={{ fontSize: "14px", color: "#555" }}>
+            🗓️ {fromDate && `From: ${format(fromDate, "dd-MM-yyyy")}`}
+            {fromDate && toDate && " | "}
+            {toDate && `To: ${format(toDate, "dd-MM-yyyy")}`}
+          </div>
+        )}
 
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <button
@@ -1199,7 +1273,22 @@ const Inventory = () => {
                                 maximumFractionDigits: 2,
                               })}
                             </td>
-                            <td>{row.status}</td>
+                            <td>
+                              {row.status}
+                              {statusFilter === "Repair" &&
+                                row.status === "Repair" && (
+                                  <button
+                                    className="make-available-btn"
+                                    onClick={() =>
+                                      handleChangeStatusToAvailable(
+                                        row.serial_number
+                                      )
+                                    }
+                                  >
+                                    Make Available
+                                  </button>
+                                )}
+                            </td>{" "}
                           </tr>
                         ))}
                     </React.Fragment>
@@ -1251,6 +1340,7 @@ const Inventory = () => {
                   <th>In Inventory</th>
                   <th>Team</th>
                   <th>Remarks</th>
+                  <th>Create Date</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -1327,6 +1417,8 @@ const Inventory = () => {
                         }
                       />
                     </td>
+                    <td style={{ textAlign: "center", color: "gray" }}>Auto</td>
+
                     <td className="event-buttons">
                       <button onClick={handleSaveToolRow}>Save</button>
                       <button onClick={() => setNewToolRow(null)}>
@@ -1413,6 +1505,7 @@ const Inventory = () => {
                             }
                           />
                         </td>
+
                         <td className="event-buttons">
                           <button
                             onClick={handleUpdateToolRow}
@@ -1435,7 +1528,18 @@ const Inventory = () => {
                         <td>{tool.quantity || 0}</td>
                         <td>{tool.in_inventory || 0}</td>
                         <td>{tool.team || "0"}</td>
-                        <td>{tool.remarks || "null"}</td>
+                        <td
+                          className="specification-cell"
+                          title={tool.remarks || ""}
+                        >
+                          {tool.remarks || "null"}
+                        </td>
+                        <td>
+                          {tool.created_at
+                            ? format(new Date(tool.created_at), "dd-MM-yyyy")
+                            : "N/A"}
+                        </td>
+
                         <td>
                           <button
                             onClick={() => {
@@ -1452,11 +1556,30 @@ const Inventory = () => {
                   )
                 ) : (
                   <tr>
-                    <td
-                      colSpan="7"
+                    {/* <td
+                      colSpan="8"
                       style={{ textAlign: "center", color: "gray" }}
                     >
                       No Tool Inventory found
+                    </td> */}
+                    <td
+                      colSpan="11"
+                      style={{ textAlign: "center", color: "gray" }}
+                    >
+                      {selectedTag.trim() ? (
+                        <>
+                          No results found for tag "
+                          <strong>{selectedTag}</strong>"
+                        </>
+                      ) : fromDate && toDate ? (
+                        <>
+                          No tool data available from{" "}
+                          <strong>{formatDate(fromDate)}</strong> to{" "}
+                          <strong>{formatDate(toDate)}</strong>.
+                        </>
+                      ) : (
+                        "No Tool Inventory data available."
+                      )}
                     </td>
                   </tr>
                 )}

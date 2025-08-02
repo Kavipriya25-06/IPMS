@@ -184,6 +184,7 @@ const Outward = () => {
       "Gate Pass",
       "Component Spec",
       "Comp id",
+      "Serial Number",
       "Vendor",
       "Quantity",
       "Project",
@@ -258,6 +259,10 @@ const Outward = () => {
 
   //Submit the Manufacturer
   const handleManufactureSubmit = async () => {
+    if (!serviceForm.typeOfOutward) {
+      showWarningToast("Please select Type of Outward.");
+      return;
+    }
     const payload = {
       category: "Manufacture",
       date: serviceForm.outDate?.toISOString().split("T")[0],
@@ -282,8 +287,23 @@ const Outward = () => {
       });
 
       if (res.ok) {
-        showSuccessToast("Outward entry saved!");
+        // --- Update serial number status to Repair ---
+        for (const sn of serviceForm.serialNumbers) {
+          try {
+            await fetch(`${config.apiBaseURL}/inventory/${sn}/`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ status: "Repair" }),
+            });
+          } catch (err) {
+            console.error(`Failed to update serial ${sn} status:`, err);
+          }
+        }
+
+        showSuccessToast("Outward entry saved & serials moved to Repair!");
         setShowServiceForm(false);
+
+        // Reset form after submit
         setServiceForm({
           outDate: new Date(),
           time: format(new Date(), "hh:mm a"),
@@ -298,17 +318,24 @@ const Outward = () => {
           remarks: "",
           serialNumbers: [],
         });
+
         fetchData();
       } else {
         const err = await res.json();
         console.error("Error saving:", err);
+        showErrorToast("Failed to save outward entry");
       }
     } catch (err) {
       console.error("Save failed", err);
+      showErrorToast("Network error while saving");
     }
   };
 
   const handleSalesSubmit = async () => {
+    if (!serviceForm.typeOfOutward) {
+      showWarningToast("Please select Type of Outward.");
+      return;
+    }
     const payload = {
       category: "Sales",
       date: salesForm.outDate?.toISOString().split("T")[0],
@@ -355,6 +382,10 @@ const Outward = () => {
   };
 
   const handleEventSubmit = async () => {
+    if (!serviceForm.typeOfOutward) {
+      showWarningToast("Please select Type of Outward.");
+      return;
+    }
     const payload = {
       category: "Event",
       date: eventForm.outDate?.toISOString().split("T")[0],
@@ -502,6 +533,9 @@ const Outward = () => {
             case "Remarks":
               row[header] = item.remarks || "N/A";
               break;
+            case "Serial Number":
+              row[header] = item.serial_numbers || "N/A";
+              break;
             default:
               row[header] = "N/A";
           }
@@ -540,23 +574,33 @@ const Outward = () => {
 
   const generateManufacturePDF = async (row) => {
     try {
-      const vendorResponse = await axios.get(
+      // 1. Fetch vendor list to get vendor_id and GST
+      const vendorListResponse = await axios.get(
+        `${config.apiBaseURL}/vendor_list/`
+      );
+      const vendorList = vendorListResponse.data;
+
+      const vendorMatch = vendorList.find((v) => v.vendor_name === row.vendor);
+
+      if (!vendorMatch) {
+        showErrorToast(`Vendor details not found for ${row.vendor}`);
+        return;
+      }
+
+      const vendorId = vendorMatch.vendor_id;
+      const vendorGSTIN = vendorMatch.gstn || "GSTIN Not found";
+
+      // 2. Fetch vendor_sub_list to get address
+      const vendorSubResponse = await axios.get(
         `${config.apiBaseURL}/vendor_sub_list/`
       );
-      const vendorData = vendorResponse.data;
+      const vendorSubList = vendorSubResponse.data;
 
-      // Find vendor details by name
-      const vendorDetails = vendorData.find(
-        (v) => v.vendor.vendor_name === row.vendor
-      );
+      const vendorSubMatch = vendorSubList.find((v) => v.vendor === vendorId);
 
-      const vendorAddress = vendorDetails
-        ? vendorDetails.location
-        : "Address not found";
-      const vendorGSTIN = vendorDetails
-        ? vendorDetails.vendor.gstn
-        : "GSTIN Not found";
+      const vendorAddress = vendorSubMatch?.location || "Address not found";
 
+      // --- PDF Generation ---
       const doc = new jsPDF();
 
       // Header
@@ -742,7 +786,9 @@ const Outward = () => {
                       <td>{row.quantity || "-"}</td>
                       <td>{getProjectName(row.project) || "-"}</td>
                       <td>{row.type_of_outward || "-"}</td>
-                      <td>{row.remarks || "-"}</td>
+                      <td className="specification-cell" title={row.remarks}>
+                        {row.remarks || "-"}
+                      </td>
                     </>
                   )}
                   {reportType === "Sales" && (
@@ -764,7 +810,9 @@ const Outward = () => {
                       <td>{row.specification || "-"}</td>
                       <td>{row.client || "-"}</td>
                       <td>{row.type_of_outward || "-"}</td>
-                      <td>{row.remarks || "-"}</td>
+                      <td className="specification-cell" title={row.remarks}>
+                        {row.remarks || "-"}
+                      </td>
                     </>
                   )}
                   {reportType === "Manufacture" && (
@@ -785,11 +833,14 @@ const Outward = () => {
                       <td>{row.gatepass || "-"}</td>
                       <td>{row.specification || "-"}</td>
                       <td>{row.component_id || "-"}</td>
+                      <td>{row.serial_numbers || "-"}</td>
                       <td>{row.vendor || "-"}</td>
                       <td>{row.quantity || "-"}</td>
                       <td>{getProjectName(row.project) || "-"}</td>
                       <td>{row.type_of_outward || "-"}</td>
-                      <td>{row.remarks || "-"}</td>
+                      <td className="specification-cell" title={row.remarks}>
+                        {row.remarks || "-"}
+                      </td>
 
                       {/* New Column - PDF Button */}
                       <td>
@@ -833,7 +884,9 @@ const Outward = () => {
                           ? format(new Date(row.return_date), "dd-MM-yyyy")
                           : "-"}
                       </td>{" "}
-                      <td>{row.remarks || "-"}</td>
+                      <td className="specification-cell" title={row.remarks}>
+                        {row.remarks || "-"}
+                      </td>
                     </>
                   )}
                 </tr>

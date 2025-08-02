@@ -254,6 +254,8 @@ function App() {
                     "Sub-Admin",
                     "Procurement",
                     "Inventory",
+                    "Finance",
+                    "User",
                   ]}
                 >
                   <Components />
@@ -269,6 +271,8 @@ function App() {
                     "Sub-Admin",
                     "Procurement",
                     "Inventory",
+                    "Finance",
+                    "User",
                   ]}
                 >
                   <ComponentsDetails />
@@ -284,6 +288,8 @@ function App() {
                     "Sub-Admin",
                     "Procurement",
                     "Inventory",
+                    "Finance",
+                    "User",
                   ]}
                 >
                   <RequestComponent />
@@ -294,7 +300,14 @@ function App() {
               path="inventory"
               element={
                 <ProtectedRoute
-                  allowedRoles={["Admin", "Sub-Admin", "Inventory", "Finance"]}
+                  allowedRoles={[
+                    "Admin",
+                    "Sub-Admin",
+                    "Procurement",
+                    "Inventory",
+                    "Finance",
+                    
+                  ]}
                 >
                   <Inventory />
                 </ProtectedRoute>
@@ -324,7 +337,14 @@ function App() {
               path="bom"
               element={
                 <ProtectedRoute
-                  allowedRoles={["Admin", "Sub-Admin", "Procurement"]}
+                  allowedRoles={[
+                    "Admin",
+                    "Sub-Admin",
+                    "Procurement",
+                    "Inventory",
+                    "Finance",
+                    "User",
+                  ]}
                 >
                   <BOMDisplay />
                 </ProtectedRoute>
@@ -334,7 +354,14 @@ function App() {
               path="bom/:bomId"
               element={
                 <ProtectedRoute
-                  allowedRoles={["Admin", "Sub-Admin", "Procurement"]}
+                  allowedRoles={[
+                    "Admin",
+                    "Sub-Admin",
+                    "Procurement",
+                    "Inventory",
+                    "Finance",
+                    "User",
+                  ]}
                 >
                   <BOMDetails />
                 </ProtectedRoute>

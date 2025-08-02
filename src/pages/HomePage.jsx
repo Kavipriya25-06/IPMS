@@ -8,31 +8,20 @@ const HomePage = () => {
   const navigate = useNavigate();
   
   return (
-    <div style={{ padding: "200px" }}>
-      <h2>Welcome to Inventory Management</h2>
-      <div>
-        {!user && (
-          <button
-            onClick={() => navigate("/login")}
-            style={{ padding: "10px 20px", fontSize: "16px" }}
-          >
-            Login
-          </button>
-        )}
-        <button
-          onClick={() => navigate("/components")}
-          style={{
-            padding: "10px 20px",
-            fontSize: "16px",
-            borderRadius: "10px",
-            border: "1px solid grey",
-            cursor: "pointer",
-          }}
-        >
-          Get Started
-        </button>
-      </div>
-    </div>
+  <div className="landing-container">
+  <h2>Welcome to Inventory Management</h2>
+  <div className="landing-buttons">
+    {!user && (
+      <button onClick={() => navigate("/login")}>
+        Login
+      </button>
+    )}
+    <button onClick={() => navigate("/components")}>
+      Get Started
+    </button>
+  </div>
+</div>
+
   );
 };
 
