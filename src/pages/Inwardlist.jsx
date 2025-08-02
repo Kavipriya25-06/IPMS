@@ -373,6 +373,7 @@ const Inwardlist = () => {
             </tr>
           </thead>
           <tbody>
+            
             {filteredByDate.length > 0 ? (
               filteredByDate.map((item, index) => (
                 <tr key={index}>
