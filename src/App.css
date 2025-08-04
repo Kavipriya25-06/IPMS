@@ -183,7 +183,7 @@ table {
 
 .table-container {
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: auto;
   max-width: 100%;
   white-space: nowrap;
   border-radius: 5px;
