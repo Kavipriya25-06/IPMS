@@ -4516,6 +4516,13 @@ ul {
   overflow-x: auto;
 }
 
+.popups {
+  position: relative;
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+}
+
 .popups h3 {
   text-align: center;
 }
@@ -4524,11 +4531,12 @@ ul {
   position: absolute;
   top: 10px;
   right: 10px;
-  font-size: 1.5rem;
+  font-size: 24px; /* Larger font for better visibility */
+  font-weight: bold;
+  color: #333;
+  cursor: pointer;
   background: none;
   border: none;
-  cursor: pointer;
-  color: #333;
 }
 
 .popups input,
@@ -4541,7 +4549,7 @@ ul {
   box-sizing: border-box;
 }
 
-.popupS-expanded {
+.popups-expanded {
   width: fit-content;
 }
 
@@ -4635,8 +4643,8 @@ ul {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: calc(85vh - 60px); /* ✅ Adjust based on your navbar height */
-  margin-top: 60px; /* ✅ Push down below navbar */
+  height: calc(85vh - 60px); /* Adjust based on your navbar height */
+  margin-top: 60px; /* Push down below navbar */
   background-color: #f9f9f9;
   text-align: center;
   padding: 20px;
