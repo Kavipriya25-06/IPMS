@@ -6,30 +6,13 @@ body {
   height: 100%;
 }
 
-/* .App {
+.App {
   text-align: left;
   padding: 20px;
   margin: 0;
-} */
-
-/* App.css */
-.App {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  padding: 20px;
-  box-sizing: border-box;
-  text-align: left;
+    min-height: 100vh;
 
 }
-
-/* Wrap all page content */
-.main-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px; /* optional spacing */
-}
-
 
 h1 {
   margin: 0 0 0px;
@@ -2188,11 +2171,13 @@ main {
   margin-top: 10px; /* Space between header and layout */
 }
 
-/* .main-content {
+.main-content {
   transition: margin-left 0.3s ease, width 0.3s ease;
+  /* height: 100vh; */
+  /* overflow-y: auto; */
   box-sizing: border-box;
   padding: 20px;
-} */
+}
 
 /* When sidebar is open, main content shifts right */
 .main-content.sidebar-open {
