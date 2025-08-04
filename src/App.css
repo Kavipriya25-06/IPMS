@@ -190,7 +190,7 @@ table {
   max-height: calc(
     90vh - 200px
   ); /* Adjust based on your footer and header height */
-  margin-bottom: 20px; /* Add space before footer */
+  margin-bottom: 50px; /* Add space before footer */
 }
 
 

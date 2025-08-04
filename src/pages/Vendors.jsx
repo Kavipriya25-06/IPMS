@@ -762,7 +762,8 @@ const Vendors = () => {
       </div>
 
       <div className="table-container">
-        <table>
+        <table  border="1"
+              style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
               <th>Vendor Name</th>
