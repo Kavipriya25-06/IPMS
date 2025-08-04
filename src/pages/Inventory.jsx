@@ -1505,6 +1505,11 @@ const Inventory = () => {
                             }
                           />
                         </td>
+                        <td>
+                          {tool.created_at
+                            ? format(new Date(tool.created_at), "dd-MM-yyyy")
+                            : "N/A"}
+                        </td>
 
                         <td className="event-buttons">
                           <button

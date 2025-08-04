@@ -2408,7 +2408,7 @@ main {
 }
 
 .add-comp {
-  background-color: rgb(180, 180, 180);
+  background-color: #f58720;
   border: none;
   border-radius: 5px;
   padding: 7px 15px;
@@ -2417,7 +2417,7 @@ main {
 }
 
 .add-comp:hover {
-  background-color: gray;
+  background-color: #f1ba86;
 }
 
 .create-tag-button img {
