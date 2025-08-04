@@ -10,8 +10,7 @@ body {
   text-align: left;
   padding: 20px;
   margin: 0;
-    min-height: 100vh;
-
+  
 }
 
 h1 {
@@ -189,7 +188,7 @@ table {
   white-space: nowrap;
   border-radius: 5px;
   max-height: calc(
-    100vh - 200px
+    90vh - 200px
   ); /* Adjust based on your footer and header height */
   margin-bottom: 20px; /* Add space before footer */
 }
@@ -4523,6 +4522,7 @@ ul {
   background: #fff;
   border-radius: 8px;
 }
+
 
 .popups h3 {
   text-align: center;
