@@ -138,7 +138,7 @@ const Inward = () => {
     if (!patchResponse.ok) {
       const patchError = await patchResponse.json();
       console.error("Error updating QC status in inward:", patchError);
-      alert("Failed to update QC status.");
+      showErrorToast("Failed to update QC status.");
       return;
     }
   };
@@ -151,7 +151,7 @@ const Inward = () => {
     const componentType = component_Type.toLowerCase();
 
     if (!componentType) {
-      alert("Component Type not available. Cannot fetch QC questions.");
+      showErrorToast("Component Type not available. Cannot fetch QC questions.");
       return;
     }
 
@@ -159,7 +159,7 @@ const Inward = () => {
       const response = await fetch(`${config.apiBaseURL}/qc_question/`);
       if (!response.ok) {
         console.error("Error fetching QC questions:", await response.text());
-        alert("Failed to fetch QC questions.");
+        showErrorToast("Failed to fetch QC questions.");
         return;
       }
 
@@ -199,7 +199,7 @@ const Inward = () => {
       setShowQCPopup(true);
     } catch (error) {
       console.error("Error fetching QC questions:", error);
-      alert("An error occurred while fetching QC questions.");
+     showErrorToast("An error occurred while fetching QC questions.");
     }
   };
 
@@ -214,14 +214,14 @@ const Inward = () => {
 
   const handleSubmitQC = async () => {
     if (!newQuestion.qcQuestions || newQuestion.qcQuestions.length === 0) {
-      alert("No questions available to submit.");
+    showInfoToast("No questions available to submit.");
       return;
     }
 
     // Validate that all questions have been answered
     const unanswered = newQuestion.qcQuestions.filter((q) => q.answer === null);
     if (unanswered.length > 0) {
-      alert("Please answer all questions before submitting.");
+      showWarningToast("Please answer all questions before submitting.");
       return;
     }
 
@@ -229,7 +229,7 @@ const Inward = () => {
       selectedItem?.inward_id || getNestedValue(selectedItem, "inward_id");
 
     if (!inwardId || inwardId === "Not Available") {
-      alert("Inward ID not found. Unable to submit QC answers.");
+      showErrorToast("Inward ID not found. Unable to submit QC answers.");
       return;
     }
 
@@ -255,7 +255,7 @@ const Inward = () => {
             `Error submitting QC answer for question ${question.id}:`,
             errorDetails
           );
-          alert(
+          showErrorToast(
             `Failed to submit QC answer for question ${
               question.id
             }: ${JSON.stringify(errorDetails)}`
@@ -269,7 +269,7 @@ const Inward = () => {
         selectedItem?.price || getNestedValue(selectedItem, "price");
 
       if (!price || isNaN(price)) {
-        alert("Invalid price. Unable to update QC status.");
+        showErrorToast("Invalid price. Unable to update QC status.");
         return;
       }
 
@@ -297,7 +297,7 @@ const Inward = () => {
       if (!patchResponse.ok) {
         const patchError = await patchResponse.json();
         console.error("Error updating QC status in inward:", patchError);
-        alert("Failed to update QC status.");
+        showErrorToast("Failed to update QC status.");
         return;
       }
 
@@ -308,7 +308,7 @@ const Inward = () => {
       fetchInwardData(); // Refresh the inward data
     } catch (error) {
       console.error("Error during QC submission process:", error);
-      alert("An error occurred while submitting QC answers.");
+      showErrorToast("An error occurred while submitting QC answers.");
     }
   };
 
@@ -317,7 +317,7 @@ const Inward = () => {
       selectedItem?.inward_id || getNestedValue(selectedItem, "inward_id");
 
     if (!inwardId || inwardId === "Not Available") {
-      alert("Inward ID not found. Unable to update overall status.");
+      showWarningToast("Inward ID not found. Unable to update overall status.");
       return;
     }
 
@@ -331,7 +331,7 @@ const Inward = () => {
       if (!response.ok) {
         const errorDetails = await response.json();
         console.error("Error updating overall QC status:", errorDetails);
-        alert("Failed to update overall QC status.");
+        showErrorToast("Failed to update overall QC status.");
         return;
       }
 
@@ -342,7 +342,7 @@ const Inward = () => {
       fetchInwardData(); // Refresh the inward data
     } catch (error) {
       console.error("Error updating overall QC status:", error);
-      alert("An error occurred while updating QC status.");
+      showErrorToast("An error occurred while updating QC status.");
     }
   };
 
@@ -370,7 +370,7 @@ const Inward = () => {
       const price = poMasterEntry?.cart_details?.unit_price || "Not Available"; // Extract price (unit_price)
 
       if (!price || price === "Not Available") {
-        alert(
+        showInfoToast(
           "Price not found in PO Master details. Cannot move to inventory."
         );
         return;
@@ -383,7 +383,7 @@ const Inward = () => {
 
       if (!selectedComponent) {
         console.error(`Component with ID ${componentId} not found.`);
-        alert("Component not found.");
+        showInfoToast("Component not found.");
         return;
       }
 
@@ -420,7 +420,7 @@ const Inward = () => {
       if (!response.ok) {
         const errorDetails = await response.json();
         console.error("Error posting to inventory:", errorDetails);
-        alert("All ready added to inventory");
+        showWarningToast("All ready added to inventory");
         return;
       }
 
@@ -430,7 +430,7 @@ const Inward = () => {
     } catch (error) {
       // Handle any error that occurs during the fetch
       console.error("Error moving to inventory:", error);
-      alert("An error occurred while moving to inventory.");
+      ashowErrorToast("An error occurred while moving to inventory.");
     }
   };
   const handleMoveToInventory = async (item) => {
@@ -464,7 +464,7 @@ const Inward = () => {
       const price = poMasterEntry?.cart_details?.unit_price || "Not Available"; // Extract price (unit_price)
 
       if (!price || price === "Not Available") {
-        alert(
+        showErrorToast(
           "Price not found in PO Master details. Cannot move to inventory."
         );
         return;
@@ -477,7 +477,7 @@ const Inward = () => {
 
       if (!selectedComponent) {
         console.error(`Component with ID ${componentId} not found.`);
-        alert("Component not found.");
+        showErrorToast("Component not found.");
         return;
       }
 
@@ -514,7 +514,7 @@ const Inward = () => {
       if (!response.ok) {
         const errorDetails = await response.json();
         console.error("Error posting to inventory:", errorDetails);
-        alert("All ready added to inventory");
+        showWarningToast("All ready added to inventory");
         return;
       }
 
@@ -543,7 +543,7 @@ const Inward = () => {
       if (!updateResponse.ok) {
         const updateError = await updateResponse.json();
         console.error("Error updating mode_to_inventory:", updateError);
-        alert("Failed to update mode_to_inventory.");
+    showErrorToast("Failed to update mode_to_inventory.");
         return;
       }
 
@@ -551,7 +551,7 @@ const Inward = () => {
     } catch (error) {
       // Handle any error that occurs during the fetch
       console.error("Error moving to inventory:", error);
-      alert("An error occurred while moving to inventory.");
+      showErrorToast("An error occurred while moving to inventory.");
     }
   };
 
@@ -573,7 +573,7 @@ const Inward = () => {
 
       // Basic validation
       if (!componentId || !componentSpecification) {
-        alert("Missing component ID or specification. Cannot proceed.");
+        showErrorToast("Missing component ID or specification. Cannot proceed.");
         return;
       }
 
@@ -596,7 +596,7 @@ const Inward = () => {
       if (!response.ok) {
         const errorDetails = await response.json();
         console.error("Error posting to outward:", errorDetails);
-        alert("Failed to move to outward. Please check logs.");
+    showErrorToast("Failed to move to outward. Please check logs.");
         return;
       }
 
@@ -627,14 +627,14 @@ const Inward = () => {
           "Error updating inward status after outward:",
           updateError
         );
-        alert("Failed to update inward record.");
+        showErrorToast("Failed to update inward record.");
         return;
       }
 
       fetchInwardData(); // Refresh the inward data
     } catch (error) {
       console.error("Error in handleMoveToOutward:", error);
-      alert("An unexpected error occurred while moving to outward.");
+      showErrorToast("An unexpected error occurred while moving to outward.");
     }
   };
 
@@ -652,7 +652,7 @@ const Inward = () => {
       getNestedValue(skuSelectedItem, "inward_id");
 
     if (!inwardId || inwardId === "Not Available") {
-      alert("Inward ID not found. Cannot update SKU.");
+      showErrorToast("Inward ID not found. Cannot update SKU.");
       return;
     }
 
@@ -671,7 +671,7 @@ const Inward = () => {
       if (!response.ok) {
         const errorDetails = await response.json();
         console.error("Error updating SKU:", errorDetails);
-        alert("Failed to update SKU.");
+        showErrorToast("Failed to update SKU.");
         return;
       }
 
@@ -681,7 +681,7 @@ const Inward = () => {
       fetchInwardData(); // Refresh data after updating
     } catch (error) {
       console.error("Error updating SKU:", error);
-      alert("An error occurred while updating SKU.");
+      showErrorToast("An error occurred while updating SKU.");
     }
   };
 

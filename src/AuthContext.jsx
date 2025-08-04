@@ -6,6 +6,14 @@ import React, {
   useCallback,
   useRef,
 } from "react";
+
+import {
+  showSuccessToast,
+  showErrorToast,
+  showInfoToast,
+  showWarningToast,
+  ToastContainerComponent,
+} from "./Toastify.jsx"; // Import Toastify utilities
 import config from "./Config"; // Import config for API endpoints
 
 // Create AuthContext
@@ -94,7 +102,7 @@ const AuthProvider = ({ children }) => {
     }
 
     inactivityTimer.current = setTimeout(() => {
-      alert("You have been logged out due to inactivity.");
+      showErrorToast("You have been logged out due to inactivity.");
       logout();
     }, INACTIVITY_TIMEOUT);
   }, [logout]);
@@ -139,6 +147,7 @@ const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={{ user, login, logout, hasRole }}>
       {children}
+      <ToastContainerComponent />
     </AuthContext.Provider>
   );
 };

@@ -161,7 +161,7 @@ const Mrfrequest = () => {
     const componentType = item.component_type.toLowerCase();
 
     if (!componentType) {
-      alert("Component Type not available. Cannot fetch QC questions.");
+  showErrorToast("Component Type not available. Cannot fetch QC questions.");
       return;
     }
 
@@ -169,7 +169,7 @@ const Mrfrequest = () => {
       const response = await fetch(`${config.apiBaseURL}/qc_question/`);
       if (!response.ok) {
         console.error("Error fetching QC questions:", await response.text());
-        alert("Failed to fetch QC questions.");
+        showErrorToast("Failed to fetch QC questions.");
         return;
       }
 
@@ -207,7 +207,7 @@ const Mrfrequest = () => {
       // setShowQCPopup(true);
     } catch (error) {
       console.error("Error fetching QC questions:", error);
-      alert("An error occurred while fetching QC questions.");
+      showErrorToast("An error occurred while fetching QC questions.");
     }
   };
 
@@ -275,21 +275,21 @@ const Mrfrequest = () => {
 
   const handleSubmitQC = async () => {
     if (!newQuestion.qcQuestions || newQuestion.qcQuestions.length === 0) {
-      alert("No questions available to submit.");
+      showWarningToast("No questions available to submit.");
       return;
     }
 
     // Validate that all questions have been answered
     const unanswered = newQuestion.qcQuestions.filter((q) => q.answer === null);
     if (unanswered.length > 0) {
-      alert("Please answer all questions before submitting.");
+      showWarningToast("Please answer all questions before submitting.");
       return;
     }
 
     const serial_number = selectedItem?.serial_number || "";
 
     if (!serial_number || serial_number === "Not Available") {
-      alert("serial number not found. Unable to submit QC answers.");
+      showErrorToast("serial number not found. Unable to submit QC answers.");
       return;
     }
 
@@ -315,7 +315,7 @@ const Mrfrequest = () => {
             `Error submitting QC answer for question ${question.id}:`,
             errorDetails
           );
-          alert(
+      showErrorToast(
             `Failed to submit QC answer for question ${
               question.id
             }: ${JSON.stringify(errorDetails)}`
@@ -331,7 +331,7 @@ const Mrfrequest = () => {
       // fetchInwardData(); // Refresh the inward data
     } catch (error) {
       console.error("Error during QC submission process:", error);
-      alert("An error occurred while submitting QC answers.");
+      showErrorToast("An error occurred while submitting QC answers.");
     }
   };
 
@@ -344,7 +344,7 @@ const Mrfrequest = () => {
 
   const handleReturnSubmit = async () => {
     if (!returnStatus) {
-      alert("Please select a return status.");
+      showWarningToast("Please select a return status.");
       return;
     }
 
