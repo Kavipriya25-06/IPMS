@@ -188,6 +188,8 @@ const Component = () => {
       // Construct the API URL with filters
       const url = new URL(`${config.apiBaseURL}/tag_search/`);
       url.searchParams.append("page", pageParam);
+      url.searchParams.append("page_size", 10); // ✅ Add this here
+
       if (selectedSpecification)
         url.searchParams.append("search", selectedSpecification);
       if (selectedCategory)
@@ -902,8 +904,20 @@ const Component = () => {
           </table>
         </div>
       </div>
-      {loading && <p>Loading...</p>}
-      {!hasMore && <p>No more data available</p>}
+      {loading && (
+        <div className="spinner">
+          <div>
+            <p>Loading...</p>
+          </div>
+        </div>
+      )}
+
+      {/* {loading && <p>Loading...</p>} */}
+      {!hasMore && (
+        <div style={{ textAlign: "center", margin: "20px 0", color: "#888" }}>
+          No more data available
+        </div>
+      )}
 
       {showScrollTop && (
         <button
