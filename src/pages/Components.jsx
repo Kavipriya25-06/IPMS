@@ -914,7 +914,7 @@ const Component = () => {
 
       {/* {loading && <p>Loading...</p>} */}
       {!hasMore && (
-        <div style={{ textAlign: "center", margin: "20px 0", color: "#888" }}>
+        <div style={{ textAlign: "center", marginTop: "-30px", color: "#888" }}>
           No more data available
         </div>
       )}
