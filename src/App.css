@@ -10,6 +10,7 @@ body {
   text-align: left;
   padding: 20px;
   margin: 0;
+  
 }
 
 h1 {
@@ -185,9 +186,15 @@ table {
   overflow-y: hidden;
   max-width: 100%;
   white-space: nowrap;
-  /* border: 1px solid #ddd; */
   border-radius: 5px;
+  max-height: calc(
+    100vh - 200px
+  ); /* Adjust based on your footer and header height */
+  overflow-x: auto;
+  margin-bottom: 20px; /* Add space before footer */
 }
+
+
 
 /* Optional: if you want the table to take full width when possible */
 .table-container table {
@@ -2021,7 +2028,7 @@ table td {
   position: fixed; /* Fix sidebar position */
   top: 90px; /* Leave 20px space from top */
   left: 20px; /* Leave 20px space from left */
-  bottom: 10px; /* Leave 20px space from bottom */
+  bottom: 70px; /* Leave 20px space from bottom */
   width: 200px !important; /* Fixed width */
   background-color: rgb(244, 243, 243) !important;
   color: black;
@@ -4624,15 +4631,13 @@ ul {
   color: #0056b3;
 }
 
-
-
 .landing-container {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   height: calc(85vh - 60px); /* ✅ Adjust based on your navbar height */
-  margin-top: 60px;            /* ✅ Push down below navbar */
+  margin-top: 60px; /* ✅ Push down below navbar */
   background-color: #f9f9f9;
   text-align: center;
   padding: 20px;
@@ -4668,3 +4673,7 @@ ul {
   background-color: #f1ba86;
 }
 
+.po-order-wrapper {
+  padding-bottom: 40px; /* avoid touching footer */
+  border-radius: 5px;
+}
