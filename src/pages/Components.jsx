@@ -188,7 +188,7 @@ const Component = () => {
       // Construct the API URL with filters
       const url = new URL(`${config.apiBaseURL}/tag_search/`);
       url.searchParams.append("page", pageParam);
-      url.searchParams.append("page_size", 10); // ✅ Add this here
+      // url.searchParams.append("page_size", 10); // ✅ Add this here
 
       if (selectedSpecification)
         url.searchParams.append("search", selectedSpecification);
