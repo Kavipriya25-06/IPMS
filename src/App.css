@@ -188,7 +188,7 @@ table {
   white-space: nowrap;
   border-radius: 5px;
   max-height: calc(
-    90vh - 200px
+    95vh - 200px
   ); /* Adjust based on your footer and header height */
   margin-bottom: 50px; /* Add space before footer */
 }
