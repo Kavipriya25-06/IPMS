@@ -179,7 +179,7 @@ const BOMDetails = () => {
       );
 
       if (exists) {
-        alert("This component is already added to the BOM.");
+        showWarningToast("This component is already added to the BOM.");
         return;
       }
 
@@ -188,7 +188,7 @@ const BOMDetails = () => {
         !newComponent.vendor ||
         !newComponent.quantity
       ) {
-        alert("All fields are required.");
+        showInfoToast("All fields are required.");
         return;
       }
 
@@ -200,7 +200,7 @@ const BOMDetails = () => {
       );
 
       if (!matchedEntry) {
-        alert("No vendor entry found for the selected component.");
+        showInfoToast("No vendor entry found for the selected component.");
         return;
       }
 
@@ -215,7 +215,7 @@ const BOMDetails = () => {
       )[0];
 
       if (!latestPriceEntry) {
-        alert("No price data found for this component.");
+        showInfoToast("No price data found for this component.");
         return;
       }
 
@@ -252,7 +252,7 @@ const BOMDetails = () => {
         });
       } else {
         const error = await response.json();
-        alert(`Failed to add component: ${JSON.stringify(error)}`);
+        showErrorToast`Failed to add component: ${JSON.stringify(error)}`;
       }
     } catch (error) {
       console.error("Error adding component:", error);
@@ -333,100 +333,132 @@ const BOMDetails = () => {
     );
   };
 
-const generateCSV = (data, totals, filename = "BOM_Report") => {
-  const headers = [
-    "S.No",
-    "Category",
-    "Component Type",
-    "Specification",
-    "UOM",
-    "Quantity",
-    "Vendor",
-    "Date",
-    "Price",
-    "Tax",
-    "Latest Price",
-    "Latest Date"
-  ];
+  const generateCSV = (data, totals, filename = "BOM_Report") => {
+    const headers = [
+      "S.No",
+      "Category",
+      "Component Type",
+      "Specification",
+      "UOM",
+      "Quantity",
+      "Vendor",
+      "Date",
+      "Price",
+      "Tax",
+      "Latest Price",
+      "Latest Date",
+    ];
 
-  // Convert each row to CSV format and escape quotes
-  const rows = data.map(item =>
-    headers.map(h => `"${String(item[h] ?? "").replace(/"/g, '""')}"`).join(",")
-  );
+    // Convert each row to CSV format and escape quotes
+    const rows = data.map((item) =>
+      headers
+        .map((h) => `"${String(item[h] ?? "").replace(/"/g, '""')}"`)
+        .join(",")
+    );
 
-  // Add an empty row and total summary rows
-  const totalRows = [
-  [], // Empty row for separation
-  [
-    "", "", "", "", "", "", "", "Total Base Price:", // up to column 6
-    `₹${totals.baseTotal}`, "", "", ""            // base total at column 7
-  ],
-  [
-    "", "", "", "", "", "", "", "Total Tax (GST):",
-    `₹${totals.totalTax}`, "", "", ""
-  ],
-  [
-    "", "", "", "", "", "", "", "Grand Total:",
-    `₹${totals.grandTotal}`, "", "", ""
-  ]
-].map(row => row.join(","));
+    // Add an empty row and total summary rows
+    const totalRows = [
+      [], // Empty row for separation
+      [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "Total Base Price:", // up to column 6
+        `₹${totals.baseTotal}`,
+        "",
+        "",
+        "", // base total at column 7
+      ],
+      [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "Total Tax (GST):",
+        `₹${totals.totalTax}`,
+        "",
+        "",
+        "",
+      ],
+      [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "Grand Total:",
+        `₹${totals.grandTotal}`,
+        "",
+        "",
+        "",
+      ],
+    ].map((row) => row.join(","));
 
+    const csvContent = [headers.join(","), ...rows, ...totalRows].join("\n");
 
-  const csvContent = [headers.join(","), ...rows, ...totalRows].join("\n");
+    // Add BOM to ensure Excel renders ₹ correctly
+    const BOM = "\uFEFF";
+    const blob = new Blob([BOM + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
 
-  // Add BOM to ensure Excel renders ₹ correctly
-  const BOM = "\uFEFF";
-  const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", `${filename}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.setAttribute("download", `${filename}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-};
+  const handleGenerateReport = () => {
+    if (!selectedComponents || selectedComponents.length === 0) {
+      showInfoToast("No components selected for report.");
+      return;
+    }
 
+    const data = selectedComponents.map((component, index) => {
+      const { price, tax, date } = getLatestPriceInfo(
+        component.component,
+        component.vendor
+      );
 
+      return {
+        "S.No": index + 1,
+        Category: component.component.category,
+        "Component Type": component.component.component_type,
+        Specification: component.component.component_specification,
+        UOM: component.component.unit_of_measurement,
+        Quantity: component.quantity,
+        Vendor: component.vendor.vendor_name,
+        Date: component.date
+          ? format(parseISO(component.date), "dd-MM-yyyy")
+          : "-",
+        Price: `₹${parseFloat(component.price || 0).toFixed(2)}`,
+        Tax: `${component.tax}%`,
+        "Latest Price": showLatestPrice
+          ? `₹${parseFloat(price || 0).toFixed(2)}`
+          : "",
+        "Latest Date": showLatestPrice && date ? date : "",
+      };
+    });
 
-const handleGenerateReport = () => {
-  if (!selectedComponents || selectedComponents.length === 0) {
-    showInfoToast("No components selected for report.");
-    return;
-  }
+    const { baseTotal, totalTaxAmount, grandTotal } = calculateTotalPrice();
 
-  const data = selectedComponents.map((component,index) => {
-    const { price, tax, date } = getLatestPriceInfo(component.component, component.vendor);
-
-    return {
-      "S.No": index + 1,
-      "Category": component.component.category,
-      "Component Type": component.component.component_type,
-      "Specification": component.component.component_specification,
-      "UOM": component.component.unit_of_measurement,
-      "Quantity": component.quantity,
-      "Vendor": component.vendor.vendor_name,
-      "Date": component.date
-        ? format(parseISO(component.date), "dd-MM-yyyy")
-        : "-",
-      "Price": `₹${parseFloat(component.price || 0).toFixed(2)}`,
-      "Tax": `${component.tax}%`,
-      "Latest Price": showLatestPrice
-        ? `₹${parseFloat(price || 0).toFixed(2)}`
-        : "",
-      "Latest Date": showLatestPrice && date ? date : ""
-    };
-  });
-
-  const { baseTotal, totalTaxAmount, grandTotal } = calculateTotalPrice();
-
-  generateCSV(data, {
-    baseTotal: baseTotal.toFixed(2),
-    totalTax: totalTaxAmount.toFixed(2),
-    grandTotal: grandTotal.toFixed(2)
-  });
-};
-
-
+    generateCSV(data, {
+      baseTotal: baseTotal.toFixed(2),
+      totalTax: totalTaxAmount.toFixed(2),
+      grandTotal: grandTotal.toFixed(2),
+    });
+  };
 
   ///
   return (
@@ -569,8 +601,8 @@ const handleGenerateReport = () => {
                             tax: latestPriceEntry?.tax?.toString() || "",
                           }));
 
-                          if (matchedVendor) setVendors([matchedVendor]);
-                          else setVendors([]);
+                          // if (matchedVendor) setVendors([matchedVendor]);
+                          // else setVendors([]);
                         } catch (error) {
                           console.error(
                             "Error processing vendor/price info:",
@@ -608,7 +640,7 @@ const handleGenerateReport = () => {
                       setNewComponent({
                         ...newComponent,
                         quantity: e.target.value,
-                      })
+                      })      
                     }
                   />
 
@@ -627,7 +659,6 @@ const handleGenerateReport = () => {
                       }));
 
                       if (componentId && vendorId) {
-                        // Step 1: Get product_id from vendorMasterData
                         const matchedEntry = vendorMasterData.find(
                           (entry) =>
                             entry.component_id === componentId &&
@@ -643,7 +674,6 @@ const handleGenerateReport = () => {
 
                         const productId = matchedEntry.product_id;
 
-                        // Step 2: Find latest price from priceTables using productId
                         const matchingPrices = priceTables
                           .filter((p) => p.product === productId)
                           .sort(
@@ -676,17 +706,23 @@ const handleGenerateReport = () => {
                           v.component_type === newComponent.componentType &&
                           v.component_id === newComponent.component
                       )
-                      .map((v) => (
-                        <option key={v.product_id} value={v.vendor}>
-                          {v.vendor_name}
-                        </option>
-                      ))}
+                      .map((v) => {
+                        const vendorName =
+                          vendors.find((ven) => ven.vendor_id === v.vendor)
+                            ?.vendor_name || "Unnamed Vendor";
+                        return (
+                          <option key={v.product_id} value={v.vendor}>
+                            {vendorName}
+                          </option>
+                        );
+                      })}
                   </select>
+
                   <label>Price</label>
-                  <input
-                    type="text"
-                    value={newComponent.price}
-                    readOnly
+                  <input                      
+                    type="text"         
+                    value={newComponent.price}           
+                    readOnly   
                     placeholder="Auto-filled based on vendor"
                   />
                 </div>
@@ -709,10 +745,13 @@ const handleGenerateReport = () => {
             >
               Show Latest Price Info
             </button>
-            
-            <button className="generate-report-btn" onClick={handleGenerateReport}>
-  Generate Report
-</button>
+
+            <button
+              className="generate-report-btn"
+              onClick={handleGenerateReport}
+            >
+              Generate Report
+            </button>
           </div>
 
           {/* <h4>Components:</h4> */}
@@ -889,8 +928,6 @@ const handleGenerateReport = () => {
           </div>
         </>
       )}
-
-
 
       <ToastContainerComponent />
     </div>

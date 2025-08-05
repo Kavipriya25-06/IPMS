@@ -7,6 +7,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { FaCalendarAlt } from "react-icons/fa";
 import { format } from "date-fns";
+import { showErrorToast, showSuccessToast, showWarningToast } from "./Toastify";
 
 const POOrderList = ({ user }) => {
   const [poOrders, setPOOrders] = useState([]); // State to store PO orders
@@ -212,7 +213,7 @@ const POOrderList = ({ user }) => {
 
   const handleSendEmail = async () => {
     if (!currentPO) {
-      alert("No Purchase Order selected!");
+      showWarningToast("No Purchase Order selected!");
       return;
     }
 
@@ -250,7 +251,7 @@ const POOrderList = ({ user }) => {
       if (!uploadResponse.ok) {
         const uploadError = await uploadResponse.json();
         console.error("Error uploading file:", uploadError);
-        alert(`Failed to upload file: ${uploadError.error}`);
+        showErrorToast(`Failed to upload file: ${uploadError.error}`);
         return;
       }
 
@@ -289,16 +290,16 @@ const POOrderList = ({ user }) => {
 
       if (response.ok) {
         const emailData = await response.json();
-        alert(`Email sent successfully: ${emailData.message}`);
+        showSuccessToast(`Email sent successfully: ${emailData.message}`);
         setShowModal(false);
       } else {
         const emailError = await response.json();
         console.error("Error sending email:", emailError);
-        alert(`Failed to send email: ${emailError.error}`);
+        showErrorToast(`Failed to send email: ${emailError.error}`);
       }
     } catch (error) {
       console.error("Error during file upload or email send:", error);
-      alert("An error occurred while uploading the file or sending the email.");
+      showErrorToast("An error occurred while uploading the file or sending the email.");
     }
   };
 
@@ -520,38 +521,42 @@ const POOrderList = ({ user }) => {
                       : " 🔽"
                     : ""}
                 </th>
-                <th
-                  className="date-filter-inline"
-                  style={{ width: "100%", height: "26px" }}
-                >
-                  {!dateFilter && <span>Date</span>}
-                  <DatePicker
-                    selected={dateFilter}
-                    onChange={(date) => setDateFilter(date)}
-                    ref={datePickerRef}
-                    dateFormat="yyyy-MM-dd"
-                    customInput={<div />}
-                    popperPlacement="bottom-end"
-                    showMonthDropdown
-                    showYearDropdown
-                    dropdownMode="select"
-                  />
-
-                  {dateFilter && (
-                    <span style={{ fontSize: "16px", color: "White" }}>
-                      {format(dateFilter, "dd-MM-yyyy")}
-                    </span>
-                  )}
-
-                  <FaCalendarAlt
+                <th style={{ cursor: "pointer" }}>
+                  <div
                     style={{
-                      fontSize: "14px",
-                      cursor: "pointer",
-                      color: "#333",
-                      marginTop: "1px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
                     }}
-                    onClick={() => datePickerRef.current.setOpen(true)}
-                  />
+                  >
+                    {!dateFilter && <span style={{}}>Date</span>}
+                    <DatePicker
+                      selected={dateFilter}
+                      onChange={(date) => setDateFilter(date)}
+                      ref={datePickerRef}
+                      dateFormat="yyyy-MM-dd"
+                      customInput={<div />}
+                      popperPlacement="bottom-end"
+                      showMonthDropdown
+                      showYearDropdown
+                      dropdownMode="select"
+                    />
+
+                    {dateFilter && (
+                      <span style={{ fontSize: "16px", color: "White" }}>
+                        {format(dateFilter, "dd-MM-yyyy")}
+                      </span>
+                    )}
+
+                    <FaCalendarAlt
+                      style={{
+                        fontSize: "14px",
+                        cursor: "pointer",
+                        color: "#333",
+                      }}
+                      onClick={() => datePickerRef.current.setOpen(true)}
+                    />
+                  </div>
                 </th>
 
                 {/* {(isAdmin || isProcurement) && <th>Actions</th>} */}

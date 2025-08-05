@@ -6,6 +6,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { FaCalendarAlt } from "react-icons/fa";
 import { format } from "date-fns";
+import { showWarningToast } from "./Toastify";
 
 const Mrf = () => {
   const navigate = useNavigate();
@@ -123,7 +124,7 @@ const Mrf = () => {
 
   const handleGenerateReport = () => {
     if (filteredData.length === 0) {
-      alert("No data available to generate the report.");
+      showWarningToast("No data available to generate the report.");
       return;
     }
 
@@ -245,44 +246,49 @@ const Mrf = () => {
             <tr>
               <th>MRF ID</th>
               <th>Name</th>
-              <th
-                className="date-filter-inline"
-                style={{ width: "100%", height: "27px" }}
-              >
-                {!dateFilter && <span>Create Date</span>}
-
-                <DatePicker
-                  selected={dateFilter}
-                  onChange={(date) => setDateFilter(date)}
-                  ref={datePickerRef}
-                  dateFormat="yyyy-MM-dd"
-                  customInput={<div />} // Hides input field
-                  popperPlacement="bottom-end"
-                  showMonthDropdown
-                  showYearDropdown
-                  dropdownMode="select"
-                />
-
-                {dateFilter && (
-                  <span
-                    style={{
-                      marginLeft: "10px",
-                      fontSize: "16px",
-                      color: "white",
-                    }}
-                  >
-                    {format(dateFilter, "dd-MM-yyyy")}
-                  </span>
-                )}
-
-                <FaCalendarAlt
+              <th style={{ cursor: "pointer" }}>
+                <div
                   style={{
-                    fontSize: "14px",
-                    cursor: "pointer",
-                    color: "#333",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
                   }}
-                  onClick={() => datePickerRef.current.setOpen(true)}
-                />
+                >
+                  {!dateFilter && <span>Create Date</span>}
+
+                  <DatePicker
+                    selected={dateFilter}
+                    onChange={(date) => setDateFilter(date)}
+                    ref={datePickerRef}
+                    dateFormat="yyyy-MM-dd"
+                    customInput={<div />} // Hides input field
+                    popperPlacement="bottom-end"
+                    showMonthDropdown
+                    showYearDropdown
+                    dropdownMode="select"
+                  />
+
+                  {dateFilter && (
+                    <span
+                      style={{
+                        marginLeft: "10px",
+                        fontSize: "16px",
+                        color: "white",
+                      }}
+                    >
+                      {format(dateFilter, "dd-MM-yyyy")}
+                    </span>
+                  )}
+
+                  <FaCalendarAlt
+                    style={{
+                      fontSize: "14px",
+                      cursor: "pointer",
+                      color: "#333",
+                    }}
+                    onClick={() => datePickerRef.current.setOpen(true)}
+                  />
+                </div>
               </th>
 
               <th>Request ID</th>

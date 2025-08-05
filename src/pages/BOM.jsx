@@ -165,7 +165,7 @@ const BOM = () => {
       });
 
       if (response.ok) {
-        alert("BOM created successfully!");
+        showSuccessToast("BOM created successfully!");
         setShowForm(false);
         setFormData({ bom_name: "", created_by: "", last_modified_by: "" });
 
@@ -173,7 +173,7 @@ const BOM = () => {
         setBoms(await refreshed.json());
       } else {
         const error = await response.json();
-        alert("Error: " + JSON.stringify(error));
+        showErrorToast("Error: " + JSON.stringify(error));
       }
     } catch (error) {
       console.error("Error submitting BOM:", error);
@@ -237,7 +237,7 @@ const BOM = () => {
         );
       } else {
         const error = await response.json();
-        alert("Error updating WBOM: " + JSON.stringify(error));
+        showErrorToast("Error updating WBOM: " + JSON.stringify(error));
       }
     } catch (error) {
       console.error("Error updating WBOM:", error);

@@ -45,6 +45,8 @@ const Inventory = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [dropdownCoords, setDropdownCoords] = useState({ top: 0, left: 0 });
   const dropdownRef = useRef();
+  const [editingToolRow, setEditingToolRow] = useState(null);
+  const [editToolRowData, setEditToolRowData] = useState({});
 
   const [componentTypeDropdownOpen, setComponentTypeDropdownOpen] =
     useState(false);
@@ -135,8 +137,10 @@ const Inventory = () => {
     return acc;
   }, {});
 
-  const [editingToolRow, setEditingToolRow] = useState(null);
-  const [editToolRowData, setEditToolRowData] = useState({});
+  const resetDateFilter = () => {
+    setFromDate(null);
+    setToDate(null);
+  };
 
   useEffect(() => {
     if (statusFilter === "Tool") {
@@ -205,23 +209,12 @@ const Inventory = () => {
 
   const fetchToolInventoryData = async () => {
     try {
-      const response = await fetch(`${config.apiBaseURL}/tool_inventory/`);
+      const response = await fetch(`${config.apiBaseURL}/tool_inventory/`); // <-- Tool inventory API endpoint
       if (!response.ok) throw new Error("Failed to fetch tool inventory");
 
       const data = await response.json();
-      setToolInventory(data); // full list
-
-      // Apply date filter
-      const filtered = data.filter((tool) => {
-        const createdAt = new Date(tool.created_at);
-        return (
-          (!toolFromDate || createdAt >= new Date(toolFromDate)) &&
-          (!toolToDate ||
-            createdAt <= new Date(toolToDate).setHours(23, 59, 59, 999))
-        );
-      });
-
-      setFilteredToolInventory(filtered);
+      setToolInventory(data); // set tool inventory data separately
+      console.log("Fetched tool inventory data:", data);
     } catch (error) {
       console.error("Error fetching tool inventory:", error);
       showErrorToast("Failed to fetch tool inventory");
@@ -273,31 +266,36 @@ const Inventory = () => {
       return;
     }
 
-    const from = fromDate ? new Date(fromDate.setHours(0, 0, 0, 0)) : null;
-    const to = toDate ? new Date(toDate.setHours(23, 59, 59, 999)) : null;
+    let filtered;
 
     if (statusFilter === "Tool") {
-      // Tool Inventory filter
-      const filtered = toolInventory.filter((item) => {
-        const createdDate = new Date(item.created_at);
-        return (!from || createdDate >= from) && (!to || createdDate <= to);
-      });
-      setFilteredToolInventory(filtered); // ✅ update tool inventory filtered state
+      filtered = [...toolInventory];
+      if (fromDate && toDate) {
+        filtered = filtered.filter((item) => {
+          const createdDate = new Date(item.created_at);
+          createdDate.setHours(0, 0, 0, 0);
+          return (
+            createdDate >= new Date(fromDate.setHours(0, 0, 0, 0)) &&
+            createdDate <= new Date(toDate.setHours(0, 0, 0, 0))
+          );
+        });
+      }
+      setToolInventory(filtered);
     } else {
-      // Normal inventory filter
-      const filtered = inventoryData.filter((item) => {
-        const createdDate = new Date(item.create_date);
-        return (!from || createdDate >= from) && (!to || createdDate <= to);
-      });
+      filtered = [...inventoryData];
+      if (fromDate && toDate) {
+        filtered = filtered.filter((item) => {
+          const createdDate = new Date(item.create_date);
+          createdDate.setHours(0, 0, 0, 0);
+          return (
+            createdDate >= new Date(fromDate.setHours(0, 0, 0, 0)) &&
+            createdDate <= new Date(toDate.setHours(0, 0, 0, 0))
+          );
+        });
+      }
       setFilteredInventory(filtered);
     }
   };
-
-  const [toolFromDate, setToolFromDate] = useState(null);
-  const [toolToDate, setToolToDate] = useState(null);
-  const [filteredToolInventory, setFilteredToolInventory] = useState([]);
-
-  // Then define:
 
   const fetchComponentMasterData = async () => {
     try {
@@ -558,22 +556,16 @@ const Inventory = () => {
     document.body.removeChild(a);
   };
 
-  // const clearDateFilter = () => {
-  //   setFromDate(null);
-  //   setToDate(null);
-  //   setFilteredInventory(
-  //     inventoryData.filter((item) => item.status === statusFilter)
-  //   );
-  // };
-
   const clearDateFilter = () => {
     setFromDate(null);
     setToDate(null);
 
     if (statusFilter === "Tool") {
-      setFilteredToolInventory(toolInventory);
+      fetchToolInventoryData(); // reset to full list
     } else {
-      setFilteredInventory(inventoryData);
+      setFilteredInventory(
+        inventoryData.filter((item) => item.status === statusFilter)
+      );
     }
   };
 
@@ -681,7 +673,8 @@ const Inventory = () => {
   const handleChangeStatusToAvailable = async (serialNumber) => {
     try {
       const response = await fetch(
-        `${config.apiBaseURL}/inventory/${serialNumber}/`,
+        `
+        ${config.apiBaseURL}/inventory/${serialNumber}/`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -690,7 +683,7 @@ const Inventory = () => {
       );
 
       if (response.ok) {
-        showSuccessToast(`Serial ${serialNumber} moved to Available`);
+        showSuccessToast("Serial ${serialNumber} moved to Available");
         // Refresh inventory after update
         fetchInventoryData("Repair");
       } else {
@@ -724,31 +717,45 @@ const Inventory = () => {
       <div className="tab-selector">
         <button
           className={`tab-btn ${statusFilter === "Available" ? "active" : ""}`}
-          onClick={() => setStatusFilter("Available")}
+          onClick={() => {
+            resetDateFilter(); // <-- clear date
+            setStatusFilter("Available");
+          }}
         >
           Available
         </button>
         <button
           className={`tab-btn ${statusFilter === "In_drone" ? "active" : ""}`}
-          onClick={() => setStatusFilter("In_drone")}
+          onClick={() => {
+            resetDateFilter();
+            setStatusFilter("In_drone");
+          }}
         >
           In Drone
         </button>
         <button
           className={`tab-btn ${statusFilter === "Repair" ? "active" : ""}`}
-          onClick={() => setStatusFilter("Repair")}
+          onClick={() => {
+            resetDateFilter();
+            setStatusFilter("Repair");
+          }}
         >
           Repair
         </button>
         <button
           className={`tab-btn ${statusFilter === "Damaged" ? "active" : ""}`}
-          onClick={() => setStatusFilter("Damaged")}
+          onClick={() => {
+            resetDateFilter();
+            setStatusFilter("Damaged");
+          }}
         >
           Scrap
         </button>
         <button
           className={`tab-btn ${statusFilter === "Tool" ? "active" : ""}`}
           onClick={() => {
+            resetDateFilter();
+
             setStatusFilter("Tool");
             setSelectedStatus("");
           }}
@@ -792,6 +799,13 @@ const Inventory = () => {
             })()}
           </span>
         </div>
+        {(fromDate || toDate) && (
+          <div style={{ fontSize: "14px", color: "#555" }}>
+            🗓️ {fromDate && `From: ${format(fromDate, "dd-MM-yyyy")}`}
+            {fromDate && toDate && " | "}
+            {toDate && `To: ${format(toDate, "dd-MM-yyyy")}`}
+          </div>
+        )}
 
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <button
@@ -1203,7 +1217,7 @@ const Inventory = () => {
                             style={{
                               backgroundColor: !row.status
                                 ? "#e0e0e0"
-                                : "#ededed",
+                                : "#ededed", // Highlight disabled items
                               color:
                                 row.status !== "Available"
                                   ? "#a0a0a0"
@@ -1211,7 +1225,7 @@ const Inventory = () => {
                             }}
                           >
                             <td>{row.component_id}</td>
-                            <td>{row.serial_number}</td>
+                            <td>{row.serial_number} </td>
                             <td
                               onDoubleClick={() =>
                                 handleDoubleClick(row.id, row.sku_number)
@@ -1264,16 +1278,7 @@ const Inventory = () => {
                               {statusFilter === "Repair" &&
                                 row.status === "Repair" && (
                                   <button
-                                    style={{
-                                      marginLeft: "10px",
-                                      padding: "4px 8px",
-                                      fontSize: "12px",
-                                      backgroundColor: "#4CAF50",
-                                      color: "#fff",
-                                      border: "none",
-                                      borderRadius: "4px",
-                                      cursor: "pointer",
-                                    }}
+                                    className="make-available-btn"
                                     onClick={() =>
                                       handleChangeStatusToAvailable(
                                         row.serial_number
@@ -1283,7 +1288,7 @@ const Inventory = () => {
                                     Make Available
                                   </button>
                                 )}
-                            </td>
+                            </td>{" "}
                           </tr>
                         ))}
                     </React.Fragment>
@@ -1424,8 +1429,8 @@ const Inventory = () => {
                 )}
 
                 {/* Existing tool rows with edit functionality */}
-                {filteredToolInventory.length > 0 ? (
-                  filteredToolInventory.map((tool, idx) =>
+                {toolInventory.length > 0 ? (
+                  toolInventory.map((tool, idx) =>
                     editingToolRow === tool.id ? (
                       <tr key={tool.id}>
                         <td>
@@ -1500,6 +1505,11 @@ const Inventory = () => {
                             }
                           />
                         </td>
+                        <td>
+                          {tool.created_at
+                            ? format(new Date(tool.created_at), "dd-MM-yyyy")
+                            : "N/A"}
+                        </td>
 
                         <td className="event-buttons">
                           <button
@@ -1551,13 +1561,24 @@ const Inventory = () => {
                   )
                 ) : (
                   <tr>
-                    <td
+                    {/* <td
                       colSpan="8"
                       style={{ textAlign: "center", color: "gray" }}
                     >
-                      {fromDate && toDate ? (
+                      No Tool Inventory found
+                    </td> */}
+                    <td
+                      colSpan="11"
+                      style={{ textAlign: "center", color: "gray" }}
+                    >
+                      {selectedTag.trim() ? (
                         <>
-                          No Tool Inventory data available from{" "}
+                          No results found for tag "
+                          <strong>{selectedTag}</strong>"
+                        </>
+                      ) : fromDate && toDate ? (
+                        <>
+                          No tool data available from{" "}
                           <strong>{formatDate(fromDate)}</strong> to{" "}
                           <strong>{formatDate(toDate)}</strong>.
                         </>
