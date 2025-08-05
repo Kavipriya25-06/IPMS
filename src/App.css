@@ -4699,20 +4699,32 @@ ul {
   color: gray;
 }
 
-.spinner {
+/* Only the loader circle spins */
+.loader {
   border: 4px solid #f3f3f3;
   border-top: 4px solid #f58720;
   border-radius: 50%;
   width: 24px;
   height: 24px;
   animation: spin 1s linear infinite;
-  display: inline-block;
-  margin-right: 10px;
-  vertical-align: middle;
 }
 
+/* Wrapper for layout */
+.spinner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Optional text styling */
+.spinner span {
+  font-size: 16px;
+  font-weight: 500;
+}
+  
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
 
