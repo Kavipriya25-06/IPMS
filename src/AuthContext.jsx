@@ -13,7 +13,7 @@ import {
   showInfoToast,
   showWarningToast,
   ToastContainerComponent,
-} from "./Toastify.jsx"; // Import Toastify utilities
+} from "./pages/Toastify"; // Import Toastify utilities
 import config from "./Config"; // Import config for API endpoints
 
 // Create AuthContext
