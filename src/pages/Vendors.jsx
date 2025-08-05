@@ -60,6 +60,30 @@ const Vendors = () => {
     // category: "",
   });
   const [newVendorId, setNewVendorId] = useState(null);
+  const [loadingVendors, setLoadingVendors] = useState(true);
+
+  const [visibleVendors, setVisibleVendors] = useState(10);
+  const [hasMoreVendors, setHasMoreVendors] = useState(true);
+  const [isLoadingMoreVendors, setIsLoadingMoreVendors] = useState(false);
+  const [filteredVendorData, setFilteredVendorData] = useState([]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const query = searchQuery.toLowerCase();
+      const filtered = vendorData.filter(
+        (v) =>
+          v.vendor_name.toLowerCase().includes(query) ||
+          v.gstn?.toLowerCase().includes(query)
+      );
+
+      setFilteredVendorData(filtered);
+      setVisibleVendors(10);
+      setHasMoreVendors(filtered.length > 10);
+      setLoadingVendors(false); //  move here after filtering is done
+    }, 500);
+
+    return () => clearTimeout(timeout);
+  }, [searchQuery, vendorData]);
 
   const handleClosePriceHistory = () => {
     setShowPocPopup(false);
@@ -69,6 +93,47 @@ const Vendors = () => {
     fetchVendorData();
     fetchPocData();
   }, []);
+
+  useEffect(() => {
+    // Only trigger fallback if there are more vendors to show
+    if (
+      filteredVendorData.length > visibleVendors &&
+      hasMoreVendors &&
+      !isLoadingMoreVendors
+    ) {
+      // Delay execution until DOM is ready
+      const timeout = setTimeout(() => {
+        const container = document.getElementById("vendor-table-wrapper");
+
+        if (container) {
+          const { scrollHeight, clientHeight } = container;
+
+          // If container is not scrollable (content smaller than container), load more
+          if (scrollHeight <= clientHeight + 10) {
+            setIsLoadingMoreVendors(true);
+
+            setTimeout(() => {
+              const nextVisible = visibleVendors + 10;
+              if (nextVisible >= filteredVendorData.length) {
+                setVisibleVendors(filteredVendorData.length);
+                setHasMoreVendors(false);
+              } else {
+                setVisibleVendors(nextVisible);
+              }
+              setIsLoadingMoreVendors(false);
+            }, 1000); // Simulate loading
+          }
+        }
+      }, 300); // Delay after render
+
+      return () => clearTimeout(timeout);
+    }
+  }, [
+    filteredVendorData,
+    visibleVendors,
+    hasMoreVendors,
+    isLoadingMoreVendors,
+  ]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -84,12 +149,17 @@ const Vendors = () => {
   }, []);
 
   const fetchVendorData = async () => {
+    setLoadingVendors(true);
+
     try {
+      // await new Promise((resolve) => setTimeout(resolve, 180000));
       const response = await fetch(`${config.apiBaseURL}/vendor_list/`);
       const data = await response.json();
       setVendorData(data);
     } catch (error) {
       console.error("Error fetching vendor data:", error);
+    } finally {
+      setLoadingVendors(false); // hide loader
     }
   };
 
@@ -760,10 +830,34 @@ const Vendors = () => {
 
         {/* Add Vendor Button */}
       </div>
-
-      <div className="table-container">
-        <table  border="1"
-              style={{ width: "100%", borderCollapse: "collapse" }}>
+      <div
+        id="vendor-table-wrapper"
+        className="table-container"
+        style={{
+          overflowY: loadingVendors ? "hidden" : "auto",
+        }}
+        onScroll={(e) => {
+          const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+          if (
+            scrollTop + clientHeight >= scrollHeight - 10 &&
+            !isLoadingMoreVendors &&
+            hasMoreVendors
+          ) {
+            setIsLoadingMoreVendors(true);
+            setTimeout(() => {
+              const nextVisible = visibleVendors + 10;
+              if (nextVisible >= filteredVendorData.length) {
+                setVisibleVendors(filteredVendorData.length);
+                setHasMoreVendors(false);
+              } else {
+                setVisibleVendors(nextVisible);
+              }
+              setIsLoadingMoreVendors(false);
+            }, 500); // Simulate delay
+          }
+        }}
+      >
+        <table border="1" style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
               <th>Vendor Name</th>
@@ -778,15 +872,24 @@ const Vendors = () => {
             </tr>
           </thead>
           <tbody>
-            {vendorData.length > 0 ? (
-              vendorData.map((vendor) => {
+            {loadingVendors ? (
+              //  Show spinner or loading text while data is loading
+              <tr>
+                <td
+                  colSpan="8"
+                  style={{ textAlign: "center", padding: "20px" }}
+                >
+                  <div className="spinner"></div>
+                  Loading vendors...
+                </td>
+              </tr>
+            ) : filteredVendorData.length > 0 ? (
+              //  Show vendor rows if data is loaded
+              filteredVendorData.slice(0, visibleVendors).map((vendor) => {
                 const vendorPocs = getVendorPocs(vendor.vendor_id);
                 const selectedPocId = primaryPocSelection[vendor.vendor_id];
                 const defaultPoc =
                   vendorPocs.find((poc) => poc.default_poc) || {};
-                const defaultPocDetails = pocData.find(
-                  (poc) => poc.vendor === vendor.vendor_id && poc.default_poc
-                );
                 const primaryPoc =
                   vendorPocs.find((poc) => poc.id === selectedPocId) ||
                   vendorPocs[0] ||
@@ -799,24 +902,22 @@ const Vendors = () => {
                       title={vendor.vendor_name || ""}
                     >
                       {isEditingVendor === vendor.vendor_id ? (
-                        <div>
-                          <input
-                            type="text"
-                            value={editedVendorName.vendor_name}
-                            style={{
-                              width: "150px",
-                              padding: "3px",
-                              borderRadius: "5px",
-                            }}
-                            onChange={(e) =>
-                              setEditedVendorName({
-                                ...editedVendorName,
-                                vendor_name: e.target.value,
-                              })
-                            }
-                            autoFocus
-                          />
-                        </div>
+                        <input
+                          type="text"
+                          value={editedVendorName.vendor_name}
+                          style={{
+                            width: "150px",
+                            padding: "3px",
+                            borderRadius: "5px",
+                          }}
+                          onChange={(e) =>
+                            setEditedVendorName({
+                              ...editedVendorName,
+                              vendor_name: e.target.value,
+                            })
+                          }
+                          autoFocus
+                        />
                       ) : (
                         <span
                           onClick={() =>
@@ -916,15 +1017,31 @@ const Vendors = () => {
                 );
               })
             ) : (
+              // Show no data message only if NOT loading and filtered data is empty
               <tr>
-                <td colSpan="8" style={{ textAlign: "center", color: "gray" }}>
+                <td
+                  colSpan="8"
+                  style={{
+                    textAlign: "center",
+                    color: "gray",
+                    padding: "20px",
+                  }}
+                >
                   No vendor data found.
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+
+        {isLoadingMoreVendors && (
+          <div className="loading-message">Loading...</div>
+        )}
+        {!hasMoreVendors && filteredVendorData.length > 0 && (
+          <div className="no-message">No more data</div>
+        )}
       </div>
+
       {/* <button
         onClick={() => setIsAddingVendor(true)}
         style={{ marginTop: "10px" }}
