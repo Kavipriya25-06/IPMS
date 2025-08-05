@@ -4639,12 +4639,13 @@ ul {
   color: #0056b3;
 }
 
-.landing-container {
+/* Fills between header and footer */
+.homepage-wrapper {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: calc(85vh - 60px); /* Adjust based on your navbar height */
+  height: calc(100vh - 180px); /* Adjust based on your navbar height */
   margin-top: 60px; /* Push down below navbar */
   background-color: #f9f9f9;
   text-align: center;
@@ -4652,34 +4653,42 @@ ul {
   border-radius: 10px;
 }
 
-.landing-container h2 {
-  font-size: 2rem;
-  margin-bottom: 20px;
-  color: #333;
-  margin-top: -10px;
+/* Styled inner box */
+.landing-container {
+  background-color: #ffffff;
+  padding: 40px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  width: 100%;
+  max-width: 500px;
 }
 
+/* Buttons */
 .landing-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 10px;
+  margin-top: 30px;
 }
 
 .landing-buttons button {
+  margin: 10px;
   padding: 12px 24px;
-  font-size: 1rem;
+  font-size: 16px;
+  background-color: white;        
+  color: black;                  
+  border: 2px solid #f58720;      
   border-radius: 8px;
-  border: 1px solid #888;
-  background-color: #fff;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
+/* Optional: Hover effect */
 .landing-buttons button:hover {
-  background-color: #f1ba86;
+  border: 2px solid #f1ba86;
+  color: gray;
 }
+
+
+
 
 .po-order-wrapper {
   padding-bottom: 40px; /* avoid touching footer */
