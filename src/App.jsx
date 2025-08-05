@@ -64,16 +64,6 @@ function App() {
   return (
     <Router>
       <div className="App">
-        {/* <h1>
-          <NavLink to="/" style={{ textDecoration: "none", color: "inherit" }}>
-            Inventory Management
-          </NavLink>
-        </h1>
-        {user && (
-          <button onClick={logout} style={{ float: "right" }}>
-            Logout
-          </button>
-        )} */}
         <header
           style={{
             position: "fixed",
@@ -306,7 +296,6 @@ function App() {
                     "Procurement",
                     "Inventory",
                     "Finance",
-                    
                   ]}
                 >
                   <Inventory />
@@ -662,3 +651,364 @@ function App() {
 }
 
 export default App;
+
+//////////////////////////////////////////   Optimized code snippet using react.lazy and suspense
+
+// import React, { Suspense, lazy } from "react";
+// import "./App.css";
+// import { useAuth } from "./AuthContext";
+// import {
+//   BrowserRouter as Router,
+//   Route,
+//   Routes,
+//   NavLink,
+// } from "react-router-dom";
+// import ProtectedRoute from "./ProtectedRoute";
+// import SideBar from "./pages/sidebar";
+// import ProfileDropdown from "./pages/ProfileDropdown";
+// import CartIcon from "./pages/CartIcon";
+// import TagIcon from "./pages/AddTagsIcon";
+// import MRFIcon from "./pages/MRFIcon";
+// import IPMSLogo from "./assets/IPMS.png";
+
+// // ---- Lazy Imports ----
+// const Components = lazy(() => import("./pages/Components"));
+// const ComponentsDetails = lazy(() => import("./pages/ComponentDetailsPage"));
+// const Inventory = lazy(() => import("./pages/Inventory"));
+// const Vendors = lazy(() => import("./pages/Vendors"));
+// const BOMDisplay = lazy(() => import("./pages/BOM"));
+// const Requests = lazy(() => import("./pages/Requests"));
+// const RequestDetails = lazy(() => import("./pages/RequestDetails"));
+// const VendorDetails = lazy(() => import("./pages/VendorDetails"));
+// const BOMDetails = lazy(() => import("./pages/BOMDetails"));
+// const RequestForm = lazy(() => import("./pages/RequestForm"));
+// const HomePage = lazy(() => import("./pages/HomePage"));
+// const POOrderMaster = lazy(() => import("./pages/POOrderMaster"));
+// const POOrderList = lazy(() => import("./pages/POList"));
+// const Inward = lazy(() => import("./pages/Inward"));
+// const InwardList = lazy(() => import("./pages/Inwardlist"));
+// const PurchaseOrder = lazy(() => import("./pages/POTemplate"));
+// const Login = lazy(() => import("./pages/Login"));
+// const Projects = lazy(() => import("./pages/Projects"));
+// const Cart = lazy(() => import("./pages/Cart"));
+// const Roles = lazy(() => import("./pages/Roles"));
+// const AddTags = lazy(() => import("./pages/AddTags"));
+// const ProjectMaster = lazy(() => import("./pages/ProjectMaster"));
+// const Mrf = lazy(() => import("./pages/Mrf"));
+// const MrfRequest = lazy(() => import("./pages/MrfRequest"));
+// const MRFCreate = lazy(() => import("./pages/MRFCreate"));
+// const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+// const RequestComponent = lazy(() => import("./pages/RequestComponent"));
+// const Outward = lazy(() => import("./pages/Outward"));
+// const OutwardSales = lazy(() => import("./pages/OutwardSales"));
+// const OutwardManufacture = lazy(() => import("./pages/OutwardManufacture"));
+// const OutwardEvent = lazy(() => import("./pages/OutwardEvent"));
+// const JobOrderSheet = lazy(() => import("./pages/JobOrderSheet"));
+
+// function App() {
+//   const { user } = useAuth();
+
+//   // Role-based access control for navigation tabs
+//   const isTabEnabled = (allowedRoles) =>
+//     user && allowedRoles.includes(user.role);
+
+//   return (
+//     <Router>
+//       <div className="App">
+//         <header
+//           style={{
+//             position: "fixed",
+//             top: 0,
+//             left: 0,
+//             right: 0,
+//             height: "70px",
+//             backgroundColor: "#ffffff",
+//             display: "flex",
+//             justifyContent: "space-between",
+//             alignItems: "center",
+//             padding: "0 20px",
+//             boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+//             zIndex: 1000,
+//           }}
+//         >
+//           <h1 style={{ margin: 0 }}>
+//             <NavLink
+//               to="/"
+//               style={{ textDecoration: "none", color: "inherit" }}
+//             >
+//               <img
+//                 src={IPMSLogo}
+//                 alt="IPMS Logo"
+//                 style={{ height: "50px", width: "160px", objectFit: "contain" }}
+//               />
+//             </NavLink>
+//           </h1>
+//           <div style={{ display: "flex", alignItems: "center" }}>
+//             <div style={{ paddingLeft: "10px", fontSize: "18px" }}>
+//               <CartIcon style={{ fontSize: "20px" }} />
+//             </div>
+//             <div style={{ paddingLeft: "10px", fontSize: "18px" }}>
+//               <MRFIcon style={{ fontSize: "20px" }} />
+//             </div>
+//             <div style={{ paddingLeft: "10px", fontSize: "18px" }}>
+//               <TagIcon style={{ fontSize: "20px" }} />
+//             </div>
+//             <div style={{ paddingLeft: "10px" }}>
+//               <ProfileDropdown />
+//             </div>
+//           </div>
+//         </header>
+
+//         {/* Suspense wrapper for all routes */}
+//         <Suspense fallback={<div style={{ marginTop: "100px" }}>Loading...</div>}>
+//           <Routes>
+//             <Route path="/login" element={<Login />} />
+//             <Route path="/" element={<HomePage />} />
+
+//             <Route element={<SideBar />}>
+//               <Route
+//                 path="components"
+//                 element={
+//                   <ProtectedRoute allowedRoles={["Admin","Sub-Admin","Procurement","Inventory","Finance","User"]}>
+//                     <Components />
+//                   </ProtectedRoute>
+//                 }
+//               />
+//               <Route
+//                 path="components/:componentId"
+//                 element={
+//                   <ProtectedRoute allowedRoles={["Admin","Sub-Admin","Procurement","Inventory","Finance","User"]}>
+//                     <ComponentsDetails />
+//                   </ProtectedRoute>
+//                 }
+//               />
+//               <Route
+//                 path="components/addcomponents"
+//                 element={
+//                   <ProtectedRoute allowedRoles={["Admin","Sub-Admin","Procurement","Inventory","Finance","User"]}>
+//                     <RequestComponent />
+//                   </ProtectedRoute>
+//                 }
+//               />
+//               <Route
+//                 path="inventory"
+//                 element={
+//                   <ProtectedRoute allowedRoles={["Admin","Sub-Admin","Procurement","Inventory","Finance"]}>
+//                     <Inventory />
+//                   </ProtectedRoute>
+//                 }
+//               />
+//               <Route
+//                 path="vendor"
+//                 element={
+//                   <ProtectedRoute allowedRoles={["Admin","Sub-Admin","Procurement"]}>
+//                     <Vendors />
+//                   </ProtectedRoute>
+//                 }
+//               />
+//               <Route
+//                 path="vendor/:vendorId"
+//                 element={
+//                   <ProtectedRoute allowedRoles={["Admin","Sub-Admin","Procurement"]}>
+//                     <VendorDetails />
+//                   </ProtectedRoute>
+//                 }
+//               />
+//               <Route
+//                 path="bom"
+//                 element={
+//                   <ProtectedRoute allowedRoles={["Admin","Sub-Admin","Procurement","Inventory","Finance","User"]}>
+//                     <BOMDisplay />
+//                   </ProtectedRoute>
+//                 }
+//               />
+//               <Route
+//                 path="bom/:bomId"
+//                 element={
+//                   <ProtectedRoute allowedRoles={["Admin","Sub-Admin","Procurement","Inventory","Finance","User"]}>
+//                     <BOMDetails />
+//                   </ProtectedRoute>
+//                 }
+//               />
+//               <Route
+//                 path="requests"
+//                 element={
+//                   <ProtectedRoute allowedRoles={["Admin","Sub-Admin","User","Procurement","Inventory"]}>
+//                     <Requests />
+//                   </ProtectedRoute>
+//                 }
+//               />
+//               <Route
+//                 path="request-form"
+//                 element={
+//                   <ProtectedRoute allowedRoles={["Admin","Sub-Admin","User","Procurement","Inventory"]}>
+//                     <RequestForm />
+//                   </ProtectedRoute>
+//                 }
+//               />
+//               <Route
+//                 path="requests/:requestId"
+//                 element={
+//                   <ProtectedRoute allowedRoles={["Admin","Sub-Admin","User","Procurement","Inventory"]}>
+//                     <RequestDetails user={user} />
+//                   </ProtectedRoute>
+//                 }
+//               />
+//               <Route
+//                 path="po-list"
+//                 element={
+//                   <ProtectedRoute allowedRoles={["Admin","Sub-Admin","Procurement","Finance"]}>
+//                     <POOrderList user={user} />
+//                   </ProtectedRoute>
+//                 }
+//               />
+//               <Route
+//                 path="po-details/:poId"
+//                 element={
+//                   <ProtectedRoute allowedRoles={["Admin","Sub-Admin","Procurement","Finance"]}>
+//                     <POOrderMaster user={user} />
+//                   </ProtectedRoute>
+//                 }
+//               />
+//               <Route
+//                 path="inward"
+//                 element={
+//                   <ProtectedRoute allowedRoles={["Admin","Sub-Admin","Inventory"]}>
+//                     <Inward />
+//                   </ProtectedRoute>
+//                 }
+//               />
+//               <Route
+//                 path="inwardlist"
+//                 element={
+//                   <ProtectedRoute allowedRoles={["Admin","Sub-Admin","Inventory"]}>
+//                     <InwardList />
+//                   </ProtectedRoute>
+//                 }
+//               />
+//               <Route
+//                 path="outward"
+//                 element={
+//                   <ProtectedRoute allowedRoles={["Admin","Sub-Admin","Inventory"]}>
+//                     <Outward />
+//                   </ProtectedRoute>
+//                 }
+//               />
+//               <Route
+//                 path="outward/add-sales-list"
+//                 element={
+//                   <ProtectedRoute allowedRoles={["Admin","Sub-Admin","Inventory"]}>
+//                     <OutwardSales />
+//                   </ProtectedRoute>
+//                 }
+//               />
+//               <Route
+//                 path="outward/add-event-list"
+//                 element={
+//                   <ProtectedRoute allowedRoles={["Admin","Sub-Admin","Inventory"]}>
+//                     <OutwardEvent />
+//                   </ProtectedRoute>
+//                 }
+//               />
+//               <Route
+//                 path="outward/add-service-list"
+//                 element={
+//                   <ProtectedRoute allowedRoles={["Admin","Sub-Admin","Inventory"]}>
+//                     <OutwardManufacture />
+//                   </ProtectedRoute>
+//                 }
+//               />
+//               <Route
+//                 path="jobordersheet"
+//                 element={
+//                   <ProtectedRoute allowedRoles={["Admin","Sub-Admin","Inventory"]}>
+//                     <JobOrderSheet />
+//                   </ProtectedRoute>
+//                 }
+//               />
+//               <Route
+//                 path="purchase-order/:id"
+//                 element={
+//                   <ProtectedRoute allowedRoles={["Admin","Sub-Admin","Procurement","Finance"]}>
+//                     <PurchaseOrder />
+//                   </ProtectedRoute>
+//                 }
+//               />
+//               <Route
+//                 path="projects"
+//                 element={
+//                   <ProtectedRoute allowedRoles={["Admin","Sub-Admin","User","Procurement","Inventory","Finance"]}>
+//                     <Projects />
+//                   </ProtectedRoute>
+//                 }
+//               />
+//               <Route
+//                 path="projects/:projectId"
+//                 element={
+//                   <ProtectedRoute allowedRoles={["Admin","Sub-Admin","User","Procurement","Inventory","Finance"]}>
+//                     <ProjectMaster />
+//                   </ProtectedRoute>
+//                 }
+//               />
+//               <Route
+//                 path="cart"
+//                 element={
+//                   <ProtectedRoute allowedRoles={["Admin","Sub-Admin","Procurement"]}>
+//                     <Cart user={user} />
+//                   </ProtectedRoute>
+//                 }
+//               />
+//               <Route
+//                 path="roles"
+//                 element={
+//                   <ProtectedRoute allowedRoles={["Admin"]}>
+//                     <Roles />
+//                   </ProtectedRoute>
+//                 }
+//               />
+//               <Route
+//                 path="addtags"
+//                 element={
+//                   <ProtectedRoute allowedRoles={["Admin","Sub-Admin","Inventory","Procurement"]}>
+//                     <AddTags />
+//                   </ProtectedRoute>
+//                 }
+//               />
+//               <Route
+//                 path="mrf"
+//                 element={
+//                   <ProtectedRoute allowedRoles={["Procurement","Admin","Sub-Admin","Inventory","User"]}>
+//                     <Mrf />
+//                   </ProtectedRoute>
+//                 }
+//               />
+//               <Route
+//                 path="mrfcreate"
+//                 element={
+//                   <ProtectedRoute allowedRoles={["Procurement","Admin","Sub-Admin","Inventory","User"]}>
+//                     <MRFCreate />
+//                   </ProtectedRoute>
+//                 }
+//               />
+//               <Route
+//                 path="mrfrequest/:MRF_id"
+//                 element={
+//                   <ProtectedRoute allowedRoles={["Procurement","Admin","Sub-Admin","Inventory","User"]}>
+//                     <MrfRequest />
+//                   </ProtectedRoute>
+//                 }
+//               />
+//             </Route>
+//           </Routes>
+
+//           {/* Reset Password route */}
+//           <Routes>
+//             <Route path="/reset-password/:id/:token" element={<ResetPassword />} />
+//           </Routes>
+//         </Suspense>
+//       </div>
+//     </Router>
+//   );
+// }
+
+// export default App;
