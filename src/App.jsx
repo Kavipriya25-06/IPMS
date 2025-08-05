@@ -645,6 +645,24 @@ function App() {
             element={<ResetPassword />}
           />
         </Routes>
+        <footer
+          style={{
+            width: "100vw",
+            backgroundColor: "#f5f5f5",
+            padding: "17px 0px",
+            textAlign: "center",
+            fontSize: "14px",
+            color: "#666",
+            borderTop: "1px solid #ddd",
+            position: "fixed",
+            left: 0,
+            bottom: 0,
+            top: "auto",
+          }}
+        >
+          © {new Date().getFullYear()} IPMS Inventory Management System. All
+          rights reserved.
+        </footer>
       </div>
     </Router>
   );
