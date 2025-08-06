@@ -1442,7 +1442,12 @@ const VendorDetails = () => {
                   </td>
                   {/* <td>{product.component_id}</td> */}
                   <td>{product.component_type}</td>
-                  <td>{product.component_specification}</td>
+                  <td
+                    className="specification-cell"
+                    title={product.component_specification}
+                  >
+                    {product.component_specification}
+                  </td>
                   <td>{product.unit_of_measurement}</td>
                   <td
                     onClick={() => handlePriceClick(product.product_id)}

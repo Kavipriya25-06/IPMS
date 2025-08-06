@@ -176,65 +176,37 @@ const Component = () => {
   }, []);
 
   // Function to fetch data from the API
-  const fetchComponents = async (isFiltering = false, resetPage = false) => {
-    if ((!nextPageUrl && !isFiltering) || loading) {
-      return;
-    } // Stop if there's no next page or already loading
-
+  const fetchComponents = async () => {
     try {
       setLoading(true);
-      const pageParam = resetPage || isFiltering ? 1 : currentPage;
 
-      // Construct the API URL with filters
-      const url = new URL(`${config.apiBaseURL}/tag_search/`);
-      url.searchParams.append("page", pageParam);
-      // url.searchParams.append("page_size", 10); // ✅ Add this here
+      let allComponents = [];
+      let page = 1;
+      let hasNext = true;
 
-      if (selectedSpecification)
-        url.searchParams.append("search", selectedSpecification);
-      if (selectedCategory)
-        url.searchParams.append("category", selectedCategory);
-      if (selectedComponentType)
-        url.searchParams.append("component_type", selectedComponentType);
-      if (tagsChoices)
-        url.searchParams.append("tags_choices__tags", tagsChoices);
+      while (hasNext) {
+        const url = new URL(`${config.apiBaseURL}/tag_search/`);
+        url.searchParams.append("page", page);
 
-      console.log("Fetching data from URL:", url.toString());
-      const response = await fetch(url);
-      const data = await response.json();
-      console.log("API Response:", data);
+        if (selectedSpecification)
+          url.searchParams.append("search", selectedSpecification);
+        if (selectedCategory)
+          url.searchParams.append("category", selectedCategory);
+        if (selectedComponentType)
+          url.searchParams.append("component_type", selectedComponentType);
+        if (tagsChoices)
+          url.searchParams.append("tags_choices__tags", tagsChoices);
 
-      if (!data || !Array.isArray(data.results)) {
-        console.error("Invalid API response structure:", data);
-        setLoading(false);
-        return;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        allComponents = [...allComponents, ...data.results];
+        hasNext = !!data.next;
+        page += 1;
       }
 
-      setComponents((prevComponents) => {
-        if (resetPage || isFiltering) {
-          return data.results; // Replace results when filtering
-        }
-        const componentMap = new Map(
-          prevComponents.map((c) => [c.component_id, c])
-        );
-
-        data.results.forEach((c) => {
-          if (!componentMap.has(c.component_id)) {
-            componentMap.set(c.component_id, c);
-          }
-        });
-
-        return Array.from(componentMap.values());
-      });
-      // Update next page URL and hasMore
-      // console.log("Next page URL:", data.next);
-      setNextPageUrl(data.next); // Update next page URL
-      setHasMore(data.next !== null); // Check if more data is available
-
-      // Increment page only if not filtering
-      if (!resetPage) {
-        setCurrentPage((prevPage) => prevPage + 1);
-      }
+      setComponents(allComponents);
+      setHasMore(false);
     } catch (error) {
       console.error("Error fetching components:", error);
     } finally {
@@ -904,20 +876,8 @@ const Component = () => {
           </table>
         </div>
       </div>
-      {loading && (
-        <div className="spinner">
-          <div>
-            <p>Loading...</p>
-          </div>
-        </div>
-      )}
-
-      {/* {loading && <p>Loading...</p>} */}
-      {!hasMore && (
-        <div style={{ textAlign: "center", marginTop: "-30px", color: "#888" }}>
-          No more data available
-        </div>
-      )}
+      {loading && <p>Loading...</p>}
+      {!hasMore && <p>No more data available</p>}
 
       {showScrollTop && (
         <button
