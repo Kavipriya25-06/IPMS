@@ -80,7 +80,7 @@ const Vendors = () => {
       setVisibleVendors(10);
       setHasMoreVendors(filtered.length > 10);
       setLoadingVendors(false); //  move here after filtering is done
-    }, 500);
+    }, 300);
 
     return () => clearTimeout(timeout);
   }, [searchQuery, vendorData]);
@@ -885,6 +885,7 @@ const Vendors = () => {
               </tr>
             ) : filteredVendorData.length > 0 ? (
               //  Show vendor rows if data is loaded
+
               filteredVendorData.slice(0, visibleVendors).map((vendor) => {
                 const vendorPocs = getVendorPocs(vendor.vendor_id);
                 const selectedPocId = primaryPocSelection[vendor.vendor_id];
@@ -907,8 +908,9 @@ const Vendors = () => {
                           value={editedVendorName.vendor_name}
                           style={{
                             width: "150px",
-                            padding: "3px",
+                            padding: "5px",
                             borderRadius: "5px",
+                            border: "1px solid #ccc",
                           }}
                           onChange={(e) =>
                             setEditedVendorName({
@@ -939,8 +941,9 @@ const Vendors = () => {
                           value={editedVendorName.gstn}
                           style={{
                             width: "150px",
-                            padding: "3px",
+                            padding: "5px",
                             borderRadius: "5px",
+                            border: "1px solid #ccc",
                           }}
                           onChange={(e) =>
                             setEditedVendorName({
@@ -1016,8 +1019,7 @@ const Vendors = () => {
                   </tr>
                 );
               })
-            ) : (
-              // Show no data message only if NOT loading and filtered data is empty
+            ) : vendorData.length === 0 ? (
               <tr>
                 <td
                   colSpan="8"
@@ -1030,7 +1032,7 @@ const Vendors = () => {
                   No vendor data found.
                 </td>
               </tr>
-            )}
+            ) : null}
           </tbody>
         </table>
 

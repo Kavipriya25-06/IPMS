@@ -441,7 +441,7 @@ const POOrderList = ({ user }) => {
       </div>
       <div className="table-container">
         {poOrders.length === 0 ? (
-          <p>No Purchase Orders found.</p>
+          <p style={{ color:"gray"}}>No Purchase Orders found.</p>
         ) : (
           <table>
             <thead>

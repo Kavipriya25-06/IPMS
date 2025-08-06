@@ -891,7 +891,7 @@ const Outward = () => {
               ))
             ) : (
               <tr>
-                <td colSpan={currentHeaders.length + 1}>No data found</td>
+                <td colSpan={currentHeaders.length + 1} style={{textAlign:"center", color:"gray"}}>No data found</td>
               </tr>
             )}
           </tbody>

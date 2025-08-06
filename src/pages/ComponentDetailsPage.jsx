@@ -126,7 +126,8 @@ const ComponentDetailsPage = () => {
     fetchData();
   }, [componentId]);
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) return <div className="spinner"></div>;
+
   if (noData) return <p>No information available for this component</p>;
 
   const firstVendor = vendorDetails[0];
