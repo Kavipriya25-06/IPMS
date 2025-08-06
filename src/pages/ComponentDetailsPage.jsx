@@ -126,8 +126,8 @@ const ComponentDetailsPage = () => {
     fetchData();
   }, [componentId]);
 
-  if (loading) return  <div className="spinner"></div>
-                   
+  if (loading) return <div className="spinner"></div>;
+
   if (noData) return <p>No information available for this component</p>;
 
   const firstVendor = vendorDetails[0];
@@ -232,8 +232,8 @@ const ComponentDetailsPage = () => {
                 {vendorDetails.map((vendor) => (
                   <tr key={vendor.product_id}>
                     <td className="truncate-cell" title={vendor.vendor_name}>
-        {vendor.vendor_name}
-      </td>
+                      {vendor.vendor_name}
+                    </td>
                     <td style={{ textAlign: "right" }}>
                       ₹
                       {priceDataMap[vendor.product_id]?.price ??
