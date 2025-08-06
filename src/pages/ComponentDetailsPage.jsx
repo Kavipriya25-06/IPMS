@@ -126,7 +126,13 @@ const ComponentDetailsPage = () => {
     fetchData();
   }, [componentId]);
 
-  if (loading) return <div className="spinner"></div>;
+  if (loading)
+    return (
+      <div style={{ textAlign: "center", marginTop: "50px" }}>
+        <div className="spinner"></div>
+        Loading Component Details...
+      </div>
+    );
 
   if (noData) return <p>No information available for this component</p>;
 

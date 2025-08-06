@@ -21,6 +21,7 @@ const ProjectList = () => {
   const [sortOrder, setSortOrder] = useState("asc");
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchProjects();
@@ -48,11 +49,14 @@ const ProjectList = () => {
 
   const fetchProjects = async () => {
     try {
+      setLoading(true);
       const response = await fetch(`${config.apiBaseURL}/project/`);
       const data = await response.json();
       setProjects(data);
     } catch (error) {
       console.error("Error fetching projects:", error);
+    } finally {
+      setLoading(false); // Stop loading after both calls
     }
   };
 
@@ -137,7 +141,10 @@ const ProjectList = () => {
         </button>
       </div>
 
-      <div className="search-wrapper-container" style={{ marginBottom: "10px" }}>
+      <div
+        className="search-wrapper-container"
+        style={{ marginBottom: "10px" }}
+      >
         <div className="search-wrapper">
           <div className="search-bar-container">
             <input
@@ -285,11 +292,21 @@ const ProjectList = () => {
             </tr>
           </thead>
           <tbody>
-            {projects.filter((project) =>
-              project.project_name
-                ?.toLowerCase()
-                .includes(searchQuery.toLowerCase())
-            ).length > 0 ? (
+            {loading ? (
+              <tr>
+                <td
+                  colSpan="8"
+                  style={{ textAlign: "center", padding: "20px" }}
+                >
+                  <div className="spinner"></div>
+                  Loading Projects...
+                </td>
+              </tr>
+            ) : projects.filter((project) =>
+                project.project_name
+                  ?.toLowerCase()
+                  .includes(searchQuery.toLowerCase())
+              ).length > 0 ? (
               projects
                 .filter((project) =>
                   project.project_name

@@ -37,108 +37,165 @@ const BOMDetails = () => {
   const [priceTables, setPriceTables] = useState([]);
   const [showLatestPrice, setShowLatestPrice] = useState(false);
   const [vendorMasterData, setVendorMasterData] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [noData, setNoData] = useState(false);
+
+  
 
   // Fetch BOM details and related components
-  useEffect(() => {
-    const fetchBomDetails = async () => {
-      try {
-        const response = await fetch(`${config.apiBaseURL}/bom_list/`);
-        const data = await response.json();
-        const bom = data.find((b) => b.bom_id === bomId);
-        setSelectedBom(bom);
-      } catch (error) {
-        console.error("Error fetching BOM details:", error);
+  // useEffect(() => {
+  //   const fetchBomDetails = async () => {
+  //     try {
+  //       const response = await fetch(`${config.apiBaseURL}/bom_list/`);
+  //       const data = await response.json();
+  //       const bom = data.find((b) => b.bom_id === bomId);
+  //       setSelectedBom(bom);
+  //     } catch (error) {
+  //       console.error("Error fetching BOM details:", error);
+  //     }
+  //   };
+
+  //   const fetchBomComponents = async () => {
+  //     try {
+  //       const response = await fetch(`${config.apiBaseURL}/bom_master/`);
+  //       const data = await response.json();
+  //       const bomComponents = data.filter((b) => b.bom === bomId); // Filter components by BOM ID
+  //       setSelectedComponents(bomComponents); // Store BOM components
+  //     } catch (error) {
+  //       console.error("Error fetching BOM components:", error);
+  //     }
+  //   };
+
+  //   const fetchVendors = async () => {
+  //     try {
+  //       setLoadingVendors(true); // Set loading to true
+  //       const response = await fetch(`${config.apiBaseURL}/vendor_list/`);
+  //       const data = await response.json();
+  //       setVendors(data); // Store the vendor list
+  //     } catch (error) {
+  //       console.error("Error fetching vendors:", error);
+  //     } finally {
+  //       setLoadingVendors(false); // Set loading to false
+  //     }
+  //   };
+
+  //   const fetchVendorMaster = async () => {
+  //     try {
+  //       const response = await fetch(`${config.apiBaseURL}/vendor_master/`);
+  //       const data = await response.json();
+  //       setVendorMasterData(data);
+  //     } catch (error) {
+  //       console.error("Error fetching vendor master data:", error);
+  //     }
+  //   };
+
+  //   const fetchComponents = async () => {
+  //     try {
+  //       setLoadingComponents(true);
+  //       const response = await fetch(`${config.apiBaseURL}/component/`);
+  //       const data = await response.json();
+  //       setComponents(data);
+  //     } catch (error) {
+  //       console.error("Error fetching components:", error);
+  //     } finally {
+  //       setLoadingComponents(false);
+  //     }
+  //   };
+
+  //   const fetchAllData = async () => {
+  //     try {
+  //       const [bomRes, bomMasterRes, vendorRes, componentRes, priceRes] =
+  //         await Promise.all([
+  //           fetch(`${config.apiBaseURL}/bom_list/`),
+  //           fetch(`${config.apiBaseURL}/bom_master/`),
+  //           fetch(`${config.apiBaseURL}/vendor_list/`),
+  //           fetch(`${config.apiBaseURL}/component/`),
+  //           fetch(`${config.apiBaseURL}/price_tables/`),
+  //         ]);
+
+  //       const [bomData, bomMasterData, vendorData, componentData, priceData] =
+  //         await Promise.all([
+  //           bomRes.json(),
+  //           bomMasterRes.json(),
+  //           vendorRes.json(),
+  //           componentRes.json(),
+  //           priceRes.json(),
+  //         ]);
+
+  //       setSelectedBom(bomData.find((b) => b.bom_id === bomId));
+  //       setSelectedComponents(bomMasterData.filter((b) => b.bom === bomId));
+  //       setVendors(vendorData);
+  //       setComponents(componentData);
+  //       setPriceTables(priceData);
+  //     } catch (err) {
+  //       console.error("Error loading data:", err);
+  //     } finally {
+  //       setLoadingComponents(false);
+  //       setLoadingVendors(false);
+  //     }
+  //   };
+
+  //   // Fetch all data
+  //   fetchBomDetails();
+  //   fetchBomComponents();
+  //   fetchVendors();
+  //   fetchVendorMaster();
+  //   fetchComponents();
+  //   fetchAllData();
+  // }, [bomId]);
+
+
+useEffect(() => {
+  const fetchAllData = async () => {
+    setLoading(true);
+    setNoData(false); // Reset before fetch
+
+    try {
+      const [bomRes, bomMasterRes, vendorRes, componentRes, priceRes] =
+        await Promise.all([
+          fetch(`${config.apiBaseURL}/bom_list/`),
+          fetch(`${config.apiBaseURL}/bom_master/`),
+          fetch(`${config.apiBaseURL}/vendor_list/`),
+          fetch(`${config.apiBaseURL}/component/`),
+          fetch(`${config.apiBaseURL}/price_tables/`),
+        ]);
+
+      const [bomData, bomMasterData, vendorData, componentData, priceData] =
+        await Promise.all([
+          bomRes.json(),
+          bomMasterRes.json(),
+          vendorRes.json(),
+          componentRes.json(),
+          priceRes.json(),
+        ]);
+
+      // Set data
+      setSelectedBom(bomData.find((b) => b.bom_id === bomId));
+      setSelectedComponents(bomMasterData.filter((b) => b.bom === bomId));
+      setVendors(vendorData);
+      setComponents(componentData);
+      setPriceTables(priceData);
+
+      // ✅ Set noData if key data arrays are empty
+      if (
+        !bomData.length ||
+        !bomMasterData.some((b) => b.bom === bomId)
+      ) {
+        setNoData(true);
       }
-    };
 
-    const fetchBomComponents = async () => {
-      try {
-        const response = await fetch(`${config.apiBaseURL}/bom_master/`);
-        const data = await response.json();
-        const bomComponents = data.filter((b) => b.bom === bomId); // Filter components by BOM ID
-        setSelectedComponents(bomComponents); // Store BOM components
-      } catch (error) {
-        console.error("Error fetching BOM components:", error);
-      }
-    };
+    } catch (err) {
+      console.error("Error loading data:", err);
+      setNoData(true); // On fetch failure, treat as no data
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const fetchVendors = async () => {
-      try {
-        setLoadingVendors(true); // Set loading to true
-        const response = await fetch(`${config.apiBaseURL}/vendor_list/`);
-        const data = await response.json();
-        setVendors(data); // Store the vendor list
-      } catch (error) {
-        console.error("Error fetching vendors:", error);
-      } finally {
-        setLoadingVendors(false); // Set loading to false
-      }
-    };
+  fetchAllData();
+}, [bomId]);
 
-    const fetchVendorMaster = async () => {
-      try {
-        const response = await fetch(`${config.apiBaseURL}/vendor_master/`);
-        const data = await response.json();
-        setVendorMasterData(data);
-      } catch (error) {
-        console.error("Error fetching vendor master data:", error);
-      }
-    };
 
-    const fetchComponents = async () => {
-      try {
-        setLoadingComponents(true);
-        const response = await fetch(`${config.apiBaseURL}/component/`);
-        const data = await response.json();
-        setComponents(data);
-      } catch (error) {
-        console.error("Error fetching components:", error);
-      } finally {
-        setLoadingComponents(false);
-      }
-    };
-
-    const fetchAllData = async () => {
-      try {
-        const [bomRes, bomMasterRes, vendorRes, componentRes, priceRes] =
-          await Promise.all([
-            fetch(`${config.apiBaseURL}/bom_list/`),
-            fetch(`${config.apiBaseURL}/bom_master/`),
-            fetch(`${config.apiBaseURL}/vendor_list/`),
-            fetch(`${config.apiBaseURL}/component/`),
-            fetch(`${config.apiBaseURL}/price_tables/`),
-          ]);
-
-        const [bomData, bomMasterData, vendorData, componentData, priceData] =
-          await Promise.all([
-            bomRes.json(),
-            bomMasterRes.json(),
-            vendorRes.json(),
-            componentRes.json(),
-            priceRes.json(),
-          ]);
-
-        setSelectedBom(bomData.find((b) => b.bom_id === bomId));
-        setSelectedComponents(bomMasterData.filter((b) => b.bom === bomId));
-        setVendors(vendorData);
-        setComponents(componentData);
-        setPriceTables(priceData);
-      } catch (err) {
-        console.error("Error loading data:", err);
-      } finally {
-        setLoadingComponents(false);
-        setLoadingVendors(false);
-      }
-    };
-
-    // Fetch all data
-    fetchBomDetails();
-    fetchBomComponents();
-    fetchVendors();
-    fetchVendorMaster();
-    fetchComponents();
-    fetchAllData();
-  }, [bomId]);
 
   const getLatestPriceInfo = (componentObj, vendorObj) => {
     if (!componentObj || !vendorObj) return { price: "-", tax: "-", date: "-" };
@@ -459,6 +516,17 @@ const BOMDetails = () => {
       grandTotal: grandTotal.toFixed(2),
     });
   };
+
+   if (loading)
+    return (
+      <div style={{ textAlign: "center", marginTop: "50px" }}>
+        <div className="spinner"></div>
+        Loading BOM Details...
+      </div>
+    );
+
+      if (noData) return <p>No information available for this BOM</p>;
+
 
   ///
   return (

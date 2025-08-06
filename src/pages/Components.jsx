@@ -178,14 +178,10 @@ const Component = () => {
     };
   }, []);
 
-  // Function to fetch data from the API
-  // const fetchComponents = async () => {
-  //   try {
-  //     setLoading(true);
   const fetchComponents = async () => {
     try {
       setLoading(true);
-      setVisibleComponents(0); // Reset
+      setVisibleComponents(0);
       setHasMore(true);
       setIsLoadingMore(false);
 
@@ -215,24 +211,21 @@ const Component = () => {
       }
 
       setComponents(allComponents);
-      setHasMore(false);
-      // Show only 10 first
-      setVisibleComponents(10);
 
-      // Initially assume more data is available
-      setHasMore(allComponents.length > 10);
+      // 👉 Determine if all should be shown at once
+      if (allComponents.length <= 20) {
+        setVisibleComponents(allComponents.length); // show all at once
+        setHasMore(false); // stop loading more
+      } else {
+        setVisibleComponents(10); // show first 10
+        setHasMore(true); // allow scroll to load more
+      }
     } catch (error) {
       console.error("Error fetching components:", error);
     } finally {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (!loading && components.length > 0) {
-      setTimeout(checkAndLoadMore, 300); // Delay to let DOM render
-    }
-  }, [loading, components]);
 
   const checkAndLoadMore = () => {
     const container = document.getElementById("component-table-wrapper");
@@ -244,21 +237,26 @@ const Component = () => {
       !isLoadingMore
     ) {
       setIsLoadingMore(true);
-      setTimeout(() => {
-        const nextVisible = visibleComponents + 10;
-        if (nextVisible >= components.length) {
-          setVisibleComponents(components.length);
-          setHasMore(false);
-        } else {
-          setVisibleComponents(nextVisible);
-        }
-        setIsLoadingMore(false);
 
-        // Keep checking recursively
-        setTimeout(checkAndLoadMore, 300);
-      }, 300);
+      const nextVisible = visibleComponents + 10;
+
+      if (nextVisible >= components.length) {
+        setVisibleComponents(components.length);
+        setHasMore(false);
+        setIsLoadingMore(false);
+      } else {
+        setVisibleComponents(nextVisible);
+        setIsLoadingMore(false);
+        setTimeout(checkAndLoadMore, 300); // keep checking
+      }
     }
   };
+
+  useEffect(() => {
+    if (!loading && components.length > 0 && hasMore) {
+      setTimeout(checkAndLoadMore, 300);
+    }
+  }, [loading, components, hasMore]);
 
   useEffect(() => {
     if (components.length > 0) {
@@ -1044,9 +1042,6 @@ const Component = () => {
           )}
         </div>
       </div>
-      {/* 
-      {loading && <p>Loading...</p>}
-      {!hasMore && <p>No more data available</p>} */}
 
       {showScrollTop && (
         <button

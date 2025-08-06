@@ -30,6 +30,8 @@ const RequestComponent = () => {
   const [showModal, setShowModal] = useState(false);
   const { user, logout } = useAuth();
   const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
+    const [loading, setLoading] = useState(true);
+  
 
   const [formData, setFormData] = useState({
     name: "Dronix",
@@ -66,17 +68,30 @@ const RequestComponent = () => {
   }, []);
 
   // Fetch submitted component requests
-  useEffect(() => {
+useEffect(() => {
+  const fetchData = async () => {
+    setLoading(true);
     let url = `${config.apiBaseURL}/request_component/`;
+
     if (user?.role === "Procurement") {
       url += "?status=Added";
     }
 
-    fetch(url)
-      .then((res) => res.json())
-      .then((data) => setComponentList(data))
-      .catch((err) => console.error("Error fetching request data:", err));
-  }, [user]);
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      setComponentList(data);
+    } catch (err) {
+      console.error("Error fetching request data:", err);
+    } finally {
+      setLoading(false); // Ensure loader is hidden at the end
+    }
+  };
+
+  fetchData();
+}, [user]);
+
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -418,9 +433,36 @@ const RequestComponent = () => {
             </thead>
 
             <tbody>
-              {filteredComponents.length === 0 ? (
+              {loading ? (
+              //  Show spinner or loading text while data is loading
+              <tr>
+                <td
+                  colSpan="8"
+                  style={{ textAlign: "center", padding: "20px" }}
+                >
+                  <div className="spinner"></div>
+                  Loading request_component...
+                </td>
+              </tr>
+            ) :filteredComponents.length === 0 ? (
                 <tr>
-                  <td colSpan="9">No data available</td>
+                  <td
+                    colSpan={
+                      user.role === "Inventory" ||
+                      user.role === "Procurement" ||
+                      user.role === "Admin"
+                        ? 10
+                        : 9
+                    }
+                    style={{
+                      textAlign: "center",
+                      padding: "15px",
+                      fontSize: "16px",
+                      color: "#888",
+                    }}
+                  >
+                    No more data available
+                  </td>
                 </tr>
               ) : (
                 filteredComponents.map((item) => (
