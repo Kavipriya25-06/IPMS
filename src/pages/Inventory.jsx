@@ -48,10 +48,9 @@ const Inventory = () => {
   const [editingToolRow, setEditingToolRow] = useState(null);
   const [editToolRowData, setEditToolRowData] = useState({});
   const [visibleInventory, setVisibleInventory] = useState(10);
-const [isLoadingMore, setIsLoadingMore] = useState(false);
-const [hasMore, setHasMore] = useState(true);
-const [loading, setLoading] = useState(true);
-
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   const [componentTypeDropdownOpen, setComponentTypeDropdownOpen] =
     useState(false);
@@ -177,57 +176,55 @@ const [loading, setLoading] = useState(true);
 
   // Fetch inventory data from API (filtered by status)
 
-const fetchInventoryData = async (status = "Available") => {
-  try {
-    setLoading(true);
-    setVisibleInventory(0);     // Reset visible count
-    setHasMore(true);           // Enable infinite scroll
-    setIsLoadingMore(false);    // Reset loading state
+  const fetchInventoryData = async (status = "Available") => {
+    try {
+      setLoading(true);
+      setVisibleInventory(0); // Reset visible count
+      setHasMore(true); // Enable infinite scroll
+      setIsLoadingMore(false); // Reset loading state
 
-    let allData = [];
+      let allData = [];
 
-    if (status === "Available") {
-      const [availableRes, reservedRes] = await Promise.all([
-        fetch(`${config.apiBaseURL}/inventory/?status=Available`),
-        fetch(`${config.apiBaseURL}/inventory/?status=Reserved`),
-      ]);
+      if (status === "Available") {
+        const [availableRes, reservedRes] = await Promise.all([
+          fetch(`${config.apiBaseURL}/inventory/?status=Available`),
+          fetch(`${config.apiBaseURL}/inventory/?status=Reserved`),
+        ]);
 
-      if (!availableRes.ok || !reservedRes.ok)
-        throw new Error("Failed to fetch Available or Reserved");
+        if (!availableRes.ok || !reservedRes.ok)
+          throw new Error("Failed to fetch Available or Reserved");
 
-      const available = await availableRes.json();
-      const reserved = await reservedRes.json();
+        const available = await availableRes.json();
+        const reserved = await reservedRes.json();
 
-      allData = [...available, ...reserved];
-    } else {
-      const response = await fetch(`${config.apiBaseURL}/inventory/?status=${status}`);
-      if (!response.ok) throw new Error("Failed to fetch inventory");
-      allData = await response.json();
+        allData = [...available, ...reserved];
+      } else {
+        const response = await fetch(
+          `${config.apiBaseURL}/inventory/?status=${status}`
+        );
+        if (!response.ok) throw new Error("Failed to fetch inventory");
+        allData = await response.json();
+      }
+
+      // Set the data
+      setInventoryData(allData);
+      setFilteredInventory(allData);
+
+      // Show first 10, or all if less than or equal to 10
+      if (allData.length <= 10) {
+        setVisibleInventory(allData.length);
+        setHasMore(false); // Nothing left to load
+      } else {
+        setVisibleInventory(10);
+        setHasMore(true); // More to scroll
+      }
+    } catch (error) {
+      console.error("Error fetching inventory data:", error);
+      showErrorToast("Failed to fetch inventory data");
+    } finally {
+      setLoading(false);
     }
-
-    // Set the data
-    setInventoryData(allData);
-    setFilteredInventory(allData);
-
-    // Show first 10, or all if less than or equal to 10
-    if (allData.length <= 10) {
-      setVisibleInventory(allData.length);
-      setHasMore(false); // Nothing left to load
-    } else {
-      setVisibleInventory(10);
-      setHasMore(true); // More to scroll
-    }
-  } catch (error) {
-    console.error("Error fetching inventory data:", error);
-    showErrorToast("Failed to fetch inventory data");
-  } finally {
-    setLoading(false);
-  }
-};
-
-
-
-
+  };
 
   const fetchToolInventoryData = async () => {
     try {
@@ -243,33 +240,29 @@ const fetchInventoryData = async (status = "Available") => {
     }
   };
 
+  const autoLoadUntilScrollable = () => {
+    const container = document.getElementById("inventory-scroll-container");
 
-const autoLoadUntilScrollable = () => {
-  const container = document.getElementById("inventory-scroll-container");
+    if (
+      container &&
+      container.scrollHeight <= container.clientHeight &&
+      hasMore &&
+      !isLoadingMore
+    ) {
+      setIsLoadingMore(true);
 
-  if (
-    container &&
-    container.scrollHeight <= container.clientHeight &&
-    hasMore &&
-    !isLoadingMore
-  ) {
-    setIsLoadingMore(true);
+      const nextVisible = visibleInventory + 10;
+      const moreToLoad = nextVisible < filteredInventory.length;
 
-    const nextVisible = visibleInventory + 10;
-    const moreToLoad = nextVisible < filteredInventory.length;
+      setVisibleInventory(moreToLoad ? nextVisible : filteredInventory.length);
+      setHasMore(moreToLoad);
+      setIsLoadingMore(false);
 
-    setVisibleInventory(moreToLoad ? nextVisible : filteredInventory.length);
-    setHasMore(moreToLoad);
-    setIsLoadingMore(false);
-
-    if (moreToLoad) {
-      setTimeout(autoLoadUntilScrollable, 300); // Keep loading until scroll appears
+      if (moreToLoad) {
+        setTimeout(autoLoadUntilScrollable, 300); // Keep loading until scroll appears
+      }
     }
-  }
-};
-
-
-
+  };
 
   useEffect(() => {
     if (!loading && filteredInventory.length > 0 && hasMore) {
@@ -282,12 +275,7 @@ const autoLoadUntilScrollable = () => {
       setVisibleInventory(10);
       setHasMore(filteredInventory.length > 10);
     }
-  }, [filteredInventory]);
-
-
-
-
-
+  }, [filteredInventory]); // 🔁 remove this
 
   const handleUpdateToolRow = async () => {
     try {
@@ -927,36 +915,34 @@ const autoLoadUntilScrollable = () => {
           )}
         </div>
       </div>
-    
 
-  <div
-  id="inventory-scroll-container"
-  className="table-inventory-container"
- style={{
+      <div
+        id="inventory-scroll-container"
+        className="table-inventory-container"
+        style={{
           overflowY: loading ? "hidden" : "auto",
-        }}          onScroll={(e) => {
-            const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-            if (
-              scrollTop + clientHeight >= scrollHeight - 10 &&
-              !isLoadingMore &&
-              hasMore
-            ) {
-              setIsLoadingMore(true);
-              setTimeout(() => {
-                const nextVisible = visibleInventory + 10;
-                if (nextVisible >= filteredInventory.length) {
-                  setVisibleInventory(filterInventory.length);
-                  setHasMore(false);
-                } else {
-                  setVisibleInventory(nextVisible);
-                }
-                setIsLoadingMore(false);
-              }, 300);
-            }
-          }}
+        }}
+        onScroll={(e) => {
+          const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+          if (
+            scrollTop + clientHeight >= scrollHeight - 10 &&
+            !isLoadingMore &&
+            hasMore
+          ) {
+            setIsLoadingMore(true);
+            setTimeout(() => {
+              const nextVisible = visibleInventory + 10;
+              const isMore = nextVisible < filteredInventory.length;
 
-
->
+              setVisibleInventory(
+                isMore ? nextVisible : filteredInventory.length
+              );
+              setHasMore(isMore);
+              setIsLoadingMore(false);
+            }, 300);
+          }
+        }}
+      >
         {statusFilter !== "Tool" ? (
           <table className="inventory-table">
             <thead>
@@ -1202,194 +1188,205 @@ const autoLoadUntilScrollable = () => {
             </thead>
             <tbody>
               {Object.keys(groupedData).length > 0 ? (
-Object.keys(groupedData).slice(0, visibleInventory).map((componentId) => {
-                  const componentRows = groupedData[componentId];
-                  const componentRowsCount =
-                    groupedData[componentId].filter(
-                      (row) =>
-                        row.status === "Available" ||
-                        row.status === "Reserved" ||
-                        row.status === "Repair" ||
-                        row.status === "Damaged" ||
-                        row.status === "In_drone"
-                    ).length || 0;
-                  const firstRow = componentRows[0];
-                  const component = componentData[componentId] || {};
-                  const isExpanded = expandedComponents[componentId];
+                Object.keys(groupedData)
+                  .slice(0, visibleInventory)
+                  .map((componentId) => {
+                    const componentRows = groupedData[componentId];
+                    const componentRowsCount =
+                      groupedData[componentId].filter(
+                        (row) =>
+                          row.status === "Available" ||
+                          row.status === "Reserved" ||
+                          row.status === "Repair" ||
+                          row.status === "Damaged" ||
+                          row.status === "In_drone"
+                      ).length || 0;
+                    const firstRow = componentRows[0];
+                    const component = componentData[componentId] || {};
+                    const isExpanded = expandedComponents[componentId];
 
-                  return (
-                    <React.Fragment key={componentId}>
-                      <tr
-                        onClick={() => toggleExpand(componentId)}
-                        className="clickable-row"
-                        style={{
-                          cursor: "pointer",
-                          backgroundColor: componentRows.some(
-                            (row) => row.status !== "Available"
-                          )
-                            ? "white"
-                            : "", // Highlight disabled rows
-                        }}
-                      >
-                        <td
+                    return (
+                      <React.Fragment key={componentId}>
+                        <tr
+                          onClick={() => toggleExpand(componentId)}
+                          className="clickable-row"
                           style={{
-                            textDecoration:
-                              componentRows.length > 1 ? "underline" : "none",
+                            cursor: "pointer",
+                            backgroundColor: componentRows.some(
+                              (row) => row.status !== "Available"
+                            )
+                              ? "white"
+                              : "", // Highlight disabled rows
                           }}
                         >
-                          {componentId}
-                        </td>
-                        <td
-                          style={{ color: "Grey", fontStyle: "italic" }}
-                        >{`Quantity: ${componentRowsCount}`}</td>
-                        <td>{component.sku_number}</td>
-                        <td>{component.category || ""}</td>
-                        <td>{component.component_type || ""}</td>
-                        <td
-                          onDoubleClick={() => {
-                            setEditingComponentSpec(componentId);
-                            setTempSpecification(firstRow.specification || "");
-                          }}
-                          style={{ cursor: "pointer" }}
-                          className="specification-cell"
-                        >
-                          {editingComponentSpec === componentId ? (
-                            <>
-                              <input
-                                type="text"
-                                value={tempSpecification}
-                                onChange={(e) =>
-                                  setTempSpecification(e.target.value)
-                                }
-                                autoFocus
-                              />
-                              <button
-                                onClick={() =>
-                                  handleSaveSpecification(componentId)
-                                }
-                              >
-                                Save
-                              </button>
-                              <button onClick={() => cancelSpecificationEdit()}>
-                                Cancel
-                              </button>
-                            </>
-                          ) : (
-                            <span>
-                              {firstRow.specification || "Not Available"}
-                            </span>
-                          )}
-                        </td>
-                        <td>{firstRow.UOM || ""}</td>
-                        <td
-                          className="specification-cell"
-                          title={firstRow.vendor_name || ""}
-                        >
-                          {firstRow.vendor_name || ""}
-                        </td>
-                        <td>
-                          {firstRow.create_date
-                            ? format(
-                                parseISO(firstRow.create_date),
-                                "dd-MM-yyyy"
-                              )
-                            : format(new Date(), "dd-MM-yyyy")}
-                        </td>
-                        <td style={{ textAlign: "right" }}>
-                          ₹
-                          {parseFloat(firstRow.price).toLocaleString("en-IN", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
-                        </td>
-                        <td></td>
-                      </tr>
-
-                      {isExpanded &&
-                        componentRows.map((row, index) => (
-                          <tr
-                            key={index}
-                            className="expanded-row"
+                          <td
                             style={{
-                              backgroundColor: !row.status
-                                ? "#e0e0e0"
-                                : "#ededed", // Highlight disabled items
-                              color:
-                                row.status !== "Available"
-                                  ? "#a0a0a0"
-                                  : "inherit",
+                              textDecoration:
+                                componentRows.length > 1 ? "underline" : "none",
                             }}
                           >
-                            <td>{row.component_id}</td>
-                            <td>{row.serial_number} </td>
-                            <td
-                              onDoubleClick={() =>
-                                handleDoubleClick(row.id, row.sku_number)
-                              }
-                              style={{ cursor: "pointer" }}
-                            >
-                              {editingSKU === row.id ? (
-                                <>
-                                  <input
-                                    type="text"
-                                    value={tempSKU}
-                                    onChange={(e) =>
-                                      handleSKUChange(e.target.value)
-                                    }
-                                    autoFocus
-                                  />
-                                  <button onClick={() => handleSaveSKU(row.id)}>
-                                    Save
-                                  </button>
-                                  <button onClick={handleCancelEdit}>
-                                    Cancel
-                                  </button>
-                                </>
-                              ) : (
-                                <span>{row.sku_number_inventory}</span>
-                              )}
-                            </td>
-                            <td>{component.category || ""}</td>
-                            <td>{component.component_type || ""}</td>
-                            <td>{row.specification || ""}</td>
-                            <td>{row.UOM || ""}</td>
-                            <td>{row.vendor_name || ""}</td>
-                            <td>
-                              {row.create_date
-                                ? format(
-                                    parseISO(row.create_date),
-                                    "dd-MM-yyyy"
-                                  )
-                                : format(new Date(), "dd-MM-yyyy")}
-                            </td>
-                            <td style={{ textAlign: "right" }}>
-                              ₹
-                              {parseFloat(row.price).toLocaleString("en-IN", {
+                            {componentId}
+                          </td>
+                          <td
+                            style={{ color: "Grey", fontStyle: "italic" }}
+                          >{`Quantity: ${componentRowsCount}`}</td>
+                          <td>{component.sku_number}</td>
+                          <td>{component.category || ""}</td>
+                          <td>{component.component_type || ""}</td>
+                          <td
+                            onDoubleClick={() => {
+                              setEditingComponentSpec(componentId);
+                              setTempSpecification(
+                                firstRow.specification || ""
+                              );
+                            }}
+                            style={{ cursor: "pointer" }}
+                            className="specification-cell"
+                          >
+                            {editingComponentSpec === componentId ? (
+                              <>
+                                <input
+                                  type="text"
+                                  value={tempSpecification}
+                                  onChange={(e) =>
+                                    setTempSpecification(e.target.value)
+                                  }
+                                  autoFocus
+                                />
+                                <button
+                                  onClick={() =>
+                                    handleSaveSpecification(componentId)
+                                  }
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  onClick={() => cancelSpecificationEdit()}
+                                >
+                                  Cancel
+                                </button>
+                              </>
+                            ) : (
+                              <span>
+                                {firstRow.specification || "Not Available"}
+                              </span>
+                            )}
+                          </td>
+                          <td>{firstRow.UOM || ""}</td>
+                          <td
+                            className="specification-cell"
+                            title={firstRow.vendor_name || ""}
+                          >
+                            {firstRow.vendor_name || ""}
+                          </td>
+                          <td>
+                            {firstRow.create_date
+                              ? format(
+                                  parseISO(firstRow.create_date),
+                                  "dd-MM-yyyy"
+                                )
+                              : format(new Date(), "dd-MM-yyyy")}
+                          </td>
+                          <td style={{ textAlign: "right" }}>
+                            ₹
+                            {parseFloat(firstRow.price).toLocaleString(
+                              "en-IN",
+                              {
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
-                              })}
-                            </td>
-                            <td>
-                              {row.status}
-                              {statusFilter === "Repair" &&
-                                row.status === "Repair" && (
-                                  <button
-                                    className="make-available-btn"
-                                    onClick={() =>
-                                      handleChangeStatusToAvailable(
-                                        row.serial_number
-                                      )
-                                    }
-                                  >
-                                    Make Available
-                                  </button>
+                              }
+                            )}
+                          </td>
+                          <td></td>
+                        </tr>
+
+                        {isExpanded &&
+                          componentRows.map((row, index) => (
+                            <tr
+                              key={index}
+                              className="expanded-row"
+                              style={{
+                                backgroundColor: !row.status
+                                  ? "#e0e0e0"
+                                  : "#ededed", // Highlight disabled items
+                                color:
+                                  row.status !== "Available"
+                                    ? "#a0a0a0"
+                                    : "inherit",
+                              }}
+                            >
+                              <td>{row.component_id}</td>
+                              <td>{row.serial_number} </td>
+                              <td
+                                onDoubleClick={() =>
+                                  handleDoubleClick(row.id, row.sku_number)
+                                }
+                                style={{ cursor: "pointer" }}
+                              >
+                                {editingSKU === row.id ? (
+                                  <>
+                                    <input
+                                      type="text"
+                                      value={tempSKU}
+                                      onChange={(e) =>
+                                        handleSKUChange(e.target.value)
+                                      }
+                                      autoFocus
+                                    />
+                                    <button
+                                      onClick={() => handleSaveSKU(row.id)}
+                                    >
+                                      Save
+                                    </button>
+                                    <button onClick={handleCancelEdit}>
+                                      Cancel
+                                    </button>
+                                  </>
+                                ) : (
+                                  <span>{row.sku_number_inventory}</span>
                                 )}
-                            </td>{" "}
-                          </tr>
-                        ))}
-                    </React.Fragment>
-                  );
-                })
+                              </td>
+                              <td>{component.category || ""}</td>
+                              <td>{component.component_type || ""}</td>
+                              <td>{row.specification || ""}</td>
+                              <td>{row.UOM || ""}</td>
+                              <td>{row.vendor_name || ""}</td>
+                              <td>
+                                {row.create_date
+                                  ? format(
+                                      parseISO(row.create_date),
+                                      "dd-MM-yyyy"
+                                    )
+                                  : format(new Date(), "dd-MM-yyyy")}
+                              </td>
+                              <td style={{ textAlign: "right" }}>
+                                ₹
+                                {parseFloat(row.price).toLocaleString("en-IN", {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}
+                              </td>
+                              <td>
+                                {row.status}
+                                {statusFilter === "Repair" &&
+                                  row.status === "Repair" && (
+                                    <button
+                                      className="make-available-btn"
+                                      onClick={() =>
+                                        handleChangeStatusToAvailable(
+                                          row.serial_number
+                                        )
+                                      }
+                                    >
+                                      Make Available
+                                    </button>
+                                  )}
+                              </td>{" "}
+                            </tr>
+                          ))}
+                      </React.Fragment>
+                    );
+                  })
               ) : (
                 <tr>
                   <td
@@ -1414,31 +1411,51 @@ Object.keys(groupedData).slice(0, visibleInventory).map((componentId) => {
                 </tr>
               )}
               {loading && (
-  <tr>
-    <td colSpan="11" style={{ textAlign: "center", padding: "20px" }}>
-      <div className="spinner" />
-      <span>Loading...</span>
-    </td>
-  </tr>
-)}
+                <tr>
+                  <td
+                    colSpan="11"
+                    style={{ textAlign: "center", padding: "20px" }}
+                  >
+                    <div className="spinner" />
+                    <span>Loading...</span>
+                  </td>
+                </tr>
+              )}
 
-{/* NO MORE DATA MESSAGE */}
-{!isLoadingMore && !loading && visibleInventory >= Object.keys(groupedData).length && (
-  <tr>
-    <td colSpan="11" style={{ textAlign: "center", padding: "10px", color: "#888" }}>
-      No more data to load.
-    </td>
-  </tr>
-)}
+              {/* NO MORE DATA MESSAGE */}
+              {!isLoadingMore &&
+                !loading &&
+                Object.keys(groupedData).length > 0 &&
+                visibleInventory >= Object.keys(groupedData).length && (
+                  <tr>
+                    <td
+                      colSpan="11"
+                      style={{
+                        textAlign: "center",
+                        padding: "10px",
+                        color: "#888",
+                      }}
+                    >
+                      No more data to load.
+                    </td>
+                  </tr>
+                )}
 
-{/* LOADING MORE SPINNER */}
-{isLoadingMore && (
-  <tr>
-    <td colSpan="11" style={{ textAlign: "center", padding: "10px", color: "#555" }}>
-      Loading more...
-    </td>
-  </tr>
-)}
+              {/* LOADING MORE SPINNER */}
+              {isLoadingMore && (
+                <tr>
+                  <td
+                    colSpan="11"
+                    style={{
+                      textAlign: "center",
+                      padding: "10px",
+                      color: "#555",
+                    }}
+                  >
+                    Loading more...
+                  </td>
+                </tr>
+              )}
               {/* <tr>
                 <td style={{ fontWeight: "bold" }}>Total Inventory count</td>
                 <td>
