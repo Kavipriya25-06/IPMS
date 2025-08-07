@@ -151,7 +151,9 @@ const Inward = () => {
     const componentType = component_Type.toLowerCase();
 
     if (!componentType) {
-      showErrorToast("Component Type not available. Cannot fetch QC questions.");
+      showErrorToast(
+        "Component Type not available. Cannot fetch QC questions."
+      );
       return;
     }
 
@@ -199,7 +201,7 @@ const Inward = () => {
       setShowQCPopup(true);
     } catch (error) {
       console.error("Error fetching QC questions:", error);
-     showErrorToast("An error occurred while fetching QC questions.");
+      showErrorToast("An error occurred while fetching QC questions.");
     }
   };
 
@@ -214,7 +216,7 @@ const Inward = () => {
 
   const handleSubmitQC = async () => {
     if (!newQuestion.qcQuestions || newQuestion.qcQuestions.length === 0) {
-    showInfoToast("No questions available to submit.");
+      showInfoToast("No questions available to submit.");
       return;
     }
 
@@ -461,9 +463,12 @@ const Inward = () => {
         (entry) => entry.cart_details.component_id === componentId
       );
 
-      const price = poMasterEntry?.cart_details?.unit_price || "Not Available"; // Extract price (unit_price)
+      const priceRaw = poMasterEntry?.cart_details?.unit_price || "0"; // Extract price (unit_price)
+      const price = parseFloat(priceRaw);
+      const gst = parseFloat(item?.gst || 0);
+      const totalPrice = +(price + (price * gst) / 100).toFixed(2);
 
-      if (!price || price === "Not Available") {
+      if (!price || price === "0") {
         showErrorToast(
           "Price not found in PO Master details. Cannot move to inventory."
         );
@@ -501,6 +506,8 @@ const Inward = () => {
         specification: componentSpecification, // Mapping component_specification to specification
         UOM: "Nos", // Unit of measurement is set to "Nos"
         price: price, // Include price from PO Master
+        gst: gst.toFixed(2),
+        total_price: totalPrice.toFixed(2),
       };
 
       // Make the POST request to the inventory API
@@ -543,7 +550,7 @@ const Inward = () => {
       if (!updateResponse.ok) {
         const updateError = await updateResponse.json();
         console.error("Error updating mode_to_inventory:", updateError);
-    showErrorToast("Failed to update mode_to_inventory.");
+        showErrorToast("Failed to update mode_to_inventory.");
         return;
       }
 
@@ -573,7 +580,9 @@ const Inward = () => {
 
       // Basic validation
       if (!componentId || !componentSpecification) {
-        showErrorToast("Missing component ID or specification. Cannot proceed.");
+        showErrorToast(
+          "Missing component ID or specification. Cannot proceed."
+        );
         return;
       }
 
@@ -596,7 +605,7 @@ const Inward = () => {
       if (!response.ok) {
         const errorDetails = await response.json();
         console.error("Error posting to outward:", errorDetails);
-    showErrorToast("Failed to move to outward. Please check logs.");
+        showErrorToast("Failed to move to outward. Please check logs.");
         return;
       }
 

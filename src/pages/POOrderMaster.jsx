@@ -720,6 +720,7 @@ const POOrderMaster = ({ user }) => {
           vendor_name: cart.vendor_name,
           po_master_id: poMasterId,
           price: cart.unit_price,
+          gst: cart.GST,
           unit: 1,
           quality_check: "Pending",
         };
