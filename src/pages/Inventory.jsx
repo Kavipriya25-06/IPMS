@@ -1289,7 +1289,7 @@ const Inventory = () => {
                           </td>
                           <td style={{ textAlign: "right" }}>
                             ₹
-                            {parseFloat(firstRow.price).toLocaleString(
+                            {parseFloat(firstRow.total_price).toLocaleString(
                               "en-IN",
                               {
                                 minimumFractionDigits: 2,
