@@ -354,35 +354,35 @@ const Component = () => {
   ]);
 
   // Infinite scroll handler
-  const handleScroll = () => {
-    if (
-      window.innerHeight + window.scrollY >= document.body.offsetHeight - 100 &&
-      hasMore &&
-      !loading
-    ) {
-      fetchComponents(); // Fetch next page when scrolled near bottom
-    }
+  // const handleScroll = () => {
+  //   if (
+  //     window.innerHeight + window.scrollY >= document.body.offsetHeight - 100 &&
+  //     hasMore &&
+  //     !loading
+  //   ) {
+  //     fetchComponents(); // Fetch next page when scrolled near bottom
+  //   }
 
-    // Show or hide scroll-to-top button
-    if (window.scrollY > 300) {
-      setShowScrollTop(true);
-    } else {
-      setShowScrollTop(false);
-    }
-  };
+  //   // Show or hide scroll-to-top button
+  //   if (window.scrollY > 300) {
+  //     setShowScrollTop(true);
+  //   } else {
+  //     setShowScrollTop(false);
+  //   }
+  // };
 
   // Wrap the scroll handler with debounce
-  const debouncedHandleScroll = useCallback(debounce(handleScroll, 200), [
-    hasMore,
-    loading,
-    nextPageUrl,
-  ]);
+  // const debouncedHandleScroll = useCallback(debounce(handleScroll, 200), [
+  //   hasMore,
+  //   loading,
+  //   nextPageUrl,
+  // ]);
 
   // Attach scroll event listener
-  useEffect(() => {
-    window.addEventListener("scroll", debouncedHandleScroll);
-    return () => window.removeEventListener("scroll", debouncedHandleScroll); // Cleanup
-  }, [debouncedHandleScroll]);
+  // useEffect(() => {
+  //   window.addEventListener("scroll", debouncedHandleScroll);
+  //   return () => window.removeEventListener("scroll", debouncedHandleScroll); // Cleanup
+  // }, [debouncedHandleScroll]);
 
   // Scroll to top handler
   const scrollToTop = () => {
@@ -664,7 +664,7 @@ const Component = () => {
         <div
           id="component-table-wrapper"
           className="table-container"
-          style={{ overflowY: loading ? "hidden" : "auto", maxHeight: "75vh" }}
+          style={{ overflowY: loading ? "hidden" : "auto"}}
           onScroll={(e) => {
             const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
             if (
