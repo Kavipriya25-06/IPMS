@@ -860,7 +860,7 @@ const Inventory = () => {
         </div>
       </div>
 
-      <div className="table-container">
+      <div className="table-inventory-container">
         {statusFilter !== "Tool" ? (
           <table className="inventory-table">
             <thead>
