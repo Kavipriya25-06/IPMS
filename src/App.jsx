@@ -231,411 +231,413 @@ function App() {
           </ul>
         </nav> */}
 
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/" element={<HomePage />} />
-          <Route element={<SideBar />}>
-            <Route
-              path="components"
-              element={
-                <ProtectedRoute
-                  allowedRoles={[
-                    "Admin",
-                    "Sub-Admin",
-                    "Procurement",
-                    "Inventory",
-                    "Finance",
-                    "User",
-                  ]}
-                >
-                  <Components />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="components/:componentId"
-              element={
-                <ProtectedRoute
-                  allowedRoles={[
-                    "Admin",
-                    "Sub-Admin",
-                    "Procurement",
-                    "Inventory",
-                    "Finance",
-                    "User",
-                  ]}
-                >
-                  <ComponentsDetails />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="components/addcomponents"
-              element={
-                <ProtectedRoute
-                  allowedRoles={[
-                    "Admin",
-                    "Sub-Admin",
-                    "Procurement",
-                    "Inventory",
-                    "Finance",
-                    "User",
-                  ]}
-                >
-                  <RequestComponent />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="inventory"
-              element={
-                <ProtectedRoute
-                  allowedRoles={[
-                    "Admin",
-                    "Sub-Admin",
-                    "Procurement",
-                    "Inventory",
-                    "Finance",
-                  ]}
-                >
-                  <Inventory />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="vendor"
-              element={
-                <ProtectedRoute
-                  allowedRoles={["Admin", "Sub-Admin", "Procurement"]}
-                >
-                  <Vendors />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="vendor/:vendorId"
-              element={
-                <ProtectedRoute
-                  allowedRoles={["Admin", "Sub-Admin", "Procurement"]}
-                >
-                  <VendorDetails />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="bom"
-              element={
-                <ProtectedRoute
-                  allowedRoles={[
-                    "Admin",
-                    "Sub-Admin",
-                    "Procurement",
-                    "Inventory",
-                    "Finance",
-                    "User",
-                  ]}
-                >
-                  <BOMDisplay />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="bom/:bomId"
-              element={
-                <ProtectedRoute
-                  allowedRoles={[
-                    "Admin",
-                    "Sub-Admin",
-                    "Procurement",
-                    "Inventory",
-                    "Finance",
-                    "User",
-                  ]}
-                >
-                  <BOMDetails />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="requests"
-              element={
-                <ProtectedRoute
-                  allowedRoles={[
-                    "Admin",
-                    "Sub-Admin",
-                    "User",
-                    "Procurement",
-                    "Inventory",
-                  ]}
-                >
-                  <Requests />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="request-form"
-              element={
-                <ProtectedRoute
-                  allowedRoles={[
-                    "Admin",
-                    "Sub-Admin",
-                    "User",
-                    "Procurement",
-                    "Inventory",
-                  ]}
-                >
-                  <RequestForm />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="requests/:requestId"
-              element={
-                <ProtectedRoute
-                  allowedRoles={[
-                    "Admin",
-                    "Sub-Admin",
-                    "User",
-                    "Procurement",
-                    "Inventory",
-                  ]}
-                >
-                  <RequestDetails user={user} />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="po-list"
-              element={
-                <ProtectedRoute
-                  allowedRoles={[
-                    "Admin",
-                    "Sub-Admin",
-                    "Procurement",
-                    "Finance",
-                  ]}
-                >
-                  <POOrderList user={user} />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="po-details/:poId"
-              element={
-                <ProtectedRoute
-                  allowedRoles={[
-                    "Admin",
-                    "Sub-Admin",
-                    "Procurement",
-                    "Finance",
-                  ]}
-                >
-                  <POOrderMaster user={user} />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="inward"
-              element={
-                <ProtectedRoute
-                  allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
-                >
-                  <Inward />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="inwardlist"
-              element={
-                <ProtectedRoute
-                  allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
-                >
-                  <InwardList />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="outward"
-              element={
-                <ProtectedRoute
-                  allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
-                >
-                  <Outward />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="outward/add-sales-list"
-              element={
-                <ProtectedRoute
-                  allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
-                >
-                  <OutwardSales />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="outward/add-event-list"
-              element={
-                <ProtectedRoute
-                  allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
-                >
-                  <OutwardEvent />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="outward/add-service-list"
-              element={
-                <ProtectedRoute
-                  allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
-                >
-                  <OutwardManufacture />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="jobordersheet"
-              element={
-                <ProtectedRoute
-                  allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
-                >
-                  <JobOrderSheet />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="purchase-order/:id"
-              element={
-                <ProtectedRoute
-                  allowedRoles={[
-                    "Admin",
-                    "Sub-Admin",
-                    "Procurement",
-                    "Finance",
-                  ]}
-                >
-                  <PurchaseOrder />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="projects"
-              element={
-                <ProtectedRoute
-                  allowedRoles={[
-                    "Admin",
-                    "Sub-Admin",
-                    "User",
-                    "Procurement",
-                    "Inventory",
-                    "Finance",
-                  ]}
-                >
-                  <Projects />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="projects/:projectId"
-              element={
-                <ProtectedRoute
-                  allowedRoles={[
-                    "Admin",
-                    "Sub-Admin",
-                    "User",
-                    "Procurement",
-                    "Inventory",
-                    "Finance",
-                  ]}
-                >
-                  <ProjectMaster />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="cart"
-              element={
-                <ProtectedRoute
-                  allowedRoles={["Admin", "Sub-Admin", "Procurement"]}
-                >
-                  <Cart user={user} />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="roles"
-              element={
-                <ProtectedRoute allowedRoles={["Admin"]}>
-                  <Roles />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="addtags"
-              element={
-                <ProtectedRoute
-                  allowedRoles={[
-                    "Admin",
-                    "Sub-Admin",
-                    "Inventory",
-                    "Procurement",
-                  ]}
-                >
-                  <AddTags />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="mrf"
-              element={
-                <ProtectedRoute
-                  allowedRoles={[
-                    "Procurement",
-                    "Admin",
-                    "Sub-Admin",
-                    "Inventory",
-                    "User",
-                  ]}
-                >
-                  <Mrf />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="mrfcreate"
-              element={
-                <ProtectedRoute
-                  allowedRoles={[
-                    "Procurement",
-                    "Admin",
-                    "Sub-Admin",
-                    "Inventory",
-                    "User",
-                  ]}
-                >
-                  <MRFCreate />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="mrfrequest/:MRF_id"
-              element={
-                <ProtectedRoute
-                  allowedRoles={[
-                    "Procurement",
-                    "Admin",
-                    "Sub-Admin",
-                    "Inventory",
-                    "User",
-                  ]}
-                >
-                  <MrfRequest />
-                </ProtectedRoute>
-              }
-            />
-          </Route>
-        </Routes>
+        <div className="main-content">
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<HomePage />} />
+            <Route element={<SideBar />}>
+              <Route
+                path="components"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={[
+                      "Admin",
+                      "Sub-Admin",
+                      "Procurement",
+                      "Inventory",
+                      "Finance",
+                      "User",
+                    ]}
+                  >
+                    <Components />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="components/:componentId"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={[
+                      "Admin",
+                      "Sub-Admin",
+                      "Procurement",
+                      "Inventory",
+                      "Finance",
+                      "User",
+                    ]}
+                  >
+                    <ComponentsDetails />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="components/addcomponents"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={[
+                      "Admin",
+                      "Sub-Admin",
+                      "Procurement",
+                      "Inventory",
+                      "Finance",
+                      "User",
+                    ]}
+                  >
+                    <RequestComponent />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="inventory"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={[
+                      "Admin",
+                      "Sub-Admin",
+                      "Procurement",
+                      "Inventory",
+                      "Finance",
+                    ]}
+                  >
+                    <Inventory />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="vendor"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["Admin", "Sub-Admin", "Procurement"]}
+                  >
+                    <Vendors />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="vendor/:vendorId"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["Admin", "Sub-Admin", "Procurement"]}
+                  >
+                    <VendorDetails />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="bom"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={[
+                      "Admin",
+                      "Sub-Admin",
+                      "Procurement",
+                      "Inventory",
+                      "Finance",
+                      "User",
+                    ]}
+                  >
+                    <BOMDisplay />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="bom/:bomId"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={[
+                      "Admin",
+                      "Sub-Admin",
+                      "Procurement",
+                      "Inventory",
+                      "Finance",
+                      "User",
+                    ]}
+                  >
+                    <BOMDetails />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="requests"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={[
+                      "Admin",
+                      "Sub-Admin",
+                      "User",
+                      "Procurement",
+                      "Inventory",
+                    ]}
+                  >
+                    <Requests />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="request-form"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={[
+                      "Admin",
+                      "Sub-Admin",
+                      "User",
+                      "Procurement",
+                      "Inventory",
+                    ]}
+                  >
+                    <RequestForm />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="requests/:requestId"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={[
+                      "Admin",
+                      "Sub-Admin",
+                      "User",
+                      "Procurement",
+                      "Inventory",
+                    ]}
+                  >
+                    <RequestDetails user={user} />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="po-list"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={[
+                      "Admin",
+                      "Sub-Admin",
+                      "Procurement",
+                      "Finance",
+                    ]}
+                  >
+                    <POOrderList user={user} />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="po-details/:poId"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={[
+                      "Admin",
+                      "Sub-Admin",
+                      "Procurement",
+                      "Finance",
+                    ]}
+                  >
+                    <POOrderMaster user={user} />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="inward"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
+                  >
+                    <Inward />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="inwardlist"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
+                  >
+                    <InwardList />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="outward"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
+                  >
+                    <Outward />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="outward/add-sales-list"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
+                  >
+                    <OutwardSales />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="outward/add-event-list"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
+                  >
+                    <OutwardEvent />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="outward/add-service-list"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
+                  >
+                    <OutwardManufacture />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="jobordersheet"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
+                  >
+                    <JobOrderSheet />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="purchase-order/:id"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={[
+                      "Admin",
+                      "Sub-Admin",
+                      "Procurement",
+                      "Finance",
+                    ]}
+                  >
+                    <PurchaseOrder />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="projects"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={[
+                      "Admin",
+                      "Sub-Admin",
+                      "User",
+                      "Procurement",
+                      "Inventory",
+                      "Finance",
+                    ]}
+                  >
+                    <Projects />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="projects/:projectId"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={[
+                      "Admin",
+                      "Sub-Admin",
+                      "User",
+                      "Procurement",
+                      "Inventory",
+                      "Finance",
+                    ]}
+                  >
+                    <ProjectMaster />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="cart"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["Admin", "Sub-Admin", "Procurement"]}
+                  >
+                    <Cart user={user} />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="roles"
+                element={
+                  <ProtectedRoute allowedRoles={["Admin"]}>
+                    <Roles />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="addtags"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={[
+                      "Admin",
+                      "Sub-Admin",
+                      "Inventory",
+                      "Procurement",
+                    ]}
+                  >
+                    <AddTags />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="mrf"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={[
+                      "Procurement",
+                      "Admin",
+                      "Sub-Admin",
+                      "Inventory",
+                      "User",
+                    ]}
+                  >
+                    <Mrf />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="mrfcreate"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={[
+                      "Procurement",
+                      "Admin",
+                      "Sub-Admin",
+                      "Inventory",
+                      "User",
+                    ]}
+                  >
+                    <MRFCreate />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="mrfrequest/:MRF_id"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={[
+                      "Procurement",
+                      "Admin",
+                      "Sub-Admin",
+                      "Inventory",
+                      "User",
+                    ]}
+                  >
+                    <MrfRequest />
+                  </ProtectedRoute>
+                }
+              />
+            </Route>
+          </Routes>
+        </div>
 
         <Routes>
           {/* other routes */}

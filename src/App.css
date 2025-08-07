@@ -193,6 +193,10 @@ table {
   margin-bottom: 50px; /* Add space before footer */
 }
 
+.main-content{
+  min-height: fit-content;
+}
+
 .table-inventory-container {
   overflow-x: auto;
   overflow-y: auto;
@@ -200,7 +204,7 @@ table {
   white-space: nowrap;
   border-radius: 5px;
   max-height: calc(
-    85vh - 200px
+    78vh - 200px
   ); /* Adjust based on your footer and header height */
   margin-bottom: 50px; /* Add space before footer */
 }
@@ -2199,7 +2203,6 @@ main {
   /* height: 100vh; */
   /* overflow-y: auto; */
   box-sizing: border-box;
-  padding: 20px;
 }
 
 /* When sidebar is open, main content shifts right */
