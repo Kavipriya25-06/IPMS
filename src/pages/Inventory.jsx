@@ -47,6 +47,11 @@ const Inventory = () => {
   const dropdownRef = useRef();
   const [editingToolRow, setEditingToolRow] = useState(null);
   const [editToolRowData, setEditToolRowData] = useState({});
+  const [visibleInventory, setVisibleInventory] = useState(10);
+const [isLoadingMore, setIsLoadingMore] = useState(false);
+const [hasMore, setHasMore] = useState(true);
+const [loading, setLoading] = useState(true);
+
 
   const [componentTypeDropdownOpen, setComponentTypeDropdownOpen] =
     useState(false);
@@ -172,40 +177,57 @@ const Inventory = () => {
 
   // Fetch inventory data from API (filtered by status)
 
-  const fetchInventoryData = async (status = "Available") => {
-    try {
-      let data = [];
+const fetchInventoryData = async (status = "Available") => {
+  try {
+    setLoading(true);
+    setVisibleInventory(0);     // Reset visible count
+    setHasMore(true);           // Enable infinite scroll
+    setIsLoadingMore(false);    // Reset loading state
 
-      if (status === "Available") {
-        // Fetch both Available and Reserved
-        const [availableRes, reservedRes] = await Promise.all([
-          fetch(`${config.apiBaseURL}/inventory/?status=Available`),
-          fetch(`${config.apiBaseURL}/inventory/?status=Reserved`),
-        ]);
+    let allData = [];
 
-        if (!availableRes.ok || !reservedRes.ok)
-          throw new Error("Failed to fetch Available or Reserved");
+    if (status === "Available") {
+      const [availableRes, reservedRes] = await Promise.all([
+        fetch(`${config.apiBaseURL}/inventory/?status=Available`),
+        fetch(`${config.apiBaseURL}/inventory/?status=Reserved`),
+      ]);
 
-        const available = await availableRes.json();
-        const reserved = await reservedRes.json();
+      if (!availableRes.ok || !reservedRes.ok)
+        throw new Error("Failed to fetch Available or Reserved");
 
-        data = [...available, ...reserved]; // merge both
-      } else {
-        const response = await fetch(
-          `${config.apiBaseURL}/inventory/?status=${status}`
-        );
-        if (!response.ok) throw new Error("Failed to fetch inventory");
-        data = await response.json();
-      }
+      const available = await availableRes.json();
+      const reserved = await reservedRes.json();
 
-      setInventoryData(data);
-      setFilteredInventory(data);
-      console.log("Fetched inventory data:", data);
-    } catch (error) {
-      console.error("Error fetching inventory data:", error);
-      showErrorToast("Failed to fetch inventory data");
+      allData = [...available, ...reserved];
+    } else {
+      const response = await fetch(`${config.apiBaseURL}/inventory/?status=${status}`);
+      if (!response.ok) throw new Error("Failed to fetch inventory");
+      allData = await response.json();
     }
-  };
+
+    // Set the data
+    setInventoryData(allData);
+    setFilteredInventory(allData);
+
+    // Show first 10, or all if less than or equal to 10
+    if (allData.length <= 10) {
+      setVisibleInventory(allData.length);
+      setHasMore(false); // Nothing left to load
+    } else {
+      setVisibleInventory(10);
+      setHasMore(true); // More to scroll
+    }
+  } catch (error) {
+    console.error("Error fetching inventory data:", error);
+    showErrorToast("Failed to fetch inventory data");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+
+
 
   const fetchToolInventoryData = async () => {
     try {
@@ -220,6 +242,52 @@ const Inventory = () => {
       showErrorToast("Failed to fetch tool inventory");
     }
   };
+
+
+const autoLoadUntilScrollable = () => {
+  const container = document.getElementById("inventory-scroll-container");
+
+  if (
+    container &&
+    container.scrollHeight <= container.clientHeight &&
+    hasMore &&
+    !isLoadingMore
+  ) {
+    setIsLoadingMore(true);
+
+    const nextVisible = visibleInventory + 10;
+    const moreToLoad = nextVisible < filteredInventory.length;
+
+    setVisibleInventory(moreToLoad ? nextVisible : filteredInventory.length);
+    setHasMore(moreToLoad);
+    setIsLoadingMore(false);
+
+    if (moreToLoad) {
+      setTimeout(autoLoadUntilScrollable, 300); // Keep loading until scroll appears
+    }
+  }
+};
+
+
+
+
+  useEffect(() => {
+    if (!loading && filteredInventory.length > 0 && hasMore) {
+      setTimeout(autoLoadUntilScrollable, 300);
+    }
+  }, [loading, filteredInventory, hasMore]);
+
+  useEffect(() => {
+    if (filteredInventory.length > 0) {
+      setVisibleInventory(10);
+      setHasMore(filteredInventory.length > 10);
+    }
+  }, [filteredInventory]);
+
+
+
+
+
 
   const handleUpdateToolRow = async () => {
     try {
@@ -859,8 +927,36 @@ const Inventory = () => {
           )}
         </div>
       </div>
+    
 
-      <div className="table-inventory-container">
+  <div
+  id="inventory-scroll-container"
+  className="table-inventory-container"
+ style={{
+          overflowY: loading ? "hidden" : "auto",
+        }}          onScroll={(e) => {
+            const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+            if (
+              scrollTop + clientHeight >= scrollHeight - 10 &&
+              !isLoadingMore &&
+              hasMore
+            ) {
+              setIsLoadingMore(true);
+              setTimeout(() => {
+                const nextVisible = visibleInventory + 10;
+                if (nextVisible >= filteredInventory.length) {
+                  setVisibleInventory(filterInventory.length);
+                  setHasMore(false);
+                } else {
+                  setVisibleInventory(nextVisible);
+                }
+                setIsLoadingMore(false);
+              }, 300);
+            }
+          }}
+
+
+>
         {statusFilter !== "Tool" ? (
           <table className="inventory-table">
             <thead>
@@ -1106,7 +1202,7 @@ const Inventory = () => {
             </thead>
             <tbody>
               {Object.keys(groupedData).length > 0 ? (
-                Object.keys(groupedData).map((componentId) => {
+Object.keys(groupedData).slice(0, visibleInventory).map((componentId) => {
                   const componentRows = groupedData[componentId];
                   const componentRowsCount =
                     groupedData[componentId].filter(
@@ -1317,6 +1413,32 @@ const Inventory = () => {
                   </td>
                 </tr>
               )}
+              {loading && (
+  <tr>
+    <td colSpan="11" style={{ textAlign: "center", padding: "20px" }}>
+      <div className="spinner" />
+      <span>Loading...</span>
+    </td>
+  </tr>
+)}
+
+{/* NO MORE DATA MESSAGE */}
+{!isLoadingMore && !loading && visibleInventory >= Object.keys(groupedData).length && (
+  <tr>
+    <td colSpan="11" style={{ textAlign: "center", padding: "10px", color: "#888" }}>
+      No more data to load.
+    </td>
+  </tr>
+)}
+
+{/* LOADING MORE SPINNER */}
+{isLoadingMore && (
+  <tr>
+    <td colSpan="11" style={{ textAlign: "center", padding: "10px", color: "#555" }}>
+      Loading more...
+    </td>
+  </tr>
+)}
               {/* <tr>
                 <td style={{ fontWeight: "bold" }}>Total Inventory count</td>
                 <td>
