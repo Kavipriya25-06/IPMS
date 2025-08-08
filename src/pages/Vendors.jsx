@@ -77,47 +77,6 @@ const Vendors = () => {
   }, []);
 
   useEffect(() => {
-    // Only trigger fallback if there are more vendors to show
-    if (
-      filteredVendorData.length > visibleVendors &&
-      hasMoreVendors &&
-      !isLoadingMoreVendors
-    ) {
-      // Delay execution until DOM is ready
-      const timeout = setTimeout(() => {
-        const container = document.getElementById("vendor-table-wrapper");
-
-        if (container) {
-          const { scrollHeight, clientHeight } = container;
-
-          // If container is not scrollable (content smaller than container), load more
-          if (scrollHeight <= clientHeight + 10) {
-            setIsLoadingMoreVendors(true);
-
-            setTimeout(() => {
-              const nextVisible = visibleVendors + 10;
-              if (nextVisible >= filteredVendorData.length) {
-                setVisibleVendors(filteredVendorData.length);
-                setHasMoreVendors(false);
-              } else {
-                setVisibleVendors(nextVisible);
-              }
-              setIsLoadingMoreVendors(false);
-            }, 1000); // Simulate loading
-          }
-        }
-      }, 300); // Delay after render
-
-      return () => clearTimeout(timeout);
-    }
-  }, [
-    filteredVendorData,
-    visibleVendors,
-    hasMoreVendors,
-    isLoadingMoreVendors,
-  ]);
-
-  useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 300) {
         setShowScrollTop(true);
@@ -130,23 +89,72 @@ const Vendors = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // 1️⃣ Fetch vendors
   const fetchVendorData = async () => {
-    setLoadingVendors(true);
-
     try {
-      // await new Promise((resolve) => setTimeout(resolve, 180000));
+      setLoadingVendors(true);
+      setVisibleVendors(0);
+      setHasMoreVendors(true);
+      setIsLoadingMoreVendors(false);
+
       const response = await fetch(`${config.apiBaseURL}/vendor_list/`);
       const data = await response.json();
-      setVendorData(data);
-      setFilteredVendorData(data); // For display
-      setVisibleVendors(10);
-      setHasMoreVendors(data.length > 10);
+
+      setFilteredVendorData(data);
+
+      if (data.length <= 20) {
+        setVisibleVendors(data.length);
+        setHasMoreVendors(false);
+      } else {
+        setVisibleVendors(10);
+        setHasMoreVendors(true);
+      }
     } catch (error) {
       console.error("Error fetching vendor data:", error);
     } finally {
-      setLoadingVendors(false); // hide loader
+      setLoadingVendors(false);
     }
   };
+
+  // 2️⃣ Auto-load if container can't scroll
+  const checkAndLoadMoreVendors = () => {
+    const container = document.getElementById("vendor-table-wrapper");
+
+    if (
+      container &&
+      container.scrollHeight <= container.clientHeight &&
+      hasMoreVendors &&
+      !isLoadingMoreVendors
+    ) {
+      setIsLoadingMoreVendors(true);
+
+      const nextVisible = visibleVendors + 10;
+
+      if (nextVisible >= filteredVendorData.length) {
+        setVisibleVendors(filteredVendorData.length);
+        setHasMoreVendors(false);
+        setIsLoadingMoreVendors(false);
+      } else {
+        setVisibleVendors(nextVisible);
+        setIsLoadingMoreVendors(false);
+        setTimeout(checkAndLoadMoreVendors, 300);
+      }
+    }
+  };
+
+  // 4️⃣ Keep checking after load
+  useEffect(() => {
+    if (!loadingVendors && filteredVendorData.length > 0 && hasMoreVendors) {
+      setTimeout(checkAndLoadMoreVendors, 300);
+    }
+  }, [loadingVendors, filteredVendorData, hasMoreVendors]);
+
+  useEffect(() => {
+    if (filteredVendorData.length > 0) {
+      setVisibleVendors(10);
+      setHasMoreVendors(filteredVendorData.length > 10);
+    }
+  }, [filteredVendorData]);
 
   const fetchPocData = async () => {
     try {
