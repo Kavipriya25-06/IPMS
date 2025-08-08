@@ -1341,14 +1341,28 @@ const RequestDetails = ({ user }) => {
                                     ? "disabled-button"
                                     : ""
                                 }`}
-                                onClick={() =>
-                                  detail.approve &&
-                                  handleAssign(
-                                    detail.component_id,
-                                    detail.qty,
-                                    detail.id
-                                  )
-                                }
+                                onClick={() => {
+                                  // Validation for price and tax before reserve
+                                  if (
+                                    detail.price === null ||
+                                    detail.tax === null ||
+                                    isNaN(detail.price) ||
+                                    isNaN(detail.tax)
+                                  ) {
+                                    showWarningToast(
+                                      "Please enter price and tax before reserving."
+                                    );
+                                    return;
+                                  }
+
+                                  if (detail.approve) {
+                                    handleAssign(
+                                      detail.component_id,
+                                      detail.qty,
+                                      detail.id
+                                    );
+                                  }
+                                }}
                                 disabled={
                                   availableQty < detail.qty ||
                                   detail.qty === 0 ||
@@ -1458,7 +1472,10 @@ const RequestDetails = ({ user }) => {
                     <tbody>
                       {pricePopupData.map((vendor) => (
                         <tr key={vendor.vendor_id}>
-                          <td className="specification-cell" title={vendor.vendor_name}>
+                          <td
+                            className="specification-cell"
+                            title={vendor.vendor_name}
+                          >
                             {vendor.vendor_name}
                           </td>
                           <td style={{ textAlign: "right" }}>
