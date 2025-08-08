@@ -121,24 +121,6 @@ const ProjectList = () => {
         }}
       >
         <h2>Project List</h2>
-        <button
-          style={{
-            cursor: "pointer",
-            background: "transparent",
-            border: "none",
-            padding: "6px",
-            marginBottom: "-10px",
-          }}
-          className="plus-button"
-          title={showAddForm ? "Cancel" : "Add Project"}
-          onClick={() => setShowAddForm(!showAddForm)}
-        >
-          <img
-            src={showAddForm ? CancelIcon : AddIcon}
-            alt={showAddForm ? "Cancel" : "Add Project"}
-            style={{ width: "20px", height: "20px", marginBottom: "5px" }}
-          />
-        </button>
       </div>
 
       <div
@@ -159,6 +141,24 @@ const ProjectList = () => {
             </span>
           </div>
         </div>
+         <button
+          style={{
+            cursor: "pointer",
+            background: "transparent",
+            border: "none",
+            padding: "4px",
+            marginBottom: "-20px",
+          }}
+          className="plus-button"
+          title={showAddForm ? "Cancel" : "Add Project"}
+          onClick={() => setShowAddForm(!showAddForm)}
+        >
+          <img
+            src={showAddForm ? CancelIcon : AddIcon}
+            alt={showAddForm ? "Cancel" : "Add Project"}
+            style={{ width: "20px", height: "20px", marginBottom: "5px" }}
+          />
+        </button>
       </div>
 
       {showAddForm && (

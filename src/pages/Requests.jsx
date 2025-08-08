@@ -172,23 +172,7 @@ const Requests = () => {
       >
         <h2>Request List</h2>
 
-        <button
-        onClick={handleNewRequest}
-        style={{
-          marginTop: "10px",
-          background: "transparent",
-          border: "none",
-          cursor: "pointer",
-          padding: "4px",
-        }}
-        title="New Request"
-      >
-        <img
-          src={Add}
-          alt="New Request"
-          style={{ width: "20px", height: "20px" }}
-        />
-      </button>
+    
       </div>
       <div className="search-wrapper-container" style={{ marginBottom: "10px" }}>
         <div className="search-wrapper">
@@ -205,6 +189,23 @@ const Requests = () => {
             </span>
           </div>
         </div>
+            <button
+        onClick={handleNewRequest}
+          style={{
+            cursor: "pointer",
+            background: "transparent",
+            border: "none",
+            padding: "4px",
+            marginBottom: "-20px",
+          }}
+        title="New Request"
+      >
+        <img
+          src={Add}
+          alt="New Request"
+          style={{ width: "20px", height: "20px" }}
+        />
+      </button>
       </div>
 
       <div className="table-container" style={{ marginTop: "-15px" }}>
@@ -294,7 +295,7 @@ const Requests = () => {
       </div>
       {showstatus && (
         <div className="modal-overlay">
-          <div className="popup">
+          <div className="popup" style={{ width: "40%",maxHeight: "60vh", overflowY: "auto" }}>
             <span className="x-button" onClick={handleCloseStatus}>
               &times;
             </span>
@@ -324,7 +325,7 @@ const Requests = () => {
                       <tr key={index}>
                         <td>{status.po_id}</td>
                         <td>{status.request_id}</td>
-                        <td>{status.component_specification}</td>
+                        <td className="specification-cell">{status.component_specification}</td>
                         <td>{status.po_status}</td>
                       </tr>
                     ))
