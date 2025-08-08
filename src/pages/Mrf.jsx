@@ -6,6 +6,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { FaCalendarAlt } from "react-icons/fa";
 import { format } from "date-fns";
+import { showWarningToast } from "./Toastify";
 
 const Mrf = () => {
   const navigate = useNavigate();
@@ -123,7 +124,7 @@ const Mrf = () => {
 
   const handleGenerateReport = () => {
     if (filteredData.length === 0) {
-      alert("No data available to generate the report.");
+      showWarningToast("No data available to generate the report.");
       return;
     }
 

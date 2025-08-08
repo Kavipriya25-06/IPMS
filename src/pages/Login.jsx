@@ -174,7 +174,7 @@ const Login = () => {
       });
 
       if (response.ok) {
-        alert("Password updated successfully!");
+        showSuccessToast("Password updated successfully!");
         setShowResetPassword(false);
         setNewPassword("");
         setError("");

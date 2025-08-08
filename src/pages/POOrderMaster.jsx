@@ -720,6 +720,7 @@ const POOrderMaster = ({ user }) => {
           vendor_name: cart.vendor_name,
           po_master_id: poMasterId,
           price: cart.unit_price,
+          gst: cart.GST,
           unit: 1,
           quality_check: "Pending",
         };
@@ -1083,7 +1084,7 @@ const POOrderMaster = ({ user }) => {
               </button>
             </>
           )}
-
+          {/* 
           {(poData?.status === "Approved" || poData?.status === "Ordered") && (
             <button
               className="cancel-button"
@@ -1091,7 +1092,18 @@ const POOrderMaster = ({ user }) => {
             >
               Cancel Order
             </button>
-          )}
+          )} */}
+
+          {(poData?.status === "Approved" || poData?.status === "Ordered") &&
+            (pendingItems.length > 0 ||
+              orderedItems.some((item) => !item.inward)) && (
+              <button
+                className="cancel-button"
+                onClick={() => updatePOMasterStatuses(poId, "Cancelled")}
+              >
+                Cancel Order
+              </button>
+            )}
 
           {poData?.status === "Cancelled" && (
             <div className="order-cancelled-banner">
@@ -1235,7 +1247,7 @@ const POOrderMaster = ({ user }) => {
                 <DatePicker
                   selected={placeOrderDateTime}
                   onChange={(date) => {
-                    const now = new Date(); // ⏰ current time
+                    const now = new Date(); //current time
                     const combinedDateTime = new Date(
                       date.getFullYear(),
                       date.getMonth(),

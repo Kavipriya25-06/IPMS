@@ -188,7 +188,23 @@ table {
   white-space: nowrap;
   border-radius: 5px;
   max-height: calc(
-    95vh - 200px
+    100vh - 230px
+  ); /* Adjust based on your footer and header height */
+  margin-bottom: 50px; /* Add space before footer */
+}
+
+.main-content{
+  min-height: fit-content;
+}
+
+.table-inventory-container {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-width: 100%;
+  white-space: nowrap;
+  border-radius: 5px;
+  max-height: calc(
+    100vh - 320px
   ); /* Adjust based on your footer and header height */
   margin-bottom: 50px; /* Add space before footer */
 }
@@ -209,6 +225,18 @@ table {
   text-align: left;
 }
 
+.table-inventory-container  table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* Optional: Better table visuals */
+.table-inventory-container  th,
+.table-inventory-container td {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  text-align: left;
+}
 .table-scroll-wrapper {
   max-height: 500px; /* or any desired height */
   overflow-y: auto;
@@ -2095,7 +2123,7 @@ table td {
 }
 
 .hamburger-button.change .bar:nth-child(1) {
-  transform: rotate(45deg) translate(3px, 5px);
+  transform: rotate(45deg) translate(3.5px, 5px);
 }
 
 .hamburger-button.change .bar:nth-child(2) {
@@ -2175,7 +2203,6 @@ main {
   /* height: 100vh; */
   /* overflow-y: auto; */
   box-sizing: border-box;
-  padding: 20px;
 }
 
 /* When sidebar is open, main content shifts right */
@@ -2408,7 +2435,7 @@ main {
 }
 
 .add-comp {
-  background-color: rgb(180, 180, 180);
+  background-color: #f58720;
   border: none;
   border-radius: 5px;
   padding: 7px 15px;
@@ -2417,7 +2444,7 @@ main {
 }
 
 .add-comp:hover {
-  background-color: gray;
+  background-color: #f1ba86;
 }
 
 .create-tag-button img {
@@ -4639,12 +4666,13 @@ ul {
   color: #0056b3;
 }
 
-.landing-container {
+/* Fills between header and footer */
+.homepage-wrapper {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: calc(85vh - 60px); /* Adjust based on your navbar height */
+  height: calc(100vh - 180px); /* Adjust based on your navbar height */
   margin-top: 60px; /* Push down below navbar */
   background-color: #f9f9f9;
   text-align: center;
@@ -4652,36 +4680,88 @@ ul {
   border-radius: 10px;
 }
 
-.landing-container h2 {
-  font-size: 2rem;
-  margin-bottom: 20px;
-  color: #333;
-  margin-top: -10px;
+/* Styled inner box */
+.landing-container {
+  background-color: #ffffff;
+  padding: 40px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  width: 100%;
+  max-width: 500px;
 }
 
+/* Buttons */
 .landing-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 10px;
+  margin-top: 30px;
 }
 
 .landing-buttons button {
+  margin: 10px;
   padding: 12px 24px;
-  font-size: 1rem;
+  font-size: 16px;
+  background-color: white;        
+  color: black;                  
+  border: 2px solid #f58720;      
   border-radius: 8px;
-  border: 1px solid #888;
-  background-color: #fff;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
+/* Optional: Hover effect */
 .landing-buttons button:hover {
-  background-color: #f1ba86;
+  border: 2px solid #f1ba86;
+  color: gray;
 }
 
 .po-order-wrapper {
   padding-bottom: 40px; /* avoid touching footer */
   border-radius: 5px;
 }
+
+.loading-message,
+.no-message {
+  text-align: center;
+  padding: 20px;
+  color: gray;
+}
+
+.spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #f58720;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+  margin-right: 10px;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.vendor-status-button {
+  color: white;
+  padding: 5px 10px;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+  font-size: 14px;
+  transition: background-color 0.3s ease;
+}
+
+.vendor-status-button.active {
+  background-color: gray;
+}
+
+.vendor-status-button.inactive {
+  background-color: #b1afaf;
+}
+
+.vendor-status-button:hover {
+  opacity: 0.7;
+}
+

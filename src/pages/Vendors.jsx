@@ -60,6 +60,12 @@ const Vendors = () => {
     // category: "",
   });
   const [newVendorId, setNewVendorId] = useState(null);
+  const [loadingVendors, setLoadingVendors] = useState(true);
+
+  const [visibleVendors, setVisibleVendors] = useState(10);
+  const [hasMoreVendors, setHasMoreVendors] = useState(true);
+  const [isLoadingMoreVendors, setIsLoadingMoreVendors] = useState(false);
+  const [filteredVendorData, setFilteredVendorData] = useState([]);
 
   const handleClosePriceHistory = () => {
     setShowPocPopup(false);
@@ -83,15 +89,72 @@ const Vendors = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // 1️⃣ Fetch vendors
   const fetchVendorData = async () => {
     try {
+      setLoadingVendors(true);
+      setVisibleVendors(0);
+      setHasMoreVendors(true);
+      setIsLoadingMoreVendors(false);
+
       const response = await fetch(`${config.apiBaseURL}/vendor_list/`);
       const data = await response.json();
-      setVendorData(data);
+
+      setFilteredVendorData(data);
+
+      if (data.length <= 20) {
+        setVisibleVendors(data.length);
+        setHasMoreVendors(false);
+      } else {
+        setVisibleVendors(10);
+        setHasMoreVendors(true);
+      }
     } catch (error) {
       console.error("Error fetching vendor data:", error);
+    } finally {
+      setLoadingVendors(false);
     }
   };
+
+  // 2️⃣ Auto-load if container can't scroll
+  const checkAndLoadMoreVendors = () => {
+    const container = document.getElementById("vendor-table-wrapper");
+
+    if (
+      container &&
+      container.scrollHeight <= container.clientHeight &&
+      hasMoreVendors &&
+      !isLoadingMoreVendors
+    ) {
+      setIsLoadingMoreVendors(true);
+
+      const nextVisible = visibleVendors + 10;
+
+      if (nextVisible >= filteredVendorData.length) {
+        setVisibleVendors(filteredVendorData.length);
+        setHasMoreVendors(false);
+        setIsLoadingMoreVendors(false);
+      } else {
+        setVisibleVendors(nextVisible);
+        setIsLoadingMoreVendors(false);
+        setTimeout(checkAndLoadMoreVendors, 300);
+      }
+    }
+  };
+
+  // 4️⃣ Keep checking after load
+  useEffect(() => {
+    if (!loadingVendors && filteredVendorData.length > 0 && hasMoreVendors) {
+      setTimeout(checkAndLoadMoreVendors, 300);
+    }
+  }, [loadingVendors, filteredVendorData, hasMoreVendors]);
+
+  useEffect(() => {
+    if (filteredVendorData.length > 0) {
+      setVisibleVendors(10);
+      setHasMoreVendors(filteredVendorData.length > 10);
+    }
+  }, [filteredVendorData]);
 
   const fetchPocData = async () => {
     try {
@@ -311,6 +374,7 @@ const Vendors = () => {
           })
         )
       );
+      showSuccessToast("Default POC updated successfully");
     } catch (error) {
       console.error("Error updating default POC:", error);
     }
@@ -452,6 +516,7 @@ const Vendors = () => {
           )
         );
         setIsEditingVendor(null); // Exit editing mode
+        showSuccessToast("Vendor details updated successfully");
       } else {
         console.error("Error updating vendor name:", response.statusText);
       }
@@ -466,11 +531,10 @@ const Vendors = () => {
     setEditedVendorName({ vendor_name: "", gstn: "" }); // Reset the edited name
   };
 
-  const toggleVendorStatus = async (vendorId, currentStatus) => {
+  const toggleVendorStatus = async (vendorId, currentStatus, vendorName) => {
     try {
-      const updatedStatus = !currentStatus; // Toggle current status
+      const updatedStatus = !currentStatus; // Toggle status
 
-      // First, update vendor_list API
       const response = await fetch(
         `${config.apiBaseURL}/vendor_list/${vendorId}/`,
         {
@@ -486,7 +550,7 @@ const Vendors = () => {
         throw new Error("Failed to update vendor_list status");
       }
 
-      // Update local state
+      // Update local vendorData and filteredVendorData immediately
       setVendorData((prevData) =>
         prevData.map((vendor) =>
           vendor.vendor_id === vendorId
@@ -495,54 +559,57 @@ const Vendors = () => {
         )
       );
 
-      // If status is now false, update vendor_master API
+      setFilteredVendorData((prevData) =>
+        prevData.map((vendor) =>
+          vendor.vendor_id === vendorId
+            ? { ...vendor, active: updatedStatus }
+            : vendor
+        )
+      );
+
+      showSuccessToast(
+        `Vendor ${vendorName} marked as ${
+          updatedStatus ? "Active" : "Inactive"
+        } successfully`
+      );
+
+      // If marking inactive, also update vendor_master products
       if (!updatedStatus) {
-        try {
-          const masterResponse = await fetch(
-            `${config.apiBaseURL}/vendor_master/`
-          );
-          if (!masterResponse.ok) {
-            throw new Error("Failed to fetch vendor_master data");
-          }
-
-          const masterData = await masterResponse.json();
-
-          // Find vendor entry matching the vendor_id
-          const vendorProducts = masterData.filter(
-            (product) => product.vendor === vendorId
-          );
-
-          if (vendorProducts.length > 0) {
-            // Loop through all products and update their status
-            await Promise.all(
-              vendorProducts.map(async (product) => {
-                if (product.product_id) {
-                  const updateMasterResponse = await fetch(
-                    `${config.apiBaseURL}/vendor_master/${product.product_id}/`,
-                    {
-                      method: "PATCH",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ active: false }),
-                    }
-                  );
-
-                  if (!updateMasterResponse.ok) {
-                    console.error(
-                      `Failed to update vendor_master for product_id: ${product.product_id}`
-                    );
-                  }
-                }
-              })
-            );
-          } else {
-            console.error(
-              "No products found for this vendor in vendor_master."
-            );
-          }
-        } catch (error) {
-          console.error("Error updating vendor_master:", error);
+        const masterResponse = await fetch(
+          `${config.apiBaseURL}/vendor_master/`
+        );
+        if (!masterResponse.ok) {
+          throw new Error("Failed to fetch vendor_master data");
         }
+
+        const masterData = await masterResponse.json();
+        const vendorProducts = masterData.filter(
+          (product) => product.vendor === vendorId
+        );
+
+        await Promise.all(
+          vendorProducts.map(async (product) => {
+            if (product.product_id) {
+              const updateMasterResponse = await fetch(
+                `${config.apiBaseURL}/vendor_master/${product.product_id}/`,
+                {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ active: false }),
+                }
+              );
+              if (!updateMasterResponse.ok) {
+                console.error(
+                  `Failed to update vendor_master for product_id: ${product.product_id}`
+                );
+              }
+            }
+          })
+        );
       }
+
+      //  Optionally: sync backend data again (not required unless needed)
+      // await fetchVendorData();
     } catch (error) {
       console.error("Error updating vendor status:", error);
     }
@@ -550,22 +617,30 @@ const Vendors = () => {
 
   const handleSearch = async (query) => {
     setSearchQuery(query);
+
     if (query.trim() === "") {
-      fetchVendorData(); // Fetch all vendors if search is cleared
+      fetchVendorData(); // Reset if query is empty
       return;
     }
+
     try {
+      setLoadingVendors(true); // Show loader while searching
       const response = await fetch(
         `${config.apiBaseURL}/vendor_search/?search=${query}`
       );
       if (response.ok) {
         const filteredVendors = await response.json();
-        setVendorData(filteredVendors);
+        setVendorData(filteredVendors); // Update base vendor list
+        setFilteredVendorData(filteredVendors); // Also update filtered list
+        setVisibleVendors(10); // Reset visible count
+        setHasMoreVendors(filteredVendors.length > 10);
       } else {
-        console.error("Error fetching search results:", response.statusText);
+        console.error("Search failed:", response.statusText);
       }
     } catch (error) {
       console.error("Error fetching search results:", error);
+    } finally {
+      setLoadingVendors(false); // Done loading
     }
   };
 
@@ -726,20 +801,6 @@ const Vendors = () => {
             </div>
           </div>
         </Modal>
-        <button
-          className="plus-button"
-          title="Add Vendor"
-          onClick={() => setShowAddVendorPopup(true)}
-          style={{
-            cursor: "pointer",
-            background: "transparent",
-            border: "none",
-            padding: "6px",
-            marginBottom: "-10px",
-          }}
-        >
-          <img src={Add} alt="Add Vendor" />
-        </button>
       </div>
       <div className="search-wrapper-container">
         {/* Centered search bar */}
@@ -757,13 +818,51 @@ const Vendors = () => {
             </span>
           </div>
         </div>
+        <button
+          className="plus-button"
+          title="Add Vendor"
+          onClick={() => setShowAddVendorPopup(true)}
+          style={{
+            cursor: "pointer",
+            background: "transparent",
+            border: "none",
+            padding: "4px",
+            marginBottom: "-25px",
+          }}
+        >
+          <img src={Add} alt="Add Vendor" />
+        </button>
 
         {/* Add Vendor Button */}
       </div>
-
-      <div className="table-container">
-        <table  border="1"
-              style={{ width: "100%", borderCollapse: "collapse" }}>
+      <div
+        id="vendor-table-wrapper"
+        className="table-container"
+        style={{
+          overflowY: loadingVendors ? "hidden" : "auto",
+        }}
+        onScroll={(e) => {
+          const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+          if (
+            scrollTop + clientHeight >= scrollHeight - 10 &&
+            !isLoadingMoreVendors &&
+            hasMoreVendors
+          ) {
+            setIsLoadingMoreVendors(true);
+            setTimeout(() => {
+              const nextVisible = visibleVendors + 10;
+              if (nextVisible >= filteredVendorData.length) {
+                setVisibleVendors(filteredVendorData.length);
+                setHasMoreVendors(false);
+              } else {
+                setVisibleVendors(nextVisible);
+              }
+              setIsLoadingMoreVendors(false);
+            }, 500); // Simulate delay
+          }
+        }}
+      >
+        <table border="1" style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
               <th>Vendor Name</th>
@@ -778,15 +877,25 @@ const Vendors = () => {
             </tr>
           </thead>
           <tbody>
-            {vendorData.length > 0 ? (
-              vendorData.map((vendor) => {
+            {loadingVendors ? (
+              //  Show spinner or loading text while data is loading
+              <tr>
+                <td
+                  colSpan="8"
+                  style={{ textAlign: "center", padding: "20px" }}
+                >
+                  <div className="spinner"></div>
+                  Loading vendors...
+                </td>
+              </tr>
+            ) : filteredVendorData.length > 0 ? (
+              //  Show vendor rows if data is loaded
+
+              filteredVendorData.slice(0, visibleVendors).map((vendor) => {
                 const vendorPocs = getVendorPocs(vendor.vendor_id);
                 const selectedPocId = primaryPocSelection[vendor.vendor_id];
                 const defaultPoc =
                   vendorPocs.find((poc) => poc.default_poc) || {};
-                const defaultPocDetails = pocData.find(
-                  (poc) => poc.vendor === vendor.vendor_id && poc.default_poc
-                );
                 const primaryPoc =
                   vendorPocs.find((poc) => poc.id === selectedPocId) ||
                   vendorPocs[0] ||
@@ -799,24 +908,23 @@ const Vendors = () => {
                       title={vendor.vendor_name || ""}
                     >
                       {isEditingVendor === vendor.vendor_id ? (
-                        <div>
-                          <input
-                            type="text"
-                            value={editedVendorName.vendor_name}
-                            style={{
-                              width: "150px",
-                              padding: "3px",
-                              borderRadius: "5px",
-                            }}
-                            onChange={(e) =>
-                              setEditedVendorName({
-                                ...editedVendorName,
-                                vendor_name: e.target.value,
-                              })
-                            }
-                            autoFocus
-                          />
-                        </div>
+                        <input
+                          type="text"
+                          value={editedVendorName.vendor_name}
+                          style={{
+                            width: "150px",
+                            padding: "5px",
+                            borderRadius: "5px",
+                            border: "1px solid #ccc",
+                          }}
+                          onChange={(e) =>
+                            setEditedVendorName({
+                              ...editedVendorName,
+                              vendor_name: e.target.value,
+                            })
+                          }
+                          autoFocus
+                        />
                       ) : (
                         <span
                           onClick={() =>
@@ -838,8 +946,9 @@ const Vendors = () => {
                           value={editedVendorName.gstn}
                           style={{
                             width: "150px",
-                            padding: "3px",
+                            padding: "5px",
                             borderRadius: "5px",
+                            border: "1px solid #ccc",
                           }}
                           onChange={(e) =>
                             setEditedVendorName({
@@ -897,17 +1006,16 @@ const Vendors = () => {
                     </td>
                     <td>
                       <button
+                        className={`vendor-status-button ${
+                          vendor.active ? "active" : "inactive"
+                        }`}
                         onClick={() =>
-                          toggleVendorStatus(vendor.vendor_id, vendor.active)
+                          toggleVendorStatus(
+                            vendor.vendor_id,
+                            vendor.active,
+                            vendor.vendor_name
+                          )
                         }
-                        style={{
-                          backgroundColor: vendor.active ? "#b1afaf" : "grey",
-                          color: "white",
-                          padding: "5px 10px",
-                          border: "none",
-                          cursor: "pointer",
-                          borderRadius: "5px",
-                        }}
                       >
                         {vendor.active ? "Active" : "Inactive"}
                       </button>
@@ -915,16 +1023,31 @@ const Vendors = () => {
                   </tr>
                 );
               })
-            ) : (
+            ) : vendorData.length === 0 ? (
               <tr>
-                <td colSpan="8" style={{ textAlign: "center", color: "gray" }}>
+                <td
+                  colSpan="8"
+                  style={{
+                    textAlign: "center",
+                    color: "gray",
+                    padding: "20px",
+                  }}
+                >
                   No vendor data found.
                 </td>
               </tr>
-            )}
+            ) : null}
           </tbody>
         </table>
+
+        {isLoadingMoreVendors && (
+          <div className="loading-message">Loading...</div>
+        )}
+        {!hasMoreVendors && filteredVendorData.length > 0 && (
+          <div className="no-message">No more data</div>
+        )}
       </div>
+
       {/* <button
         onClick={() => setIsAddingVendor(true)}
         style={{ marginTop: "10px" }}

@@ -23,6 +23,9 @@ const ComponentDetailsPage = () => {
   const [vendorDetails, setVendorDetails] = useState([]);
   const [priceDataMap, setPriceDataMap] = useState({});
 
+  const [loading, setLoading] = useState(true);
+  const [noData, setNoData] = useState(false);
+
   const handleMouseMove = (e) => {
     const rect = imgRef.current.getBoundingClientRect();
 
@@ -53,11 +56,16 @@ const ComponentDetailsPage = () => {
   useEffect(() => {
     if (!componentId) {
       showErrorToast("Invalid component ID");
+      setNoData(true);
+      setLoading(false);
       return;
     }
 
     const fetchData = async () => {
       try {
+        setLoading(true);
+        setNoData(false);
+
         const res = await fetch(
           `${config.apiBaseURL}/vendor_master/?component_id=${componentId}`
         );
@@ -67,8 +75,12 @@ const ComponentDetailsPage = () => {
         const matchingComponents = data.filter(
           (item) => item.component_id === componentId
         );
-        if (matchingComponents.length === 0)
-          throw new Error("Component not found");
+        if (matchingComponents.length === 0) {
+          setNoData(true);
+          setVendorDetails([]);
+          setLoading(false);
+          return;
+        }
 
         setVendorDetails(matchingComponents);
 
@@ -102,16 +114,27 @@ const ComponentDetailsPage = () => {
 
         setImageList(images);
         setMainImage(images[0]);
+        setLoading(false);
       } catch (err) {
         console.error("Error fetching component detail:", err);
         showErrorToast("Failed to load component details");
+        setNoData(true);
+        setLoading(false);
       }
     };
 
     fetchData();
   }, [componentId]);
 
-  if (vendorDetails.length === 0) return <p>Loading...</p>;
+  if (loading)
+    return (
+      <div style={{ textAlign: "center", marginTop: "50px" }}>
+        <div className="spinner"></div>
+        Loading Component Details...
+      </div>
+    );
+
+  if (noData) return <p>No information available for this component</p>;
 
   const firstVendor = vendorDetails[0];
 
@@ -217,12 +240,13 @@ const ComponentDetailsPage = () => {
                     <td className="truncate-cell" title={vendor.vendor_name}>
                       {vendor.vendor_name}
                     </td>
-                    <td style={{textAlign:"right"}}>
-                      ₹{priceDataMap[vendor.product_id]?.price ??
+                    <td style={{ textAlign: "right" }}>
+                      ₹
+                      {priceDataMap[vendor.product_id]?.price ??
                         vendor.last_price ??
                         "-"}
                     </td>
-                    <td style={{textAlign:"right"}}>
+                    <td style={{ textAlign: "right" }}>
                       {priceDataMap[vendor.product_id]?.tax ??
                         vendor.tax ??
                         "-"}

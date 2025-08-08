@@ -15,6 +15,7 @@ import "react-toastify/dist/ReactToastify.css";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { format, parseISO } from "date-fns";
+import AddIcon from "../assets/Add.png";
 
 const RequestForm = () => {
   const [boms, setBoms] = useState([]);
@@ -667,7 +668,33 @@ const RequestForm = () => {
       {selectedBom && (
         <div>
           <h3>Selected BOM: {selectedBom.bom_name}</h3>
-          <h4>Components:</h4>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <h4 style={{ margin: 0 }}>Components:</h4>
+
+            <button
+              onClick={handleAddComponent}
+              style={{
+                cursor: "pointer",
+                background: "transparent",
+                border: "none",
+                padding: "6px",
+              }}
+              title="Add Component"
+            >
+              <img
+                src={AddIcon} // replace with your image path or import
+                alt="Add Component"
+                style={{ width: "20px", height: "20px" }}
+              />
+            </button>
+          </div>
+
           <div className="table-container">
             <table>
               <thead>
@@ -730,7 +757,7 @@ const RequestForm = () => {
                         }
                       />
                     </td>
-                    <td>
+                    <td className="specification-cells">
                       {component.vendorOptions &&
                       component.vendorOptions.length > 0 ? (
                         <select
@@ -771,18 +798,21 @@ const RequestForm = () => {
               </tbody>
             </table>
           </div>
-          <button
+          {/* <button
             onClick={handleAddComponent}
             className="edit-button"
             style={{
               padding: "10px 15px",
               borderRadius: "5px",
               cursor: "pointer",
-              marginTop: "20px",
+              marginTop: "-30px",
+              zIndex: 1000,
+              position: "fixed",
             }}
           >
             Add Component
-          </button>
+          </button> */}
+        
         </div>
       )}
 

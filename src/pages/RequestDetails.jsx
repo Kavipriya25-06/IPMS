@@ -40,6 +40,9 @@ const RequestDetails = ({ user }) => {
   const [requestStatus, setRequestStatus] = useState([]);
   const [bomName, setBomName] = useState([]);
   const [selectedRequestDetailId, setSelectedRequestDetailId] = useState(null);
+  const [selectedVendorId, setSelectedVendorId] = useState(null);
+
+  // When opening the popup
 
   const [requestMaster, setRequestMaster] = useState([]);
 
@@ -210,6 +213,16 @@ const RequestDetails = ({ user }) => {
 
     if (!vendor_id) {
       showErrorToast("Invalid vendor selected.");
+      return;
+    }
+
+    if (
+      detail.price == null ||
+      detail.tax == null ||
+      detail.price === "" ||
+      detail.tax === ""
+    ) {
+      showWarningToast("Please add price and GST before adding to cart.");
       return;
     }
 
@@ -893,7 +906,15 @@ const RequestDetails = ({ user }) => {
     console.log("Details state after update:", details);
   };
 
-  const handleVendorSelection = (componentType, componentSpec, componentId) => {
+  const handleVendorSelection = (
+    componentType,
+    componentSpec,
+    componentId,
+    currentVendorId // pass this when calling
+  ) => {
+    // Save currently selected vendor for this component
+    setSelectedVendorId(currentVendorId);
+
     // Filter price data for matching component_type and component_specification
     const matchingVendors = priceViewData
       .filter(
@@ -908,7 +929,6 @@ const RequestDetails = ({ user }) => {
       }));
 
     // Show popup with filtered data
-    // console.log("Matching Vendors for Popup:", matchingVendors); // Debug
     setPricePopupData(matchingVendors);
     console.log("Price Popup Data:", matchingVendors);
 
@@ -1206,7 +1226,8 @@ const RequestDetails = ({ user }) => {
                                 handleVendorSelection(
                                   detail.component_type,
                                   detail.component_specification,
-                                  detail.component_id
+                                  detail.component_id,
+                                  detail.vendor_id
                                 )
                               }
                             >
@@ -1222,7 +1243,8 @@ const RequestDetails = ({ user }) => {
                                 handleVendorSelection(
                                   detail.component_type,
                                   detail.component_specification,
-                                  detail.component_id
+                                  detail.component_id,
+                                  detail.vendor_id
                                 )
                               }
                             >
@@ -1410,7 +1432,12 @@ const RequestDetails = ({ user }) => {
 
           {showPricePopup && pricePopupData && (
             <div className="modal-overlay">
-              <div className="popup">
+              <div
+                className="popup"
+                style={{
+                  minWidth: "30%",
+                }}
+              >
                 <span
                   className="x-button"
                   onClick={() => setShowPricePopup(false)}
@@ -1431,7 +1458,9 @@ const RequestDetails = ({ user }) => {
                     <tbody>
                       {pricePopupData.map((vendor) => (
                         <tr key={vendor.vendor_id}>
-                          <td>{vendor.vendor_name}</td>
+                          <td className="specification-cell" title={vendor.vendor_name}>
+                            {vendor.vendor_name}
+                          </td>
                           <td style={{ textAlign: "right" }}>
                             {vendor.latest_price !== null
                               ? `₹${parseFloat(
@@ -1452,15 +1481,17 @@ const RequestDetails = ({ user }) => {
                               type="radio"
                               name="vendorSelection"
                               value={vendor.vendor_id}
+                              checked={selectedVendorId === vendor.vendor_id}
                               onChange={() => {
                                 handleVendorChange(
-                                  vendor.component_id, // Component ID
+                                  vendor.component_id,
                                   vendor.vendor_id,
                                   vendor.vendor_name,
-                                  vendor.latest_price || 0, // Handle null price
-                                  vendor.latest_tax || 0
+                                  vendor.latest_price,
+                                  vendor.latest_tax
                                 );
-                                setShowPricePopup(false); // Close the popup
+                                setSelectedVendorId(vendor.vendor_id);
+                                setShowPricePopup(false);
                               }}
                             />
                           </td>

@@ -22,6 +22,7 @@ const BOM = () => {
     key: null,
     direction: "ascending",
   });
+  const [loading, setLoading] = useState(true);
 
   const handleToggleWbom = async (bom) => {
     if (bom.wbom) {
@@ -76,13 +77,25 @@ const BOM = () => {
   const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
 
   useEffect(() => {
-    // Fetch BOM list from the API
-    fetch(`${config.apiBaseURL}/bom_list/`)
-      .then((response) => response.json())
-      .then((data) => setBoms(data))
-      .catch((error) => console.error("Error fetching BOMs:", error));
+    const fetchData = async () => {
+      setLoading(true); // Start loading
 
-    fetchBomQuantities();
+      try {
+        // Fetch BOM list from the API
+
+        const bomRes = await fetch(`${config.apiBaseURL}/bom_list/`);
+        const bomData = await bomRes.json();
+        setBoms(bomData);
+
+        await fetchBomQuantities(); // Assuming this is also async
+      } catch (error) {
+        console.error("Error fetching BOMs or quantities:", error);
+      } finally {
+        setLoading(false); // Stop loading after both calls
+      }
+    };
+
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -155,7 +168,6 @@ const BOM = () => {
       ...formData,
       wbom: false,
       number_of_components: 0,
-
     };
     try {
       const response = await fetch(`${config.apiBaseURL}/bom_list/`, {
@@ -165,7 +177,7 @@ const BOM = () => {
       });
 
       if (response.ok) {
-        alert("BOM created successfully!");
+        showSuccessToast("BOM created successfully!");
         setShowForm(false);
         setFormData({ bom_name: "", created_by: "", last_modified_by: "" });
 
@@ -173,7 +185,7 @@ const BOM = () => {
         setBoms(await refreshed.json());
       } else {
         const error = await response.json();
-        alert("Error: " + JSON.stringify(error));
+        showErrorToast("Error: " + JSON.stringify(error));
       }
     } catch (error) {
       console.error("Error submitting BOM:", error);
@@ -237,7 +249,7 @@ const BOM = () => {
         );
       } else {
         const error = await response.json();
-        alert("Error updating WBOM: " + JSON.stringify(error));
+        showErrorToast("Error updating WBOM: " + JSON.stringify(error));
       }
     } catch (error) {
       console.error("Error updating WBOM:", error);
@@ -266,7 +278,11 @@ const BOM = () => {
           title="Add BOM"
           onClick={() => setShowForm(!showForm)}
         >
-          <img src={AddIcon} alt="" style={{ width: "20px", height: "20px", marginBottom:"5px" }} />
+          <img
+            src={AddIcon}
+            alt=""
+            style={{ width: "20px", height: "20px", marginBottom: "5px" }}
+          />
         </button>
       </div>
 
@@ -344,70 +360,83 @@ const BOM = () => {
             </tr>
           </thead>
           <tbody>
-            {sortData(boms, sortConfig, (item, key) => {
-              if (key === "quantity") return bomQuantities[item.bom_id] || 0;
-              if (key === "created_date" || key === "last_modified_date")
-                return new Date(item[key]);
-              return item[key];
-            }).map((bom) => (
-              <tr key={bom.bom_id}>
+            {loading ? (
+              //  Show spinner or loading text while data is loading
+              <tr>
                 <td
-                  onClick={() => handleBomClick(bom.bom_id, bom.wbom)}
-                  style={{
-                    cursor: "pointer",
-                    textDecoration: "underline",
-                  }}
+                  colSpan="8"
+                  style={{ textAlign: "center", padding: "20px" }}
                 >
-                  {bom.bom_id}
+                  <div className="spinner"></div>
+                  Loading BOM...
                 </td>
-                <td>{bom.bom_name}</td>
-                <td>{bomQuantities[bom.bom_id] || 0}</td>
-                <td>{bom.created_by}</td>
-                <td>
-                  {bom.created_date
-                    ? format(parseISO(bom.created_date), "dd-MM-yyyy")
-                    : "-"}
-                </td>
-                <td>{bom.last_modified_by}</td>
-                <td>
-                  {bom.last_modified_date
-                    ? format(parseISO(bom.last_modified_date), "dd-MM-yyyy")
-                    : "-"}
-                </td>
-                <td>
-                  <div className="action-buttons">
-                    <button
-                      onClick={() => handleToggleWbom(bom)}
-                      style={{
-                        backgroundColor: bom.wbom ? "#4CAF50" : "#f58720",
-                        color: "white",
-                        borderRadius: "5px",
-                        border: "none",
-                        cursor: "pointer",
-                      }}
-                      title={
-                        bom.wbom ? "Maeked as Final BOM" : "Mark as Final BOM"
-                      }
-                    >
-                      {bom.wbom ? "FBOM" : "WBOM"}
-                    </button>
+              </tr>
+            ) : (
+              sortData(boms, sortConfig, (item, key) => {
+                if (key === "quantity") return bomQuantities[item.bom_id] || 0;
+                if (key === "created_date" || key === "last_modified_date")
+                  return new Date(item[key]);
+                return item[key];
+              }).map((bom) => (
+                <tr key={bom.bom_id}>
+                  <td
+                    onClick={() => handleBomClick(bom.bom_id, bom.wbom)}
+                    style={{
+                      cursor: "pointer",
+                      textDecoration: "underline",
+                    }}
+                  >
+                    {bom.bom_id}
+                  </td>
+                  <td>{bom.bom_name}</td>
+                  <td>{bomQuantities[bom.bom_id] || 0}</td>
+                  <td>{bom.created_by}</td>
+                  <td>
+                    {bom.created_date
+                      ? format(parseISO(bom.created_date), "dd-MM-yyyy")
+                      : "-"}
+                  </td>
+                  <td>{bom.last_modified_by}</td>
+                  <td>
+                    {bom.last_modified_date
+                      ? format(parseISO(bom.last_modified_date), "dd-MM-yyyy")
+                      : "-"}
+                  </td>
+                  <td>
+                    <div className="action-buttons">
+                      <button
+                        onClick={() => handleToggleWbom(bom)}
+                        style={{
+                          backgroundColor: bom.wbom ? "#4CAF50" : "#f58720",
+                          color: "white",
+                          borderRadius: "5px",
+                          border: "none",
+                          cursor: "pointer",
+                        }}
+                        title={
+                          bom.wbom ? "Maeked as Final BOM" : "Mark as Final BOM"
+                        }
+                      >
+                        {bom.wbom ? "FBOM" : "WBOM"}
+                      </button>
 
-                    <button
-                      onClick={() => handleDelete(bom.bom_id)}
-                      className="delete-button"
-                      title="Delete"
-                    >
-                      {/* <img
+                      <button
+                        onClick={() => handleDelete(bom.bom_id)}
+                        className="delete-button"
+                        title="Delete"
+                      >
+                        {/* <img
                       src={Delete}
                       alt="Delete"
                       style={{ width: "20px", height: "20px" }}
                     /> */}
-                      Delete
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

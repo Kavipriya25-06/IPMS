@@ -73,6 +73,7 @@ const VendorDetails = () => {
     left: 0,
   });
   const editDateInputRef = useRef(null);
+  const [loadingVendors, setLoadingVendors] = useState(true);
 
   const formatDateToYYYYMMDD = (date) => {
     const year = date.getFullYear();
@@ -108,6 +109,8 @@ const VendorDetails = () => {
 
   useEffect(() => {
     const fetchVendorDetails = async () => {
+      setLoadingVendors(true);
+
       try {
         const response = await fetch(`${config.apiBaseURL}/vendor_master/`);
         const data = await response.json();
@@ -148,6 +151,8 @@ const VendorDetails = () => {
         setSelectedVendorData(updatedProducts);
       } catch (error) {
         console.error("Error fetching vendor products:", error);
+      } finally {
+        setLoadingVendors(false); // hide loader
       }
     };
 
@@ -767,7 +772,7 @@ const VendorDetails = () => {
     return VendorName;
   };
 
-  const toggleVendorStatus = async (productId, currentStatus, vendorId) => {
+  const toggleVendorStatus = async (productId, currentStatus, vendorId,componentId) => {
     try {
       const updatedStatus = !currentStatus; // Toggle the status
 
@@ -821,6 +826,11 @@ const VendorDetails = () => {
               : product
           )
         );
+          showSuccessToast(
+                `Vendor ${componentId} marked as ${
+                  updatedStatus ? "Active" : "Inactive"
+                } successfully`
+              );
       } else {
         console.error("Error updating vendor status:", response.statusText);
       }
@@ -1041,7 +1051,7 @@ const VendorDetails = () => {
               readOnly
             />
 
-            <input
+            {/* <input
               type="file"
               onChange={(e) => handleInputChange("img", e.target.files[0])}
             />
@@ -1050,7 +1060,7 @@ const VendorDetails = () => {
               onChange={(e) =>
                 handleInputChange("attachments", e.target.files[0])
               }
-            />
+            /> */}
 
             <div className="popup-actions">
               <button onClick={handleAddNewProduct}>Save Product</button>
@@ -1426,193 +1436,229 @@ const VendorDetails = () => {
             </tr>
           </thead>
           <tbody>
-            {selectedVendorData.map((product, index) => {
-              const isAddedToComp = !!componentMasterData[product.product_id]; // Check if the product is in component master
+            {loadingVendors ? (
+              //  Show spinner or loading text while data is loading
+              <tr>
+                <td
+                  colSpan="10"
+                  style={{ textAlign: "center", padding: "20px" }}
+                >
+                  <div className="spinner"></div>
+                  Loading component details...
+                </td>
+              </tr>
+            ) : selectedVendorData.length === 0 ? (
+              <tr>
+                <td
+                  colSpan="10"
+                  style={{
+                    textAlign: "center",
+                    padding: "20px",
+                    color: "#888",
+                  }}
+                >
+                  No data available for this vendor.
+                </td>
+              </tr>
+            ) : (
+              selectedVendorData.map((product, index) => {
+                const isAddedToComp = !!componentMasterData[product.product_id]; // Check if the product is in component master
 
-              return (
-                <tr key={product.product_id || index}>
-                  {/* <td>{product.product_id}</td> */}
-                  <td>
-                    <Link
-                      to={`/components/${product.component_id}`}
-                      style={{ textDecoration: "line", color: "inherit" }}
-                    >
-                      {product.component_id}
-                    </Link>
-                  </td>
-                  {/* <td>{product.component_id}</td> */}
-                  <td>{product.component_type}</td>
-                  <td>{product.component_specification}</td>
-                  <td>{product.unit_of_measurement}</td>
-                  <td
-                    onClick={() => handlePriceClick(product.product_id)}
-                    style={{
-                      cursor: "pointer",
-                      textDecoration: "underline",
-                      textAlign: "right",
-                    }}
-                  >
-                    ₹
-                    {parseFloat(product.last_price).toLocaleString("en-IN", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </td>
-                  <td style={{ textAlign: "right" }}>{product.tax}%</td>
-                  {/* Image editing section */}
-                  <td>
-                    <div className="image-cell">
-                      <div
-                        className="image-preview"
-                        style={{
-                          display: "flex",
-                          flexWrap: "wrap",
-                          gap: "10px",
-                        }}
+                return (
+                  <tr key={product.product_id || index}>
+                    {/* <td>{product.product_id}</td> */}
+                    <td>
+                      <Link
+                        to={`/components/${product.component_id}`}
+                        style={{ textDecoration: "line", color: "inherit" }}
                       >
-                        {product.images && product.images.length > 0 ? (
-                          product.images.map((imgObj, i) => (
-                            <div
-                              key={i}
-                              style={{
-                                position: "relative",
-                                width: "60px",
-                                height: "60px",
-                              }}
-                            >
-                              <img
-                                src={`${config.apiBaseURL}${imgObj.image}`}
-                                alt={`Product-${i}`}
-                                className="product-thumbnail"
+                        {product.component_id}
+                      </Link>
+                    </td>
+                    {/* <td>{product.component_id}</td> */}
+                    <td>{product.component_type}</td>
+                    <td
+                      className="specification-cell"
+                      title={product.component_specification}
+                    >
+                      {product.component_specification}
+                    </td>
+                    <td>{product.unit_of_measurement}</td>
+                    <td
+                      onClick={() => handlePriceClick(product.product_id)}
+                      style={{
+                        cursor: "pointer",
+                        textDecoration: "underline",
+                        textAlign: "right",
+                      }}
+                    >
+                      ₹
+                      {parseFloat(product.last_price).toLocaleString("en-IN", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </td>
+                    <td style={{ textAlign: "right" }}>{product.tax}%</td>
+                    {/* Image editing section */}
+                    <td>
+                      <div className="image-cell">
+                        <div
+                          className="image-preview"
+                          style={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: "10px",
+                          }}
+                        >
+                          {product.images && product.images.length > 0 ? (
+                            product.images.map((imgObj, i) => (
+                              <div
+                                key={i}
                                 style={{
-                                  width: "100%",
-                                  height: "100%",
-                                  objectFit: "cover",
-                                  border: "1px solid #ccc",
-                                  borderRadius: "4px",
+                                  position: "relative",
+                                  width: "60px",
+                                  height: "60px",
                                 }}
-                              />
-                              <span
-                                onClick={() =>
-                                  handleDeleteImage(index, imgObj.id)
-                                } // 👈 Use imgObj.id
-                                style={{
-                                  position: "absolute",
-                                  top: "-6px",
-                                  right: "-6px",
-                                  backgroundColor: "#e68a00",
-                                  color: "white",
-                                  borderRadius: "50%",
-                                  width: "18px",
-                                  height: "18px",
-                                  fontSize: "12px",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  cursor: "pointer",
-                                }}
-                                title="Delete Image"
                               >
-                                ×
-                              </span>
-                            </div>
-                          ))
-                        ) : (
-                          <span>No Images</span>
-                        )}
-                      </div>
+                                <img
+                                  src={`${config.apiBaseURL}${imgObj.image}`}
+                                  alt={`Product-${i}`}
+                                  className="product-thumbnail"
+                                  style={{
+                                    width: "100%",
+                                    height: "100%",
+                                    objectFit: "cover",
+                                    border: "1px solid #ccc",
+                                    borderRadius: "4px",
+                                  }}
+                                />
+                                <span
+                                  onClick={() =>
+                                    handleDeleteImage(index, imgObj.id)
+                                  } // 👈 Use imgObj.id
+                                  style={{
+                                    position: "absolute",
+                                    top: "-6px",
+                                    right: "-6px",
+                                    backgroundColor: "#e68a00",
+                                    color: "white",
+                                    borderRadius: "50%",
+                                    width: "18px",
+                                    height: "18px",
+                                    fontSize: "12px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    cursor: "pointer",
+                                  }}
+                                  title="Delete Image"
+                                >
+                                  ×
+                                </span>
+                              </div>
+                            ))
+                          ) : (
+                            <span>No Images</span>
+                          )}
+                        </div>
 
-                      <div className="image-edit" style={{ marginTop: "5px" }}>
-                        {product.isEditingImage ? (
-                          <>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              multiple
-                              onChange={(e) =>
-                                handleImageChange(
-                                  index,
-                                  Array.from(e.target.files)
-                                )
-                              }
-                            />
-                            <button onClick={() => saveImages(index)}>
-                              Upload
-                            </button>
+                        <div
+                          className="image-edit"
+                          style={{ marginTop: "5px" }}
+                        >
+                          {product.isEditingImage ? (
+                            <>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                onChange={(e) =>
+                                  handleImageChange(
+                                    index,
+                                    Array.from(e.target.files)
+                                  )
+                                }
+                              />
+                              <button onClick={() => saveImages(index)}>
+                                Upload
+                              </button>
+                              <button
+                                onClick={() =>
+                                  cancelEditField(index, "isEditingImage")
+                                }
+                              >
+                                Cancel
+                              </button>
+                            </>
+                          ) : (
                             <button
                               onClick={() =>
-                                cancelEditField(index, "isEditingImage")
+                                enableEditField(index, "isEditingImage")
                               }
                             >
-                              Cancel
+                              Upload Images
                             </button>
-                          </>
-                        ) : (
-                          <button
-                            onClick={() =>
-                              enableEditField(index, "isEditingImage")
-                            }
-                          >
-                            Upload Images
-                          </button>
-                        )}
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </td>
+                    </td>
 
-                  {/* Attachment Editing Section */}
-                  <td>
-                    <div className="attachment-cell">
-                      {/* Top: View Attachment or No Attachments */}
-                      <div className="attachment-view">
-                        {product.attachments ? (
-                          <a
-                            href={`${config.apiBaseURL}${product.attachments}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            View Attachment
-                          </a>
-                        ) : (
-                          <span>No Attachments</span>
-                        )}
-                      </div>
+                    {/* Attachment Editing Section */}
+                    <td>
+                      <div className="attachment-cell">
+                        {/* Top: View Attachment or No Attachments */}
+                        <div className="attachment-view">
+                          {product.attachments ? (
+                            <a
+                              href={`${config.apiBaseURL}${product.attachments}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              View Attachment
+                            </a>
+                          ) : (
+                            <span>No Attachments</span>
+                          )}
+                        </div>
 
-                      {/* Bottom: Edit or Save/Cancel Buttons */}
-                      <div className="attachment-edit">
-                        {product.isEditingAttachment ? (
-                          <>
-                            <input
-                              type="file"
-                              onChange={(e) =>
-                                handleAttachmentChange(index, e.target.files[0])
-                              }
-                            />
-                            <button onClick={() => saveAttachment(index)}>
-                              Save
-                            </button>
+                        {/* Bottom: Edit or Save/Cancel Buttons */}
+                        <div className="attachment-edit">
+                          {product.isEditingAttachment ? (
+                            <>
+                              <input
+                                type="file"
+                                onChange={(e) =>
+                                  handleAttachmentChange(
+                                    index,
+                                    e.target.files[0]
+                                  )
+                                }
+                              />
+                              <button onClick={() => saveAttachment(index)}>
+                                Save
+                              </button>
+                              <button
+                                onClick={() =>
+                                  cancelEditField(index, "isEditingAttachment")
+                                }
+                              >
+                                Cancel
+                              </button>
+                            </>
+                          ) : (
                             <button
                               onClick={() =>
-                                cancelEditField(index, "isEditingAttachment")
+                                enableEditField(index, "isEditingAttachment")
                               }
                             >
-                              Cancel
+                              Edit Attachment
                             </button>
-                          </>
-                        ) : (
-                          <button
-                            onClick={() =>
-                              enableEditField(index, "isEditingAttachment")
-                            }
-                          >
-                            Edit Attachment
-                          </button>
-                        )}
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </td>
+                    </td>
 
-                  {/* <td>
+                    {/* <td>
                     <div style={{ display: "flex", gap: "10px" }}>
                       <button
                         onClick={() => handleEditClickVendorMaster(index)}
@@ -1629,70 +1675,67 @@ const VendorDetails = () => {
                       </button>
                     </div>
                   </td> */}
-                  <td>
-                    <button
-                      onClick={() =>
-                        toggleVendorStatus(
-                          product.product_id,
-                          product.active,
-                          product.vendor
-                        )
-                      }
-                      style={{
-                        backgroundColor: product.active ? "green" : "red",
-                        color: "white",
-                        padding: "5px 10px",
-                        border: "none",
-                        cursor: "pointer",
-                        borderRadius: "5px",
-                      }}
-                    >
-                      {product.active ? "Active" : "Inactive"}
-                    </button>
-                  </td>
-                  <td>
-                    {product.isEditingRemarks ? (
-                      <div className="remarks-edit-container">
-                        <input
-                          type="text"
-                          className="remarks-input"
-                          value={product.editableRemarks || ""}
-                          onChange={(e) => {
-                            const updated = [...selectedVendorData];
-                            updated[index].editableRemarks = e.target.value;
-                            setSelectedVendorData(updated);
-                          }}
-                          placeholder="Enter remarks"
-                        />
-                        <button
-                          className="remarks-btn save-btn"
-                          onClick={() => saveRemarks(index)}
-                        >
-                          Save
-                        </button>
-                        <button
-                          className="remarks-btn cancel-btn"
-                          onClick={() =>
-                            cancelEditField(index, "isEditingRemarks")
-                          }
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    ) : (
-                      <span
-                        className="remarks-display"
+                    <td>
+                      <button
+                        className={`vendor-status-button ${
+                          product.active ? "active" : "inactive"
+                        }`}
                         onClick={() =>
-                          enableEditField(index, "isEditingRemarks")
+                          toggleVendorStatus(
+                            product.product_id,
+                            product.active,
+                            product.vendor,
+                            product.component_id
+                          )
                         }
                       >
-                        {product.remarks || "Click to add remarks"}
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
+                        {product.active ? "Active" : "Inactive"}
+                      </button>
+                    </td>
+                    <td>
+                      {product.isEditingRemarks ? (
+                        <div className="remarks-edit-container">
+                          <input
+                            type="text"
+                            className="remarks-input"
+                            value={product.editableRemarks || ""}
+                            onChange={(e) => {
+                              const updated = [...selectedVendorData];
+                              updated[index].editableRemarks = e.target.value;
+                              setSelectedVendorData(updated);
+                            }}
+                            placeholder="Enter remarks"
+                          />
+                          <button
+                            className="remarks-btn save-btn"
+                            onClick={() => saveRemarks(index)}
+                          >
+                            Save
+                          </button>
+                          <button
+                            className="remarks-btn cancel-btn"
+                            onClick={() =>
+                              cancelEditField(index, "isEditingRemarks")
+                            }
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <span
+                          className="remarks-display"
+                          onClick={() =>
+                            enableEditField(index, "isEditingRemarks")
+                          }
+                        >
+                          {product.remarks || "Click to add remarks"}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>
