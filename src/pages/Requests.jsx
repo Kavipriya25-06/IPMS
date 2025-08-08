@@ -133,14 +133,40 @@ const Requests = () => {
 
   // Function to handle sorting
   const handleSort = (field) => {
+    let newOrder = sortOrder;
+
     if (sortField === field) {
       // If clicking the same field, toggle the sort order.
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+      newOrder = sortOrder === "asc" ? "desc" : "asc";
+      setSortOrder(newOrder);
     } else {
       // Set new sort field and default to ascending.
       setSortField(field);
-      setSortOrder("asc");
+      newOrder = "asc";
+      setSortOrder(newOrder);
     }
+
+    // Apply sorting immediately
+    const sorted = [...sortedRequests].sort((a, b) => {
+      if (field === "request_id") {
+        // Numeric sort for request_id
+        return newOrder === "asc"
+          ? Number(a.request_id) - Number(b.request_id)
+          : Number(b.request_id) - Number(a.request_id);
+      } else if (field === "date") {
+        // Sort dates
+        return newOrder === "asc"
+          ? new Date(a.date) - new Date(b.date)
+          : new Date(b.date) - new Date(a.date);
+      } else {
+        // String sort
+        return newOrder === "asc"
+          ? String(a[field] || "").localeCompare(String(b[field] || ""))
+          : String(b[field] || "").localeCompare(String(a[field] || ""));
+      }
+    });
+
+    setSortedRequests(sorted);
   };
 
   // Sorting the requests array based on the sortField and sortOrder.
@@ -171,10 +197,11 @@ const Requests = () => {
         }}
       >
         <h2>Request List</h2>
-
-    
       </div>
-      <div className="search-wrapper-container" style={{ marginBottom: "10px" }}>
+      <div
+        className="search-wrapper-container"
+        style={{ marginBottom: "10px" }}
+      >
         <div className="search-wrapper">
           <div className="search-bar-container">
             <input
@@ -189,8 +216,8 @@ const Requests = () => {
             </span>
           </div>
         </div>
-            <button
-        onClick={handleNewRequest}
+        <button
+          onClick={handleNewRequest}
           style={{
             cursor: "pointer",
             background: "transparent",
@@ -198,14 +225,14 @@ const Requests = () => {
             padding: "4px",
             marginBottom: "-20px",
           }}
-        title="New Request"
-      >
-        <img
-          src={Add}
-          alt="New Request"
-          style={{ width: "20px", height: "20px" }}
-        />
-      </button>
+          title="New Request"
+        >
+          <img
+            src={Add}
+            alt="New Request"
+            style={{ width: "20px", height: "20px" }}
+          />
+        </button>
       </div>
 
       <div className="table-container" style={{ marginTop: "-15px" }}>
@@ -295,7 +322,10 @@ const Requests = () => {
       </div>
       {showstatus && (
         <div className="modal-overlay">
-          <div className="popup" style={{ width: "40%",maxHeight: "60vh", overflowY: "auto" }}>
+          <div
+            className="popup"
+            style={{ width: "40%", maxHeight: "60vh", overflowY: "auto" }}
+          >
             <span className="x-button" onClick={handleCloseStatus}>
               &times;
             </span>
@@ -325,7 +355,9 @@ const Requests = () => {
                       <tr key={index}>
                         <td>{status.po_id}</td>
                         <td>{status.request_id}</td>
-                        <td className="specification-cell">{status.component_specification}</td>
+                        <td className="specification-cell">
+                          {status.component_specification}
+                        </td>
                         <td>{status.po_status}</td>
                       </tr>
                     ))
