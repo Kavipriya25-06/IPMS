@@ -51,6 +51,7 @@ const Inventory = () => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
+  
 
   const [componentTypeDropdownOpen, setComponentTypeDropdownOpen] =
     useState(false);
@@ -146,16 +147,30 @@ const Inventory = () => {
     setToDate(null);
   };
 
+  // useEffect(() => {
+  //   if (statusFilter === "Tool") {
+  //     fetchToolInventoryData(); // Fetch tool inventory
+  //   } else {
+  //     fetchInventoryData(statusFilter); // Fetch normal inventory
+  //   }
+  //   fetchComponentMasterData();
+  //   fetchVendorMasterData();
+  //   fetchMetaTags();
+  // }, [statusFilter]);
+
   useEffect(() => {
+  const loadData = async () => {
     if (statusFilter === "Tool") {
-      fetchToolInventoryData(); // Fetch tool inventory
+      await fetchToolInventoryData();
     } else {
-      fetchInventoryData(statusFilter); // Fetch normal inventory
+      await fetchInventoryData(statusFilter);
     }
     fetchComponentMasterData();
     fetchVendorMasterData();
     fetchMetaTags();
-  }, [statusFilter]);
+  };
+  loadData();
+}, [statusFilter]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -690,13 +705,28 @@ const Inventory = () => {
 
   const filteredStatusInventory = filteredInventory;
 
-  useEffect(() => {
-    fetchInventoryData();
-  }, [selectedStatus]);
 
-  useEffect(() => {
-    filterByDate();
-  }, [statusFilter]);
+// 🔹 Remove this duplicated fetch —  DELETE
+// useEffect(() => {
+//   fetchInventoryData();
+// }, [selectedStatus]);
+
+// 🔹 Prevent autoLoadUntilScrollable from running on the first mount
+const firstLoad = useRef(true);
+useEffect(() => {
+  if (firstLoad.current) {
+    firstLoad.current = false;
+    return;
+  }
+  if (!loading && filteredInventory.length > 0 && hasMore) {
+    setTimeout(autoLoadUntilScrollable, 300);
+  }
+}, [loading, filteredInventory, hasMore]);
+
+
+  // useEffect(() => {
+  //   filterByDate();
+  // }, [statusFilter]);
 
   const handleSaveToolRow = async () => {
     const toolToSave = {
