@@ -3,6 +3,7 @@ import tagIcon from "../assets/Tag_icon.png";
 import config from "../Config"; // Import config for API endpoints
 import "../App.css";
 import { Link, useNavigate } from "react-router-dom";
+import Tags from "../assets/tags.png"; // Import the tags icon
 
 import {
   showSuccessToast,
@@ -437,7 +438,15 @@ const Component = () => {
   const handleAddTag = async () => {
     if (!newTag) return;
 
-    // Find the selected tag object from availableTags
+    const selectedCompTags = tags
+      .filter((t) => t.component_id === selectedComponent)
+      .map((t) => t.tags);
+
+    if (selectedCompTags.includes(newTag)) {
+      showWarningToast("Tag already added to this component.");
+      return;
+    }
+
     const selectedTag = availableTags.find((tag) => tag.tags === newTag);
     if (!selectedTag) {
       showErrorToast("Invalid tag selection.");
@@ -446,33 +455,53 @@ const Component = () => {
 
     const payload = {
       component_id: selectedComponent,
-      tags_choices: selectedTag.id, // Send the tag ID
-      tags: selectedTag.tags, // Send the tag name
+      tags_choices: selectedTag.id,
+      tags: selectedTag.tags,
     };
 
     try {
       const response = await fetch(`${config.apiBaseURL}/tags/`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       if (response.ok) {
         const newTagEntry = await response.json();
-        setTags([
-          ...tags,
+
+        // Update table tags
+        setTags((prev) => [
+          ...prev,
           {
             id: newTagEntry.id,
             tags: selectedTag.tags,
             component_id: selectedComponent,
           },
         ]);
-        setNewTag(""); // Clear the input field
-        setSelectedComponent(null); // Close the dropdown/modal
+
+        // Update dropdown source (testTags) so getFilteredTags sees it immediately
+        setTestTags((prev) => [
+          ...prev,
+          {
+            id: newTagEntry.id,
+            tags: [selectedTag.tags], // must be array for flatMap
+            component_id: {
+              component_type:
+                components.find((c) => c.component_id === selectedComponent)
+                  ?.component_type || "",
+              category:
+                components.find((c) => c.component_id === selectedComponent)
+                  ?.category || "",
+              component_specification:
+                components.find((c) => c.component_id === selectedComponent)
+                  ?.component_specification || "",
+            },
+          },
+        ]);
+
+        setNewTag("");
+        setSelectedComponent(null);
       } else {
-        console.error("Failed to add tag:", response.statusText);
         showErrorToast("Failed to add tag.");
       }
     } catch (error) {
@@ -481,27 +510,38 @@ const Component = () => {
     }
   };
 
-  const deleteTag = async (tagId, componentId) => {
-    try {
-      const response = await fetch(`${config.apiBaseURL}/tags/${tagId}/`, {
-        method: "DELETE",
-      });
+const deleteTag = async (tagId, componentId) => {
+  try {
+    const response = await fetch(`${config.apiBaseURL}/tags/${tagId}/`, {
+      method: "DELETE",
+    });
 
-      if (response.ok) {
-        // Update the tags state after deletion
-        setTags(
-          (prevTags) => prevTags.filter((tag) => tag.id !== tagId) // Remove the deleted tag from the state
-        );
-      } else {
-        console.error("Failed to delete the tag:", response.statusText);
-      }
-    } catch (error) {
-      console.error("Error deleting the tag:", error);
+    if (response.ok) {
+      // Get the tag name for this id
+      const deletedTag = tags.find(t => t.id === tagId)?.tags;
+
+      // Remove from table tags
+      setTags(prevTags => prevTags.filter(t => t.id !== tagId));
+
+      //Remove from testTags based on tag name & component id
+      setTestTags(prev =>
+        prev.filter(t =>
+          !(t.tags.includes(deletedTag) && t.component_id.component_id === componentId)
+        )
+      );
+
+      showSuccessToast("Tag deleted successfully!");
+    } else {
+      console.error("Failed to delete the tag:", response.statusText);
     }
-  };
+  } catch (error) {
+    console.error("Error deleting the tag:", error);
+  }
+};
+
 
   const handleTagIconClick = () => {
-    setShowPopup(true); // Show the pop-up when the tag image is clicked
+    setShowPopup(true);
   };
 
   const handlePopupClose = () => {
@@ -639,7 +679,7 @@ const Component = () => {
         <h2>Component List</h2>
         <div className="button-group">
           <button className="create-tag-button" onClick={handleTagIconClick}>
-            <img src="src/assets/tags.png" alt="icon" />
+            <img src={Tags} alt="icon" />
           </button>
           <button className="add-comp" onClick={handleAddComponentClick}>
             Add Component
@@ -664,7 +704,7 @@ const Component = () => {
         <div
           id="component-table-wrapper"
           className="table-container"
-          style={{ overflowY: loading ? "hidden" : "auto"}}
+          style={{ overflowY: loading ? "hidden" : "auto" }}
           onScroll={(e) => {
             const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
             if (
@@ -722,6 +762,8 @@ const Component = () => {
                         left: dropdownCoords.left,
                         zIndex: 9999,
                         width: "150px",
+                        marginLeft: "20px",
+                        marginTop: "4px",
                       }}
                     >
                       <div
@@ -751,7 +793,7 @@ const Component = () => {
                   ref={componentTypeDropdownRef}
                 >
                   <div
-                    className="component-type-dropdown"
+                    className="component-dropdown"
                     onClick={() =>
                       setComponentTypeDropdownOpen(!componentTypeDropdownOpen)
                     }
@@ -765,17 +807,18 @@ const Component = () => {
 
                   {componentTypeDropdownOpen && (
                     <div
-                      className="component-type-dropdown-options"
+                      className="component-dropdown-options"
                       style={{
                         position: "fixed",
                         top: componentdropdownCoords.top,
                         left: componentdropdownCoords.left,
                         zIndex: 9999,
-                        width: "150px",
+                        marginLeft: "20px",
+                        marginTop: "4px",
                       }}
                     >
                       <div
-                        className="component-type-dropdown-option"
+                        className="component-dropdown-option"
                         onClick={() => setSelectedComponentType([])}
                         style={{ padding: "6px 12px", cursor: "pointer" }}
                       >
@@ -785,7 +828,7 @@ const Component = () => {
                       {getFilteredComponentTypes().map((type) => (
                         <div
                           key={type}
-                          className="component-type-dropdown-option"
+                          className="component-dropdown-option"
                           onClick={() => setSelectedComponentType([type])}
                           style={{ padding: "6px 12px", cursor: "pointer" }}
                         >

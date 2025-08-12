@@ -62,7 +62,7 @@ function App() {
     user && allowedRoles.includes(user.role);
 
   return (
-    <Router>
+    <Router basename="/app1">
       <div className="App">
         <header
           style={{
