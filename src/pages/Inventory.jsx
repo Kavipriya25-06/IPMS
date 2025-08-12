@@ -51,7 +51,6 @@ const Inventory = () => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
-  
 
   const [componentTypeDropdownOpen, setComponentTypeDropdownOpen] =
     useState(false);
@@ -159,18 +158,18 @@ const Inventory = () => {
   // }, [statusFilter]);
 
   useEffect(() => {
-  const loadData = async () => {
-    if (statusFilter === "Tool") {
-      await fetchToolInventoryData();
-    } else {
-      await fetchInventoryData(statusFilter);
-    }
-    fetchComponentMasterData();
-    fetchVendorMasterData();
-    fetchMetaTags();
-  };
-  loadData();
-}, [statusFilter]);
+    const loadData = async () => {
+      if (statusFilter === "Tool") {
+        await fetchToolInventoryData();
+      } else {
+        await fetchInventoryData(statusFilter);
+      }
+      fetchComponentMasterData();
+      fetchVendorMasterData();
+      fetchMetaTags();
+    };
+    loadData();
+  }, [statusFilter]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -705,24 +704,22 @@ const Inventory = () => {
 
   const filteredStatusInventory = filteredInventory;
 
+  // 🔹 Remove this duplicated fetch —  DELETE
+  // useEffect(() => {
+  //   fetchInventoryData();
+  // }, [selectedStatus]);
 
-// 🔹 Remove this duplicated fetch —  DELETE
-// useEffect(() => {
-//   fetchInventoryData();
-// }, [selectedStatus]);
-
-// 🔹 Prevent autoLoadUntilScrollable from running on the first mount
-const firstLoad = useRef(true);
-useEffect(() => {
-  if (firstLoad.current) {
-    firstLoad.current = false;
-    return;
-  }
-  if (!loading && filteredInventory.length > 0 && hasMore) {
-    setTimeout(autoLoadUntilScrollable, 300);
-  }
-}, [loading, filteredInventory, hasMore]);
-
+  // 🔹 Prevent autoLoadUntilScrollable from running on the first mount
+  const firstLoad = useRef(true);
+  useEffect(() => {
+    if (firstLoad.current) {
+      firstLoad.current = false;
+      return;
+    }
+    if (!loading && filteredInventory.length > 0 && hasMore) {
+      setTimeout(autoLoadUntilScrollable, 300);
+    }
+  }, [loading, filteredInventory, hasMore]);
 
   // useEffect(() => {
   //   filterByDate();
@@ -1058,65 +1055,64 @@ useEffect(() => {
                   )}
                 </th>
 
-<th
-  className="component-type-dropdown-wrapper"
-  ref={componentTypeRef}
->
-  <div
-    className="component-dropdown"
-    onClick={(e) => {
-      const rect = e.target.getBoundingClientRect();
-      setComponentTypeCoords({
-        top: rect.bottom,
-        left: rect.left,
-      });
-      setComponentTypeDropdownOpen(!componentTypeDropdownOpen);
-    }}
-  >
-    {selectedComponentTypes.length > 0
-      ? `Selected (${selectedComponentTypes.length})`
-      : "Component Type"}
-  </div>
+                <th
+                  className="component-type-dropdown-wrapper"
+                  ref={componentTypeRef}
+                >
+                  <div
+                    className="component-dropdown"
+                    onClick={(e) => {
+                      const rect = e.target.getBoundingClientRect();
+                      setComponentTypeCoords({
+                        top: rect.bottom,
+                        left: rect.left,
+                      });
+                      setComponentTypeDropdownOpen(!componentTypeDropdownOpen);
+                    }}
+                  >
+                    {selectedComponentTypes.length > 0
+                      ? `Selected (${selectedComponentTypes.length})`
+                      : "Component Type"}
+                  </div>
 
-  {componentTypeDropdownOpen && (
-    <div
-      className="component-dropdown-options"
-      style={{
-        position: "fixed",
-        top: componentTypeCoords.top,
-        left: componentTypeCoords.left,
-        zIndex: 9999,
-      }}
-    >
-      <label className="component-dropdown-option">
-        <input
-          type="checkbox"
-          checked={selectedComponentTypes.length === 0}
-          onChange={() => setSelectedComponentTypes([])}
-        />
-        All
-      </label>
-      {getAllComponentTypes().map((type) => (
-        <label key={type} className="component-dropdown-option">
-          <input
-            type="checkbox"
-            checked={selectedComponentTypes.includes(type)}
-            onChange={(e) => {
-              const isChecked = e.target.checked;
-              setSelectedComponentTypes((prev) =>
-                isChecked
-                  ? [...prev, type]
-                  : prev.filter((t) => t !== type)
-              );
-            }}
-          />
-          {type}
-        </label>
-      ))}
-    </div>
-  )}
-</th>
-
+                  {componentTypeDropdownOpen && (
+                    <div
+                      className="component-dropdown-options"
+                      style={{
+                        position: "fixed",
+                        top: componentTypeCoords.top,
+                        left: componentTypeCoords.left,
+                        zIndex: 9999,
+                      }}
+                    >
+                      <label className="component-dropdown-option">
+                        <input
+                          type="checkbox"
+                          checked={selectedComponentTypes.length === 0}
+                          onChange={() => setSelectedComponentTypes([])}
+                        />
+                        All
+                      </label>
+                      {getAllComponentTypes().map((type) => (
+                        <label key={type} className="component-dropdown-option">
+                          <input
+                            type="checkbox"
+                            checked={selectedComponentTypes.includes(type)}
+                            onChange={(e) => {
+                              const isChecked = e.target.checked;
+                              setSelectedComponentTypes((prev) =>
+                                isChecked
+                                  ? [...prev, type]
+                                  : prev.filter((t) => t !== type)
+                              );
+                            }}
+                          />
+                          {type}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </th>
 
                 <th
                   onClick={() => handleSort("specification")}
@@ -1132,7 +1128,7 @@ useEffect(() => {
                 <th>UOM</th>
                 <th className="vendor-dropdown-wrapper" ref={vendorRef}>
                   <div
-                    className="category-dropdown"
+                    className="component-dropdown"
                     onClick={(e) => {
                       const rect = e.target.getBoundingClientRect();
                       setVendorCoords({ top: rect.bottom, left: rect.left });
@@ -1152,7 +1148,7 @@ useEffect(() => {
 
                   {vendorDropdownOpen && (
                     <div
-                      className="category-dropdown-options"
+                      className="component-dropdown-options"
                       style={{
                         position: "fixed",
                         top: vendorCoords.top,
@@ -1160,7 +1156,7 @@ useEffect(() => {
                         zIndex: 9999,
                       }}
                     >
-                      <label className="category-dropdown-option">
+                      <label className="component-dropdown-option">
                         <input
                           type="checkbox"
                           checked={selectedVendors.length === 0}
@@ -1171,7 +1167,7 @@ useEffect(() => {
                       {getAllVendors().map((vendor) => (
                         <label
                           key={vendor}
-                          className="category-dropdown-option"
+                          className="component-dropdown-option"
                         >
                           <input
                             type="checkbox"

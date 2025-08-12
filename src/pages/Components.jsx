@@ -648,7 +648,7 @@ const Component = () => {
       </div>
       <div class="center-wrapper">
         <div className="search-bar-container" style={{ width: "300px" }}>
-          <input
+          <input    
             type="text"
             className="search-bar"
             placeholder="Search by Spec..."
