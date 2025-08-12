@@ -168,6 +168,24 @@ nav ul li.disabled a:hover {
   background-color: #cb6c13;
 }
 
+.po-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.po-details {
+  display: flex;
+  gap: 100px; /* space between PO/Vendor/GSTIN */
+  margin-top: 10px;
+}
+
+.po-details h3 {
+  margin: 0;
+}
+
+
 /* Main Content */
 main {
   padding: 20px;

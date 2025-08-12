@@ -141,7 +141,7 @@ const ProjectList = () => {
             </span>
           </div>
         </div>
-         <button
+        <button
           style={{
             cursor: "pointer",
             background: "transparent",
@@ -300,6 +300,12 @@ const ProjectList = () => {
                 >
                   <div className="spinner"></div>
                   Loading Projects...
+                </td>
+              </tr>
+            ) : projects.length === 0 ? (
+              <tr>
+                <td colSpan="5" style={{ textAlign: "center", color: "gray" }}>
+                  No projects available
                 </td>
               </tr>
             ) : projects.filter((project) =>

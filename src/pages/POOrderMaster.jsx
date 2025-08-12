@@ -56,71 +56,6 @@ const POOrderMaster = ({ user }) => {
     body: "",
   });
 
-  const [vendorLocation, setVendorLocation] = useState("N/A");
-  const [vendorPOC, setVendorPOC] = useState(null);
-
-  // Pick a sensible "location" string from a vendor_sub_list row
-  const extractLocation = (row) => {
-    if (!row) return null;
-    return row.location || null; // your API uses "location"
-  };
-
-  // If multiple sub-rows exist for the vendor, prefer default_poc === true
-  const pickBestSubRow = (rows) => {
-    if (!Array.isArray(rows) || rows.length === 0) return null;
-    const def = rows.find((r) => r.default_poc === true);
-    return def || rows[0];
-  };
-
-  const fetchVendorLocation = async (resolvedVendorId) => {
-    try {
-      if (!resolvedVendorId) {
-        setVendorLocation("N/A");
-        setVendorPOC(null);
-        return;
-      }
-
-      const res = await fetch(`${config.apiBaseURL}/vendor_sub_list/`);
-      if (!res.ok) throw new Error("Failed to fetch vendor_sub_list");
-      const list = await res.json();
-
-      // Your sublist uses "vendor": "V_00001"
-      const matches = list.filter((row) => row?.vendor === resolvedVendorId);
-      const best = pickBestSubRow(matches);
-
-      setVendorLocation(extractLocation(best) || "N/A");
-      // optional: keep POC info if you want to show/email it
-      setVendorPOC(
-        best
-          ? {
-              name: best.point_of_contact || "",
-              email: best.email || "",
-              phone: best.phone_number || "",
-            }
-          : null
-      );
-    } catch (e) {
-      console.error("fetchVendorLocation error:", e);
-      setVendorLocation("N/A");
-      setVendorPOC(null);
-    }
-  };
-
-  useEffect(() => {
-    // Prefer vendor_id from poData (your header uses poData.cart_details)
-    const vid =
-      poData?.cart_details?.vendor_id ??
-      poDetails?.[0]?.cart_details?.vendor_id ??
-      null;
-
-    if (vid) {
-      fetchVendorLocation(vid);
-    } else {
-      setVendorLocation("N/A");
-      setVendorPOC(null);
-    }
-  }, [poData, poDetails]);
-
   // The user object is now passed as a prop
   const isAdmin = user?.role === "Admin";
   const isProcurement = user?.role === "Procurement";
@@ -1028,7 +963,6 @@ const POOrderMaster = ({ user }) => {
           <h3>PO Number: {poId}</h3>
           <h3>Vendor Name: {vendorName}</h3>
           <h3>GSTIN: {vendor_gstn}</h3>
-          <h3>Location: {vendorLocation}</h3>
           <button
             onClick={() => navigate("/po-list")}
             style={{

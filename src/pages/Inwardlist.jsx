@@ -29,6 +29,8 @@ const Inwardlist = () => {
   const [editingIndex, setEditingIndex] = useState(null);
   const [invoiceNumberInput, setInvoiceNumberInput] = useState("");
   const [invoiceDateInput, setInvoiceDateInput] = useState("");
+    const [loading, setLoading] = useState(true);
+  
 
   const navigate = useNavigate();
 
@@ -47,6 +49,8 @@ const Inwardlist = () => {
   // Fetch Inward Data
   const fetchInwardData = async () => {
     try {
+            setLoading(true);
+
       const response = await fetch(`${config.apiBaseURL}/inward/`);
       const data = await response.json();
       const result = data.filter((item) => item.mode_to_inventory === true);
@@ -79,6 +83,8 @@ const Inwardlist = () => {
       setFilteredData(groupedData);
     } catch (err) {
       console.error("Error fetching inward data:", err);
+    }finally {
+      setLoading(false); // Stop loading after both calls
     }
   };
 
@@ -209,7 +215,23 @@ const Inwardlist = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredData.map((item, index) => (
+            {loading ? (
+              <tr>
+                <td
+                  colSpan="12"
+                  style={{ textAlign: "center", padding: "20px" }}
+                >
+                  <div className="spinner"></div>
+                  Loading Projects...
+                </td>
+              </tr>
+            ) : filteredData.length === 0 ? (
+              <tr>
+                <td colSpan="12" style={{ textAlign: "center", color: "gray" }}>
+                  No Inward available
+                </td>
+              </tr>
+            ) :filteredData.map((item, index) => (
               <tr key={index}>
                 <td>{getNestedValue(item, "po_master.PO_id")}</td>
                 <td>{getNestedValue(item, "po_master.cart.component_id")}</td>
