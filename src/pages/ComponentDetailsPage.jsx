@@ -177,7 +177,7 @@ const ComponentDetailsPage = () => {
 
         <div className="product-right">
           <div className="product-header">
-            <a href="/components" className="back-link">
+            <a href="/app1/components" className="back-link">
               ← Back
             </a>
           </div>
