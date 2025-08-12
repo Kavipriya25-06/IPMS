@@ -16,6 +16,7 @@ const Requests = () => {
   const [sortOrder, setSortOrder] = useState("asc");
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch(`${config.apiBaseURL}/request_list/`)
@@ -56,12 +57,16 @@ const Requests = () => {
 
   const fetchRequestDetails = async () => {
     try {
+      setLoading(true);
+
       const response = await fetch(`${config.apiBaseURL}/request_master/`);
       const data = await response.json();
       setRequestMaster(data);
       console.log("Request master", data);
     } catch (error) {
       console.error("Error fetching request details:", error);
+    } finally {
+      setLoading(false); // Stop loading after both calls
     }
   };
 
@@ -268,52 +273,78 @@ const Requests = () => {
             </tr>
           </thead>
           <tbody>
-            {sortedRequests
-              .filter((request) =>
+            {loading ? (
+              <tr>
+                <td
+                  colSpan="8"
+                  style={{ textAlign: "center", padding: "20px" }}
+                >
+                  <div className="spinner"></div>
+                  Loading Requests...
+                </td>
+              </tr>
+            ) : sortedRequests.length === 0 ? (
+              <tr>
+                <td colSpan="5" style={{ textAlign: "center", color: "gray" }}>
+                  No requests available
+                </td>
+              </tr>
+            ) : sortedRequests.filter((request) =>
                 request.requester_name
                   ?.toLowerCase()
                   .includes(searchQuery.toLowerCase())
-              )
-              .map((request) => {
-                const { status } = getAggregatedStatus(request.request_id);
-                return (
-                  <tr key={request.request_id}>
-                    <td
-                      onClick={() => handleRequestClick(request.request_id)}
-                      style={{
-                        cursor: "pointer",
-                        textDecoration: "underline",
-                      }}
+              ).length > 0 ? (
+              sortedRequests
+                .filter((request) =>
+                  request.requester_name
+                    ?.toLowerCase()
+                    .includes(searchQuery.toLowerCase())
+                )
+                .map((request) => {
+                  const { status } = getAggregatedStatus(request.request_id);
+                  return (
+                    <tr
+                      key={request.request_id}
+                      style={{ borderBottom: "1px solid #ddd" }}
                     >
-                      {request.request_id}
-                    </td>
-                    <td>{request.requester_name}</td>
-                    <td>
-                      {request.date
-                        ? format(parseISO(request.date), "dd-MM-yyyy")
-                        : "--"}
-                    </td>
-                    <td
-                      onClick={() => statusPopup(request.request_id)}
-                      style={{ cursor: "pointer", textDecoration: "underline" }}
-                    >
-                      {status}
-                    </td>
-                    <td>{request.last_modified_by}</td>
-                  </tr>
-                );
-              })}
-
-            {/* Show message if no matching data */}
-            {sortedRequests.filter((request) =>
-              request.requester_name
-                ?.toLowerCase()
-                .includes(searchQuery.toLowerCase())
-            ).length === 0 && (
+                      <td
+                        onClick={() => handleRequestClick(request.request_id)}
+                        style={{
+                          cursor: "pointer",
+                          textDecoration: "underline",
+                          padding: "10px",
+                        }}
+                      >
+                        {request.request_id}
+                      </td>
+                      <td style={{ padding: "10px" }}>
+                        {request.requester_name}
+                      </td>
+                      <td style={{ padding: "10px" }}>
+                        {request.date
+                          ? format(parseISO(request.date), "dd-MM-yyyy")
+                          : "--"}
+                      </td>
+                      <td
+                        onClick={() => statusPopup(request.request_id)}
+                        style={{
+                          cursor: "pointer",
+                          textDecoration: "underline",
+                          padding: "10px",
+                        }}
+                      >
+                        {status}
+                      </td>
+                      <td style={{ padding: "10px" }}>
+                        {request.last_modified_by}
+                      </td>
+                    </tr>
+                  );
+                })
+            ) : (
               <tr>
                 <td colSpan="5" style={{ textAlign: "center", color: "gray" }}>
-                  No data found for requester name "
-                  <strong>{searchQuery}</strong>"
+                  No requests found for "<strong>{searchQuery}</strong>"
                 </td>
               </tr>
             )}
