@@ -190,7 +190,7 @@ const Inwardlist = () => {
         <h2>Inward</h2>
       </div>
 
-      <div className="table-container">
+      <div className="table-container" style={{ marginTop: "-10px" }}>
         <table>
           <thead>
             <tr>

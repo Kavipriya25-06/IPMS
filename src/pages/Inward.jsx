@@ -768,7 +768,7 @@ const Inward = () => {
         />
       )}
 
-      <div className="table-container" style={{ marginTop: "20px" }}>
+      <div className="table-container" style={{ marginTop: "10px" }}>
         <table>
           <thead>
             <tr>
