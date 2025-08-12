@@ -664,7 +664,7 @@ const Component = () => {
         <div
           id="component-table-wrapper"
           className="table-container"
-          style={{ overflowY: loading ? "hidden" : "auto"}}
+          style={{ overflowY: loading ? "hidden" : "auto" }}
           onScroll={(e) => {
             const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
             if (
@@ -722,6 +722,8 @@ const Component = () => {
                         left: dropdownCoords.left,
                         zIndex: 9999,
                         width: "150px",
+                        marginLeft: "20px",
+                        marginTop: "4px",
                       }}
                     >
                       <div
@@ -751,7 +753,7 @@ const Component = () => {
                   ref={componentTypeDropdownRef}
                 >
                   <div
-                    className="component-type-dropdown"
+                    className="component-dropdown"
                     onClick={() =>
                       setComponentTypeDropdownOpen(!componentTypeDropdownOpen)
                     }
@@ -765,17 +767,18 @@ const Component = () => {
 
                   {componentTypeDropdownOpen && (
                     <div
-                      className="component-type-dropdown-options"
+                      className="component-dropdown-options"
                       style={{
                         position: "fixed",
                         top: componentdropdownCoords.top,
                         left: componentdropdownCoords.left,
                         zIndex: 9999,
-                        width: "150px",
+                        marginLeft: "20px",
+                        marginTop: "4px",
                       }}
                     >
                       <div
-                        className="component-type-dropdown-option"
+                        className="component-dropdown-option"
                         onClick={() => setSelectedComponentType([])}
                         style={{ padding: "6px 12px", cursor: "pointer" }}
                       >
@@ -785,7 +788,7 @@ const Component = () => {
                       {getFilteredComponentTypes().map((type) => (
                         <div
                           key={type}
-                          className="component-type-dropdown-option"
+                          className="component-dropdown-option"
                           onClick={() => setSelectedComponentType([type])}
                           style={{ padding: "6px 12px", cursor: "pointer" }}
                         >

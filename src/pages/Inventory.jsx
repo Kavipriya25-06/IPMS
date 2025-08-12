@@ -290,7 +290,7 @@ const Inventory = () => {
       setVisibleInventory(10);
       setHasMore(filteredInventory.length > 10);
     }
-  }, [filteredInventory]); // 🔁 remove this
+  }, [filteredInventory]);
 
   const handleUpdateToolRow = async () => {
     try {
@@ -1058,64 +1058,65 @@ useEffect(() => {
                   )}
                 </th>
 
-                <th
-                  className="component-type-dropdown-wrapper"
-                  ref={componentTypeRef}
-                >
-                  <div
-                    className="category-dropdown"
-                    onClick={(e) => {
-                      const rect = e.target.getBoundingClientRect();
-                      setComponentTypeCoords({
-                        top: rect.bottom,
-                        left: rect.left,
-                      });
-                      setComponentTypeDropdownOpen(!componentTypeDropdownOpen);
-                    }}
-                  >
-                    {selectedComponentTypes.length > 0
-                      ? `Selected (${selectedComponentTypes.length})`
-                      : "Component Type"}
-                  </div>
+<th
+  className="component-type-dropdown-wrapper"
+  ref={componentTypeRef}
+>
+  <div
+    className="component-dropdown"
+    onClick={(e) => {
+      const rect = e.target.getBoundingClientRect();
+      setComponentTypeCoords({
+        top: rect.bottom,
+        left: rect.left,
+      });
+      setComponentTypeDropdownOpen(!componentTypeDropdownOpen);
+    }}
+  >
+    {selectedComponentTypes.length > 0
+      ? `Selected (${selectedComponentTypes.length})`
+      : "Component Type"}
+  </div>
 
-                  {componentTypeDropdownOpen && (
-                    <div
-                      className="category-dropdown-options"
-                      style={{
-                        position: "fixed",
-                        top: componentTypeCoords.top,
-                        left: componentTypeCoords.left,
-                        zIndex: 9999,
-                      }}
-                    >
-                      <label className="category-dropdown-option">
-                        <input
-                          type="checkbox"
-                          checked={selectedComponentTypes.length === 0}
-                          onChange={() => setSelectedComponentTypes([])}
-                        />
-                        All
-                      </label>
-                      {getAllComponentTypes().map((type) => (
-                        <label key={type} className="category-dropdown-option">
-                          <input
-                            type="checkbox"
-                            checked={selectedComponentTypes.includes(type)}
-                            onChange={(e) => {
-                              const isChecked = e.target.checked;
-                              setSelectedComponentTypes((prev) =>
-                                isChecked
-                                  ? [...prev, type]
-                                  : prev.filter((t) => t !== type)
-                              );
-                            }}
-                          />
-                          {type}
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </th>
+  {componentTypeDropdownOpen && (
+    <div
+      className="component-dropdown-options"
+      style={{
+        position: "fixed",
+        top: componentTypeCoords.top,
+        left: componentTypeCoords.left,
+        zIndex: 9999,
+      }}
+    >
+      <label className="component-dropdown-option">
+        <input
+          type="checkbox"
+          checked={selectedComponentTypes.length === 0}
+          onChange={() => setSelectedComponentTypes([])}
+        />
+        All
+      </label>
+      {getAllComponentTypes().map((type) => (
+        <label key={type} className="component-dropdown-option">
+          <input
+            type="checkbox"
+            checked={selectedComponentTypes.includes(type)}
+            onChange={(e) => {
+              const isChecked = e.target.checked;
+              setSelectedComponentTypes((prev) =>
+                isChecked
+                  ? [...prev, type]
+                  : prev.filter((t) => t !== type)
+              );
+            }}
+          />
+          {type}
+        </label>
+      ))}
+    </div>
+  )}
+</th>
+
 
                 <th
                   onClick={() => handleSort("specification")}
