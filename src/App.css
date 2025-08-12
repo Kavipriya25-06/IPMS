@@ -2967,6 +2967,7 @@ main {
 
   /* Make tables scrollable on small screens */
   .table-container,
+
   .table-scroll-wrapper,
   .table-scroll-horizontal {
     overflow-x: auto;
@@ -2975,6 +2976,13 @@ main {
     border-radius: 5px;
     max-height: calc(100vh - 350px); /* adjust offset for header/footer */
   }
+    .table-inventory-container{
+      overflow-x: auto;
+    overflow-y: auto; /* allow vertical scrolling inside container */
+    -webkit-overflow-scrolling: touch;
+    border-radius: 5px;
+    max-height: calc(100vh - 380px); 
+    }
 
   table {
     font-size: 13px;
@@ -3088,7 +3096,7 @@ main {
     display: flex;
     align-items: flex-end;
     gap: 8px;
-    width: 240px !important;
+    width: 280px !important;
     margin-top: 10px;
   }
 
@@ -3096,11 +3104,15 @@ main {
     justify-content: flex-end;
     margin: 0;
     margin-bottom: 10px;
+  
   }
 
   .right-wrapper {
     justify-content: center;
     margin: 0;
+    margin-top: -30px;
+        margin-bottom: 10px;
+
   }
 
   .date-filter,
@@ -3182,35 +3194,20 @@ main {
 @media (max-width: 1024px) {
   .search-wrapper-container {
     display: flex;
-    flex-direction: row; /* 👈 Make them stay in a row */
-    justify-content: flex-end; /* 👈 Align to right */
-    align-items: center; /* 👈 Align vertically center */
+    flex-direction: row; /*  Make them stay in a row */
+    justify-content: flex-end; /*  Align to right */
+    align-items: center; /*  Align vertically center */
     padding: 10px 16px;
-    margin-top: -30px;
-    gap: 10px; /* 👈 Space between input and button */
+    margin-top: -40px;
+    gap: 20px; /* Space between input and button */
     flex-wrap: wrap; /* Optional: wraps on very small screens */
   }
 
   .search-wrapper {
     display: flex;
     justify-content: flex-end;
-    width: auto;
-  }
+  }  
 
-  .button-group {
-    margin-top: 0% !important;
-  }
-
-  .search-bar-container {
-    display: flex;
-    align-items: center;
-    width: 320px;
-    margin-top: 20px;
-  }
-
-  .plus-button {
-    margin-top: 30px; /* Ensure it's aligned horizontally */
-  }
 }
 
 /* ProductDetailPage.css */

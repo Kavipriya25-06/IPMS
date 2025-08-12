@@ -1048,7 +1048,7 @@ const POOrderMaster = ({ user }) => {
     <h3>PO Number: {poId}</h3>
     <h3>Vendor Name: {vendorName}</h3>
     <h3>GSTIN: {vendor_gstn}</h3>
-        <h3>Location: {vendor_gstn}</h3>
+        <h3>Location: {vendorLocation}</h3>
 
   </div>
   

@@ -3,15 +3,10 @@
 const config = {
 
 
-<<<<<<< HEAD
+  
      apiBaseURL: "http://127.0.0.1:8000",
     
    // apiBaseURL: "http://148.135.138.195:8000",
-=======
-    apiBaseURL: "http://127.0.0.1:8000",
-    
-    // apiBaseURL: "http://148.135.138.195:8000",
->>>>>>> 8a4d061653cb7c4e7162eba7f2158e9e5a759a8a
 
     endpoints: {
       // Admin endpoint

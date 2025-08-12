@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import CustomMessagebox from "./CustomMessageBox.jsx";
 import config from "../Config.js";
+import Logo from "../assets/aero.png"
 
 import {
   showSuccessToast,
@@ -134,6 +135,9 @@ const Login = () => {
       return;
     }
 
+      showInfoToast("Sending reset link...");
+  setError("");
+
     try {
       const response = await fetch(`${config.apiBaseURL}/forgot-password/`, {
         method: "POST",
@@ -192,7 +196,7 @@ const Login = () => {
   return (
     <div className="login-container">
       <div className="logo-container">
-        <img src="/aero.png" alt="Company Logo" />
+        <img src={Logo} alt="Company Logo" />
         {/* <img
           style={{
             marginTop: "-130px",
