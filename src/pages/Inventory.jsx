@@ -51,7 +51,6 @@ const Inventory = () => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
-  
 
   const [componentTypeDropdownOpen, setComponentTypeDropdownOpen] =
     useState(false);
@@ -159,18 +158,18 @@ const Inventory = () => {
   // }, [statusFilter]);
 
   useEffect(() => {
-  const loadData = async () => {
-    if (statusFilter === "Tool") {
-      await fetchToolInventoryData();
-    } else {
-      await fetchInventoryData(statusFilter);
-    }
-    fetchComponentMasterData();
-    fetchVendorMasterData();
-    fetchMetaTags();
-  };
-  loadData();
-}, [statusFilter]);
+    const loadData = async () => {
+      if (statusFilter === "Tool") {
+        await fetchToolInventoryData();
+      } else {
+        await fetchInventoryData(statusFilter);
+      }
+      fetchComponentMasterData();
+      fetchVendorMasterData();
+      fetchMetaTags();
+    };
+    loadData();
+  }, [statusFilter]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -290,7 +289,7 @@ const Inventory = () => {
       setVisibleInventory(10);
       setHasMore(filteredInventory.length > 10);
     }
-  }, [filteredInventory]); // 🔁 remove this
+  }, [filteredInventory]);
 
   const handleUpdateToolRow = async () => {
     try {
@@ -705,24 +704,22 @@ const Inventory = () => {
 
   const filteredStatusInventory = filteredInventory;
 
+  // 🔹 Remove this duplicated fetch —  DELETE
+  // useEffect(() => {
+  //   fetchInventoryData();
+  // }, [selectedStatus]);
 
-// 🔹 Remove this duplicated fetch —  DELETE
-// useEffect(() => {
-//   fetchInventoryData();
-// }, [selectedStatus]);
-
-// 🔹 Prevent autoLoadUntilScrollable from running on the first mount
-const firstLoad = useRef(true);
-useEffect(() => {
-  if (firstLoad.current) {
-    firstLoad.current = false;
-    return;
-  }
-  if (!loading && filteredInventory.length > 0 && hasMore) {
-    setTimeout(autoLoadUntilScrollable, 300);
-  }
-}, [loading, filteredInventory, hasMore]);
-
+  // 🔹 Prevent autoLoadUntilScrollable from running on the first mount
+  const firstLoad = useRef(true);
+  useEffect(() => {
+    if (firstLoad.current) {
+      firstLoad.current = false;
+      return;
+    }
+    if (!loading && filteredInventory.length > 0 && hasMore) {
+      setTimeout(autoLoadUntilScrollable, 300);
+    }
+  }, [loading, filteredInventory, hasMore]);
 
   // useEffect(() => {
   //   filterByDate();
@@ -1063,7 +1060,7 @@ useEffect(() => {
                   ref={componentTypeRef}
                 >
                   <div
-                    className="category-dropdown"
+                    className="component-dropdown"
                     onClick={(e) => {
                       const rect = e.target.getBoundingClientRect();
                       setComponentTypeCoords({
@@ -1080,7 +1077,7 @@ useEffect(() => {
 
                   {componentTypeDropdownOpen && (
                     <div
-                      className="category-dropdown-options"
+                      className="component-dropdown-options"
                       style={{
                         position: "fixed",
                         top: componentTypeCoords.top,
@@ -1088,7 +1085,7 @@ useEffect(() => {
                         zIndex: 9999,
                       }}
                     >
-                      <label className="category-dropdown-option">
+                      <label className="component-dropdown-option">
                         <input
                           type="checkbox"
                           checked={selectedComponentTypes.length === 0}
@@ -1097,7 +1094,7 @@ useEffect(() => {
                         All
                       </label>
                       {getAllComponentTypes().map((type) => (
-                        <label key={type} className="category-dropdown-option">
+                        <label key={type} className="component-dropdown-option">
                           <input
                             type="checkbox"
                             checked={selectedComponentTypes.includes(type)}
@@ -1131,7 +1128,7 @@ useEffect(() => {
                 <th>UOM</th>
                 <th className="vendor-dropdown-wrapper" ref={vendorRef}>
                   <div
-                    className="category-dropdown"
+                    className="component-dropdown"
                     onClick={(e) => {
                       const rect = e.target.getBoundingClientRect();
                       setVendorCoords({ top: rect.bottom, left: rect.left });
@@ -1151,7 +1148,7 @@ useEffect(() => {
 
                   {vendorDropdownOpen && (
                     <div
-                      className="category-dropdown-options"
+                      className="component-dropdown-options"
                       style={{
                         position: "fixed",
                         top: vendorCoords.top,
@@ -1159,7 +1156,7 @@ useEffect(() => {
                         zIndex: 9999,
                       }}
                     >
-                      <label className="category-dropdown-option">
+                      <label className="component-dropdown-option">
                         <input
                           type="checkbox"
                           checked={selectedVendors.length === 0}
@@ -1170,7 +1167,7 @@ useEffect(() => {
                       {getAllVendors().map((vendor) => (
                         <label
                           key={vendor}
-                          className="category-dropdown-option"
+                          className="component-dropdown-option"
                         >
                           <input
                             type="checkbox"
