@@ -10,7 +10,6 @@ body {
   text-align: left;
   padding: 20px;
   margin: 0;
-  
 }
 
 h1 {
@@ -188,12 +187,12 @@ table {
   white-space: nowrap;
   border-radius: 5px;
   max-height: calc(
-    100vh - 230px
+    100vh - 220px
   ); /* Adjust based on your footer and header height */
   margin-bottom: 50px; /* Add space before footer */
 }
 
-.main-content{
+.main-content {
   min-height: fit-content;
 }
 
@@ -209,8 +208,6 @@ table {
   margin-bottom: 50px; /* Add space before footer */
 }
 
-
-
 /* Optional: if you want the table to take full width when possible */
 .table-container table {
   width: 100%;
@@ -225,13 +222,13 @@ table {
   text-align: left;
 }
 
-.table-inventory-container  table {
+.table-inventory-container table {
   width: 100%;
   border-collapse: collapse;
 }
 
 /* Optional: Better table visuals */
-.table-inventory-container  th,
+.table-inventory-container th,
 .table-inventory-container td {
   padding: 8px 12px;
   border: 1px solid #ccc;
@@ -1082,12 +1079,11 @@ table td {
   transform: scale(0.98);
 }
 
-
 .category-dropdown-wrapper {
   position: relative;
 }
 
-.category-dropdown{
+.category-dropdown {
   cursor: pointer;
   padding: 6px 12px;
   border: none;
@@ -1107,14 +1103,14 @@ table td {
 }
 
 .category-dropdown-options {
-  background:  #c3c2c2;
+  background: #c3c2c2;
   border: 1px solid #ccc;
   border-radius: 6px;
   padding: 6px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   max-height: 250px; /* Limit dropdown height */
-  max-width: 250px;  /* Limit dropdown width */
-  overflow-y: auto;  /* Enable vertical scroll if content exceeds height */
+  max-width: 250px; /* Limit dropdown width */
+  overflow-y: auto; /* Enable vertical scroll if content exceeds height */
   overflow-x: hidden; /* Hide horizontal scroll */
   color: black;
   margin-top: 10px;
@@ -1133,7 +1129,7 @@ table td {
   background-color: #f0f0f0;
 }
 
-.component-dropdown{
+.component-dropdown {
   cursor: pointer;
   padding: 6px 12px;
   border: none;
@@ -1153,14 +1149,14 @@ table td {
 }
 
 .component-dropdown-options {
-  background:  #c3c2c2;
+  background: #c3c2c2;
   border: 1px solid #ccc;
   border-radius: 6px;
   padding: 6px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   max-height: 300px; /* Limit dropdown height */
-  max-width: 250px;  /* Limit dropdown width */
-  overflow-y: auto;  /* Enable vertical scroll if content exceeds height */
+  max-width: 250px; /* Limit dropdown width */
+  overflow-y: auto; /* Enable vertical scroll if content exceeds height */
   overflow-x: hidden; /* Hide horizontal scroll */
   color: black;
   margin-top: 10px;
@@ -1180,38 +1176,44 @@ table td {
 }
 
 .tags-dropdown {
+  cursor: pointer;
   padding: 6px 12px;
-  border-radius: 4px;
-  /* border: 1px solid #ccc; */
-  min-width: 100px;
-  display: inline-block;
-}
+  border: none;
+  background-color: transparent;
+  display: flex;
+  align-items: center;
 
-.tags-dropdown-options {
-  position: absolute;
-  top: 110%;
-  left: 10;
-  background-color: rgb(195, 194, 194);
-  border: 1px solid #ccc;
-  color: black;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  margin-top: 4px;
-  border-radius: 4px;
-  z-index: 10;
-  max-width: 300px;
-  max-height: 300px; /* Fixed max height */
-  margin-left: 10px;
+  font-weight: bold;
+  position: relative;
 }
 
 .tags-dropdown::after {
   content: "▼"; /* Dropdown arrow */
   font-size: 12px;
   margin-left: 4px !important;
-  color: #333 !important;
+  color: #333;
+}
+
+.tags-dropdown-options {
+  background: #c3c2c2;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  max-height: 300px; /* Limit dropdown height */
+  max-width: 250px; /* Limit dropdown width */
+  overflow-y: auto; /* Enable vertical scroll if content exceeds height */
+  overflow-x: hidden; /* Hide horizontal scroll */
+  color: black;
+  margin-top: 10px;
 }
 
 .tags-dropdown-option {
-  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  font-size: 14px;
   cursor: pointer;
 }
 
@@ -1229,7 +1231,7 @@ table td {
   max-width: 800px; /* LIMIT WIDTH */
   box-sizing: border-box;
   flex-wrap: wrap;
-  margin-top: -50px;
+  margin-top: -60px;
   margin-bottom: 10px;
 }
 
@@ -2936,9 +2938,8 @@ main {
   .main-content,
   main {
     margin-left: 0 !important;
-    width: 100% !important;
+    width: 100% ;
     padding: 10px;
-    margin-top: 90px;
   }
 
   .layout-container {
@@ -2951,8 +2952,10 @@ main {
   .table-scroll-wrapper,
   .table-scroll-horizontal {
     overflow-x: auto;
+    overflow-y: auto; /* allow vertical scrolling inside container */
     -webkit-overflow-scrolling: touch;
     border-radius: 5px;
+    max-height: calc(100vh - 350px); /* adjust offset for header/footer */
   }
 
   table {
@@ -3048,77 +3051,57 @@ main {
 
 @media (max-width: 1024px) {
   .header {
-    padding: 10px;
-    padding-top: 0%;
+    padding: 10px 0;
     align-items: center;
     text-align: center;
-    flex-direction: column; /* Stack vertically */
-    margin-left: -40px;
-    margin-top: -70px;
+    flex-direction: column;
     gap: 10px;
+    margin: 0; /* Removed negative margins */
   }
 
   .header-controls {
-    flex-direction: column; /*  Keep them side by side */
-    flex-wrap: wrap; /*  Allow wrapping if screen is too small */
+    flex-direction: column;
+    flex-wrap: wrap;
     justify-content: center;
     gap: 20px;
   }
 
   .search-bar-container {
     display: flex;
-    align-items: end;
-    gap: 8px;
-  }
-
-  .right-wrapper .search-bar-container {
-    margin-top: 20px;
-    display: flex;
     align-items: flex-end;
     gap: 8px;
     width: 240px !important;
+    margin-top: 10px;
   }
 
   .center-wrapper {
     justify-content: flex-end;
-    margin-top: -10px;
-    margin-bottom: 12px;
-  }
-  .request-selector-dropdown {
-    margin-top: 5px;
+    margin: 0;
+    margin-bottom: 10px;
   }
 
   .right-wrapper {
-    justify-content: flex-end;
-    margin-top: -15px;
-    margin-bottom: 20px;
+    justify-content: center;
+    margin: 0;
   }
 
   .date-filter,
   .status-filter {
-    flex: 1 1 100%; /* Optional: make controls full width when wrapped */
+    flex: 1 1 100%;
     text-align: center;
   }
 
-  .date-filter label {
-    margin-bottom: 4px;
-    margin-right: -20px;
-  }
-
+  .date-filter label,
   .status-filter label {
     margin-bottom: 4px;
-  }
-  .date-filter input,
-  .search-bar {
-    width: 120%;
   }
 
   .date-filter input {
     width: 80%;
   }
 
-  .date-filter .calendar-icon {
-    right: 40px;
+  .calendar-icon {
+    right: 20px;
   }
 
   .status-filter select {
@@ -3127,21 +3110,7 @@ main {
 
   .generate-report-button .filter-button,
   .clear-button {
-    width: 20%;
-  }
-
-  .search-icon {
-    top: 20px;
-    right: 12px;
-  }
-
-  .date-input-container {
-    position: relative;
-    width: 100%;
-  }
-
-  .calendar-icon {
-    right: 20px;
+    width: auto;
   }
 }
 
@@ -4541,7 +4510,6 @@ ul {
   border-radius: 8px;
 }
 
-
 .popups h3 {
   text-align: center;
 }
@@ -4691,9 +4659,9 @@ ul {
   margin: 10px;
   padding: 12px 24px;
   font-size: 16px;
-  background-color: white;        
-  color: black;                  
-  border: 2px solid #f58720;      
+  background-color: white;
+  color: black;
+  border: 2px solid #f58720;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -4730,8 +4698,12 @@ ul {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .vendor-status-button {
@@ -4755,4 +4727,3 @@ ul {
 .vendor-status-button:hover {
   opacity: 0.7;
 }
-
