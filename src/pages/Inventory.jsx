@@ -1214,7 +1214,17 @@ const Inventory = () => {
               </tr>
             </thead>
             <tbody>
-              {Object.keys(groupedData).length > 0 ? (
+              {loading ? (
+                <tr>
+                  <td
+                    colSpan="11"
+                    style={{ textAlign: "center", padding: "20px" }}
+                  >
+                    <div className="spinner" />
+                    <span>Loading...</span>
+                  </td>
+                </tr>
+              ) : Object.keys(groupedData).length > 0 ? (
                 Object.keys(groupedData)
                   .slice(0, visibleInventory)
                   .map((componentId) => {
@@ -1440,17 +1450,6 @@ const Inventory = () => {
                   </td>
                 </tr>
               )}
-              {loading && (
-                <tr>
-                  <td
-                    colSpan="11"
-                    style={{ textAlign: "center", padding: "20px" }}
-                  >
-                    <div className="spinner" />
-                    <span>Loading...</span>
-                  </td>
-                </tr>
-              )}
 
               {/* NO MORE DATA MESSAGE */}
               {!isLoadingMore &&
@@ -1486,16 +1485,6 @@ const Inventory = () => {
                   </td>
                 </tr>
               )}
-              {/* <tr>
-                <td style={{ fontWeight: "bold" }}>Total Inventory count</td>
-                <td>
-                   {filteredInventory.filter(
-                (row) => row.status === "Available" || row.status === "Reserved"
-              ).length || 0} 
-                  {filteredInventory.length || 0}
-                </td>
-                <td colSpan="10" className="no-data"></td>
-              </tr> */}
             </tbody>
           </table>
         ) : (
