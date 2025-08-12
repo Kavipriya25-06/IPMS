@@ -664,7 +664,7 @@ const Component = () => {
         <div
           id="component-table-wrapper"
           className="table-container"
-          style={{ overflowY: loading ? "hidden" : "auto"}}
+          style={{ overflowY: loading ? "hidden" : "auto" }}
           onScroll={(e) => {
             const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
             if (
