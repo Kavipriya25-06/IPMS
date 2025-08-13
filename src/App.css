@@ -185,7 +185,6 @@ nav ul li.disabled a:hover {
   margin: 0;
 }
 
-
 /* Main Content */
 main {
   padding: 20px;
@@ -2219,8 +2218,8 @@ main {
 /* When sidebar is open, main content shifts right */
 .main-content.sidebar-open {
   margin-left: 220px; /* sidebar width */
-  width: calc(100% - 180px); /* subtract the exact sidebar width */
-  height: 100vh; /* make sure main content fills viewport height */
+  width: calc(100% - 180px);
+  /* height: 100vh; */
   box-sizing: border-box; /* so padding doesn't break layout */
 }
 
@@ -2956,7 +2955,7 @@ main {
   .main-content,
   main {
     margin-left: 0 !important;
-    width: 100% ;
+    width: 100%;
     padding: 10px;
   }
 
@@ -2967,7 +2966,6 @@ main {
 
   /* Make tables scrollable on small screens */
   .table-container,
-
   .table-scroll-wrapper,
   .table-scroll-horizontal {
     overflow-x: auto;
@@ -2976,13 +2974,13 @@ main {
     border-radius: 5px;
     max-height: calc(100vh - 350px); /* adjust offset for header/footer */
   }
-    .table-inventory-container{
-      overflow-x: auto;
+  .table-inventory-container {
+    overflow-x: auto;
     overflow-y: auto; /* allow vertical scrolling inside container */
     -webkit-overflow-scrolling: touch;
     border-radius: 5px;
-    max-height: calc(100vh - 380px); 
-    }
+    max-height: calc(100vh - 380px);
+  }
 
   table {
     font-size: 13px;
@@ -3104,15 +3102,13 @@ main {
     justify-content: flex-end;
     margin: 0;
     margin-bottom: 10px;
-  
   }
 
   .right-wrapper {
     justify-content: center;
     margin: 0;
     margin-top: -30px;
-        margin-bottom: 10px;
-
+    margin-bottom: 10px;
   }
 
   .date-filter,
@@ -3160,21 +3156,21 @@ main {
   justify-content: center;
 }
 
-.search-bar-container {
+.search-wrapper .search-bar-container {
   display: flex;
   align-items: center;
   width: 350px;
   max-width: 100%;
 }
 
-.search-bar {
+.search-wrapper .search-bar {
   flex: 1;
   padding: 8px 12px;
   border-radius: 4px;
   font-size: 14px;
 }
 
-.search-icon {
+.search-wrapper .search-icon {
   margin-left: 8px;
   color: #555;
 }
@@ -3194,20 +3190,30 @@ main {
 @media (max-width: 1024px) {
   .search-wrapper-container {
     display: flex;
-    flex-direction: row; /*  Make them stay in a row */
-    justify-content: flex-end; /*  Align to right */
-    align-items: center; /*  Align vertically center */
+    justify-content: center; /* Center the whole content */
+    align-items: center;
     padding: 10px 16px;
-    margin-top: -40px;
-    gap: 20px; /* Space between input and button */
-    flex-wrap: wrap; /* Optional: wraps on very small screens */
+    margin-top: -20px;
+    gap: 20px;
+    flex-wrap: wrap; /* Allow wrap if needed */
   }
 
   .search-wrapper {
+    flex: 0 0 auto;
     display: flex;
-    justify-content: flex-end;
-  }  
+    justify-content: center; /* Center the search bar itself */
+  }
 
+  .button-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: center; /* Keep buttons centered as a group */
+  }
+
+  .addingtags-container {
+    margin-top: 60px;
+  }
 }
 
 /* ProductDetailPage.css */
@@ -4741,4 +4747,140 @@ ul {
 
 .vendor-status-button:hover {
   opacity: 0.7;
+}
+
+.reset-container {
+  max-width: 400px;
+  width: 100%;
+  padding: 30px 25px;
+  padding-top: 10px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.reset-container h2 {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #333;
+}
+
+.error-msg {
+  color: #d93025;
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.success-msg {
+  color: #188038;
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.reset-container form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.reset-container label {
+  font-weight: 600;
+  margin-bottom: 5px;
+  color: #555;
+}
+
+.form-group-horizontal {
+  display: flex;
+  align-items: center;
+  gap: 12px; /* space between label and input */
+}
+
+.form-group-horizontal label {
+  flex: 0 0 140px; /* fixed width for label */
+  font-weight: 600;
+  color: #555;
+  /* optional to align text right */
+  text-align: right;
+}
+
+.password-input-wrapper {
+  display: flex;
+  align-items: center;
+  flex: 1; /* take remaining space */
+  position: relative;
+}
+
+.password-input-wrapper input {
+  flex: 1;
+  padding-right: 36px; /* space for eye icon */
+  font-size: 16px;
+  padding: 8px 12px;
+  border: 1.5px solid #ccc;
+  border-radius: 5px;
+  transition: border-color 0.3s ease;
+}
+
+.password-input-wrapper input:focus {
+  border-color: gray;
+  outline: none;
+}
+
+.password-toggle-icon {
+  position: absolute;
+  right: 10px;
+  cursor: pointer;
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  user-select: none;
+}
+
+.button-wrapper {
+  display: flex;
+  justify-content: flex-end; /* Align button right */
+  margin-top: 8px; /* space from input or strength text */
+}
+
+.submit-button {
+  padding: 8px 16px;
+  font-size: 14px;
+  background-color: white;
+  color: black;
+  border: 2px solid #f58720;
+  border-radius: 5px;
+  cursor: pointer;
+  white-space: nowrap;
+  width: auto; /* do not stretch */
+  min-width: 100px;
+  transition: background-color 0.3s ease;
+}
+
+.submit-button:hover {
+  border: 2px solid #f1ba86;
+  color: gray;
+}
+
+.password-strength {
+  font-weight: 600;
+  margin-top: 4px; /* small spacing above */
+  user-select: none;
+  color: #555;
+  text-align: right; /* align text right */
+  white-space: nowrap; /* keep it in one line */
+  width: 100%; /* take full container width */
+}
+
+.password-strength.low {
+  color: #d93025; /* red */
+}
+
+.password-strength.medium {
+  color: #e2a500; /* orange */
+}
+
+.password-strength.good {
+  color: #188038; /* green */
 }

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import CustomMessagebox from "./CustomMessageBox.jsx";
 import config from "../Config.js";
-import Logo from "../assets/aero.png"
+import Logo from "../assets/aero.png";
 
 import {
   showSuccessToast,
@@ -135,10 +135,10 @@ const Login = () => {
       return;
     }
 
-      showInfoToast("Sending reset link...");
-  setError("");
+    setError("");
 
     try {
+      showInfoToast("Sending reset link...");
       const response = await fetch(`${config.apiBaseURL}/forgot-password/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -268,7 +268,18 @@ const Login = () => {
           )}
         </form>
       </div>
-      <ToastContainerComponent />
+      <ToastContainerComponent
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />{" "}
     </div>
   );
 };
