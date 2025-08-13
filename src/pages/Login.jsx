@@ -4,6 +4,7 @@ import { useAuth } from "../AuthContext";
 import CustomMessagebox from "./CustomMessageBox.jsx";
 import config from "../Config.js";
 import Logo from "../assets/aero.png";
+import { FaArrowLeft } from "react-icons/fa"; // Install with: npm install react-icons
 
 import {
   showSuccessToast,
@@ -210,6 +211,14 @@ const Login = () => {
         /> */}
       </div>
       <div className="login-box">
+        <button
+          className="login-back"
+          onClick={() => {
+            navigate("/");
+          }}
+        >
+          <FaArrowLeft />
+        </button>
         <h2>Login</h2>
         {error && <p style={{ color: "red" }}>{error}</p>}
         <form onSubmit={handleLogin}>

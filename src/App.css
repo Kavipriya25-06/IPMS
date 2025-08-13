@@ -4694,6 +4694,39 @@ ul {
   color: gray;
 }
 
+.home-button {
+  position: absolute;
+  top: 25px;
+  left: 25px;
+  background: none;
+  border: none;
+  color: #333;
+  font-size: 16px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.home-button:hover {
+  color: gray;
+}
+
+.login-back{
+  display: flex;
+  justify-content: flex-start;
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.login-back:hover{
+  color: gray;
+}
+
+
 .po-order-wrapper {
   padding-bottom: 40px; /* avoid touching footer */
   border-radius: 5px;
@@ -4884,3 +4917,4 @@ ul {
 .password-strength.good {
   color: #188038; /* green */
 }
+

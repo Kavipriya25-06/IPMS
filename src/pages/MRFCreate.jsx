@@ -349,7 +349,7 @@ const MRFCreate = () => {
           <tbody>
             {requestDetails.map((row) => (
               <tr key={row.serial_number}>
-                <td>{row.component_type}</td>
+                <td >{row.component_type}</td>
                 <td>{row.specification}</td>
                 <td>{row.UOM}</td>
                 <td>{row.category}</td>
@@ -385,7 +385,7 @@ const MRFCreate = () => {
 
               return (
                 <tr key={`new-${index}`}>
-                  <td>
+                  <td  className="specification-cells">
                     <select
                       value={
                         row.component_type && row.specification
@@ -421,7 +421,7 @@ const MRFCreate = () => {
                       ))}
                     </select>
                   </td>
-                  <td>{selectedItem?.specification || "-"}</td>
+                  <td  className="specification-cell">{selectedItem?.specification || "-"}</td>
                   <td>{selectedItem?.UOM || "-"}</td>
                   <td>{selectedItem?.category || "-"}</td>
                   <td>{selectedItem?.vendor_name || "-"}</td>
