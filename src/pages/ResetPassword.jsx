@@ -135,7 +135,7 @@ const ResetPassword = () => {
           )}
 
           <div className="button-wrapper">
-            <button type="submit" className="submit-button">
+            <button type="submit" className="password-button">
               Set New Password
             </button>
           </div>

@@ -4844,7 +4844,7 @@ ul {
   margin-top: 8px; /* space from input or strength text */
 }
 
-.submit-button {
+.password-button {
   padding: 8px 16px;
   font-size: 14px;
   background-color: white;
@@ -4858,7 +4858,7 @@ ul {
   transition: background-color 0.3s ease;
 }
 
-.submit-button:hover {
+.password-button:hover {
   border: 2px solid #f1ba86;
   color: gray;
 }
