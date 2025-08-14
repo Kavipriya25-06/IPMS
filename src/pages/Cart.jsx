@@ -425,7 +425,7 @@ const Cart = ({ user }) => {
                                   )}
                                   className="place-order-btn"
                                 >
-                                  Place Order
+                                  Submit PO
                                 </button>
                               </div>
                             )

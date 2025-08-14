@@ -58,6 +58,7 @@ const POOrderMaster = ({ user }) => {
 
   const [vendorLocation, setVendorLocation] = useState("N/A");
   const [vendorPOC, setVendorPOC] = useState(null);
+  
 
   // Pick a sensible "location" string from a vendor_sub_list row
   const extractLocation = (row) => {
@@ -405,7 +406,7 @@ const POOrderMaster = ({ user }) => {
 
   const vendorName = poData?.cart_details?.vendor_name || "N/A";
   const vendor_gstn = poData?.cart_details?.gstn || "";
-  
+
   const { totalquantity, totalcost } = computeTotals();
 
   const handleOpenModal = () => {
@@ -1020,45 +1021,43 @@ const POOrderMaster = ({ user }) => {
   return (
     <div>
       <h2>PO Details</h2>
-       <button
-            onClick={() => navigate("/po-list")}
-            style={{
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              padding: "4px",
-            }}
-            title="Back to BOM List"
-          >
-            <img
-              src={Back}
-              alt="Back to BOM list "
-              style={{ width: "20px", height: "20px" }}
-            />
-          </button>
+      <button
+        onClick={() => navigate("/po-list")}
+        style={{
+          background: "transparent",
+          border: "none",
+          cursor: "pointer",
+          padding: "4px",
+        }}
+        title="Back to BOM List"
+      >
+        <img
+          src={Back}
+          alt="Back to BOM list "
+          style={{ width: "20px", height: "20px" }}
+        />
+      </button>
       {loading ? (
         <p>Loading...</p>
       ) : error ? (
         <p>{error}</p>
       ) : (
         <>
-        
-       <div className="po-header">
-  <div className="po-details">
-    <h3>PO Number: {poId}</h3>
-    <h3>Vendor Name: {vendorName}</h3>
-    <h3>GSTIN: {vendor_gstn}</h3>
-        <h3>Location: {vendorLocation}</h3>
+          <div className="po-header">
+            <div className="po-details">
+              <h3>PO Number: {poId}</h3>
+              <h3>Vendor Name: {vendorName}</h3>
+              <h3>GSTIN: {vendor_gstn}</h3>
+              <h3>Location: {vendorLocation}</h3>
+            </div>
 
-  </div>
-  
-  <button
-    className="generate-report-btn"
-    onClick={() => generatePOCSV(poDetails, totalquantity, totalcost)}
-  >
-    Generate Report
-  </button>
-</div>
+            <button
+              className="generate-report-btn"
+              onClick={() => generatePOCSV(poDetails, totalquantity, totalcost)}
+            >
+              Generate Report
+            </button>
+          </div>
 
           <div className="table-container">
             <table>
@@ -1118,7 +1117,8 @@ const POOrderMaster = ({ user }) => {
 
                 {/* Totals Row */}
                 <tr style={{ fontWeight: "bold" }}>
-                  <td colSpan="5">Totals</td>
+                  
+                  <td colSpan="5" style={{ textAlign: "right" }}>Total Qty and Price</td>
                   <td>{totalquantity}</td>
                   <td></td>
                   <td></td>

@@ -161,7 +161,9 @@ const Mrfrequest = () => {
     const componentType = item.component_type.toLowerCase();
 
     if (!componentType) {
-  showErrorToast("Component Type not available. Cannot fetch QC questions.");
+      showErrorToast(
+        "Component Type not available. Cannot fetch QC questions."
+      );
       return;
     }
 
@@ -315,7 +317,7 @@ const Mrfrequest = () => {
             `Error submitting QC answer for question ${question.id}:`,
             errorDetails
           );
-      showErrorToast(
+          showErrorToast(
             `Failed to submit QC answer for question ${
               question.id
             }: ${JSON.stringify(errorDetails)}`
@@ -343,8 +345,20 @@ const Mrfrequest = () => {
   };
 
   const handleReturnSubmit = async () => {
+    // Check if return status is selected
     if (!returnStatus) {
       showWarningToast("Please select a return status.");
+      return;
+    }
+
+    // Check if QC is completed
+    if (
+      !newQuestion.overallStatus ||
+      newQuestion.qcQuestions?.some((q) => !q.answer)
+    ) {
+      showWarningToast(
+        "Please complete QC for the return item before submitting."
+      );
       return;
     }
 
@@ -352,6 +366,7 @@ const Mrfrequest = () => {
       returnStatus === "Move to Inventory" ? "Available" : returnStatus;
 
     try {
+      // Update inventory status
       await fetch(`${config.apiBaseURL}/inventory/${selectedSerial}/`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -369,6 +384,7 @@ const Mrfrequest = () => {
         }),
       });
 
+      // Update local table state
       setMrfListData((prevData) =>
         prevData.map((item) =>
           item.serial_number === selectedSerial
@@ -377,6 +393,7 @@ const Mrfrequest = () => {
         )
       );
 
+      // Reset form
       setShowPopup(false);
       setReportedBy("");
       setRemarks("");
@@ -387,15 +404,14 @@ const Mrfrequest = () => {
     }
   };
 
-    const [currentUserRole, setCurrentUserRole] = useState("");
-  
-    // Load role from localStorage (or replace with your actual role-fetching logic)
-    useEffect(() => {
-      const role = localStorage.getItem("userRole"); // Default to 'User'
-      console.log("Normalized role:", role);
-      setCurrentUserRole(role);
-    }, []);
+  const [currentUserRole, setCurrentUserRole] = useState("");
 
+  // Load role from localStorage (or replace with your actual role-fetching logic)
+  useEffect(() => {
+    const role = localStorage.getItem("userRole"); // Default to 'User'
+    console.log("Normalized role:", role);
+    setCurrentUserRole(role);
+  }, []);
 
   return (
     <div>
@@ -484,12 +500,16 @@ const Mrfrequest = () => {
                           onClick={() =>
                             handleAssign(item.serial_number, item.id, item)
                           }
-                          disabled={!approvalStatus}
-                           className="cancel-btn"
-                           style={{
-                              padding: "5px 10px",
-                              backgroundColor: approvalStatus ? "gray" : "grey",
-                              }}
+                          disabled={!approvalStatus} // Disable until approved
+                          className="cancel-btn"
+                          style={{
+                            padding: "5px 10px",
+                            backgroundColor: approvalStatus
+                              ? "cancel-btn"
+                              : "lightgray",
+                            color: approvalStatus ? "white" : "#666",
+                            cursor: approvalStatus ? "pointer" : "not-allowed",
+                          }}
                         >
                           Assign
                         </button>
@@ -497,10 +517,10 @@ const Mrfrequest = () => {
                         <>
                           <button
                             disabled
-                           className="cancel-btn"
-                           style={{
+                            className="cancel-btn"
+                            style={{
                               padding: "5px 10px",
-                              }}
+                            }}
                           >
                             Assigned
                           </button>

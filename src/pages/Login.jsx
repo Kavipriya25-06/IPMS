@@ -43,6 +43,8 @@ const Login = () => {
 
       const success = await login(email, password);
       if (success) {
+          localStorage.setItem("email", email); // <-- this is missing in your code
+
         localStorage.setItem("userRole", user.role);
 
         // Define sidebar tiles here (or import from a shared config file)

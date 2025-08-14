@@ -29,12 +29,16 @@ const debounce = (func, delay) => {
 const RequestComponent = () => {
   const [showModal, setShowModal] = useState(false);
   const { user, logout } = useAuth();
+  const usernameFromEmail = user?.email?.split("@")[0] || "";
+  const todayDate = format(new Date(), "yyyy-MM-dd"); // YYYY-MM-DD
+
   const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
-    const [loading, setLoading] = useState(true);
-  
+  const [loading, setLoading] = useState(true);
 
   const [formData, setFormData] = useState({
-    name: "Dronix",
+    name: usernameFromEmail,
+    request_date: todayDate,
+
     category: "",
     component_type: "",
     component_specification: "",
@@ -54,6 +58,16 @@ const RequestComponent = () => {
 
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (user?.email) {
+      setFormData((prev) => ({
+        ...prev,
+        name: user.email.split("@")[0],
+        request_date: new Date().toISOString().split("T")[0],
+      }));
+    }
+  }, [user]);
+
   // Fetch dropdown options
   useEffect(() => {
     fetch(`${config.apiBaseURL}/component_options/`)
@@ -68,30 +82,28 @@ const RequestComponent = () => {
   }, []);
 
   // Fetch submitted component requests
-useEffect(() => {
-  const fetchData = async () => {
-    setLoading(true);
-    let url = `${config.apiBaseURL}/request_component/`;
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      let url = `${config.apiBaseURL}/request_component/`;
 
-    if (user?.role === "Procurement") {
-      url += "?status=Added";
-    }
+      if (user?.role === "Procurement") {
+        url += "?status=Added";
+      }
 
-    try {
-      const res = await fetch(url);
-      const data = await res.json();
-      setComponentList(data);
-    } catch (err) {
-      console.error("Error fetching request data:", err);
-    } finally {
-      setLoading(false); // Ensure loader is hidden at the end
-    }
-  };
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        setComponentList(data);
+      } catch (err) {
+        console.error("Error fetching request data:", err);
+      } finally {
+        setLoading(false); // Ensure loader is hidden at the end
+      }
+    };
 
-  fetchData();
-}, [user]);
-
-
+    fetchData();
+  }, [user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -106,6 +118,7 @@ useEffect(() => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
       const response = await fetch(`${config.apiBaseURL}/request_component/`, {
         method: "POST",
@@ -114,21 +127,23 @@ useEffect(() => {
       });
 
       if (response.ok) {
+        const newItem = await response.json(); // get the created record from backend
+
         showSuccessToast("Component request submitted!");
         setShowModal(false);
+
+        // Reset form
         setFormData({
-          name: "Dronix",
+          name: usernameFromEmail,
           category: "",
           component_type: "",
           component_specification: "",
           product_link: "",
           uom: "",
         });
-        // Refresh table data
-        const updatedList = await fetch(
-          `${config.apiBaseURL}/request_component/`
-        ).then((res) => res.json());
-        setComponentList(updatedList);
+
+        // Add new item to top of list instantly
+        setComponentList((prev) => [newItem, ...prev]);
       } else {
         showErrorToast("Submission failed");
       }
@@ -294,6 +309,25 @@ useEffect(() => {
             <div className="modal-overlays">
               <div className="modals" ref={modalRef}>
                 <h2>Request Component</h2>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    gap: "10px",
+                    marginBottom: "15px",
+                  }}
+                >
+                  <div>
+                    <strong>User Name:</strong> <span>{formData.name}</span>
+                  </div>
+                  <div>
+                    <strong>Request Date:</strong>{" "}
+                    <span>
+                      {format(new Date(formData.request_date), "dd-MM-yyyy")}
+                    </span>
+                  </div>
+                </div>
+
                 <form onSubmit={handleSubmit}>
                   <div className="forms-group">
                     <label htmlFor="">Category</label>
@@ -410,18 +444,17 @@ useEffect(() => {
 
                 <th>Date</th>
 
-                {user.role === "User" && (
-                  <th>
-                    <>Status</>
-                  </th>
-                )}
-
                 <th
                   style={{ textDecoration: "underline", cursor: "pointer" }}
                   onClick={() => handleSort("component_id")}
                 >
                   Component ID
                 </th>
+                {user.role === "User" && (
+                  <th>
+                    <>Status</>
+                  </th>
+                )}
 
                 {(user.role === "Inventory" || user.role === "Procurement") && (
                   <th>
@@ -434,17 +467,17 @@ useEffect(() => {
 
             <tbody>
               {loading ? (
-              //  Show spinner or loading text while data is loading
-              <tr>
-                <td
-                  colSpan="8"
-                  style={{ textAlign: "center", padding: "20px" }}
-                >
-                  <div className="spinner"></div>
-                  Loading request_component...
-                </td>
-              </tr>
-            ) :filteredComponents.length === 0 ? (
+                //  Show spinner or loading text while data is loading
+                <tr>
+                  <td
+                    colSpan="8"
+                    style={{ textAlign: "center", padding: "20px" }}
+                  >
+                    <div className="spinner"></div>
+                    Loading request_component...
+                  </td>
+                </tr>
+              ) : filteredComponents.length === 0 ? (
                 <tr>
                   <td
                     colSpan={
@@ -469,7 +502,14 @@ useEffect(() => {
                   <tr key={item.id}>
                     {(user.role === "Inventory" ||
                       user.role === "Procurement" ||
-                      user.role === "Admin") && <td>{item.name}</td>}
+                      user.role === "Admin") && (
+                      <td>
+                        {item.name?.includes("@")
+                          ? item.name.split("@")[0]
+                          : item.name}
+                      </td>
+                    )}
+
                     <td>{item.category}</td>
                     <td>{item.component_type}</td>
                     <td>{item.component_specification}</td>
