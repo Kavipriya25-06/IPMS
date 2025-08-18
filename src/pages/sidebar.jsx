@@ -42,7 +42,7 @@ export default function Sidebar() {
       roles: ["Admin", "Sub-Admin", "Procurement"],
     },
     {
-      label: "Bom",
+      label: "BOM",
       path: "/bom",
       roles: ["Admin", "Sub-Admin", "Procurement","Inventory","Finance","User"],
     },

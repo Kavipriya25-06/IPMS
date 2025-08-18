@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import config from "../Config"; // Import config for API endpoints
 import Add from "../assets/Add.png";
 import { format, parseISO } from "date-fns";
+import { useAuth } from "../AuthContext";
 
 const Requests = () => {
   const [requests, setRequests] = useState([]);
@@ -17,15 +18,41 @@ const Requests = () => {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const loggedInEmail = user?.email || "";
+  const loggedInName = loggedInEmail.split("@")[0] || "";
+  const loggedInRole = user?.role || "";
 
-  useEffect(() => {
-    fetch(`${config.apiBaseURL}/request_list/`)
-      .then((response) => response.json())
-      .then((data) => setRequests(data))
-      .catch((error) => console.error("Error fetching requests:", error));
-    fetchRequestDetails();
-    fetchRequestStatus();
-  }, []);
+useEffect(() => {
+  fetch(`${config.apiBaseURL}/request_list/`)
+    .then((response) => response.json())
+    .then((data) => {
+      // Sort by request_id number ascending
+      const sortedData = [...data].sort((a, b) => {
+        const numA = parseInt(String(a.request_id).replace(/\D/g, ""), 10);
+        const numB = parseInt(String(b.request_id).replace(/\D/g, ""), 10);
+        return numA - numB;
+      });
+
+      // Role-based filtering after sorting
+      if (
+        loggedInRole === "Admin" ||
+        loggedInRole === "Sub-Admin" ||
+        loggedInRole === "Inventory"
+      ) {
+        setRequests(sortedData); // See all requests
+      } else {
+        setRequests(
+          sortedData.filter((req) => req.requester_name === loggedInName) // Only own requests
+        );
+      }
+    })
+    .catch((error) => console.error("Error fetching requests:", error));
+
+  fetchRequestDetails();
+  fetchRequestStatus();
+}, [loggedInRole, loggedInName]);
+
 
   useEffect(() => {
     const handleScroll = () => {

@@ -664,6 +664,8 @@ const RequestDetails = ({ user }) => {
           UOM: inventoryData.UOM,
           status: "Reserved",
           price: inventoryData.price,
+          gst: inventoryData.gst,
+          total_price: inventoryData.total_price,
           Request_id_assign: requestId,
         };
 

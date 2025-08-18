@@ -16,6 +16,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { format, parseISO } from "date-fns";
 import AddIcon from "../assets/Add.png";
+import { useAuth } from "../AuthContext.jsx";
 
 const RequestForm = () => {
   const [boms, setBoms] = useState([]);
@@ -39,6 +40,13 @@ const RequestForm = () => {
     projectName: "",
     bomId: "",
   }); // State to manage popup input fields
+  const { user, logout } = useAuth();
+
+  useEffect(() => {
+    if (user?.email) {
+      setRequesterName(user.email.split("@")[0]);
+    }
+  }, [user]);
 
   useEffect(() => {
     fetch(`${config.apiBaseURL}/bom_list/`)
@@ -343,7 +351,7 @@ const RequestForm = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            requester_name: requesterName,
+            requester_name: requesterName, // use the state here
             project_id: selectedProject ? selectedProject.project_id : null,
             project_name: selectedBom
               ? selectedBom.bom_name
@@ -562,7 +570,7 @@ const RequestForm = () => {
             <input
               type="text"
               value={requesterName}
-              onChange={(e) => setRequesterName(e.target.value)}
+              readOnly
               placeholder="Enter requester name"
               required
               style={{
@@ -570,9 +578,13 @@ const RequestForm = () => {
                 padding: "8px",
                 borderRadius: "4px",
                 border: "1px solid #ccc",
+                backgroundColor: "#f5f5f5", // light gray background
+                cursor: "not-allowed", // show "disabled" cursor
+                color: "#555", // softer text color
               }}
             />
           </div>
+
           <div
             className="date-input-container"
             style={{ marginBottom: "15px", width: "100%" }}
@@ -585,6 +597,15 @@ const RequestForm = () => {
               value={formattedDate}
               readOnly
               className="input1"
+              style={{
+                width: "100%",
+                padding: "8px",
+                borderRadius: "4px",
+                border: "1px solid #ccc",
+                backgroundColor: "#f5f5f5", // light gray background
+                cursor: "not-allowed", // show "disabled" cursor
+                color: "#555", // softer text color
+              }}
             />
           </div>
 
@@ -812,7 +833,6 @@ const RequestForm = () => {
           >
             Add Component
           </button> */}
-        
         </div>
       )}
 

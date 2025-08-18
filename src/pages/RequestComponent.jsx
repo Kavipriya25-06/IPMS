@@ -29,6 +29,9 @@ const debounce = (func, delay) => {
 const RequestComponent = () => {
   const [showModal, setShowModal] = useState(false);
   const { user, logout } = useAuth();
+  const usernameFromEmail = user?.email?.split("@")[0] || "";
+  const todayDate = format(new Date(), "yyyy-MM-dd"); // YYYY-MM-DD
+
   const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
   const [loading, setLoading] = useState(true);
 
@@ -87,7 +90,9 @@ const RequestComponent = () => {
   };
 
   const [formData, setFormData] = useState({
-    name: "Dronix",
+    name: usernameFromEmail,
+    request_date: todayDate,
+
     category: "",
     component_type: "",
     component_specification: "",
@@ -106,6 +111,16 @@ const RequestComponent = () => {
   const [searchSpec, setSearchSpec] = useState("");
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user?.email) {
+      setFormData((prev) => ({
+        ...prev,
+        name: user.email.split("@")[0],
+        request_date: new Date().toISOString().split("T")[0],
+      }));
+    }
+  }, [user]);
 
   // Fetch dropdown options
   useEffect(() => {
@@ -157,6 +172,7 @@ const RequestComponent = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
       const response = await fetch(`${config.apiBaseURL}/request_component/`, {
         method: "POST",
@@ -165,21 +181,23 @@ const RequestComponent = () => {
       });
 
       if (response.ok) {
+        const newItem = await response.json(); // get the created record from backend
+
         showSuccessToast("Component request submitted!");
         setShowModal(false);
+
+        // Reset form
         setFormData({
-          name: "Dronix",
+          name: usernameFromEmail,
           category: "",
           component_type: "",
           component_specification: "",
           product_link: "",
           uom: "",
         });
-        // Refresh table data
-        const updatedList = await fetch(
-          `${config.apiBaseURL}/request_component/`
-        ).then((res) => res.json());
-        setComponentList(updatedList);
+
+        // Add new item to top of list instantly
+        setComponentList((prev) => [newItem, ...prev]);
       } else {
         showErrorToast("Submission failed");
       }
@@ -386,6 +404,25 @@ const RequestComponent = () => {
             <div className="modal-overlays">
               <div className="modals" ref={modalRef}>
                 <h2>Request Component</h2>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    gap: "10px",
+                    marginBottom: "15px",
+                  }}
+                >
+                  <div>
+                    <strong>User Name:</strong> <span>{formData.name}</span>
+                  </div>
+                  <div>
+                    <strong>Request Date:</strong>{" "}
+                    <span>
+                      {format(new Date(formData.request_date), "dd-MM-yyyy")}
+                    </span>
+                  </div>
+                </div>
+
                 <form onSubmit={handleSubmit}>
                   <div className="forms-group">
                     <label htmlFor="">Category</label>
@@ -502,18 +539,17 @@ const RequestComponent = () => {
 
                 <th>Date</th>
 
-                {user.role === "User" && (
-                  <th>
-                    <>Status</>
-                  </th>
-                )}
-
                 <th
                   style={{ textDecoration: "underline", cursor: "pointer" }}
                   onClick={() => handleSort("component_id")}
                 >
                   Component ID
                 </th>
+                {user.role === "User" && (
+                  <th>
+                    <>Status</>
+                  </th>
+                )}
 
                 {(user.role === "Inventory" || user.role === "Procurement") && (
                   <th>
@@ -570,7 +606,14 @@ const RequestComponent = () => {
                   <tr key={item.id}>
                     {(user.role === "Inventory" ||
                       user.role === "Procurement" ||
-                      user.role === "Admin") && <td>{item.name}</td>}
+                      user.role === "Admin") && (
+                      <td>
+                        {item.name?.includes("@")
+                          ? item.name.split("@")[0]
+                          : item.name}
+                      </td>
+                    )}
+
                     <td>{item.category}</td>
                     <td>{item.component_type}</td>
                     <td>{item.component_specification}</td>
