@@ -13,6 +13,8 @@ import {
   showWarningToast,
   ToastContainerComponent,
 } from "./Toastify.jsx"; // Import Toastify utilities
+import { FaArrowLeft } from "react-icons/fa";
+
 //
 const BOMDetails = () => {
   const { bomId } = useParams(); // Retrieve bomId from URL
@@ -36,16 +38,15 @@ const BOMDetails = () => {
   const [loadingComponents, setLoadingComponents] = useState(true);
   const [priceTables, setPriceTables] = useState([]);
   const [showLatestPrice, setShowLatestPrice] = useState(false);
-    const [loading, setLoading] = useState(true);
-    
-  
+  const [loading, setLoading] = useState(true);
+
   const [vendorMasterData, setVendorMasterData] = useState([]);
 
   // Fetch BOM details and related components
   useEffect(() => {
     const fetchBomDetails = async () => {
       try {
-              setLoading(true);
+        setLoading(true);
 
         const response = await fetch(`${config.apiBaseURL}/bom_list/`);
         const data = await response.json();
@@ -53,9 +54,9 @@ const BOMDetails = () => {
         setSelectedBom(bom);
       } catch (error) {
         console.error("Error fetching BOM details:", error);
-      }finally {
-      setLoading(false); // Stop loading after both calls
-    }
+      } finally {
+        setLoading(false); // Stop loading after both calls
+      }
     };
 
     const fetchBomComponents = async () => {
@@ -467,8 +468,7 @@ const BOMDetails = () => {
     });
   };
 
-  
-   if (loading)
+  if (loading)
     return (
       <div style={{ textAlign: "center", marginTop: "50px" }}>
         <div className="spinner"></div>
@@ -476,49 +476,32 @@ const BOMDetails = () => {
       </div>
     );
 
-      // if (noData) return <p>No information available for this BOM</p>;
+  // if (noData) return <p>No information available for this BOM</p>;
 
   ///
   return (
     <div style={{ padding: "20px" }}>
       {selectedBom && (
         <>
-          <h3>Selected BOM: {selectedBom.bom_name}</h3>
+          <div className="header-back">
+            <button
+              className="back-btn"
+              onClick={() => navigate(-1)}
+              title="Back to BOM List"
+            >
+              <FaArrowLeft />
+            </button>
+            <h3>Selected BOM: {selectedBom.bom_name}</h3>
+          </div>{" "}
           <p>
             <strong>BOM ID:</strong> {selectedBom.bom_id}
           </p>
-
           {selectedBom.wbom && (
             <p style={{ color: "gray", marginTop: "10px" }}>
               This is a Final BOM. Components cannot be added or removed.
             </p>
           )}
-
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginTop: "10px",
-            }}
-          >
-            <button
-              onClick={() => navigate("/bom")}
-              style={{
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                padding: "4px",
-              }}
-              title="Back to BOM List"
-            >
-              <img
-                src={Back}
-                alt="Back to BOM list "
-                style={{ width: "20px", height: "20px" }}
-              />
-            </button>
-
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <button
               onClick={() => {
                 if (!selectedBom.wbom) setShowAddComponentForm(true);
@@ -539,12 +522,11 @@ const BOMDetails = () => {
             >
               <img
                 src={AddIcon}
-                alt=""
+                alt="Add"
                 style={{ width: "20px", height: "20px" }}
               />
             </button>
           </div>
-
           {!selectedBom.wbom && showAddComponentForm && (
             <div className="modal-overlay">
               <div className="modal-content">
@@ -658,7 +640,7 @@ const BOMDetails = () => {
                       setNewComponent({
                         ...newComponent,
                         quantity: e.target.value,
-                      })      
+                      })
                     }
                   />
 
@@ -737,10 +719,10 @@ const BOMDetails = () => {
                   </select>
 
                   <label>Price</label>
-                  <input                      
-                    type="text"         
-                    value={newComponent.price}           
-                    readOnly   
+                  <input
+                    type="text"
+                    value={newComponent.price}
+                    readOnly
                     placeholder="Auto-filled based on vendor"
                   />
                 </div>
@@ -754,7 +736,6 @@ const BOMDetails = () => {
               </div>
             </div>
           )}
-
           <div className="price-button-wrapper">
             <button
               onClick={() => setShowLatestPrice(true)}
@@ -771,7 +752,6 @@ const BOMDetails = () => {
               Generate Report
             </button>
           </div>
-
           {/* <h4>Components:</h4> */}
           <div className="table-container">
             <table

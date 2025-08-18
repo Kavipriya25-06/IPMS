@@ -18,6 +18,8 @@ import {
 import { format } from "date-fns";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { FaArrowLeft } from "react-icons/fa";
+
 
 const POOrderMaster = ({ user }) => {
   const { poId } = useParams(); // Extract PO ID from the route
@@ -58,7 +60,6 @@ const POOrderMaster = ({ user }) => {
 
   const [vendorLocation, setVendorLocation] = useState("N/A");
   const [vendorPOC, setVendorPOC] = useState(null);
-  
 
   // Pick a sensible "location" string from a vendor_sub_list row
   const extractLocation = (row) => {
@@ -653,6 +654,7 @@ const POOrderMaster = ({ user }) => {
     let payload = {};
 
     // SHIPMENT case
+    // SHIPMENT case
     const hasShippedDate = field === "shipping_date" || item.shipping_date;
     const hasShippedQty =
       field === "shipping_qty" || item.shipping_qty || item.shipped_quantity;
@@ -675,17 +677,16 @@ const POOrderMaster = ({ user }) => {
         return;
       }
 
-      const pendingQty = item.quantity - shippedQty;
-
       payload = {
         shipped_quantity: shippedQty,
         shipped_date: shippedDate,
-        pending_quantity: pendingQty,
-        received_quantity: shippedQty, //  force received = shipped
+        // pending from Ordered–Shipped
+        pending_quantity: Math.max(item.quantity - shippedQty, 0),
       };
     }
 
     // RECEIVED case (if applicable)
+    // RECEIVED case
     const hasReceivedDate = field === "received_date" || item.received_date;
     const hasReceivedQty =
       field === "received_qty" || item.received_qty || item.received_quantity;
@@ -701,10 +702,23 @@ const POOrderMaster = ({ user }) => {
           ? value
           : updatedItem.received_date || item.received_date;
 
+      const shippedQtyNow =
+        updatedItem.shipping_qty ??
+        item.shipping_qty ??
+        item.shipped_quantity ??
+        0;
+
+      if (receivedQty > shippedQtyNow) {
+        showWarningToast("Received quantity cannot exceed shipped quantity.");
+        return;
+      }
+
       payload = {
         ...payload,
         received_quantity: receivedQty,
         received_date: receivedDate,
+        // pending from BOTH gaps: Ordered–Received
+        pending_quantity: Math.max(item.quantity - receivedQty, 0),
       };
     }
 
@@ -1020,23 +1034,16 @@ const POOrderMaster = ({ user }) => {
 
   return (
     <div>
-      <h2>PO Details</h2>
-      <button
-        onClick={() => navigate("/po-list")}
-        style={{
-          background: "transparent",
-          border: "none",
-          cursor: "pointer",
-          padding: "4px",
-        }}
-        title="Back to BOM List"
-      >
-        <img
-          src={Back}
-          alt="Back to BOM list "
-          style={{ width: "20px", height: "20px" }}
-        />
-      </button>
+      <div className="header-back">
+        <button
+          className="back-btn"
+          onClick={() => navigate(-1)}
+          title="Back to BOM List"
+        >
+          <FaArrowLeft />
+        </button>
+        <h2>PO Details</h2>
+      </div>{" "}
       {loading ? (
         <p>Loading...</p>
       ) : error ? (
@@ -1117,8 +1124,7 @@ const POOrderMaster = ({ user }) => {
 
                 {/* Totals Row */}
                 <tr style={{ fontWeight: "bold" }}>
-                  
-                  <td colSpan="5" style={{ textAlign: "right" }}>Total Qty and Price</td>
+                  <td colSpan="5">Totals</td>
                   <td>{totalquantity}</td>
                   <td></td>
                   <td></td>
@@ -1301,9 +1307,7 @@ const POOrderMaster = ({ user }) => {
           </div>
         </div>
       )}
-
       {/* Naveen Added */}
-
       {showPlaceOrderPopup && (
         <div className="modal-overlay">
           <div className="popup" style={{ marginTop: "-80px" }}>
@@ -1538,13 +1542,41 @@ const POOrderMaster = ({ user }) => {
                               ? item.received_qty
                               : item.received_quantity !== undefined
                               ? item.received_quantity
-                              : item.shipping_qty !== undefined
-                              ? item.shipping_qty
-                              : item.shipped_quantity || 0
+                              : ""
                           }
-                          className="input-disabled"
-                          disabled
-                          readOnly
+                          className={
+                            isPOCancelled || !isShippingSaved || isReceivedSaved
+                              ? "input-disabled"
+                              : "input-enabled"
+                          }
+                          disabled={
+                            isPOCancelled || !isShippingSaved || isReceivedSaved
+                          }
+                          onChange={(e) => handleChange(e, index)}
+                          onBlur={(e) => {
+                            const numericValue = Number(e.target.value);
+                            const shippedQty =
+                              item.shipping_qty !== undefined
+                                ? Number(item.shipping_qty)
+                                : Number(item.shipped_quantity || 0);
+
+                            if (numericValue > shippedQty) {
+                              showWarningToast(
+                                "Received quantity cannot exceed shipped quantity."
+                              );
+                              setTimeout(() => e.target.focus(), 0);
+                              return;
+                            }
+
+                            if (!Number.isNaN(numericValue)) {
+                              // PATCH + instantly refresh the row; saveDeliveryUpdate will also recalc pending_quantity
+                              saveDeliveryUpdate(
+                                index,
+                                "received_qty",
+                                numericValue
+                              );
+                            }
+                          }}
                         />
                       </td>
 
@@ -1853,7 +1885,7 @@ const POOrderMaster = ({ user }) => {
                         shipped_quantity: enteredQty,
                         received_quantity: enteredQty,
                         shipped_date: shippedInput.date,
-                        po_master: selectedPendingItem.po_master.id, // always the ID
+                        po_master: selectedPendingItem.po_master.id,
                         order_placed_date_time:
                           selectedPendingItem.order_placed_date_time,
                         status: "Shipped",
@@ -1906,7 +1938,6 @@ const POOrderMaster = ({ user }) => {
           </div>
         </div>
       )}
-
       <ToastContainerComponent />
     </div>
   );

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import config from "../Config"; // API Configuration
+import { FaArrowLeft } from "react-icons/fa";
 
 const ProjectMaster = () => {
   const { projectId } = useParams();
@@ -38,15 +39,11 @@ const ProjectMaster = () => {
               data.request_lists?.length > 0
                 ? data.request_lists[0].requester_name
                 : "N/A",
-            bom_id: data.bom_lists?.length > 0
-              ? data.bom_lists[0].bom_id
-              : "N/A",
-            bom_name: data.bom_lists?.length > 0
-              ? data.bom_lists[0].bom_name
-              : "N/A",
-            PO_id: data.po_master?.length > 0
-              ? data.po_master[0].PO_id
-              : "N/A",
+            bom_id:
+              data.bom_lists?.length > 0 ? data.bom_lists[0].bom_id : "N/A",
+            bom_name:
+              data.bom_lists?.length > 0 ? data.bom_lists[0].bom_name : "N/A",
+            PO_id: data.po_master?.length > 0 ? data.po_master[0].PO_id : "N/A",
           };
 
           setProjectDetails(formattedDetails);
@@ -65,11 +62,16 @@ const ProjectMaster = () => {
 
   return (
     <div style={{ padding: "20px" }}>
-      <button onClick={() => navigate(-1)} className="back-button">
-        Back to Project List
-      </button>
-      <h2>Project Master Details</h2>
-
+      <div className="header-back">
+        <button
+          className="back-btn"
+          onClick={() => navigate(-1)}
+          title="Back to Project List"
+        >
+          <FaArrowLeft />
+        </button>
+        <h2>Project Master Details</h2>
+      </div>{" "}
       {loading ? (
         <div style={{ textAlign: "center", padding: "20px" }}>
           <div className="spinner"></div>

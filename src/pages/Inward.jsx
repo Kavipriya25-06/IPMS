@@ -11,6 +11,8 @@ import {
   showWarningToast,
   ToastContainerComponent,
 } from "./Toastify.jsx"; // Import Toastify utilities
+import { FaArrowLeft } from "react-icons/fa";
+
 
 const Inward = () => {
   const navigate = useNavigate();
@@ -754,10 +756,16 @@ const Inward = () => {
     <div>
       <div className="header">
         {/* <h2>Inward</h2> */}
-
-        <button onClick={() => navigate(-1)} className="back-button">
-          Back to Inward List
-        </button>
+        <div className="header-back">
+          <button
+            className="back-btn"
+            onClick={() => navigate(-1)}
+            title="Back to Inward List"
+          >
+            <FaArrowLeft />
+          </button>
+          <h3>Back to Inward List</h3>
+        </div>{" "}
       </div>
 
       {/* Render CustomMessagebox when showMessageBox is true */}
@@ -768,7 +776,7 @@ const Inward = () => {
         />
       )}
 
-      <div className="table-container" style={{ marginTop: "10px" }}>
+      <div className="table-container">
         <table>
           <thead>
             <tr>

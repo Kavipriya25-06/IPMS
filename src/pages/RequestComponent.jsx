@@ -5,6 +5,8 @@ import "../App.css";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext.jsx";
 import { format, parseISO } from "date-fns";
+import { FaArrowLeft } from "react-icons/fa";
+import { FaEdit } from "react-icons/fa"; // import edit icon
 
 import {
   showSuccessToast,
@@ -395,7 +397,15 @@ const RequestComponent = () => {
   return (
     <div>
       <div className="header">
-        <h2>New Component</h2>
+        <div className="header-back">
+          <button
+            className="back-btn"
+            onClick={() => navigate(-1)} // Goes back to previous page
+          >
+            <FaArrowLeft />
+          </button>
+          <h2>New Component</h2>
+        </div>{" "}
         <div className="button-group">
           <button className="add-comp" onClick={() => setShowModal(true)}>
             Request Component
@@ -560,6 +570,8 @@ const RequestComponent = () => {
 
                 {(user.role === "Inventory" ||
                   user.role === "Procurement" ||
+                  user.role === "Admin" ||
+                  user.role === "Sub-Admin" ||
                   user.role === "User") && (
                   <th>
                     {" "}
@@ -697,23 +709,17 @@ const RequestComponent = () => {
                     <td style={{ minWidth: 180 }}>
                       {user.role === "Inventory" ? (
                         editingReasonId === item.id ? (
-                          <div
-                            style={{
-                              display: "flex",
-                              gap: 8,
-                              alignItems: "center",
-                            }}
-                          >
+                          <div className="reason-input-container">
                             <input
                               type="text"
                               value={reasonDraft}
                               onChange={(e) => setReasonDraft(e.target.value)}
                               placeholder="Enter reason"
-                              style={{ flex: 1, padding: "6px 8px" }}
+                              className="reason-input"
                               disabled={savingReason}
                             />
                             <button
-                              className="btn-added"
+                              className="btn-edit-added"
                               onClick={() => saveReason(item)}
                               disabled={savingReason}
                               title="Save"
@@ -721,7 +727,7 @@ const RequestComponent = () => {
                               {savingReason ? "Saving..." : "Save"}
                             </button>
                             <button
-                              className="btn-reject"
+                              className="btn-edit-reject"
                               onClick={cancelEditReason}
                               disabled={savingReason}
                             >
@@ -744,11 +750,11 @@ const RequestComponent = () => {
                               {item.reason || "N/A"}
                             </span>
                             <button
-                              className="btn-reject"
+                              className="btn-edit-icon"
                               onClick={() => startEditReason(item)}
                               title="Edit reason"
                             >
-                              Edit
+                              <FaEdit />
                             </button>
                           </div>
                         )
