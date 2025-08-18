@@ -20,7 +20,6 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { FaArrowLeft } from "react-icons/fa";
 
-
 const POOrderMaster = ({ user }) => {
   const { poId } = useParams(); // Extract PO ID from the route
   const [poDetails, setPODetails] = useState([]);
@@ -864,10 +863,13 @@ const POOrderMaster = ({ user }) => {
         ? item.shipping_qty
         : item.shipped_quantity || 0;
 
+    const orderedQty = Number(item.quantity || 0);
+
     const isDisabled =
-      shippingQty > item.quantity ||
-      (item.shipped_date && item.shipped_quantity) ||
-      isPOCancelled;
+      shippingQty > orderedQty || // Over-shipped
+      shippingQty < 1 || // Less than 1
+      (item.shipped_date && item.shipped_quantity) || // Already finalized
+      isPOCancelled; // Cancelled PO
 
     const handleFocus = (e) => {
       if (shippingQty > item.quantity) {
@@ -910,9 +912,10 @@ const POOrderMaster = ({ user }) => {
           : item.shipped_quantity || 0;
 
       const isDisabled =
-        receivedQty > shippedQty || // Block if over-shipped
+        receivedQty < 1 ||
+        receivedQty > shippedQty || //  Block if received > shipped
         (item.received_date && item.received_quantity) ||
-        isPOCancelled; // Already saved
+        isPOCancelled;
 
       const handleFocus = (e) => {
         if (shippedQty <= 0) {
@@ -1602,9 +1605,10 @@ const POOrderMaster = ({ user }) => {
 
                               const isoString = mergedDateTime.toISOString();
 
-                              // Compare with shipping date (if exists)
                               const shippingDate =
                                 item.shipping_date || item.shipped_date;
+
+                              // ❌ Block if before shipping date
                               if (
                                 shippingDate &&
                                 new Date(mergedDateTime) <
@@ -1613,10 +1617,10 @@ const POOrderMaster = ({ user }) => {
                                 showWarningToast(
                                   "Received date must be after shipping date."
                                 );
-                                return; // prevent saving
+                                return;
                               }
 
-                              //Save only if valid
+                              // ✅ Save only if valid
                               handleChange(
                                 {
                                   target: {
@@ -1640,10 +1644,14 @@ const POOrderMaster = ({ user }) => {
                             dropdownMode="select"
                             popperPlacement="bottom"
                             portalId="datepicker-portal-target"
+                            // ⛔ Disable if qty < 1
                             disabled={
                               isReceivedSaved ||
                               !isShippingSaved ||
-                              isPOCancelled
+                              isPOCancelled ||
+                              Number(
+                                item.received_qty ?? item.received_quantity ?? 0
+                              ) < 1
                             }
                             customInput={
                               <CustomReceivedDateInput item={item} />
@@ -1657,7 +1665,7 @@ const POOrderMaster = ({ user }) => {
                             }
                           />
 
-                          {/*Hide icon if date is finalized */}
+                          {/* Hide icon if date is finalized */}
                           {!isReceivedSaved && (
                             <i className="fas fa-calendar-alt calendar-icons"></i>
                           )}
