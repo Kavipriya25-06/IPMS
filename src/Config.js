@@ -6,7 +6,7 @@ const config = {
   
      apiBaseURL: "http://127.0.0.1:8000",
     
-   // apiBaseURL: "http://148.135.138.195:8000",
+    // apiBaseURL: "http://148.135.138.195:8000",
 
     endpoints: {
       // Admin endpoint

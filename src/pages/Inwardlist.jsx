@@ -29,8 +29,6 @@ const Inwardlist = () => {
   const [editingIndex, setEditingIndex] = useState(null);
   const [invoiceNumberInput, setInvoiceNumberInput] = useState("");
   const [invoiceDateInput, setInvoiceDateInput] = useState("");
-    const [loading, setLoading] = useState(true);
-  
 
   const navigate = useNavigate();
 
@@ -49,8 +47,6 @@ const Inwardlist = () => {
   // Fetch Inward Data
   const fetchInwardData = async () => {
     try {
-            setLoading(true);
-
       const response = await fetch(`${config.apiBaseURL}/inward/`);
       const data = await response.json();
       const result = data.filter((item) => item.mode_to_inventory === true);
@@ -83,8 +79,6 @@ const Inwardlist = () => {
       setFilteredData(groupedData);
     } catch (err) {
       console.error("Error fetching inward data:", err);
-    }finally {
-      setLoading(false); // Stop loading after both calls
     }
   };
 
@@ -144,7 +138,7 @@ const Inwardlist = () => {
 
   const updateInvoiceForPO = async (poId, invoiceNumber, invoiceDate) => {
     try {
-      const res = await fetch(`${config.apiBaseURL}/inward/`);
+      const res = await fetch("http://127.0.0.1:8000/inward/");
       const inwardList = await res.json();
 
       const matchingInwards = inwardList.filter(
@@ -152,7 +146,7 @@ const Inwardlist = () => {
       );
 
       const updatePromises = matchingInwards.map((item) =>
-        fetch(`${config.apiBaseURL}/inward/${item.inward_id}/`, {
+        fetch(`http://127.0.0.1:8000/inward/${item.inward_id}/`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -168,7 +162,7 @@ const Inwardlist = () => {
         throw new Error(`${failed.length} updates failed`);
       }
 
-      //  Update state locally to reflect changes without refresh
+      // ✅ Update state locally to reflect changes without refresh
       const updatedData = inwardData.map((item) => {
         if (item.po_master?.PO_id === poId) {
           return {
@@ -196,7 +190,7 @@ const Inwardlist = () => {
         <h2>Inward</h2>
       </div>
 
-      <div className="table-container" style={{ marginTop: "-10px" }}>
+      <div className="table-container">
         <table>
           <thead>
             <tr>
@@ -215,23 +209,7 @@ const Inwardlist = () => {
             </tr>
           </thead>
           <tbody>
-            {loading ? (
-              <tr>
-                <td
-                  colSpan="12"
-                  style={{ textAlign: "center", padding: "20px" }}
-                >
-                  <div className="spinner"></div>
-                  Loading Projects...
-                </td>
-              </tr>
-            ) : filteredData.length === 0 ? (
-              <tr>
-                <td colSpan="12" style={{ textAlign: "center", color: "gray" }}>
-                  No Inward available
-                </td>
-              </tr>
-            ) :filteredData.map((item, index) => (
+            {filteredData.map((item, index) => (
               <tr key={index}>
                 <td>{getNestedValue(item, "po_master.PO_id")}</td>
                 <td>{getNestedValue(item, "po_master.cart.component_id")}</td>
@@ -358,8 +336,7 @@ const Inwardlist = () => {
                   %
                 </td>
                 <td style={{ textAlign: "right" }}>
-                  ₹
-                  {calculateGrandTotal(
+                  ₹{calculateGrandTotal(
                     item.price,
                     item.quantity,
                     item.gst

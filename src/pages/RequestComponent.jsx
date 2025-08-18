@@ -30,8 +30,61 @@ const RequestComponent = () => {
   const [showModal, setShowModal] = useState(false);
   const { user, logout } = useAuth();
   const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
-    const [loading, setLoading] = useState(true);
-  
+  const [loading, setLoading] = useState(true);
+
+  // Reason inline-edit state
+  const [editingReasonId, setEditingReasonId] = useState(null);
+  const [reasonDraft, setReasonDraft] = useState("");
+  const [savingReason, setSavingReason] = useState(false);
+
+  const startEditReason = (item) => {
+    setEditingReasonId(item.id);
+    setReasonDraft(item.reason || "");
+  };
+
+  const cancelEditReason = () => {
+    setEditingReasonId(null);
+    setReasonDraft("");
+  };
+
+  const saveReason = async (item) => {
+    if (savingReason) return;
+    setSavingReason(true);
+    try {
+      const res = await fetch(
+        `${config.apiBaseURL}/request_component/${item.id}/`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reason: reasonDraft?.trim() || null }),
+        }
+      );
+
+      if (!res.ok) {
+        showErrorToast("Failed to save reason");
+        setSavingReason(false);
+        return;
+      }
+
+      // Optimistic UI update
+      setComponentList((prev) =>
+        prev.map((rc) =>
+          rc.id === item.id
+            ? { ...rc, reason: reasonDraft?.trim() || null }
+            : rc
+        )
+      );
+
+      showSuccessToast("Reason saved");
+      setEditingReasonId(null);
+      setReasonDraft("");
+    } catch (e) {
+      console.error(e);
+      showErrorToast("Network error while saving reason");
+    } finally {
+      setSavingReason(false);
+    }
+  };
 
   const [formData, setFormData] = useState({
     name: "Dronix",
@@ -68,30 +121,28 @@ const RequestComponent = () => {
   }, []);
 
   // Fetch submitted component requests
-useEffect(() => {
-  const fetchData = async () => {
-    setLoading(true);
-    let url = `${config.apiBaseURL}/request_component/`;
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      let url = `${config.apiBaseURL}/request_component/`;
 
-    if (user?.role === "Procurement") {
-      url += "?status=Added";
-    }
+      if (user?.role === "Procurement") {
+        url += "?status=Added";
+      }
 
-    try {
-      const res = await fetch(url);
-      const data = await res.json();
-      setComponentList(data);
-    } catch (err) {
-      console.error("Error fetching request data:", err);
-    } finally {
-      setLoading(false); // Ensure loader is hidden at the end
-    }
-  };
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        setComponentList(data);
+      } catch (err) {
+        console.error("Error fetching request data:", err);
+      } finally {
+        setLoading(false); // Ensure loader is hidden at the end
+      }
+    };
 
-  fetchData();
-}, [user]);
-
-
+    fetchData();
+  }, [user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -208,11 +259,16 @@ useEffect(() => {
 
   const handleRejectRequest = (item) => {
     let componentId = item.component_id || "";
+    let reasonText = item.reason || "";
 
     showTextToast({
       message: ({ closeToast }) => (
         <div>
-          <p>Enter Component ID for rejection:</p>
+          <p style={{ marginBottom: 8, fontWeight: 600 }}>Reject Request</p>
+
+          <label style={{ display: "block", marginTop: 6, fontSize: 13 }}>
+            Component ID (optional)
+          </label>
           <input
             type="text"
             defaultValue={componentId}
@@ -220,62 +276,98 @@ useEffect(() => {
               componentId = e.target.value.trim();
             }}
             style={{
-              marginTop: "8px",
+              marginTop: 4,
               padding: "6px",
               width: "100%",
               border: "1px solid #ccc",
               borderRadius: "4px",
             }}
+            placeholder="E.g., CMP-00123 (leave blank if none)"
+          />
+
+          <label style={{ display: "block", marginTop: 10, fontSize: 13 }}>
+            Reason{" "}
+            {componentId ? (
+              "(optional)"
+            ) : (
+              <span style={{ color: "red" }}>*</span>
+            )}
+          </label>
+          <textarea
+            defaultValue={reasonText}
+            onChange={(e) => {
+              reasonText = e.target.value;
+            }}
+            style={{
+              marginTop: 4,
+              padding: "6px",
+              width: "100%",
+              minHeight: 70,
+              border: "1px solid #ccc",
+              borderRadius: "4px",
+              resize: "vertical",
+            }}
+            placeholder="Enter the reason for rejection"
           />
         </div>
       ),
       confirmText: "Reject",
       cancelText: "Cancel",
+
       onConfirm: async () => {
-        if (!componentId) {
-          showErrorToast("Component ID is required for rejection.");
+        // Rule: if NO componentId, reason is mandatory
+        if (!componentId && (!reasonText || !reasonText.trim())) {
+          showErrorToast(
+            "Reason is required when Component ID is not provided."
+          );
           return;
         }
 
         try {
-          // --- 1. Fetch Component Master data ---
-          const response = await fetch(`${config.apiBaseURL}/component/`);
-          const componentMasterData = await response.json();
+          // If componentId is provided → validate
+          if (componentId) {
+            const response = await fetch(`${config.apiBaseURL}/component/`);
+            const componentMasterData = await response.json();
 
-          // --- 2. Check if entered componentId exists in Component Master ---
-          const componentExists = componentMasterData.some(
-            (comp) => comp.component_id === componentId
-          );
-
-          if (!componentExists) {
-            showErrorToast(
-              `Component ID "${componentId}" does not exist in Component Master.`
+            const componentExists = componentMasterData.some(
+              (comp) => comp.component_id === componentId
             );
-            return; // stop rejection
+
+            if (!componentExists) {
+              showErrorToast(
+                `Component ID "${componentId}" does not exist in Component Master.`
+              );
+              return;
+            }
           }
 
-          //  3. Proceed with rejection ---
+          // Build PATCH body
+          const patchBody = {
+            status: "Rejected",
+          };
+          if (componentId) patchBody.component_id = componentId;
+          if (reasonText && reasonText.trim())
+            patchBody.reason = reasonText.trim();
+
           await fetch(`${config.apiBaseURL}/request_component/${item.id}/`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              status: "Rejected",
-              component_id: componentId,
-            }),
+            body: JSON.stringify(patchBody),
           });
 
-          showWarningToast(`Component ${componentId} rejected.`);
+          showWarningToast("Request rejected.");
 
+          // Refresh list
           const updatedList = await fetch(
             `${config.apiBaseURL}/request_component/`
           ).then((res) => res.json());
-
           setComponentList(updatedList);
         } catch (error) {
-          showErrorToast("Failed to reject request.");
           console.error("Reject error:", error);
+          showErrorToast("Failed to reject request.");
         }
       },
+
       onCancel: () => {
         showWarningToast("Rejection cancelled.");
       },
@@ -348,7 +440,7 @@ useEffect(() => {
                       name="product_link"
                       value={formData.product_link}
                       onChange={handleChange}
-                      required
+                      // required
                     />
                   </div>
                   <div className="forms-group">
@@ -429,22 +521,31 @@ useEffect(() => {
                     <>Actions</>
                   </th>
                 )}
+
+                {(user.role === "Inventory" ||
+                  user.role === "Procurement" ||
+                  user.role === "User") && (
+                  <th>
+                    {" "}
+                    <>Reason</>
+                  </th>
+                )}
               </tr>
             </thead>
 
             <tbody>
               {loading ? (
-              //  Show spinner or loading text while data is loading
-              <tr>
-                <td
-                  colSpan="8"
-                  style={{ textAlign: "center", padding: "20px" }}
-                >
-                  <div className="spinner"></div>
-                  Loading request_component...
-                </td>
-              </tr>
-            ) :filteredComponents.length === 0 ? (
+                //  Show spinner or loading text while data is loading
+                <tr>
+                  <td
+                    colSpan="8"
+                    style={{ textAlign: "center", padding: "20px" }}
+                  >
+                    <div className="spinner"></div>
+                    Loading request_component...
+                  </td>
+                </tr>
+              ) : filteredComponents.length === 0 ? (
                 <tr>
                   <td
                     colSpan={
@@ -474,13 +575,17 @@ useEffect(() => {
                     <td>{item.component_type}</td>
                     <td>{item.component_specification}</td>
                     <td>
-                      <a
-                        href={item.product_link}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        Link
-                      </a>
+                      {item.product_link ? (
+                        <a
+                          href={item.product_link}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Link
+                        </a>
+                      ) : (
+                        "N/A"
+                      )}
                     </td>
                     <td>{item.uom}</td>
                     <td>{format(parseISO(item.request_date), "dd-MM-yyyy")}</td>
@@ -546,6 +651,72 @@ useEffect(() => {
                         {user.role === "User" && <>Pending</>}
                       </td>
                     )}
+                    <td style={{ minWidth: 180 }}>
+                      {user.role === "Inventory" ? (
+                        editingReasonId === item.id ? (
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: 8,
+                              alignItems: "center",
+                            }}
+                          >
+                            <input
+                              type="text"
+                              value={reasonDraft}
+                              onChange={(e) => setReasonDraft(e.target.value)}
+                              placeholder="Enter reason"
+                              style={{ flex: 1, padding: "6px 8px" }}
+                              disabled={savingReason}
+                            />
+                            <button
+                              className="btn-added"
+                              onClick={() => saveReason(item)}
+                              disabled={savingReason}
+                              title="Save"
+                            >
+                              {savingReason ? "Saving..." : "Save"}
+                            </button>
+                            <button
+                              className="btn-reject"
+                              onClick={cancelEditReason}
+                              disabled={savingReason}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: 8,
+                              alignItems: "center",
+                            }}
+                          >
+                            <span
+                              style={{
+                                color: item.reason ? "inherit" : "#888",
+                              }}
+                            >
+                              {item.reason || "N/A"}
+                            </span>
+                            <button
+                              className="btn-reject"
+                              onClick={() => startEditReason(item)}
+                              title="Edit reason"
+                            >
+                              Edit
+                            </button>
+                          </div>
+                        )
+                      ) : (
+                        <span
+                          style={{ color: item.reason ? "inherit" : "#888" }}
+                        >
+                          {item.reason || "N/A"}
+                        </span>
+                      )}
+                    </td>
                   </tr>
                 ))
               )}
