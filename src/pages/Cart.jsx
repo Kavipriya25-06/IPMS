@@ -291,7 +291,7 @@ const Cart = ({ user }) => {
 
   return (
     <div>
-      {/* Render CustomMessagebox when showMessageBox is true */}
+      {/* Render CustomMessagebox */}
       {showMessageBox && (
         <CustomMessagebox
           message={messageBoxContent}
@@ -299,15 +299,33 @@ const Cart = ({ user }) => {
         />
       )}
 
-      <div>
-        <h2>Cart</h2>
+      <div style={{ position: "relative" }}>
+        <h2 style={{ display: "inline-block" }}>Cart</h2>
+        {/* Total Quantity at top-right */}
+        <span
+          style={{
+            float: "right",
+            fontWeight: "bold",
+            fontSize: "20px",
+            marginTop: "30px",
+          }}
+        >
+          Total Quantity:{" "}
+          {cartItems.reduce((total, group) => {
+            const groupTotal = Object.values(group.requests_by_date || {})
+              .flatMap((statusGroup) => Object.values(statusGroup || {}).flat())
+              .filter((item) => !item.order_placed)
+              .reduce((sum, item) => sum + Number(item.quantity), 0);
+            return total + groupTotal;
+          }, 0)}
+        </span>
+
         {cartItems.length === 0 ||
         !cartItems.some((group) =>
-          Object.values(group.requests_by_date || {}).some(
-            (requestsGroupedByStatus) =>
-              Object.values(requestsGroupedByStatus || {}).some((requests) =>
-                requests.some((item) => !item.order_placed)
-              )
+          Object.values(group.requests_by_date || {}).some((statusGroup) =>
+            Object.values(statusGroup || {}).some((reqs) =>
+              reqs.some((item) => !item.order_placed)
+            )
           )
         ) ? (
           <p style={{ fontWeight: "bold", fontSize: "18px" }}>
@@ -316,35 +334,76 @@ const Cart = ({ user }) => {
         ) : (
           cartItems
             .filter((group) =>
-              Object.values(group.requests_by_date || {}).some(
-                (requestsGroupedByStatus) =>
-                  Object.values(requestsGroupedByStatus || {}).some(
-                    (requests) => requests.some((item) => !item.order_placed)
-                  )
+              Object.values(group.requests_by_date || {}).some((statusGroup) =>
+                Object.values(statusGroup || {}).some((reqs) =>
+                  reqs.some((item) => !item.order_placed)
+                )
               )
-            ) // Filter out groups where all items are `order_placed`
+            )
             .map((group, groupIndex) => (
-              <div key={group.vendor_id || groupIndex}>
-                <h4>Vendor: {group.vendor_name}</h4>
-                {Object.entries(group.requests_by_date || {})
-                  .filter(([_, requestsGroupedByStatus]) =>
-                    Object.values(requestsGroupedByStatus || {}).some(
-                      (requests) => requests.some((item) => !item.order_placed)
+              <div
+                key={group.vendor_id || groupIndex}
+                style={{ marginBottom: "16px" }}
+              >
+                {/* Vendor and Date inline */}
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "20px",
+                    alignItems: "center",
+                    marginBottom: "8px",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontWeight: "bold",
+                      fontSize: "16px",
+                      color: "#333",
+                      margin: 0,
+                    }}
+                  >
+                    Vendor: {group.vendor_name}
+                  </span>
+                  {Object.entries(group.requests_by_date || {})
+                    .filter(([_, statusGroup]) =>
+                      Object.values(statusGroup || {}).some((reqs) =>
+                        reqs.some((item) => !item.order_placed)
+                      )
                     )
-                  ) // Filter out dates where all items are `order_placed`
-                  .map(([date, requestsGroupedByStatus]) => (
+                    .map(([date]) => (
+                      <span
+                        key={date}
+                        style={{
+                          fontWeight: "bold",
+                          fontSize: "16px",
+                          color: "#333",
+                          margin: 0,
+                        }}
+                      >
+                        Date: {format(parseISO(date), "dd-MM-yyyy")}
+                      </span>
+                    ))}
+                </div>
+
+                {/* Tables for each date/status */}
+                {Object.entries(group.requests_by_date || {})
+                  .filter(([_, statusGroup]) =>
+                    Object.values(statusGroup || {}).some((reqs) =>
+                      reqs.some((item) => !item.order_placed)
+                    )
+                  )
+                  .map(([date, statusGroup]) => (
                     <div key={date}>
-                      <h5>Date: {format(parseISO(date), "dd-MM-yyyy")}</h5>
-                      {Object.entries(requestsGroupedByStatus || {})
-                        .filter(([_, requests]) =>
-                          requests.some((item) => !item.order_placed)
-                        ) // Filter out order statuses where all items are `order_placed`
+                      {Object.entries(statusGroup || {})
+                        .filter(([status, reqs]) =>
+                          reqs.some((item) => !item.order_placed)
+                        )
                         .map(
-                          ([orderPlaced, requests]) =>
-                            orderPlaced === "false" &&
-                            requests.filter((item) => !item.order_placed)
-                              .length > 0 && (
-                              <div key={orderPlaced}>
+                          ([status, reqs]) =>
+                            status === "false" &&
+                            reqs.filter((item) => !item.order_placed).length >
+                              0 && (
+                              <div key={status}>
                                 <div className="table-container">
                                   <table>
                                     <thead>
@@ -362,7 +421,7 @@ const Cart = ({ user }) => {
                                       </tr>
                                     </thead>
                                     <tbody>
-                                      {requests
+                                      {reqs
                                         .filter((item) => !item.order_placed)
                                         .map((item) => (
                                           <tr key={item.id}>
@@ -395,7 +454,6 @@ const Cart = ({ user }) => {
                                                 maximumFractionDigits: 2,
                                               })}
                                             </td>
-
                                             <td>
                                               <button
                                                 onClick={() =>
@@ -428,7 +486,7 @@ const Cart = ({ user }) => {
                                     onClick={() =>
                                       handlePlaceOrder(group, date)
                                     }
-                                    disabled={requests.every(
+                                    disabled={reqs.every(
                                       (item) => item.order_placed
                                     )}
                                     className="place-order-btn"
@@ -445,6 +503,7 @@ const Cart = ({ user }) => {
             ))
         )}
       </div>
+
       <ToastContainerComponent />
     </div>
   );

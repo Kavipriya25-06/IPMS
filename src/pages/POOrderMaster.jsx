@@ -1041,7 +1041,7 @@ const POOrderMaster = ({ user }) => {
         <button
           className="back-btn"
           onClick={() => navigate(-1)}
-          title="Back to BOM List"
+          title="Back to PO List"
         >
           <FaArrowLeft />
         </button>

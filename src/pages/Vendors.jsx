@@ -406,13 +406,17 @@ const Vendors = () => {
         },
         body: JSON.stringify(newVendor),
       });
+
       if (response.ok) {
         const addedVendor = await response.json();
-        setVendorData([...vendorData, addedVendor]);
-        setNewVendorId(addedVendor.vendor_id); // Store the generated vendor_id
+
+        // 🔥 update both lists so table updates immediately
+        setVendorData((prev) => [...prev, addedVendor]);
+        setFilteredVendorData((prev) => [...prev, addedVendor]);
+
+        setNewVendorId(addedVendor.vendor_id);
         setShowAddVendorPopup(false);
-        // setIsAddingSubVendor(true); // Show the form for adding sub-vendor
-        setNewVendor({ vendor_name: "" });
+        setNewVendor({ vendor_name: "", gstn: "" });
         showSuccessToast("Vendor added successfully.");
       } else {
         console.error("Error adding vendor:", response.statusText);
