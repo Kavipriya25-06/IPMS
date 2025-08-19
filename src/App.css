@@ -3740,7 +3740,6 @@ ul {
   background-color: #f58720;
   border: none;
   border-radius: 5px;
-  margin-top: 10px;
   color: white;
   cursor: pointer;
 }
@@ -4918,3 +4917,136 @@ ul {
   color: #188038; /* green */
 }
 
+/* Dashboard tile container */
+.main-dashboard-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 40px;
+  padding: 40px;
+  justify-content: center;
+  background-color: #fafafa;
+  flex: 1;
+  align-items: center;
+  border-radius: 10px;
+
+  /* Push it down below header */
+  margin-top: 80px; /* adjust based on header height */
+}
+
+
+.dashboard-tile-main-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 30px;
+}
+
+/* Individual tile */
+.dashboard-tile-main {
+  background-color: #ffffff;
+  border-radius: 12px;
+  width: 280px;
+  height: 80px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.08);
+  padding: 20px;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  border: 2px solid transparent;
+}
+
+.dashboard-tile-main:hover {
+  border-color: #f1890d;
+  transform: translateY(-3px);
+  background-color: #f1f2f2;
+}
+
+.header-back {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: black;
+  display: flex;
+  align-items: center;
+}
+
+.back-btn:hover {
+  color: grey;
+}
+
+.btn-edit-icon {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  color: black;
+  border: none;
+  padding: 3px 4px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-edit-icon:hover {
+  background: gray;
+}
+
+.reason-input-container {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.reason-input {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+/* Save button */
+.btn-edit-added {
+  background: #f1890d; /* green */
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.btn-edit-added:hover {
+  background: #f5b578;
+}
+
+
+/* Cancel button */
+.btn-edit-reject {
+  background: gray; /* red */
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.btn-edit-reject:hover {
+  background: #b0b0b0;
+}

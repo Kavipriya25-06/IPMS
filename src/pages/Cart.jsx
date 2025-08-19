@@ -418,15 +418,24 @@ const Cart = ({ user }) => {
                                     </tbody>
                                   </table>
                                 </div>
-                                <button
-                                  onClick={() => handlePlaceOrder(group, date)}
-                                  disabled={requests.every(
-                                    (item) => item.order_placed
-                                  )}
-                                  className="place-order-btn"
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    justifyContent: "flex-end",
+                                  }}
                                 >
-                                  Submit PO
-                                </button>
+                                  <button
+                                    onClick={() =>
+                                      handlePlaceOrder(group, date)
+                                    }
+                                    disabled={requests.every(
+                                      (item) => item.order_placed
+                                    )}
+                                    className="place-order-btn"
+                                  >
+                                    Submit PO
+                                  </button>
+                                </div>
                               </div>
                             )
                         )}

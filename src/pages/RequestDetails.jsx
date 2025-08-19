@@ -1102,6 +1102,16 @@ const RequestDetails = ({ user }) => {
         </button>
         <h2>Request Details for {requestId}</h2>
       </div>{" "}
+      {/* <div className="header-back">
+              <button
+                className="back-btn"
+                onClick={() => navigate(-1)}
+                title="Back to Request List"
+              >
+                <FaArrowLeft />
+              </button>
+      <h2>Request Details for {requestId}</h2>
+            </div>{" "} */}
       {/* Render CustomMessagebox when showMessageBox is true */}
       {showMessageBox && (
         <CustomMessagebox
