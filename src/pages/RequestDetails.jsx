@@ -14,6 +14,8 @@ import {
   ToastContainerComponent,
 } from "./Toastify.jsx"; // Import Toastify utilities
 
+import { FaArrowLeft } from "react-icons/fa";
+
 const RequestDetails = ({ user }) => {
   const { requestId } = useParams();
   const [details, setDetails] = useState([]); // to fetch the request details
@@ -1090,24 +1092,16 @@ const RequestDetails = ({ user }) => {
 
   return (
     <div>
-      <h2>Request Details for {requestId}</h2>
-      <button
-        onClick={() => navigate("/requests")}
-        style={{
-          background: "transparent",
-          border: "none",
-          cursor: "pointer",
-          padding: "4px",
-        }}
-        title="Back to BOM List"
-      >
-        <img
-          src={Back}
-          alt="Back to BOM list "
-          style={{ width: "20px", height: "20px" }}
-        />
-      </button>
-
+      <div className="header-back">
+        <button
+          className="back-btn"
+          onClick={() => navigate(-1)}
+          title="Back to Request List"
+        >
+          <FaArrowLeft />
+        </button>
+        <h2>Request Details for {requestId}</h2>
+      </div>{" "}
       {/* Render CustomMessagebox when showMessageBox is true */}
       {showMessageBox && (
         <CustomMessagebox
@@ -1115,7 +1109,6 @@ const RequestDetails = ({ user }) => {
           onClose={() => setShowMessageBox(false)}
         />
       )}
-
       {details.length === 0 ? (
         <p>No request details found for this ID.</p>
       ) : (

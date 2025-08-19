@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import config from "../Config"; // Import config for API endpoints
 import DeleteIcon from "../assets/Delete.png"; //
@@ -36,16 +36,25 @@ const BOMDetails = () => {
   const [loadingComponents, setLoadingComponents] = useState(true);
   const [priceTables, setPriceTables] = useState([]);
   const [showLatestPrice, setShowLatestPrice] = useState(false);
-    const [loading, setLoading] = useState(true);
-    
-  
+  const [loading, setLoading] = useState(true);
+
   const [vendorMasterData, setVendorMasterData] = useState([]);
+
+  // Sum of quantities in this BOM (same definition as Number of Components in the list)
+  const totalQuantity = useMemo(
+    () =>
+      (selectedComponents || []).reduce(
+        (sum, row) => sum + (Number(row?.quantity) || 0),
+        0
+      ),
+    [selectedComponents]
+  );
 
   // Fetch BOM details and related components
   useEffect(() => {
     const fetchBomDetails = async () => {
       try {
-              setLoading(true);
+        setLoading(true);
 
         const response = await fetch(`${config.apiBaseURL}/bom_list/`);
         const data = await response.json();
@@ -53,9 +62,9 @@ const BOMDetails = () => {
         setSelectedBom(bom);
       } catch (error) {
         console.error("Error fetching BOM details:", error);
-      }finally {
-      setLoading(false); // Stop loading after both calls
-    }
+      } finally {
+        setLoading(false); // Stop loading after both calls
+      }
     };
 
     const fetchBomComponents = async () => {
@@ -467,8 +476,7 @@ const BOMDetails = () => {
     });
   };
 
-  
-   if (loading)
+  if (loading)
     return (
       <div style={{ textAlign: "center", marginTop: "50px" }}>
         <div className="spinner"></div>
@@ -476,7 +484,7 @@ const BOMDetails = () => {
       </div>
     );
 
-      // if (noData) return <p>No information available for this BOM</p>;
+  // if (noData) return <p>No information available for this BOM</p>;
 
   ///
   return (
@@ -658,7 +666,7 @@ const BOMDetails = () => {
                       setNewComponent({
                         ...newComponent,
                         quantity: e.target.value,
-                      })      
+                      })
                     }
                   />
 
@@ -737,10 +745,10 @@ const BOMDetails = () => {
                   </select>
 
                   <label>Price</label>
-                  <input                      
-                    type="text"         
-                    value={newComponent.price}           
-                    readOnly   
+                  <input
+                    type="text"
+                    value={newComponent.price}
+                    readOnly
                     placeholder="Auto-filled based on vendor"
                   />
                 </div>
@@ -886,7 +894,21 @@ const BOMDetails = () => {
                     <>
                       <tr>
                         <td
-                          colSpan="7"
+                          colSpan="4"
+                          style={{ textAlign: "right", fontWeight: "bold" }}
+                        >
+                          Total Quantity:
+                        </td>
+                        <td
+                          colSpan="1"
+                          style={{ textAlign: "right", fontWeight: "bold" }}
+                        >
+                          {" "}
+                          {totalQuantity.toLocaleString("en-IN")}{" "}
+                        </td>
+
+                        <td
+                          colSpan="2"
                           style={{ textAlign: "right", fontWeight: "bold" }}
                         >
                           Total Base Price:
