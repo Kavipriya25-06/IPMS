@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import config from "../Config"; // Import config for API endpoints
+import { useLocation, useNavigate } from "react-router-dom";
+import config from "../Config";
 import Add from "../assets/Add.png";
+import { FaArrowLeft } from "react-icons/fa";
 
 import {
   showSuccessToast,
   showErrorToast,
-  showInfoToast,
   showWarningToast,
-  showMessageToast,
+  showInfoToast,
   ToastContainerComponent,
 } from "./Toastify.jsx";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
-const Outward = () => {
-  const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
+const OutwardSales = () => {
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const [newRow, setNewRow] = useState(null);
 
   const [componentOptions, setComponentOptions] = useState([
@@ -23,77 +23,127 @@ const Outward = () => {
     "Component B",
     "Component C",
   ]);
+  const navigate = useNavigate();
+
+  const location = useLocation();
+  const outwardId = location.state?.outwardId;
+
+  const [productName, setProductName] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 300) {
-        setShowScrollTop(true);
-      } else {
-        setShowScrollTop(false);
-      }
-    };
+    if (!outwardId) return;
 
+    setLoading(true);
+
+    // Fetch all Sales records
+    fetch(`${config.apiBaseURL}/outward/sales/`)
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("Sales API data:", data);
+
+        // Find the sales record with this outwardId
+        const saleRecord = data.find((item) => item.id === outwardId);
+
+        if (saleRecord) {
+          setProductName(saleRecord.specification || "No product linked");
+        } else {
+          setProductName("No product linked");
+        }
+
+        setLoading(false);
+      })
+      .catch(() => {
+        setProductName("No product linked");
+        setLoading(false);
+      });
+  }, [outwardId]);
+
+  // --- Scroll to top ---
+  useEffect(() => {
+    const handleScroll = () => setShowScrollTop(window.scrollY > 300);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth", // Smooth scroll effect
-    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleAddRow = () => {
-    setNewRow({
-      component: "",
-      vendor: "",
-      serial: "",
-    });
+    if (newRow) {
+      showWarningToast("Please fill or save the sales data first.");
+      return;
+    }
+    setNewRow({ component: "", quantity: "", serial: "", remarks: "" });
   };
 
   const handleSaveRow = () => {
-    if (!newRow.component || !newRow.vendor || !newRow.serial) {
+    if (
+      !newRow.component ||
+      !newRow.quantity ||
+      !newRow.serial ||
+      !newRow.remarks
+    ) {
       showErrorToast("Please fill all fields.");
       return;
     }
-
-    // Save logic goes here — API call or local state update
     console.log("Saving row:", newRow);
-
     setNewRow(null);
     showSuccessToast("Row added.");
   };
 
-  
-  const handleCancelRow = () => {
-    setNewRow(null); // Clear the new row, effectively cancelling
-  };
+  const handleCancelRow = () => setNewRow(null);
 
   return (
-    <div>
+    <div style={{ marginTop: "10px" }}>
       <div
         className="header"
         style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          marginBottom: "-10px",
         }}
       >
-        <h2>Bhumi V.0.1.4</h2>
-        <div className="date-row">
-          <h5>Date:</h5>
-          <DatePicker
-            selected={new Date()}
-            dateFormat="dd-MMM-yyyy"
-            placeholderText="dd-mm-yyyy"
-            showMonthDropdown
-            showYearDropdown
-            dropdownMode="select"
-            readOnly
-            className="date-picker"
-          />
+        <div style={{ display: "flex", alignItems: "center", gap: "100px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+            <button
+              className="back-btn"
+              onClick={() =>
+                navigate("/outward", { state: { reportType: "Sales" } })
+              }
+              title="Back to Sales List"
+            >
+              <FaArrowLeft />
+            </button>
+
+            <h2 style={{ margin: 0 }}>
+              Product Name : {loading ? "N/A" : productName}
+            </h2>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px", // space between "Date:" and picker
+              fontSize: "20px", // same font size for both
+              marginTop: "5px",
+            }}
+          >
+            <span style={{ color: "black", fontWeight: "bold" }}>Date:</span>
+            <DatePicker
+              selected={new Date()}
+              dateFormat="dd-MMM-yyyy"
+              placeholderText="dd-mm-yyyy"
+              showMonthDropdown
+              showYearDropdown
+              dropdownMode="select"
+              readOnly
+              className="date-sales-picker"
+              style={{ fontSize: "20px", padding: "4px 6px" }} // normalize input look
+            />
+          </div>
         </div>
         <div
           style={{
@@ -104,11 +154,9 @@ const Outward = () => {
           }}
         >
           <button className="generate-report-btn">Generate Report</button>
-
           <button
             style={{
               cursor: "pointer",
-
               background: "transparent",
               border: "none",
             }}
@@ -120,16 +168,15 @@ const Outward = () => {
         </div>
       </div>
 
+      {/* Table */}
       <div className="table-container">
         <table>
           <thead>
             <tr>
               <th>S.No</th>
               <th>Component</th>
+              <th>Serial Number</th>
               <th>Quantity</th>
-              <th>Unit Price</th>
-              <th>GST</th>
-              <th>Grand Total</th>
               <th>Remarks</th>
               {newRow && <th>Action</th>}
             </tr>
@@ -141,8 +188,6 @@ const Outward = () => {
               <td>12</td>
               <td>8000</td>
               <td>8%</td>
-              <td>12300</td>
-              <td>Good</td>
             </tr>
 
             {newRow && (
@@ -154,11 +199,6 @@ const Outward = () => {
                     onChange={(e) =>
                       setNewRow({ ...newRow, component: e.target.value })
                     }
-                    style={{
-                      padding: "4px",
-                      borderRadius: "4px",
-                      width: "50%",
-                    }}
                   >
                     <option value="">Select</option>
                     {componentOptions.map((comp) => (
@@ -170,85 +210,36 @@ const Outward = () => {
                 </td>
                 <td>
                   <input
-                    type="number"
-                    value={newRow.vendor}
-                    onChange={(e) =>
-                      setNewRow({ ...newRow, vendor: e.target.value })
-                    }
-                    placeholder="Quantity"
-                    style={{
-                      padding: "4px",
-                      borderRadius: "4px",
-                      border: "1.4px solid #ccc",
-                      width: "70%",
-                    }}
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    value={newRow.vendor}
-                    onChange={(e) =>
-                      setNewRow({ ...newRow, vendor: e.target.value })
-                    }
-                    placeholder="Unit Price"
-                    style={{
-                      padding: "4px",
-                      borderRadius: "4px",
-                      border: "1.4px solid #ccc",
-                      width: "70%",
-                    }}
-                  />
-                </td>
-                <td>
-                  <input
-                    type="text"
-                    value={newRow.vendor}
-                    onChange={(e) =>
-                      setNewRow({ ...newRow, vendor: e.target.value })
-                    }
-                    placeholder="GST"
-                    style={{
-                      padding: "4px",
-                      borderRadius: "4px",
-                      border: "1.4px solid #ccc",
-                      width: "60%",
-                    }}
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    value={newRow.vendor}
-                    onChange={(e) =>
-                      setNewRow({ ...newRow, vendor: e.target.value })
-                    }
-                    placeholder="Grand Total"
-                    style={{
-                      padding: "4px",
-                      borderRadius: "4px",
-                      border: "1.4px solid #ccc",
-                      width: "70%",
-                    }}
-                  />
-                </td>
-                <td>
-                  <input
                     type="text"
                     value={newRow.serial}
                     onChange={(e) =>
                       setNewRow({ ...newRow, serial: e.target.value })
                     }
-                    placeholder="Remarks"
-                    style={{
-                      padding: "4px",
-                      borderRadius: "4px",
-                      border: "1.4px solid #ccc",
-                      width: "60%",
-                    }}
+                    placeholder="Serial Number"
                   />
                 </td>
-                 <td className="event-buttons">
+                <td>
+                  <input
+                    type="number"
+                    value={newRow.quantity}
+                    onChange={(e) =>
+                      setNewRow({ ...newRow, quantity: e.target.value })
+                    }
+                    placeholder="Quantity"
+                  />
+                </td>
+                <td className="specification-cell" title={newRow.remarks}>
+                  <input
+                    type="text"
+                    value={newRow.remarks}
+                    onChange={(e) =>
+                      setNewRow({ ...newRow, remarks: e.target.value })
+                    }
+                    placeholder="Remarks"
+                  />
+                </td>
+
+                <td className="event-buttons">
                   <button onClick={handleSaveRow}>Save</button>
                   <button onClick={handleCancelRow}>Cancel</button>
                 </td>
@@ -257,6 +248,7 @@ const Outward = () => {
           </tbody>
         </table>
       </div>
+
       {showScrollTop && (
         <button
           style={{
@@ -282,4 +274,4 @@ const Outward = () => {
   );
 };
 
-export default Outward;
+export default OutwardSales;

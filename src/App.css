@@ -3789,18 +3789,28 @@ ul {
   font-size: 15px;
 }
 
+.date-sales-picker {
+  border: none;
+  font-weight: bold;
+  font-size: 20px;
+}
 .date-picker:focus {
   outline: none;
   box-shadow: none;
 }
 
+.date-sales-picker:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+
 .date-row {
   display: flex;
   align-items: center;
   gap: 2px; /* space between h5, input, and icon */
-  font-size: 20px;
-  margin-bottom: -10px;
-  color: #b6b5b5;
+  font-size: 30px;
+  margin-top: 10px;
 }
 
 .add-tag-wrapper {
@@ -4939,28 +4949,82 @@ ul {
 }
 
 /* Individual tile */
+/* Tile box */
 .dashboard-tile-main {
   background-color: #ffffff;
   border-radius: 12px;
-  width: 280px;
-  height: 80px;
+  /* Remove fixed width or increase it */
+  width: auto;       /* allow width to grow */
+  min-width: 280px !important;  /* keep minimum width */
+  min-height: 140px !important; /* keep minimum height */
+  max-width: 400px;  /* optional max width to prevent too large */
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.08);
-  padding: 20px;
-  text-align: center;
+  padding: 20px; /* increase padding for more space */
   display: flex;
   justify-content: center;
-  align-items: center;
-  font-weight: bold;
+  align-items: flex-start;
+  text-align: left;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
   border: 2px solid transparent;
+  flex-direction: column;
 }
+
 
 .dashboard-tile-main:hover {
   border-color: #f1890d;
   transform: translateY(-3px);
   background-color: #f1f2f2;
 }
+
+/* Wrapper for inside content */
+.tile-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: center;
+
+}
+
+/* Top heading label */
+.tile-label {
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+/* Grid layout for counts */
+.tile-counts-grid {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  gap: 20px;
+  width: 100%;
+  text-align: center;
+}
+
+/* Each count block */
+.count-column {
+  flex: 1 1 45%; /* 2 columns that shrink if needed */
+}
+
+/* Count number styling */
+.count-number {
+  font-size: 40px;
+  font-weight: bold;
+  color: #000;
+}
+
+/* Count label */
+.count-label {
+  font-size: 15px;
+  color: #666;
+}
+
+
 
 .header-back {
   display: flex;
@@ -5187,4 +5251,128 @@ ul {
   border-color: #f5f5f5;
   outline: none;
   box-shadow: 0 0 4px rgba(0, 123, 255, 0.3);
+}
+
+.qc-container {
+  margin: 30px;
+  font-family: Arial, sans-serif;
+}
+
+.qc-title {
+  font-weight: bold;
+  margin-bottom: 50px;
+  font-size: 23px;
+
+}
+
+.qc-input-group {
+  display: flex;
+  align-items: flex-start; /* vertically center label and select */
+  margin-bottom: 15px;
+  gap: 10px; /* spacing between label and select */
+    margin-left: 100px;
+}
+
+.qc-input-groups {
+  display: flex;
+  align-items: center; /* vertically center label and select */
+  margin-bottom: 15px;
+  gap: 10px; /* spacing between label and select */
+}
+
+.qc-label {
+  width: 150px; /* adjust as needed */
+  font-weight: bold;
+}
+
+.qc-select {
+  padding: 6px;
+  width: 315px;
+  border-radius: 5px;
+  border: 1px solid #b0b0b0;
+}
+
+.qc-textarea {
+  padding: 6px;
+  width: 300px;
+  resize: vertical; /* allows resizing */
+  border-radius: 5px;
+  border: 1px solid #b0b0b0;
+  height: 100px;
+}
+
+.qc-plus-icon {
+  font-size: 10px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  margin-left: 100px;
+}
+
+.qc-plus-icon img {
+  width: 18px; /* Adjust as needed */
+  height: 18px;
+  object-fit: contain;
+  transition: transform 0.2s ease;
+}
+
+.qc-plus-icon:hover img {
+  transform: scale(1.1); /* slightly zooms in on hover */
+}
+
+.qc-button-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  margin-left: 420px;
+}
+
+.qc-submit-button {
+  background-color: #f58720;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.qc-submit-button:hover{
+  background-color: #f1ba86;
+}
+
+.qc-cancel-button {
+  background-color: #b0b0b0;
+  border: none;
+  padding: 8px 16px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.qc-cancel-button:hover{
+  background-color: #bab6b6;
+}
+
+.qc-question-wrapper {
+  position: relative;
+}
+
+.qc-remove-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  font-weight: bold;
+  color: #d33;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+
+.qc-remove-btn:hover {
+  background-color: #fdd;
 }

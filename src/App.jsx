@@ -51,6 +51,8 @@ import OutwardManufacture from "./pages/OutwardManufacture";
 import OutwardEvent from "./pages/OutwardEvent";
 import JobOrderSheet from "./pages/JobOrderSheet";
 import MainDashboard from "./pages/MainDashboard";
+import QCForm from "./pages/QcQuestion";
+import QcIcon from "./pages/QcIcon";
 
 // import { useAuth } from "./AuthContext";
 // import PODetails from "./pages/PODetails";
@@ -95,6 +97,9 @@ function App() {
           </h1>
 
           <div style={{ display: "flex", alignItems: "center" }}>
+            <div style={{ paddingLeft: "10px", fontSize: "18px" }}>
+              <QcIcon style={{ fontSize: "20px" }} />
+            </div>
             <div style={{ paddingLeft: "10px", fontSize: "18px" }}>
               <CartIcon style={{ fontSize: "20px" }} />
             </div>
@@ -238,14 +243,22 @@ function App() {
             <Route path="/" element={<HomePage />} />
             {/* <Route path="/dashboard" element={<MainDashboard />} /> */}
             <Route
-  path="/dashboard"
-  element={
-    <ProtectedRoute allowedRoles={["Admin","Sub-Admin","Procurement","Inventory","Finance","User"]}>
-      <MainDashboard  />
-    </ProtectedRoute>
-  }
-/>
-
+              path="/dashboard"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[
+                    "Admin",
+                    "Sub-Admin",
+                    "Procurement",
+                    "Inventory",
+                    "Finance",
+                    "User",
+                  ]}
+                >
+                  <MainDashboard />
+                </ProtectedRoute>
+              }
+            />
 
             <Route element={<SideBar />}>
               <Route
@@ -644,6 +657,16 @@ function App() {
                     ]}
                   >
                     <MrfRequest />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="qcform"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
+                  >
+                    <QCForm />
                   </ProtectedRoute>
                 }
               />

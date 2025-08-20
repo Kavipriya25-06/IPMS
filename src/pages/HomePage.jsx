@@ -52,7 +52,7 @@ const HomePage = () => {
           <h2>Welcome to Inventory Management</h2>
           <div className="landing-buttons">
             {!user && <button onClick={() => navigate("/login")}>Login</button>}
-            <button onClick={() => navigate("/components")}>Get Started</button>
+            <button onClick={() => navigate("/dashboard")}>Get Started</button>
           </div>
         </div>
       </div>

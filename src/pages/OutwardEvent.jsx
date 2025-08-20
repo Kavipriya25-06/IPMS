@@ -1,98 +1,134 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import config from "../Config"; // Import config for API endpoints
+import { useLocation, useNavigate } from "react-router-dom";
+import config from "../Config";
 import {
   showSuccessToast,
   showErrorToast,
-  showInfoToast,
   showWarningToast,
-  showMessageToast,
+  showInfoToast,
   ToastContainerComponent,
 } from "./Toastify.jsx";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import Add from "../assets/Add.png";
+import { FaArrowLeft } from "react-icons/fa";
 
-const Outward = () => {
-  const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
+const OutwardEvent = () => {
+  const navigate = useNavigate();
+
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const [newRow, setNewRow] = useState(null);
 
-  const [componentOptions, setComponentOptions] = useState([
-    "Component A",
-    "Component B",
-    "Component C",
-  ]);
+  const location = useLocation();
+  const outwardId = location.state?.outwardId;
 
+  const [eventName, setEventName] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  // Fetch Event details
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 300) {
-        setShowScrollTop(true);
-      } else {
-        setShowScrollTop(false);
-      }
-    };
+    if (!outwardId) return;
 
+    setLoading(true);
+
+    fetch(`${config.apiBaseURL}/outward/event/`)
+      .then((res) => res.json())
+      .then((data) => {
+        // find event record by outwardId
+        const eventRecord = data.find((item) => item.id === outwardId);
+
+        if (eventRecord) {
+          setEventName(eventRecord.event_name || "No event linked");
+        } else {
+          setEventName("No event linked");
+        }
+
+        setLoading(false);
+      })
+      .catch(() => {
+        setEventName("No event linked");
+        setLoading(false);
+      });
+  }, [outwardId]);
+
+  // --- Scroll to top ---
+  useEffect(() => {
+    const handleScroll = () => setShowScrollTop(window.scrollY > 300);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth", // Smooth scroll effect
-    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleAddRow = () => {
-    setNewRow({
-      component: "",
-      vendor: "",
-      serial: "",
-    });
-  };
-
+ const handleAddRow = () => {
+  if (newRow) {
+    showWarningToast("Please fill or save the event data first.");
+    return;
+  }
+  setNewRow({ component: "", serialNumber: "", quantity: "",remarks: "" });
+};
+  // Validate serialNumber as well
   const handleSaveRow = () => {
-    if (!newRow.component || !newRow.vendor || !newRow.serial) {
+    if (!newRow.component || !newRow.serialNumber || !newRow.quantity || !newRow.remarks) {
       showErrorToast("Please fill all fields.");
       return;
     }
-
-    // Save logic goes here — API call or local state update
     console.log("Saving row:", newRow);
-
     setNewRow(null);
     showSuccessToast("Row added.");
   };
 
-  const handleCancelRow = () => {
-    setNewRow(null); // Clear the new row, effectively cancelling
-  };
+  const handleCancelRow = () => setNewRow(null);
 
   return (
-    <div>
+    <div style={{ marginTop: "10px" }}>
       <div
         className="header"
         style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          marginBottom: "-10px",
         }}
       >
-        <h2>Outward List</h2>
-        <div className="date-row">
-          <h5>Date:</h5>
-          <DatePicker
-            selected={new Date()}
-            dateFormat="dd-MMM-yyyy"
-            placeholderText="dd-mm-yyyy"
-            showMonthDropdown
-            showYearDropdown
-            dropdownMode="select"
-            readOnly
-            className="date-picker"
-          />
+        <div style={{ display: "flex", alignItems: "center", gap: "100px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+            <button
+              className="back-btn"
+              onClick={() =>
+                navigate("/outward", { state: { reportType: "Event" } })
+              }
+              title="Back to Event List"
+            >
+              <FaArrowLeft />
+            </button>
+
+            <h2 style={{ margin: 0 }}>
+              Event Name : {loading ? "Loading..." : eventName}
+            </h2>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              fontSize: "20px",
+              marginTop: "5px",
+            }}
+          >
+            <span style={{ color: "black", fontWeight: "bold" }}>Date:</span>
+            <DatePicker
+              selected={new Date()}
+              dateFormat="dd-MMM-yyyy"
+              readOnly
+              className="date-sales-picker"
+              style={{ fontSize: "20px", padding: "4px 6px" }}
+            />
+          </div>
         </div>
+
         <div
           style={{
             display: "flex",
@@ -102,11 +138,9 @@ const Outward = () => {
           }}
         >
           <button className="generate-report-btn">Generate Report</button>
-
           <button
             style={{
               cursor: "pointer",
-
               background: "transparent",
               border: "none",
             }}
@@ -115,58 +149,72 @@ const Outward = () => {
           >
             <img src={Add} alt="" style={{ width: "20px", height: "20px" }} />
           </button>
-        </div>{" "}
+        </div>
       </div>
 
+      {/* Table */}
       <div className="table-container">
         <table>
           <thead>
             <tr>
               <th>S.No</th>
               <th>Component</th>
+              <th>Serial Number</th>
               <th>Quantity</th>
+              <th>Remarks</th>
               {newRow && <th>Action</th>}
             </tr>
           </thead>
           <tbody>
             <tr>
               <td>1</td>
-              <td>Backend BOM List table changes</td>
-              <td>12</td>
+              <td>Sample Component</td>
+              <td>WERT32145382583</td>
+              <td>10</td>
+              <td>good</td>
             </tr>
+
             {newRow && (
               <tr>
                 <td>2</td>
                 <td>
                   <input
                     type="text"
-                    value={newRow.vendor}
+                    value={newRow.component}
                     onChange={(e) =>
-                      setNewRow({ ...newRow, vendor: e.target.value })
+                      setNewRow({ ...newRow, component: e.target.value })
                     }
                     placeholder="Component Name"
-                    style={{
-                      padding: "4px",
-                      borderRadius: "4px",
-                      border: "1.4px solid #ccc",
-                      width: "60%",
-                    }}
+                  />
+                </td>
+                <td>
+                  <input
+                    type="text"
+                    value={newRow.serialNumber}
+                    onChange={(e) =>
+                      setNewRow({ ...newRow, serialNumber: e.target.value })
+                    }
+                    placeholder="Serial Number"
                   />
                 </td>
                 <td>
                   <input
                     type="number"
-                    value={newRow.vendor}
+                    value={newRow.quantity}
                     onChange={(e) =>
-                      setNewRow({ ...newRow, vendor: e.target.value })
+                      setNewRow({ ...newRow, quantity: e.target.value })
                     }
                     placeholder="Quantity"
-                    style={{
-                      padding: "4px",
-                      borderRadius: "4px",
-                      border: "1.4px solid #ccc",
-                      width: "60%",
-                    }}
+                  />
+                </td>
+                <td className="specification-cell" title={newRow.remarks}>
+                  <input
+                    type="text"
+                    value={newRow.remarks}
+                    onChange={(e) =>
+                      setNewRow({ ...newRow, remarks: e.target.value })
+                    }
+                    placeholder="remarks"
                   />
                 </td>
                 <td className="event-buttons">
@@ -178,6 +226,8 @@ const Outward = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Scroll to top */}
       {showScrollTop && (
         <button
           style={{
@@ -198,9 +248,10 @@ const Outward = () => {
           ↑
         </button>
       )}
-      <ToastContainerComponent position="top-right" autoClose={3000} />
+
+      <ToastContainerComponent />
     </div>
   );
 };
 
-export default Outward;
+export default OutwardEvent;
