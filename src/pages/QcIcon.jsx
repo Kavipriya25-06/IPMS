@@ -37,15 +37,18 @@ const QcIcon = () => {
   }}
   onClick={() => navigate("/qcform")}
 >
-  <img
-    src={QC}
-    alt="questions"
-    style={{
-      width: "28px",
-      height: "28px",
-      objectFit: "contain",
-    }}
-  />
+ <img
+  src={QC}
+  alt="questions"
+  title="QC Questions Page" 
+  style={{
+    width: "24px",
+    height: "24px",
+    objectFit: "contain",
+    cursor: "pointer",     
+  }}
+/>
+
 </div>
 
 

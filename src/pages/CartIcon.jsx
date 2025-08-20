@@ -40,6 +40,8 @@ const CartIcon = () => {
   <img
     src={ShoppingCart}
     alt="Cart"
+      title="Cart Page" 
+
     style={{
       width: "24px",
       height: "24px",

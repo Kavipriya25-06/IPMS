@@ -42,6 +42,8 @@ const MRFIcon = () => {
       <img
         src={MRFiconpng}
         alt="MRFRequest"
+          title="MRF-Request Page" 
+
         onClick={() => navigate("/Mrf")}
         style={{
           width: "24px",

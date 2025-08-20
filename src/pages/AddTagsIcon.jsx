@@ -41,6 +41,8 @@ const TagIcon = () => {
     <img
       src={TagIconpng}
       alt="Tags"
+        title="Tag Page" 
+
        style={{
       width: "24px",
       height: "24px",
