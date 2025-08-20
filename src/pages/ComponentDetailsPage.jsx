@@ -3,11 +3,14 @@ import config from "../Config";
 import "../App.css";
 import { useParams } from "react-router-dom";
 import { format, parseISO } from "date-fns";
+import { useAuth } from "../AuthContext";
+import Add from "../assets/Add.png";
 
 import {
   showSuccessToast,
   showErrorToast,
   showWarningToast,
+  showInfoToast,
   ToastContainerComponent,
 } from "./Toastify.jsx";
 
@@ -71,6 +74,14 @@ const ComponentDetailsPage = () => {
   const [isEditingImage, setIsEditingImage] = useState(false);
   const [newImages, setNewImages] = useState([]);
   const [uploadingImages, setUploadingImages] = useState(false);
+
+  const { user } = useAuth();
+
+  const allowedRoles = ["Admin", "Sub-Admin", "Inventory", "Procurement"];
+  const canEdit = allowedRoles.includes(user?.role);
+
+  const allowedRolesPlus = ["Admin", "Procurement"];
+  const canEditPlus = allowedRolesPlus.includes(user?.role);
 
   const handleMouseMove = (e) => {
     const rect = imgRef.current.getBoundingClientRect();
@@ -344,10 +355,54 @@ const ComponentDetailsPage = () => {
   // ========== NEW: Image Upload Handlers ==========
   const onPickImages = (e) => {
     const files = Array.from(e.target.files || []);
-    setNewImages(files);
+
+    const existingFiles = new Set(
+      imageList.map((url) => url.split("/").pop().toLowerCase()) // saved names
+    );
+
+    const added = [];
+    files.forEach((file) => {
+      const uniqueKey = `${file.name.toLowerCase()}-${file.size}`;
+      // check against newImages
+      const alreadyInPreview = newImages.some(
+        (img) =>
+          img.file.name.toLowerCase() === file.name.toLowerCase() &&
+          img.file.size === file.size
+      );
+      // check against existing saved images (by ignoring random suffixes)
+      const baseName = file.name.toLowerCase().split(".")[0];
+      const isAlreadySaved = Array.from(existingFiles).some(
+        (saved) => saved.startsWith(baseName) // "prppellar" matches "prppellar_<RANDOM>.avif"
+      );
+
+      if (alreadyInPreview || isAlreadySaved) {
+        showInfoToast(
+          `"${file.name}" is already uploaded, please upload another one`
+        );
+        return;
+      }
+
+      added.push({
+        file,
+        preview: URL.createObjectURL(file),
+      });
+    });
+
+    setNewImages((prev) => [...prev, ...added]);
+    e.target.value = ""; // reset picker
+  };
+
+  const removeNewImage = (index) => {
+    setNewImages((prev) => {
+      // cleanup object URL to avoid memory leaks
+      URL.revokeObjectURL(prev[index].preview);
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
   const cancelImages = () => {
+    // cleanup previews
+    newImages.forEach((img) => URL.revokeObjectURL(img.preview));
     setIsEditingImage(false);
     setNewImages([]);
   };
@@ -363,7 +418,7 @@ const ComponentDetailsPage = () => {
     }
 
     const formData = new FormData();
-    newImages.forEach((file) => {
+    newImages.forEach(({ file }) => {
       formData.append("images", file); // Backend expects 'images'
     });
 
@@ -398,6 +453,8 @@ const ComponentDetailsPage = () => {
         setMainImage(uploadedUrls[0]);
       }
 
+      // cleanup previews
+      newImages.forEach((img) => URL.revokeObjectURL(img.preview));
       setNewImages([]);
       setIsEditingImage(false);
       showSuccessToast("Images uploaded successfully!");
@@ -408,6 +465,7 @@ const ComponentDetailsPage = () => {
       setUploadingImages(false);
     }
   };
+
   // ================================================
 
   return (
@@ -447,28 +505,60 @@ const ComponentDetailsPage = () => {
             </div>
 
             {/* NEW: Image upload controls */}
-            <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
+            <div className="image-upload-controls">
               {!isEditingImage ? (
-                <button onClick={() => setIsEditingImage(true)}>
-                  Add Images
-                </button>
+                <>
+                  {/* Show Add Images button only if role allowed */}
+                  {canEdit && (
+                    <button onClick={() => setIsEditingImage(true)}>
+                      Add Images
+                    </button>
+                  )}
+                </>
               ) : (
                 <>
+                  {/* File picker */}
                   <input
                     type="file"
                     accept="image/*"
                     multiple
                     onChange={onPickImages}
                   />
-                  <button onClick={saveImages} disabled={uploadingImages}>
-                    {uploadingImages ? "Uploading..." : "Save"}
-                  </button>
-                  <button onClick={cancelImages} disabled={uploadingImages}>
-                    Cancel
-                  </button>
+
+                  {/* Preview thumbnails BELOW input */}
+                  {newImages.length > 0 && (
+                    <div className="file-preview-list">
+                      {newImages.map((img, index) => (
+                        <div key={index} className="file-preview-item">
+                          <img
+                            src={img.preview}
+                            alt="preview"
+                            className="thumb"
+                          />
+
+                          <button
+                            type="button"
+                            className="remove-btn"
+                            onClick={() => removeNewImage(index)}
+                          ></button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Action buttons */}
+                  <div className="image-actions">
+                    <button onClick={saveImages} disabled={uploadingImages}>
+                      {uploadingImages ? "Uploading..." : "Save"}
+                    </button>
+                    <button onClick={cancelImages} disabled={uploadingImages}>
+                      Cancel
+                    </button>
+                  </div>
                 </>
               )}
             </div>
+
             {isEditingImage && newImages.length > 0 && (
               <div style={{ marginTop: 6, fontSize: 12, color: "#555" }}>
                 {newImages.length} file(s) selected
@@ -534,7 +624,7 @@ const ComponentDetailsPage = () => {
               margin: "8px 0",
             }}
           >
-            <button
+            {/* <button
               title="Add vendor & price"
               onClick={() => setShowAddRow((s) => !s)}
               style={{
@@ -546,7 +636,27 @@ const ComponentDetailsPage = () => {
               }}
             >
               {showAddRow ? "–" : "+"}
-            </button>
+            </button> */}
+            <>
+              {/* Show Add Images button only if role allowed */}
+              {canEditPlus && (
+                <button
+                  className="plus-button"
+                  title="Add Vendor & price"
+                  onClick={() => setShowAddRow((s) => !s)}
+                  style={{
+                    cursor: "pointer",
+                    background: "transparent",
+                    border: "none",
+                    padding: "4px",
+                    marginBottom: "-25px",
+                  }}
+                >
+                  {" "}
+                  <img src={Add} alt="Add Vendor & price" />{" "}
+                </button>
+              )}
+            </>
           </div>
 
           <div className="table-container">
@@ -558,15 +668,16 @@ const ComponentDetailsPage = () => {
                   <th>Tax%</th>
                   <th>Date</th>
                   <th>Delivery Days</th>
-                  <th>Actions</th>
+                  {canEditPlus && canEdit && showAddRow && <th>Actions</th>}
                 </tr>
               </thead>
               <tbody>
                 {/* Inline add row */}
                 {showAddRow && (
-                  <tr>
+                  <tr className="new-row">
                     <td>
                       <select
+                        className="form-select"
                         value={newRow.vendor_id}
                         onChange={(e) => onChangeVendorSelect(e.target.value)}
                       >
@@ -583,11 +694,11 @@ const ComponentDetailsPage = () => {
                         type="number"
                         min="0"
                         placeholder="Price"
+                        className="form-input"
                         value={newRow.price}
                         onChange={(e) =>
                           onChangeNewRow("price", e.target.value)
                         }
-                        style={{ textAlign: "right", width: "100%" }}
                       />
                     </td>
                     <td>
@@ -595,9 +706,9 @@ const ComponentDetailsPage = () => {
                         type="number"
                         min="0"
                         placeholder="Tax %"
+                        className="form-input"
                         value={newRow.tax}
                         onChange={(e) => onChangeNewRow("tax", e.target.value)}
-                        style={{ textAlign: "right", width: "100%" }}
                       />
                     </td>
                     <td>—</td>
@@ -606,21 +717,33 @@ const ComponentDetailsPage = () => {
                         type="number"
                         min="0"
                         placeholder="Days"
+                        className="form-input"
                         value={newRow.delivery_days}
                         onChange={(e) =>
                           onChangeNewRow("delivery_days", e.target.value)
                         }
-                        style={{ textAlign: "right", width: "100%" }}
                       />
                     </td>
-                    <td>
-                      <button onClick={saveNewRow} disabled={savingNewRow}>
-                        {savingNewRow ? "Saving..." : "Save"}
-                      </button>
-                      <button onClick={cancelNewRow} style={{ marginLeft: 6 }}>
-                        Cancel
-                      </button>
-                    </td>
+
+                    {canEditPlus && canEdit && showAddRow && (
+                      <td>
+                        <div style={{ display: "flex", gap: "10px" }}>
+                          <button
+                            className="edit-btn"
+                            onClick={saveNewRow}
+                            disabled={savingNewRow}
+                          >
+                            {savingNewRow ? "Saving..." : "Save"}
+                          </button>
+                          <button
+                            className="delete-button"
+                            onClick={cancelNewRow}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 )}
 
@@ -654,7 +777,6 @@ const ComponentDetailsPage = () => {
                     <td>
                       {priceDataMap[vendor.product_id]?.delivery_days ?? "-"}
                     </td>
-                    <td />
                   </tr>
                 ))}
               </tbody>

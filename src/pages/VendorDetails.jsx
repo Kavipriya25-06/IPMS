@@ -561,16 +561,55 @@ const VendorDetails = () => {
   };
 
   // Handler for updating the image
-  const handleImageChange = (index, files) => {
-    setSelectedVendorData((prevState) => {
-      const updatedProducts = [...prevState];
-      updatedProducts[index] = {
-        ...updatedProducts[index],
-        newImages: files, // Store selected files temporarily
-      };
-      return updatedProducts;
+const handleImageChange = (index, files) => {
+  setSelectedVendorData((prevState) => {
+    const updatedProducts = [...prevState];
+    const product = updatedProducts[index];
+
+    // Existing saved images (backend)
+    const existingImages = (product.images || []).map((imgObj) =>
+      String(imgObj.image).toLowerCase()
+    );
+
+    // Already staged (not yet uploaded)
+    const alreadySelected = (product.newImages || []).map(
+      (f) => `${f.name.toLowerCase()}-${f.size}`
+    );
+
+    const added = [];
+    files.forEach((file) => {
+      const uniqueKey = `${file.name.toLowerCase()}-${file.size}`;
+
+      // Check if already in staged list
+      if (alreadySelected.includes(uniqueKey)) {
+        showInfoToast(`"${file.name}" is already selected — skipping.`);
+        return;
+      }
+
+      // Check if already saved in backend
+      const baseName = file.name.toLowerCase().split(".")[0];
+      const isSaved = existingImages.some((saved) =>
+        saved.includes(baseName)
+      );
+      if (isSaved) {
+        showInfoToast(`"${file.name}" already exists in saved images.`);
+        return;
+      }
+
+      // If unique, add it
+      added.push(file);
     });
-  };
+
+    // Always merge new files with previous ones
+    updatedProducts[index] = {
+      ...product,
+      newImages: [...(product.newImages || []), ...added],
+    };
+
+    return updatedProducts;
+  });
+};
+
 
   // Handler for updating the attachment
   const handleAttachmentChange = (index, file) => {
@@ -772,7 +811,12 @@ const VendorDetails = () => {
     return VendorName;
   };
 
-  const toggleVendorStatus = async (productId, currentStatus, vendorId,componentId) => {
+  const toggleVendorStatus = async (
+    productId,
+    currentStatus,
+    vendorId,
+    componentId
+  ) => {
     try {
       const updatedStatus = !currentStatus; // Toggle the status
 
@@ -826,11 +870,11 @@ const VendorDetails = () => {
               : product
           )
         );
-          showSuccessToast(
-                `Vendor ${componentId} marked as ${
-                  updatedStatus ? "Active" : "Inactive"
-                } successfully`
-              );
+        showSuccessToast(
+          `Vendor ${componentId} marked as ${
+            updatedStatus ? "Active" : "Inactive"
+          } successfully`
+        );
       } else {
         console.error("Error updating vendor status:", response.statusText);
       }
@@ -1502,12 +1546,14 @@ const VendorDetails = () => {
                     {/* Image editing section */}
                     <td>
                       <div className="image-cell">
+                        {/* SAVED IMAGES */}
                         <div
                           className="image-preview"
                           style={{
                             display: "flex",
                             flexWrap: "wrap",
-                            gap: "10px",
+                            gap: "6px",
+                            marginBottom: "6px",
                           }}
                         >
                           {product.images && product.images.length > 0 ? (
@@ -1516,14 +1562,13 @@ const VendorDetails = () => {
                                 key={i}
                                 style={{
                                   position: "relative",
-                                  width: "60px",
-                                  height: "60px",
+                                  width: "45px",
+                                  height: "45px",
                                 }}
                               >
                                 <img
                                   src={`${config.apiBaseURL}${imgObj.image}`}
                                   alt={`Product-${i}`}
-                                  className="product-thumbnail"
                                   style={{
                                     width: "100%",
                                     height: "100%",
@@ -1535,17 +1580,17 @@ const VendorDetails = () => {
                                 <span
                                   onClick={() =>
                                     handleDeleteImage(index, imgObj.id)
-                                  } // 👈 Use imgObj.id
+                                  }
                                   style={{
                                     position: "absolute",
-                                    top: "-6px",
-                                    right: "-6px",
+                                    top: "-5px",
+                                    right: "-5px",
                                     backgroundColor: "#e68a00",
                                     color: "white",
                                     borderRadius: "50%",
-                                    width: "18px",
-                                    height: "18px",
-                                    fontSize: "12px",
+                                    width: "16px",
+                                    height: "16px",
+                                    fontSize: "11px",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
@@ -1558,43 +1603,151 @@ const VendorDetails = () => {
                               </div>
                             ))
                           ) : (
-                            <span>No Images</span>
+                            <span style={{ fontSize: "15px", color: "#888" }}>
+                              No Images
+                            </span>
                           )}
                         </div>
 
-                        <div
-                          className="image-edit"
-                          style={{ marginTop: "5px" }}
-                        >
-                          {product.isEditingImage ? (
-                            <>
-                              <input
-                                type="file"
-                                accept="image/*"
-                                multiple
-                                onChange={(e) =>
-                                  handleImageChange(
-                                    index,
-                                    Array.from(e.target.files)
-                                  )
-                                }
-                              />
-                              <button onClick={() => saveImages(index)}>
-                                Upload
-                              </button>
-                              <button
-                                onClick={() =>
-                                  cancelEditField(index, "isEditingImage")
-                                }
+                        {/* NEWLY SELECTED PREVIEW (not uploaded yet) */}
+                        {product.newImages && product.newImages.length > 0 && (
+                          <div
+                            className="new-image-preview"
+                            style={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: "6px",
+                              marginBottom: "6px",
+                            }}
+                          >
+                            {product.newImages.map((file, i) => (
+                              <div
+                                key={i}
+                                style={{
+                                  position: "relative",
+                                  width: "45px",
+                                  height: "45px",
+                                }}
                               >
-                                Cancel
-                              </button>
-                            </>
+                                <img
+                                  src={URL.createObjectURL(file)}
+                                  alt={file.name}
+                                  style={{
+                                    width: "100%",
+                                    height: "100%",
+                                    objectFit: "cover",
+                                    border: "1px solid #999",
+                                    borderRadius: "4px",
+                                  }}
+                                />
+                                <span
+                                  onClick={() => {
+                                    // remove previewed file
+                                    setSelectedVendorData((prev) => {
+                                      const updated = [...prev];
+                                      updated[index] = {
+                                        ...updated[index],
+                                        newImages: updated[
+                                          index
+                                        ].newImages.filter((_, j) => j !== i),
+                                      };
+                                      return updated;
+                                    });
+                                  }}
+                                  style={{
+                                    position: "absolute",
+                                    top: "-5px",
+                                    right: "-5px",
+                                    backgroundColor: "#cc0000",
+                                    color: "white",
+                                    borderRadius: "50%",
+                                    width: "16px",
+                                    height: "16px",
+                                    fontSize: "11px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    cursor: "pointer",
+                                  }}
+                                  title="Remove File"
+                                >
+                                  ×
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* EDIT MODE BUTTONS */}
+                        {/* EDIT MODE BUTTONS */}
+                        <div className="image-edit">
+                          {product.isEditingImage ? (
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                border: "1px solid #ccc",
+                                borderRadius: "6px",
+                                padding: "5px",
+                                
+                                backgroundColor: "#fff",
+                              }}
+                            >
+                              {/* LEFT: File input styled like native */}
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "8px",
+                                  flex: 1,
+                                }}
+                              >
+                                <input
+                                  type="file"
+                                  id={`file-input-${index}`}
+                                  accept="image/*"
+                                  multiple
+                                  style={{ flex: 1 }}
+                                  onChange={(e) =>
+                                    handleImageChange(
+                                      index,
+                                      Array.from(e.target.files)
+                                    )
+                                  }
+                                />
+                              </div>
+
+                              {/* RIGHT: Upload + Cancel */}
+                              <div
+                                style={{
+                                  display: "flex",
+                                  gap: "8px",
+                                  flexShrink: 0,
+                                }}
+                              >
+                                <button
+                                  className="save-btn"
+                                  onClick={() => saveImages(index)}
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  className="cancel-btn"
+                                  onClick={() =>
+                                    cancelEditField(index, "isEditingImage")
+                                  }
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
                           ) : (
                             <button
                               onClick={() =>
                                 enableEditField(index, "isEditingImage")
                               }
+                              style={{ width: "100%" }}
                             >
                               Upload Images
                             </button>
@@ -1617,7 +1770,7 @@ const VendorDetails = () => {
                               View Attachment
                             </a>
                           ) : (
-                            <span>No Attachments</span>
+                            <span  style={{ fontSize: "15px", color: "#888" }}>No Attachments</span>
                           )}
                         </div>
 
