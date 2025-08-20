@@ -34,7 +34,7 @@ const POOrderMaster = ({ user }) => {
   const [inwardLoadingIds, setInwardLoadingIds] = useState([]);
   const navigate = useNavigate(); // Initialize useNavigate
   const [showPlaceOrderPopup, setShowPlaceOrderPopup] = useState(false);
-  const [placeOrderDateTime, setPlaceOrderDateTime] = useState("");
+  const [placeOrderDateTime, setPlaceOrderDateTime] = useState(new Date());
 
   const [showOrderedTable, setShowOrderedTable] = useState(false);
   const [orderedItems, setOrderedItems] = useState([]);
@@ -1154,7 +1154,10 @@ const POOrderMaster = ({ user }) => {
               </button>
               <button
                 className="place-order-button"
-                onClick={() => setShowPlaceOrderPopup(true)}
+                onClick={() => {
+                  setPlaceOrderDateTime(new Date()); // prefill
+                  setShowPlaceOrderPopup(true);
+                }}
               >
                 Place Order
               </button>
@@ -1315,8 +1318,8 @@ const POOrderMaster = ({ user }) => {
         <div className="modal-overlay">
           <div className="popup" style={{ marginTop: "-80px" }}>
             <div className="popup-content">
-              <h3>Place Order - Date & Time</h3>
-              <label>Select Date and Time:</label>
+              <h3>Place Order</h3>
+              <label>Select Date:</label>
               <div className="date-input-containers">
                 <DatePicker
                   selected={placeOrderDateTime}

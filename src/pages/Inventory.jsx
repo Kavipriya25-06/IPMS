@@ -521,26 +521,36 @@ const Inventory = () => {
             Team: item.team || "N/A",
             Remarks: item.remarks || "N/A",
           }))
-        : reportData.map((item, index) => ({
-            "S.No": index + 1,
-            "Component ID": item.component_id || "N/A",
-            "Serial Number": item.serial_number || "N/A",
-            "SKU Number Inventory": item.sku_number_inventory || "N/A",
-            Category: item.category || "N/A",
-            "Component Type": item.component_type || "N/A",
-            Specification: item.specification || "N/A",
-            UOM: item.UOM || "N/A",
-            "Vendor Name": item.vendor_name || "N/A",
-            "Created Date": item.create_date || "N/A",
-            Price:
-              item.price !== undefined && item.price !== null
-                ? `₹${parseFloat(item.price).toLocaleString("en-IN", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}`
-                : "N/A",
-            Status: item.status || "N/A",
-          }));
+        : reportData.map((item, index) => {
+            const basePrice = item?.price ?? null;
+            const gstVal = item?.gst ?? null;
+            const computedTotal =
+              basePrice != null && gstVal != null && !isNaN(Number(gstVal))
+                ? Number(basePrice) * (1 + Number(gstVal) / 100)
+                : basePrice;
+            const totalPrice = item?.total_price ?? computedTotal;
+
+            return {
+              "S.No": index + 1,
+              "Component ID": item.component_id || "N/A",
+              "Serial Number": item.serial_number || "N/A",
+              "SKU Number Inventory": item.sku_number_inventory || "N/A",
+              Category: item.category || "N/A",
+              "Component Type": item.component_type || "N/A",
+              Specification: item.specification || "N/A",
+              UOM: item.UOM || "N/A",
+              "Vendor Name": item.vendor_name || "N/A",
+              "Created Date": item.create_date || "N/A",
+              Price: basePrice != null ? formatINR(basePrice) : "N/A",
+              "GST (%)":
+                gstVal != null && !isNaN(Number(gstVal))
+                  ? `${Number(gstVal)}%`
+                  : "N/A",
+              "Total Price": totalPrice != null ? formatINR(totalPrice) : "N/A",
+              Status: item.status || "N/A",
+              Remarks: item.remarks || "",
+            };
+          });
 
     generateCSV(formattedData, status);
   };
@@ -586,7 +596,10 @@ const Inventory = () => {
         "Vendor Name",
         "Created Date",
         "Price",
+        "GST (%)",
+        "Total Price",
         "Status",
+        "Remarks",
       ];
     }
 
@@ -778,6 +791,35 @@ const Inventory = () => {
     }
   };
 
+  // ---- Add below your other functions, above `return` ----
+  const getStatusScopedItems = () => {
+    if (statusFilter === "Tool") return []; // tools don't have price in your table
+
+    if (statusFilter === "Available") {
+      // Available includes Reserved in your UI
+      return filteredInventory.filter(
+        (item) => item.status === "Available" || item.status === "Reserved"
+      );
+    }
+
+    return filteredInventory.filter((item) => item.status === statusFilter);
+  };
+
+  const computeTotalCost = () => {
+    const items = getStatusScopedItems();
+    return items.reduce((sum, item) => {
+      // prefer total_price; fallback to price
+      const n = Number(item?.total_price ?? item?.price ?? 0);
+      return sum + (isNaN(n) ? 0 : n);
+    }, 0);
+  };
+
+  const formatINR = (amount) =>
+    `₹${Number(amount).toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+
   return (
     <div className="inventory-container">
       <div className="header">
@@ -880,6 +922,20 @@ const Inventory = () => {
                 (item) => item.status === statusFilter
               ).length;
             })()}
+          </span>
+
+          <span
+            style={{
+              marginLeft: "20px",
+              fontWeight: "bold",
+              fontSize: "20px",
+              color: "#333",
+            }}
+          >
+            Total Cost:
+          </span>
+          <span style={{ fontWeight: "bold", fontSize: "20px" }}>
+            {statusFilter === "Tool" ? "—" : formatINR(computeTotalCost())}
           </span>
         </div>
         {(fromDate || toDate) && (
@@ -1211,13 +1267,14 @@ const Inventory = () => {
                     : ""}
                 </th>
                 <th>Status</th>
+                <th>Remarks</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
                   <td
-                    colSpan="11"
+                    colSpan="12"
                     style={{ textAlign: "center", padding: "20px" }}
                   >
                     <div className="spinner" />
@@ -1279,6 +1336,7 @@ const Inventory = () => {
                             }}
                             style={{ cursor: "pointer" }}
                             className="specification-cell"
+                            title={firstRow.specification}
                           >
                             {editingComponentSpec === componentId ? (
                               <>
@@ -1335,6 +1393,7 @@ const Inventory = () => {
                             )}
                           </td>
                           <td></td>
+                          <td></td>
                         </tr>
 
                         {isExpanded &&
@@ -1385,7 +1444,12 @@ const Inventory = () => {
                               </td>
                               <td>{component.category || ""}</td>
                               <td>{component.component_type || ""}</td>
-                              <td>{row.specification || ""}</td>
+                              <td
+                                className="specification-cell"
+                                title={row.specification}
+                              >
+                                {row.specification || ""}
+                              </td>
                               <td>{row.UOM || ""}</td>
                               <td>{row.vendor_name || ""}</td>
                               <td>
@@ -1422,6 +1486,12 @@ const Inventory = () => {
                                     </button>
                                   )}
                               </td>{" "}
+                              <td
+                                className="specification-cell"
+                                title={row.remarks || ""}
+                              >
+                                {row.remarks || ""}
+                              </td>
                             </tr>
                           ))}
                       </React.Fragment>

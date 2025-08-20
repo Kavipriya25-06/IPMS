@@ -16,6 +16,29 @@ import {
   ToastContainerComponent,
 } from "./Toastify.jsx"; // Import Toastify utilities
 
+let _xlsxPromise = null;
+function loadXLSXFromCDN() {
+  if (typeof window !== "undefined" && window.XLSX) {
+    return Promise.resolve(window.XLSX);
+  }
+  if (_xlsxPromise) return _xlsxPromise;
+
+  _xlsxPromise = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src =
+      "https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js";
+    script.async = true;
+    script.onload = () =>
+      window.XLSX
+        ? resolve(window.XLSX)
+        : reject(new Error("XLSX failed to load"));
+    script.onerror = () => reject(new Error("Failed to load XLSX from CDN"));
+    document.head.appendChild(script);
+  });
+
+  return _xlsxPromise;
+}
+
 const Inwardlist = () => {
   const [inwardData, setInwardData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
@@ -138,7 +161,7 @@ const Inwardlist = () => {
 
   const updateInvoiceForPO = async (poId, invoiceNumber, invoiceDate) => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/inward/");
+      const res = await fetch(`${config.apiBaseURL}/inward/`);
       const inwardList = await res.json();
 
       const matchingInwards = inwardList.filter(
@@ -146,7 +169,7 @@ const Inwardlist = () => {
       );
 
       const updatePromises = matchingInwards.map((item) =>
-        fetch(`http://127.0.0.1:8000/inward/${item.inward_id}/`, {
+        fetch(`${config.apiBaseURL}/inward/${item.inward_id}/`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -162,7 +185,7 @@ const Inwardlist = () => {
         throw new Error(`${failed.length} updates failed`);
       }
 
-      // ✅ Update state locally to reflect changes without refresh
+      // Update state locally to reflect changes without refresh
       const updatedData = inwardData.map((item) => {
         if (item.po_master?.PO_id === poId) {
           return {
@@ -184,10 +207,136 @@ const Inwardlist = () => {
     }
   };
 
+  const exportToExcel = async () => {
+    try {
+      const XLSX = await loadXLSXFromCDN();
+
+      const headers = [
+        "PO_ID",
+        "Component ID",
+        "Component Specification",
+        "Vendor Name",
+        "Date",
+        "Invoice No",
+        "Invoice Date",
+        "Quantity",
+        "Unit Price",
+        "GST %",
+        "Grand Total",
+      ];
+
+      let totalQty = 0;
+      let totalGrand = 0;
+
+      const rows = filteredData.map((item) => {
+        const poId = getNestedValue(item, "po_master.PO_id", "");
+        const compId = getNestedValue(item, "po_master.cart.component_id", "");
+        const spec = getNestedValue(
+          item,
+          "po_master.cart.component_specification",
+          ""
+        );
+        const vendor = getNestedValue(item, "po_master.cart.vendor_name", "");
+        const dateStr = item.date
+          ? format(new Date(item.date), "dd-MM-yyyy")
+          : "-";
+        const invNo = item.invoice_number || "-";
+        const invDate = item.invoice_date
+          ? format(new Date(item.invoice_date), "dd-MM-yyyy")
+          : "-";
+        const qty = Number(item.quantity) || 0;
+        const unitPrice = Number(item.price) || 0;
+        const gst = Number(item.gst) || 0;
+        const grand = calculateGrandTotal(unitPrice, qty, gst);
+
+        totalQty += qty;
+        totalGrand += grand;
+
+        return [
+          poId,
+          compId,
+          spec,
+          vendor,
+          dateStr,
+          invNo,
+          invDate,
+          qty,
+          Number(unitPrice.toFixed(2)),
+          gst,
+          Number(grand.toFixed(2)),
+        ];
+      });
+
+      // Totals
+      rows.push([
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "Totals",
+        totalQty,
+        "",
+        "",
+        Number(totalGrand.toFixed(2)),
+      ]);
+
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+
+      // Autofilter + column widths
+      ws["!autofilter"] = {
+        ref: XLSX.utils.encode_range({
+          s: { r: 0, c: 0 },
+          e: { r: rows.length, c: headers.length - 1 },
+        }),
+      };
+      ws["!cols"] = [
+        { wch: 12 }, // PO_ID
+        { wch: 16 }, // Component ID
+        { wch: 30 }, // Spec
+        { wch: 20 }, // Vendor
+        { wch: 12 }, // Date
+        { wch: 16 }, // Inv No
+        { wch: 14 }, // Inv Date
+        { wch: 10 }, // Qty
+        { wch: 12 }, // Unit Price
+        { wch: 8 }, // GST
+        { wch: 14 }, // Grand Total
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Inward Report");
+
+      const ts = format(new Date(), "dd-MM-yyyy_HH-mm");
+      XLSX.writeFile(wb, `Inward_Report_${ts}.xlsx`);
+
+      showSuccessToast("Excel report generated.");
+    } catch (e) {
+      console.error("Excel export error:", e);
+      showErrorToast("Failed to generate Excel report.");
+    }
+  };
+
   return (
     <div>
       <div className="header">
         <h2>Inward</h2>
+        <button
+          onClick={exportToExcel}
+          className="generate-report-btn"
+          style={{
+            background: "#f5880cff",
+            color: "#fff",
+            border: "none",
+            padding: "8px 12px",
+            borderRadius: 6,
+            cursor: "pointer",
+          }}
+          title="Download Excel report"
+        >
+          Generate Report
+        </button>
       </div>
 
       <div className="table-container">
@@ -336,7 +485,8 @@ const Inwardlist = () => {
                   %
                 </td>
                 <td style={{ textAlign: "right" }}>
-                  ₹{calculateGrandTotal(
+                  ₹
+                  {calculateGrandTotal(
                     item.price,
                     item.quantity,
                     item.gst

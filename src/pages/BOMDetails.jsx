@@ -158,6 +158,12 @@ const BOMDetails = () => {
     fetchAllData();
   }, [bomId]);
 
+  const fmtINR = (n) =>
+    `₹${(Number.isFinite(n) ? n : 0).toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+
   const getLatestPriceInfo = (componentObj, vendorObj) => {
     if (!componentObj || !vendorObj) return { price: "-", tax: "-", date: "-" };
 
@@ -184,7 +190,7 @@ const BOMDetails = () => {
 
     return {
       price: parseFloat(latest.price),
-      tax: `${latest.tax}%`,
+      tax: parseFloat(latest?.tax ?? 0),
       date: format(parseISO(latest.current_time), "dd-MM-yyyy"),
     };
   };
@@ -306,16 +312,23 @@ const BOMDetails = () => {
       showErrorToast("An error occurred while deleting.");
     }
   };
-  const calculateTotalPrice = () => {
+  const calculateTotalPrice = (useLatest = false) => {
     let baseTotal = 0;
     let totalTaxAmount = 0;
 
-    selectedComponents.forEach((component) => {
-      const unitPrice = parseFloat(component.price || 0);
-      const quantity = parseFloat(component.quantity || 0);
-      const taxRate = parseFloat(component.tax || 0);
+    selectedComponents.forEach((row) => {
+      const qty = parseFloat(row.quantity || 0);
 
-      const base = unitPrice * quantity;
+      let unitPrice = parseFloat(row.price || 0);
+      let taxRate = parseFloat(row.tax || 0);
+
+      if (useLatest) {
+        const latest = getLatestPriceInfo(row.component, row.vendor);
+        if (Number.isFinite(latest.price)) unitPrice = latest.price;
+        if (Number.isFinite(latest.tax)) taxRate = latest.tax;
+      }
+
+      const base = unitPrice * qty;
       const taxAmount = (base * taxRate) / 100;
 
       baseTotal += base;
@@ -780,12 +793,11 @@ const BOMDetails = () => {
                   <th>Price</th>
                   <th>Tax</th>
                   <th style={{ backgroundColor: "#82817f" }}>
-                    Latest Price
-                  </th>{" "}
-                  {/* New column */}
-                  <th style={{ backgroundColor: "#82817f" }}>
                     Latest Date
                   </th>{" "}
+                  <th style={{ backgroundColor: "#82817f" }}>Latest Price</th>{" "}
+                  {/* New column */}
+                  <th style={{ backgroundColor: "#82817f" }}>Latest Tax</th>
                   {/* New column */}
                   <th>Actions</th>
                 </tr>
@@ -825,6 +837,7 @@ const BOMDetails = () => {
                         )}
                       </td>
                       <td>{component.tax}%</td>
+                      <td>{showLatestPrice ? date : ""}</td>
                       <td style={{ textAlign: "right" }}>
                         {showLatestPrice
                           ? `₹${parseFloat(price || 0).toLocaleString("en-IN", {
@@ -833,7 +846,11 @@ const BOMDetails = () => {
                             })}`
                           : ""}
                       </td>
-                      <td>{showLatestPrice ? date : ""}</td>
+                      <td style={{ textAlign: "right" }}>
+                        {showLatestPrice
+                          ? `${Number.isFinite(tax) ? tax : 0}%`
+                          : ""}
+                      </td>
                       <td>
                         <button
                           style={{
@@ -871,76 +888,103 @@ const BOMDetails = () => {
               <tfoot>
                 {(() => {
                   const { baseTotal, totalTaxAmount, grandTotal } =
-                    calculateTotalPrice();
+                    calculateTotalPrice(false);
+                  const latestTotals = calculateTotalPrice(true);
+                  const cell = { textAlign: "right", fontWeight: "bold" };
+
                   return (
                     <>
+                      {/* Row 1: Quantity + Base Price (+ latest base price on the right) */}
                       <tr>
-                        <td
-                          colSpan="4"
-                          style={{ textAlign: "right", fontWeight: "bold" }}
-                        >
+                        <td colSpan="4" style={cell}>
                           Total Quantity:
                         </td>
-                        <td
-                          colSpan="1"
-                          style={{ textAlign: "right", fontWeight: "bold" }}
-                        >
-                          {" "}
-                          {totalQuantity.toLocaleString("en-IN")}{" "}
+                        <td colSpan="1" style={cell}>
+                          {totalQuantity.toLocaleString("en-IN")}
                         </td>
-
-                        <td
-                          colSpan="2"
-                          style={{ textAlign: "right", fontWeight: "bold" }}
-                        >
+                        <td colSpan="2" style={cell}>
                           Total Base Price:
                         </td>
-                        <td
-                          colSpan="2"
-                          style={{ textAlign: "right", fontWeight: "bold" }}
-                        >
-                          ₹
-                          {baseTotal.toLocaleString("en-IN", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
+                        <td colSpan="2" style={cell}>
+                          {fmtINR(baseTotal)}
                         </td>
+
+                        {showLatestPrice ? (
+                          <>
+                            {/* under Latest Date + Latest Price */}
+                            <td colSpan="2" style={cell}>
+                              Total Base Price (Latest):
+                            </td>
+                            {/* under Latest Tax */}
+                            <td style={cell}>
+                              {fmtINR(latestTotals.baseTotal)}
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td colSpan="2" />
+                            <td />
+                          </>
+                        )}
+
+                        {/* Actions col to keep grid/borders intact */}
+                        <td />
                       </tr>
+
+                      {/* Row 2: Tax */}
                       <tr>
-                        <td
-                          colSpan="7"
-                          style={{ textAlign: "right", fontWeight: "bold" }}
-                        >
+                        <td colSpan="7" style={cell}>
                           Total Tax (GST):
                         </td>
-                        <td
-                          colSpan="2"
-                          style={{ textAlign: "right", fontWeight: "bold" }}
-                        >
-                          ₹
-                          {totalTaxAmount.toLocaleString("en-IN", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
+                        <td colSpan="2" style={cell}>
+                          {fmtINR(totalTaxAmount)}
                         </td>
+
+                        {showLatestPrice ? (
+                          <>
+                            <td colSpan="2" style={cell}>
+                              Total Tax (GST) (Latest):
+                            </td>
+                            <td style={cell}>
+                              {fmtINR(latestTotals.totalTaxAmount)}
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td colSpan="2" />
+                            <td />
+                          </>
+                        )}
+
+                        <td />
                       </tr>
+
+                      {/* Row 3: Grand total */}
                       <tr>
-                        <td
-                          colSpan="7"
-                          style={{ textAlign: "right", fontWeight: "bold" }}
-                        >
+                        <td colSpan="7" style={cell}>
                           Grand Total (Price + GST):
                         </td>
-                        <td
-                          colSpan="2"
-                          style={{ textAlign: "right", fontWeight: "bold" }}
-                        >
-                          ₹
-                          {grandTotal.toLocaleString("en-IN", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
+                        <td colSpan="2" style={cell}>
+                          {fmtINR(grandTotal)}
                         </td>
+
+                        {showLatestPrice ? (
+                          <>
+                            <td colSpan="2" style={cell}>
+                              Grand Total (Price + GST) (Latest):
+                            </td>
+                            <td style={cell}>
+                              {fmtINR(latestTotals.grandTotal)}
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td colSpan="2" />
+                            <td />
+                          </>
+                        )}
+
+                        <td />
                       </tr>
                     </>
                   );
