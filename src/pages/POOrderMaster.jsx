@@ -7,18 +7,19 @@ import Back from "../assets/Back.png";
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { FaTrashAlt, FaEdit, FaCheck } from "react-icons/fa";
 
 import {
   showSuccessToast,
   showErrorToast,
   showInfoToast,
   showWarningToast,
+  showMessageToast,
   ToastContainerComponent,
 } from "./Toastify.jsx"; // Import Toastify utilities
 import { format } from "date-fns";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { FaArrowLeft } from "react-icons/fa";
 
 const POOrderMaster = ({ user }) => {
   const { poId } = useParams(); // Extract PO ID from the route
@@ -34,7 +35,7 @@ const POOrderMaster = ({ user }) => {
   const [inwardLoadingIds, setInwardLoadingIds] = useState([]);
   const navigate = useNavigate(); // Initialize useNavigate
   const [showPlaceOrderPopup, setShowPlaceOrderPopup] = useState(false);
-  const [placeOrderDateTime, setPlaceOrderDateTime] = useState(new Date());
+  const [placeOrderDateTime, setPlaceOrderDateTime] = useState("");
 
   const [showOrderedTable, setShowOrderedTable] = useState(false);
   const [orderedItems, setOrderedItems] = useState([]);
@@ -59,6 +60,7 @@ const POOrderMaster = ({ user }) => {
 
   const [vendorLocation, setVendorLocation] = useState("N/A");
   const [vendorPOC, setVendorPOC] = useState(null);
+  const [editingIndex, setEditingIndex] = useState(null);
 
   // Pick a sensible "location" string from a vendor_sub_list row
   const extractLocation = (row) => {
@@ -140,7 +142,15 @@ const POOrderMaster = ({ user }) => {
     try {
       const response = await fetch(`${config.apiBaseURL}/po_master/`);
       const result = await response.json();
-      const filteredPO = result.filter((order) => order.PO_id === poId);
+      // const filteredPO = result.filter((order) => order.PO_id === poId);
+      // setPODetails(filteredPO);
+      const filteredPO = result
+        .filter((order) => order.PO_id === poId)
+        .map((item) => ({
+          ...item,
+          // keep the original quantity so edits can't exceed it later
+          original_quantity: item.cart_details?.quantity ?? 0,
+        }));
       setPODetails(filteredPO);
       setLoading(false);
     } catch (error) {
@@ -653,7 +663,6 @@ const POOrderMaster = ({ user }) => {
     let payload = {};
 
     // SHIPMENT case
-    // SHIPMENT case
     const hasShippedDate = field === "shipping_date" || item.shipping_date;
     const hasShippedQty =
       field === "shipping_qty" || item.shipping_qty || item.shipped_quantity;
@@ -676,16 +685,17 @@ const POOrderMaster = ({ user }) => {
         return;
       }
 
+      const pendingQty = item.quantity - shippedQty;
+
       payload = {
         shipped_quantity: shippedQty,
         shipped_date: shippedDate,
-        // pending from Ordered–Shipped
-        pending_quantity: Math.max(item.quantity - shippedQty, 0),
+        pending_quantity: pendingQty,
+        received_quantity: shippedQty, //  force received = shipped
       };
     }
 
     // RECEIVED case (if applicable)
-    // RECEIVED case
     const hasReceivedDate = field === "received_date" || item.received_date;
     const hasReceivedQty =
       field === "received_qty" || item.received_qty || item.received_quantity;
@@ -701,23 +711,10 @@ const POOrderMaster = ({ user }) => {
           ? value
           : updatedItem.received_date || item.received_date;
 
-      const shippedQtyNow =
-        updatedItem.shipping_qty ??
-        item.shipping_qty ??
-        item.shipped_quantity ??
-        0;
-
-      if (receivedQty > shippedQtyNow) {
-        showWarningToast("Received quantity cannot exceed shipped quantity.");
-        return;
-      }
-
       payload = {
         ...payload,
         received_quantity: receivedQty,
         received_date: receivedDate,
-        // pending from BOTH gaps: Ordered–Received
-        pending_quantity: Math.max(item.quantity - receivedQty, 0),
       };
     }
 
@@ -863,13 +860,10 @@ const POOrderMaster = ({ user }) => {
         ? item.shipping_qty
         : item.shipped_quantity || 0;
 
-    const orderedQty = Number(item.quantity || 0);
-
     const isDisabled =
-      shippingQty > orderedQty || // Over-shipped
-      shippingQty < 1 || // Less than 1
-      (item.shipped_date && item.shipped_quantity) || // Already finalized
-      isPOCancelled; // Cancelled PO
+      shippingQty > item.quantity ||
+      (item.shipped_date && item.shipped_quantity) ||
+      isPOCancelled;
 
     const handleFocus = (e) => {
       if (shippingQty > item.quantity) {
@@ -912,10 +906,9 @@ const POOrderMaster = ({ user }) => {
           : item.shipped_quantity || 0;
 
       const isDisabled =
-        receivedQty < 1 ||
-        receivedQty > shippedQty || //  Block if received > shipped
+        receivedQty > shippedQty || // Block if over-shipped
         (item.received_date && item.received_quantity) ||
-        isPOCancelled;
+        isPOCancelled; // Already saved
 
       const handleFocus = (e) => {
         if (shippedQty <= 0) {
@@ -1035,18 +1028,89 @@ const POOrderMaster = ({ user }) => {
     document.body.removeChild(a);
   };
 
+  // only updates value while typing
+  const handleQuantityChange = (index, newQty) => {
+    setPODetails((prev) => {
+      const updated = [...prev];
+      updated[index].cart_details.quantity = Number(newQty);
+      updated[index].cart_details.total_cost =
+        updated[index].cart_details.unit_price * Number(newQty);
+      return updated;
+    });
+  };
+
+  const saveQuantity = (index) => {
+    const row = poDetails[index]; // use poDetails, not poData
+    const qty = Number(row.cart_details.quantity);
+    const cap = Number(row.original_quantity ?? 0);
+
+    if (!Number.isFinite(qty)) {
+      showErrorToast("Invalid quantity");
+      return;
+    }
+
+    if (qty > cap) {
+      showErrorToast(`Quantity cannot exceed original (${cap})`);
+      handleQuantityChange(index, cap); // reset to max
+      return;
+    }
+
+    if (qty < 1) {
+      showErrorToast("Quantity must be at least 1");
+      handleQuantityChange(index, 1); // reset to min
+      return;
+    }
+
+    showSuccessToast("Quantity updated successfully");
+    setEditingIndex(null); // exit edit mode
+  };
+
+ const handleDeleteItem = async (id) => {
+  showMessageToast({
+    message: "Are you sure you want to delete this item?",
+    onConfirm: async () => {
+      try {
+        const res = await fetch(`${config.apiBaseURL}/po_master/${id}/`, {
+          method: "DELETE",
+        });
+
+        if (res.ok) {
+          setPODetails((prev) => prev.filter((item) => item.id !== id));
+          showSuccessToast("Item deleted successfully.");
+        } else {
+          showErrorToast("Failed to delete item.");
+        }
+      } catch (err) {
+        console.error(err);
+        showErrorToast("Error deleting item.");
+      }
+    },
+    onCancel: () => {
+      showInfoToast("Delete cancelled.");
+    },
+  });
+};
+
+
   return (
     <div>
-      <div className="header-back">
-        <button
-          className="back-btn"
-          onClick={() => navigate(-1)}
-          title="Back to PO List"
-        >
-          <FaArrowLeft />
-        </button>
-        <h2>PO Details</h2>
-      </div>{" "}
+      <h2>PO Details</h2>
+      <button
+        onClick={() => navigate("/po-list")}
+        style={{
+          background: "transparent",
+          border: "none",
+          cursor: "pointer",
+          padding: "4px",
+        }}
+        title="Back to BOM List"
+      >
+        <img
+          src={Back}
+          alt="Back to BOM list "
+          style={{ width: "20px", height: "20px" }}
+        />
+      </button>
       {loading ? (
         <p>Loading...</p>
       ) : error ? (
@@ -1054,11 +1118,58 @@ const POOrderMaster = ({ user }) => {
       ) : (
         <>
           <div className="po-header">
-            <div className="po-details">
-              <h3>PO Number: {poId}</h3>
-              <h3>Vendor Name: {vendorName}</h3>
-              <h3>GSTIN: {vendor_gstn}</h3>
-              <h3>Location: {vendorLocation}</h3>
+            <div
+              className="po-details"
+              style={{ display: "flex", gap: "100px", flexWrap: "wrap" }}
+            >
+              <h3
+                style={{
+                  maxWidth: "250px",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  cursor: "pointer",
+                }}
+                title={poId} // full content on hover
+              >
+                PO Number: {poId}
+              </h3>
+              <h3
+                style={{
+                  maxWidth: "250px",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  cursor: "pointer",
+                }}
+                title={vendorName}
+              >
+                Vendor Name: {vendorName}
+              </h3>
+              <h3
+                style={{
+                  maxWidth: "250px",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  cursor: "pointer",
+                }}
+                title={vendor_gstn}
+              >
+                GSTIN: {vendor_gstn}
+              </h3>
+              <h3
+                style={{
+                  maxWidth: "250px",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  cursor: "pointer",
+                }}
+                title={vendorLocation}
+              >
+                Location: {vendorLocation}
+              </h3>
             </div>
 
             <button
@@ -1082,7 +1193,7 @@ const POOrderMaster = ({ user }) => {
                   <th>Unit Price</th>
                   <th>GST</th>
                   <th>Total Cost</th>
-                  {/* {(isAdmin || isProcurement) && <th>Actions</th>} */}
+                  {(isAdmin || isProcurement) && <th>Actions</th>}
                 </tr>
               </thead>
               <tbody>
@@ -1093,7 +1204,49 @@ const POOrderMaster = ({ user }) => {
                     <td>{po.cart_details.component_type}</td>
                     <td>{po.cart_details.component_specification}</td>
                     <td>{po.cart_details.unit_of_measurement}</td>
-                    <td>{po.cart_details.quantity}</td>
+                    <td style={{ position: "relative", paddingRight: "30px" }}>
+                      {isAdmin &&
+                      poData?.status !== "Approved" &&
+                      editingIndex === index ? (
+                        <input
+                          type="number"
+                          value={po.cart_details.quantity}
+                          min="1"
+                          max={po.original_quantity}
+                          onChange={(e) =>
+                            handleQuantityChange(index, e.target.value)
+                          }
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") saveQuantity(index);
+                          }}
+                          style={{ width: "60px" }}
+                          autoFocus
+                        />
+                      ) : (
+                        po.cart_details.quantity
+                      )}
+                      {isAdmin && poData?.status !== "Approved" && (
+                        <span
+                          style={{
+                            position: "absolute",
+                            right: "5px",
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                            cursor: "pointer",
+                            color: editingIndex === index ? "green" : "#007bff",
+                          }}
+                          onClick={() => {
+                            if (editingIndex === index) {
+                              saveQuantity(index); // ✅ validate + toast + exit
+                            } else {
+                              setEditingIndex(index); // ✏️ enter edit mode
+                            }
+                          }}
+                        >
+                          {editingIndex === index ? <FaCheck /> : <FaEdit />}
+                        </span>
+                      )}
+                    </td>
 
                     <td style={{ textAlign: "right" }}>
                       ₹
@@ -1122,6 +1275,15 @@ const POOrderMaster = ({ user }) => {
                         }
                       )}
                     </td>
+                    {isAdmin && poData?.status !== "Approved" && (
+                      <td style={{ textAlign: "center" }}>
+                        <FaTrashAlt
+                          style={{ color: "red", cursor: "pointer" }}
+                          title="Delete Item"
+                          onClick={() => handleDeleteItem(po.id)}
+                        />
+                      </td>
+                    )}
                   </tr>
                 ))}
 
@@ -1154,10 +1316,7 @@ const POOrderMaster = ({ user }) => {
               </button>
               <button
                 className="place-order-button"
-                onClick={() => {
-                  setPlaceOrderDateTime(new Date()); // prefill
-                  setShowPlaceOrderPopup(true);
-                }}
+                onClick={() => setShowPlaceOrderPopup(true)}
               >
                 Place Order
               </button>
@@ -1313,13 +1472,15 @@ const POOrderMaster = ({ user }) => {
           </div>
         </div>
       )}
+
       {/* Naveen Added */}
+
       {showPlaceOrderPopup && (
         <div className="modal-overlay">
           <div className="popup" style={{ marginTop: "-80px" }}>
             <div className="popup-content">
-              <h3>Place Order</h3>
-              <label>Select Date:</label>
+              <h3>Place Order - Date & Time</h3>
+              <label>Select Date and Time:</label>
               <div className="date-input-containers">
                 <DatePicker
                   selected={placeOrderDateTime}
@@ -1548,41 +1709,13 @@ const POOrderMaster = ({ user }) => {
                               ? item.received_qty
                               : item.received_quantity !== undefined
                               ? item.received_quantity
-                              : ""
+                              : item.shipping_qty !== undefined
+                              ? item.shipping_qty
+                              : item.shipped_quantity || 0
                           }
-                          className={
-                            isPOCancelled || !isShippingSaved || isReceivedSaved
-                              ? "input-disabled"
-                              : "input-enabled"
-                          }
-                          disabled={
-                            isPOCancelled || !isShippingSaved || isReceivedSaved
-                          }
-                          onChange={(e) => handleChange(e, index)}
-                          onBlur={(e) => {
-                            const numericValue = Number(e.target.value);
-                            const shippedQty =
-                              item.shipping_qty !== undefined
-                                ? Number(item.shipping_qty)
-                                : Number(item.shipped_quantity || 0);
-
-                            if (numericValue > shippedQty) {
-                              showWarningToast(
-                                "Received quantity cannot exceed shipped quantity."
-                              );
-                              setTimeout(() => e.target.focus(), 0);
-                              return;
-                            }
-
-                            if (!Number.isNaN(numericValue)) {
-                              // PATCH + instantly refresh the row; saveDeliveryUpdate will also recalc pending_quantity
-                              saveDeliveryUpdate(
-                                index,
-                                "received_qty",
-                                numericValue
-                              );
-                            }
-                          }}
+                          className="input-disabled"
+                          disabled
+                          readOnly
                         />
                       </td>
 
@@ -1608,10 +1741,9 @@ const POOrderMaster = ({ user }) => {
 
                               const isoString = mergedDateTime.toISOString();
 
+                              // Compare with shipping date (if exists)
                               const shippingDate =
                                 item.shipping_date || item.shipped_date;
-
-                              // ❌ Block if before shipping date
                               if (
                                 shippingDate &&
                                 new Date(mergedDateTime) <
@@ -1620,10 +1752,10 @@ const POOrderMaster = ({ user }) => {
                                 showWarningToast(
                                   "Received date must be after shipping date."
                                 );
-                                return;
+                                return; // prevent saving
                               }
 
-                              // ✅ Save only if valid
+                              //Save only if valid
                               handleChange(
                                 {
                                   target: {
@@ -1647,14 +1779,10 @@ const POOrderMaster = ({ user }) => {
                             dropdownMode="select"
                             popperPlacement="bottom"
                             portalId="datepicker-portal-target"
-                            // ⛔ Disable if qty < 1
                             disabled={
                               isReceivedSaved ||
                               !isShippingSaved ||
-                              isPOCancelled ||
-                              Number(
-                                item.received_qty ?? item.received_quantity ?? 0
-                              ) < 1
+                              isPOCancelled
                             }
                             customInput={
                               <CustomReceivedDateInput item={item} />
@@ -1668,7 +1796,7 @@ const POOrderMaster = ({ user }) => {
                             }
                           />
 
-                          {/* Hide icon if date is finalized */}
+                          {/*Hide icon if date is finalized */}
                           {!isReceivedSaved && (
                             <i className="fas fa-calendar-alt calendar-icons"></i>
                           )}
@@ -1896,7 +2024,7 @@ const POOrderMaster = ({ user }) => {
                         shipped_quantity: enteredQty,
                         received_quantity: enteredQty,
                         shipped_date: shippedInput.date,
-                        po_master: selectedPendingItem.po_master.id,
+                        po_master: selectedPendingItem.po_master.id, // always the ID
                         order_placed_date_time:
                           selectedPendingItem.order_placed_date_time,
                         status: "Shipped",
@@ -1949,6 +2077,7 @@ const POOrderMaster = ({ user }) => {
           </div>
         </div>
       )}
+
       <ToastContainerComponent />
     </div>
   );

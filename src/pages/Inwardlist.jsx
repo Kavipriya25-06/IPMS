@@ -50,9 +50,16 @@ const Inwardlist = () => {
   // Fetch Inward Data
   const fetchInwardData = async () => {
     try {
-      const response = await fetch(`${config.apiBaseURL}/inward/`);
-      const data = await response.json();
-      const result = data.filter((item) => item.mode_to_inventory === true);
+      // 1. Fetch inward data
+      const inwardRes = await fetch(`${config.apiBaseURL}/inward/`);
+      const inwardData = await inwardRes.json();
+      const result = inwardData.filter(
+        (item) => item.mode_to_inventory === true
+      );
+
+      // 2. Fetch po_delivery data (for received_quantity)
+      const deliveryRes = await fetch(`${config.apiBaseURL}/po_delivery/`);
+      const deliveryData = await deliveryRes.json();
 
       const grouped = {};
       result.forEach((item) => {
@@ -64,10 +71,16 @@ const Inwardlist = () => {
         );
         const key = `${poId}_${componentId}`;
 
+        //  Sum all received_quantity for this PO & Component
+        const receivedQty = deliveryData
+          .filter((d) => d.PO_id === poId && d.component_id === componentId)
+          .reduce((sum, d) => sum + (d.received_quantity || 0), 0);
+
         if (!grouped[key]) {
           grouped[key] = {
             ...item,
-            quantity: 1,
+            quantity: 1, // inward qty (live)
+            totalQuantity: receivedQty, //sum of all received qty
             totalPrice: item.price || 0,
             gst: item.gst || 0,
           };
@@ -106,8 +119,8 @@ const Inwardlist = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const calculateGrandTotal = (unitPrice, quantity, gst) => {
-    const subtotal = unitPrice * quantity;
+  const calculateGrandTotal = (unitPrice, totalQuantity, gst) => {
+    const subtotal = unitPrice * totalQuantity;
     const gstAmount = subtotal * (gst / 100);
     return subtotal + gstAmount;
   };
@@ -200,7 +213,7 @@ const Inwardlist = () => {
       setInwardData(updatedData);
       setFilteredData(updatedData);
 
-      showSuccessToast("Invoice details updated for selected items.");
+      showSuccessToast("Invoice details updated for selected inward items.");
     } catch (err) {
       console.error("Update error:", err);
       showErrorToast("Failed to update invoice details");
@@ -372,6 +385,7 @@ const Inwardlist = () => {
               <th>Date</th>
               <th>Invoice No</th>
               <th>Invoice Date</th>
+              <th>Total Qty</th>
               <th style={{ textAlign: "right" }}>Quantity</th>
               <th style={{ textAlign: "right" }}>Unit Price</th>
               <th style={{ textAlign: "right" }}>GST</th>
@@ -384,13 +398,21 @@ const Inwardlist = () => {
               <tr key={index}>
                 <td>{getNestedValue(item, "po_master.PO_id")}</td>
                 <td>{getNestedValue(item, "po_master.cart.component_id")}</td>
-                <td>
+                <td
+                  className="specification-cell"
+                  title={item.po_master.cart.component_specification}
+                >
                   {getNestedValue(
                     item,
                     "po_master.cart.component_specification"
                   )}
                 </td>
-                <td>{getNestedValue(item, "po_master.cart.vendor_name")}</td>
+                <td
+                  className="specification-cell"
+                  title={item.po_master.cart.vendor_name}
+                >
+                  {getNestedValue(item, "po_master.cart.vendor_name")}
+                </td>
                 <td>
                   {item.date ? format(new Date(item.date), "dd-MM-yyyy") : "-"}
                 </td>
@@ -426,7 +448,11 @@ const Inwardlist = () => {
                         alignItems: "center",
                       }}
                     >
-                      <span style={{ flex: 1 }}>
+                      <span
+                        style={{ flex: 1 }}
+                        className="specification-cell"
+                        title={item.invoice_number}
+                      >
                         {item.invoice_number || "-"}
                       </span>
                       <FaEdit
@@ -445,7 +471,7 @@ const Inwardlist = () => {
                   )}
                 </td>
 
-                <td>
+                <td style={{ minWidth: "120px" }}>
                   {editingIndex === index ? (
                     <DatePicker
                       selected={
@@ -497,7 +523,7 @@ const Inwardlist = () => {
                     </div>
                   )}
                 </td>
-
+                <td style={{ textAlign: "right" }}>{item.totalQuantity}</td>
                 <td style={{ textAlign: "right" }}>{item.quantity}</td>
                 <td style={{ textAlign: "right" }}>₹{item.price || "-"}</td>
                 <td style={{ textAlign: "right" }}>
@@ -510,7 +536,7 @@ const Inwardlist = () => {
                   ₹
                   {calculateGrandTotal(
                     item.price,
-                    item.quantity,
+                    item.totalQuantity,
                     item.gst
                   ).toFixed(2)}
                 </td>

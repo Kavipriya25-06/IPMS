@@ -26,33 +26,43 @@ const ProfileDropdown = () => {
     <div className="profile-dropdown" ref={dropdownRef}>
       <div
         style={{
-          width: "40px",
-          height: "40px",
-          border: isOpen ? "2px solid #28a745" : "2px solid transparent",
-          borderRadius: "50%",
-          padding: "1px",
-          backgroundColor: isOpen ? "#e9f9ee" : "transparent",
           display: "flex",
-          justifyContent: "center",
           alignItems: "center",
-          cursor: "pointer",
-          transition: "all 0.2s ease-in-out",
-          boxShadow: isOpen ? "0 0 4px rgba(40, 167, 69, 0.4)" : "none",
-          gap:"10px"
+          gap: "2px",
         }}
-        onClick={() => setIsOpen(!isOpen)}
-        className="profile-picture"
       >
-        <img
-          src={defaultProfilePic}
-          alt="Profile"
+        <div
           style={{
-            width: "24px",
-            height: "24px",
-            objectFit: "contain",
+            width: "40px",
+            height: "40px",
+            border: isOpen ? "2px solid #28a745" : "2px solid transparent",
+            borderRadius: "50%",
+            padding: "1px",
+            backgroundColor: isOpen ? "#e9f9ee" : "transparent",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            cursor: "pointer",
+            transition: "all 0.2s ease-in-out",
+            boxShadow: isOpen ? "0 0 4px rgba(40, 167, 69, 0.4)" : "none",
           }}
-        />
-        <span style={{fontWeight:"500", color:"#373838ff", fontSize:"15px"}}>{user.role}</span>
+          onClick={() => setIsOpen(!isOpen)}
+          className="profile-picture"
+        >
+          <img
+            src={defaultProfilePic}
+            alt="Profile"
+            style={{
+              width: "24px",
+              height: "24px",
+              objectFit: "contain",
+            }}
+          />
+        </div>
+
+        <span style={{ fontWeight: 500, color: "#373838", fontSize: "15px" }}>
+          {user.role}
+        </span>
       </div>
 
       {isOpen && (

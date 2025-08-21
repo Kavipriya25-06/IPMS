@@ -109,7 +109,7 @@ function App() {
             <div style={{ paddingLeft: "10px", fontSize: "18px" }}>
               <TagIcon style={{ fontSize: "20px" }} />
             </div>
-            <div style={{ paddingLeft: "35px", paddingRight:"5px" }}>
+            <div style={{ paddingLeft: "10px", paddingRight:"5px" }}>
               <ProfileDropdown />
             </div>
           </div>

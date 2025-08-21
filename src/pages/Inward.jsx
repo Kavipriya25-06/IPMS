@@ -13,7 +13,6 @@ import {
 } from "./Toastify.jsx"; // Import Toastify utilities
 import { FaArrowLeft } from "react-icons/fa";
 
-
 const Inward = () => {
   const navigate = useNavigate();
   const [inwardData, setInwardData] = useState([]); // State to store inward data
@@ -798,12 +797,7 @@ const Inward = () => {
                 <td>{getNestedValue(item, "po_master.cart.component_id")}</td>
                 <td
                   className="specification-cell"
-                  title={
-                    getNestedValue(
-                      item,
-                      "po_master.cart.component_specification"
-                    ) || "-"
-                  }
+                  title={item.po_master.cart.component_specification}
                 >
                   {getNestedValue(
                     item,
@@ -812,9 +806,7 @@ const Inward = () => {
                 </td>
                 <td
                   className="specification-cell"
-                  title={
-                    getNestedValue(item, "po_master.cart.vendor_name") || "-"
-                  }
+                  title={item.po_master.cart.vendor_name}
                 >
                   {getNestedValue(item, "po_master.cart.vendor_name")}
                 </td>
