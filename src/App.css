@@ -3761,7 +3761,7 @@ ul {
 .table-action-buttons {
   display: flex;
   justify-content: flex-end;
-  gap: 22px !important; /* Space between buttons */
+  gap: 10px !important; /* Space between buttons */
 }
 
 /* Shared style for all action buttons (optional) */
@@ -5375,4 +5375,8 @@ ul {
 
 .qc-remove-btn:hover {
   background-color: #fdd;
+}
+
+.invoicedate{
+  font-size: 12px !important;
 }

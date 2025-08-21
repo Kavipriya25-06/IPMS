@@ -405,6 +405,7 @@ const RequestComponent = () => {
             <FaArrowLeft />
           </button>
           <h2>New Component</h2>
+          <h3 style={{marginLeft:"60px"}}>Total Requests: {filteredComponents.length}</h3>
         </div>{" "}
         <div className="button-group">
           <button className="add-comp" onClick={() => setShowModal(true)}>
@@ -526,6 +527,7 @@ const RequestComponent = () => {
           </span>
         </div>
       </div>
+
       <div>
         <div className="table-container">
           <table>

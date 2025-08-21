@@ -924,19 +924,23 @@ const Inventory = () => {
             })()}
           </span>
 
-          <span
-            style={{
-              marginLeft: "20px",
-              fontWeight: "bold",
-              fontSize: "20px",
-              color: "#333",
-            }}
-          >
-            Total Cost:
-          </span>
-          <span style={{ fontWeight: "bold", fontSize: "20px" }}>
-            {statusFilter === "Tool" ? "—" : formatINR(computeTotalCost())}
-          </span>
+          {statusFilter !== "Tool" && (
+            <>
+              <span
+                style={{
+                  marginLeft: "20px",
+                  fontWeight: "bold",
+                  fontSize: "20px",
+                  color: "#333",
+                }}
+              >
+                Total Cost:
+              </span>
+              <span style={{ fontWeight: "bold", fontSize: "20px" }}>
+                {statusFilter === "Tool" ? "—" : formatINR(computeTotalCost())}
+              </span>
+            </>
+          )}
         </div>
         {(fromDate || toDate) && (
           <div style={{ fontSize: "14px", color: "#555" }}>
@@ -1528,7 +1532,7 @@ const Inventory = () => {
                 visibleInventory >= Object.keys(groupedData).length && (
                   <tr>
                     <td
-                      colSpan="11"
+                      colSpan="12"
                       style={{
                         textAlign: "center",
                         padding: "10px",

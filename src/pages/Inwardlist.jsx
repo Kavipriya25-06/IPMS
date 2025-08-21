@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { FaCalendarAlt } from "react-icons/fa";
+import Filter from "../assets/Filter_icon.svg";
 
 import {
   showSuccessToast,
@@ -15,29 +16,6 @@ import {
   showWarningToast,
   ToastContainerComponent,
 } from "./Toastify.jsx"; // Import Toastify utilities
-
-let _xlsxPromise = null;
-function loadXLSXFromCDN() {
-  if (typeof window !== "undefined" && window.XLSX) {
-    return Promise.resolve(window.XLSX);
-  }
-  if (_xlsxPromise) return _xlsxPromise;
-
-  _xlsxPromise = new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src =
-      "https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js";
-    script.async = true;
-    script.onload = () =>
-      window.XLSX
-        ? resolve(window.XLSX)
-        : reject(new Error("XLSX failed to load"));
-    script.onerror = () => reject(new Error("Failed to load XLSX from CDN"));
-    document.head.appendChild(script);
-  });
-
-  return _xlsxPromise;
-}
 
 const Inwardlist = () => {
   const [inwardData, setInwardData] = useState([]);
@@ -52,6 +30,8 @@ const Inwardlist = () => {
   const [editingIndex, setEditingIndex] = useState(null);
   const [invoiceNumberInput, setInvoiceNumberInput] = useState("");
   const [invoiceDateInput, setInvoiceDateInput] = useState("");
+  const [filterDate, setFilterDate] = useState(null);
+  const [showDateFilter, setShowDateFilter] = useState(false);
 
   const navigate = useNavigate();
 
@@ -152,7 +132,14 @@ const Inwardlist = () => {
         backgroundColor: "#fff",
       }}
     >
-      <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>
+      <span
+        style={{
+          flex: 1,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          fontSize: "12px",
+        }}
+      >
         {value || "dd-mm-yyyy"}
       </span>
       <FaCalendarAlt style={{ color: "#333", marginLeft: "6px" }} />
@@ -160,6 +147,19 @@ const Inwardlist = () => {
   ));
 
   const updateInvoiceForPO = async (poId, invoiceNumber, invoiceDate) => {
+    if (!invoiceNumber && !invoiceDate) {
+      showWarningToast("Invoice Number and Invoice Date are required");
+      return;
+    }
+    if (!invoiceNumber) {
+      showWarningToast("Invoice Number is required");
+      return;
+    }
+    if (!invoiceDate) {
+      showWarningToast("Invoice Date is required");
+      return;
+    }
+
     try {
       const res = await fetch(`${config.apiBaseURL}/inward/`);
       const inwardList = await res.json();
@@ -185,7 +185,7 @@ const Inwardlist = () => {
         throw new Error(`${failed.length} updates failed`);
       }
 
-      // Update state locally to reflect changes without refresh
+      // Update state locally
       const updatedData = inwardData.map((item) => {
         if (item.po_master?.PO_id === poId) {
           return {
@@ -198,148 +198,170 @@ const Inwardlist = () => {
       });
 
       setInwardData(updatedData);
-      setFilteredData(updatedData); // if you're using filteredData separately
+      setFilteredData(updatedData);
 
-      showSuccessToast("Invoice details updated for all inward items.");
+      showSuccessToast("Invoice details updated for selected items.");
     } catch (err) {
       console.error("Update error:", err);
       showErrorToast("Failed to update invoice details");
     }
   };
 
-  const exportToExcel = async () => {
-    try {
-      const XLSX = await loadXLSXFromCDN();
-
-      const headers = [
-        "PO_ID",
-        "Component ID",
-        "Component Specification",
-        "Vendor Name",
-        "Date",
-        "Invoice No",
-        "Invoice Date",
-        "Quantity",
-        "Unit Price",
-        "GST %",
-        "Grand Total",
-      ];
-
-      let totalQty = 0;
-      let totalGrand = 0;
-
-      const rows = filteredData.map((item) => {
-        const poId = getNestedValue(item, "po_master.PO_id", "");
-        const compId = getNestedValue(item, "po_master.cart.component_id", "");
-        const spec = getNestedValue(
-          item,
-          "po_master.cart.component_specification",
-          ""
-        );
-        const vendor = getNestedValue(item, "po_master.cart.vendor_name", "");
-        const dateStr = item.date
-          ? format(new Date(item.date), "dd-MM-yyyy")
-          : "-";
-        const invNo = item.invoice_number || "-";
-        const invDate = item.invoice_date
-          ? format(new Date(item.invoice_date), "dd-MM-yyyy")
-          : "-";
-        const qty = Number(item.quantity) || 0;
-        const unitPrice = Number(item.price) || 0;
-        const gst = Number(item.gst) || 0;
-        const grand = calculateGrandTotal(unitPrice, qty, gst);
-
-        totalQty += qty;
-        totalGrand += grand;
-
-        return [
-          poId,
-          compId,
-          spec,
-          vendor,
-          dateStr,
-          invNo,
-          invDate,
-          qty,
-          Number(unitPrice.toFixed(2)),
-          gst,
-          Number(grand.toFixed(2)),
-        ];
-      });
-
-      // Totals
-      rows.push([
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "Totals",
-        totalQty,
-        "",
-        "",
-        Number(totalGrand.toFixed(2)),
-      ]);
-
-      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-
-      // Autofilter + column widths
-      ws["!autofilter"] = {
-        ref: XLSX.utils.encode_range({
-          s: { r: 0, c: 0 },
-          e: { r: rows.length, c: headers.length - 1 },
-        }),
-      };
-      ws["!cols"] = [
-        { wch: 12 }, // PO_ID
-        { wch: 16 }, // Component ID
-        { wch: 30 }, // Spec
-        { wch: 20 }, // Vendor
-        { wch: 12 }, // Date
-        { wch: 16 }, // Inv No
-        { wch: 14 }, // Inv Date
-        { wch: 10 }, // Qty
-        { wch: 12 }, // Unit Price
-        { wch: 8 }, // GST
-        { wch: 14 }, // Grand Total
-      ];
-
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Inward Report");
-
-      const ts = format(new Date(), "dd-MM-yyyy_HH-mm");
-      XLSX.writeFile(wb, `Inward_Report_${ts}.xlsx`);
-
-      showSuccessToast("Excel report generated.");
-    } catch (e) {
-      console.error("Excel export error:", e);
-      showErrorToast("Failed to generate Excel report.");
+  const generateInwardReport = () => {
+    if (!filteredData || filteredData.length === 0) {
+      showInfoToast("No data available to export.");
+      return;
     }
+
+    const formatDate = (val) =>
+      val ? new Date(val).toLocaleDateString("en-GB") : "-";
+
+    const formatCurrency = (value) =>
+      value ? `₹${parseFloat(value).toFixed(2)}` : "-";
+
+    const formatGST = (gst) =>
+      gst % 1 === 0 ? `${parseInt(gst)}%` : `${parseFloat(gst)}%`;
+
+    const calculateGrandTotal = (unitPrice, qty, gst) => {
+      const total = (parseFloat(unitPrice) || 0) * (parseInt(qty) || 0);
+      const gstAmount = (total * (parseFloat(gst) || 0)) / 100;
+      return total + gstAmount;
+    };
+
+    const getNestedValue = (obj, path, defaultVal = "-") => {
+      return (
+        path.split(".").reduce((acc, part) => acc?.[part], obj) ?? defaultVal
+      );
+    };
+
+    const formattedData = filteredData.map((item, index) => {
+      const price = item.price || 0;
+      const quantity = item.quantity || 0;
+      const gst = item.gst || 0;
+
+      return {
+        "S.No": index + 1,
+        PO_ID: getNestedValue(item, "po_master.PO_id"),
+        "Component ID": getNestedValue(item, "po_master.cart.component_id"),
+        "Component Specification": getNestedValue(
+          item,
+          "po_master.cart.component_specification"
+        ),
+        "Vendor Name": getNestedValue(item, "po_master.cart.vendor_name"),
+        Date: formatDate(item.date),
+        "Invoice No": item.invoice_number || "-",
+        "Invoice Date": formatDate(item.invoice_date),
+        Quantity: quantity,
+        "Unit Price": formatCurrency(price),
+        GST: formatGST(gst),
+        "Grand Total": formatCurrency(
+          calculateGrandTotal(price, quantity, gst)
+        ),
+      };
+    });
+
+    generateCSV(formattedData, "Inward_Report");
   };
+
+  const generateCSV = (data, filename) => {
+    const headers = Object.keys(data[0]).join(",");
+    const rows = data.map((row) =>
+      Object.values(row)
+        .map((val) => `"${val}"`)
+        .join(",")
+    );
+    const csvContent = [headers, ...rows].join("\n");
+
+    // Add UTF-8 BOM for Excel to recognize ₹ and other characters correctly
+    const BOM = "\uFEFF";
+    const blob = new Blob([BOM + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `${filename}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  };
+
+  const filteredByDate = filterDate
+    ? filteredData.filter(
+        (item) =>
+          item.date &&
+          new Date(item.date).toDateString() === filterDate.toDateString()
+      )
+    : filteredData;
+
+  useEffect(() => {
+    if (filterDate) window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [filterDate]);
 
   return (
     <div>
       <div className="header">
         <h2>Inward</h2>
-        <button
-          onClick={exportToExcel}
-          className="generate-report-btn"
-          style={{
-            background: "#f5880cff",
-            color: "#fff",
-            border: "none",
-            padding: "8px 12px",
-            borderRadius: 6,
-            cursor: "pointer",
-          }}
-          title="Download Excel report"
-        >
-          Generate Report
-        </button>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          {filterDate && (
+            <div
+              style={{
+                fontSize: "14px",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              🗓️ <span>{format(filterDate, "dd-MM-yyyy")}</span>
+            </div>
+          )}
+          <div style={{ position: "relative", display: "inline-block" }}>
+            <button
+              style={{
+                cursor: "pointer",
+                background: "transparent",
+                border: "none",
+                padding: "0",
+              }}
+              title="Filter by Date"
+              onClick={() => setShowDateFilter((prev) => !prev)}
+            >
+              <img
+                src={Filter}
+                alt="Filter"
+                style={{ width: "25px", height: "30px" }}
+              />
+            </button>
+
+            <DatePicker
+              selected={filterDate}
+              onChange={(date) => {
+                setFilterDate(date);
+                setShowDateFilter(false); // Close calendar on select
+              }}
+              open={showDateFilter}
+              onClickOutside={() => setShowDateFilter(false)} // Close when clicked outside
+              dateFormat="dd-MM-yyyy"
+              showMonthDropdown
+              showYearDropdown
+              dropdownMode="select"
+              popperPlacement="bottom-start"
+              wrapperClassName="date-filter-datepicker"
+              customInput={<></>} // prevent showing an input at all
+            />
+          </div>
+
+          <button
+            className="generate-report-btn"
+            onClick={generateInwardReport}
+          >
+            Generate Report
+          </button>
+        </div>
       </div>
 
-      <div className="table-container">
+      <div className="table-container" style={{ marginTop: "-10px" }}>
         <table>
           <thead>
             <tr>
@@ -358,7 +380,7 @@ const Inwardlist = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredData.map((item, index) => (
+            {filteredByDate.map((item, index) => (
               <tr key={index}>
                 <td>{getNestedValue(item, "po_master.PO_id")}</td>
                 <td>{getNestedValue(item, "po_master.cart.component_id")}</td>
@@ -423,7 +445,7 @@ const Inwardlist = () => {
                   )}
                 </td>
 
-                <td style={{ minWidth: "130px" }}>
+                <td>
                   {editingIndex === index ? (
                     <DatePicker
                       selected={

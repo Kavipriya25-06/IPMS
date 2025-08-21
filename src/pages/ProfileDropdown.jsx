@@ -38,6 +38,7 @@ const ProfileDropdown = () => {
           cursor: "pointer",
           transition: "all 0.2s ease-in-out",
           boxShadow: isOpen ? "0 0 4px rgba(40, 167, 69, 0.4)" : "none",
+          gap:"10px"
         }}
         onClick={() => setIsOpen(!isOpen)}
         className="profile-picture"
@@ -51,6 +52,7 @@ const ProfileDropdown = () => {
             objectFit: "contain",
           }}
         />
+        <span style={{fontWeight:"500", color:"#373838ff", fontSize:"15px"}}>{user.role}</span>
       </div>
 
       {isOpen && (
