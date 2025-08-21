@@ -13,6 +13,7 @@ const QCForm = () => {
   const [componentType, setComponentType] = useState("");
   const [questions, setQuestions] = useState([""]);
   const [componentTypesList, setComponentTypesList] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetch(`${config.apiBaseURL}/component/`)
@@ -46,10 +47,10 @@ const QCForm = () => {
 
   const handleRemoveQuestion = (index) => {
     const updated = questions.filter((_, i) => i !== index);
-    setQuestions(updated);
+    setQuestions(updated.length ? updated : [""]);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!componentType) {
@@ -57,15 +58,60 @@ const QCForm = () => {
       return;
     }
 
-    const hasEmpty = questions.some((q) => q.trim() === "");
-    if (hasEmpty) {
-      showErrorToast("Please fill in all question fields.");
+    const cleaned = questions.map((q) => q.trim()).filter(Boolean);
+    if (cleaned.length === 0) {
+      showErrorToast("Please enter at least one question.");
       return;
     }
 
-    console.log("Component Type:", componentType);
-    console.log("Questions:", questions);
-    showSuccessToast("Form submitted successfully!");
+    try {
+      setIsSubmitting(true);
+
+      // 1) Ensure the component type exists in QC component types
+      //    If it already exists, the API may return 400/409 — we ignore that and continue.
+      const ctRes = await fetch(`${config.apiBaseURL}/qc_component_type/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ component_type: componentType }),
+      });
+
+      if (!ctRes.ok && ctRes.status !== 400 && ctRes.status !== 409) {
+        // Not a "already exists" error -> surface it but still try questions
+        const msg = await ctRes.text();
+        console.warn("qc_component_type POST warning:", msg);
+      }
+
+      // 2) POST each question for this component type
+      const results = await Promise.all(
+        cleaned.map((q) =>
+          fetch(`${config.apiBaseURL}/qc_question/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              component_type: componentType,
+              question: q,
+            }),
+          })
+        )
+      );
+
+      const failed = results.filter((r) => !r.ok);
+      if (failed.length > 0) {
+        showErrorToast(
+          `Saved with ${failed.length} error(s). Some questions failed.`
+        );
+      } else {
+        showSuccessToast("QC questions saved successfully!");
+        // Reset form
+        setComponentType("");
+        setQuestions([""]);
+      }
+    } catch (err) {
+      console.error("Submit error:", err);
+      showErrorToast("Something went wrong while saving. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCancel = () => {
@@ -124,13 +170,18 @@ const QCForm = () => {
         </div>
 
         <div className="qc-button-group">
-          <button type="submit" className="qc-submit-button">
-            Submit
+          <button
+            type="submit"
+            className="qc-submit-button"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Saving..." : "Submit"}
           </button>
           <button
             type="button"
             className="qc-cancel-button"
             onClick={handleCancel}
+            disabled={isSubmitting}
           >
             Cancel
           </button>
