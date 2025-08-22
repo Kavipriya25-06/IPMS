@@ -51,6 +51,8 @@ const Inventory = () => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [editingRemarks, setEditingRemarks] = useState(null); // which row is being edited
+  const [tempRemarks, setTempRemarks] = useState(""); // temp value for input
 
   const [componentTypeDropdownOpen, setComponentTypeDropdownOpen] =
     useState(false);
@@ -445,39 +447,40 @@ const Inventory = () => {
     setFilteredInventory(filtered);
   };
 
-  const handleDoubleClick = (id, currentSKU) => {
-    setEditingSKU(id); // Set edit mode for the row
-    setTempSKU(currentSKU); // Set the temporary SKU value
+  // Enter edit mode
+  const handleDoubleClick = (serialNumber, currentSKU) => {
+    setEditingSKU(serialNumber); // ✅ use unique serial_number
+    setTempSKU(currentSKU || "");
   };
 
-  const handleSKUChange = (value) => {
-    setTempSKU(value); // Update the temporary SKU value
-  };
+  // Track typing
+  const handleSKUChange = (value) => setTempSKU(value);
 
-  const handleSaveSKU = async (id) => {
-    const item = filteredInventory.find((row) => row.id === id);
+  // Save
+  const handleSaveSKU = async (serialNumber) => {
+    const item = filteredInventory.find(
+      (row) => row.serial_number === serialNumber
+    );
     if (!item) return;
 
     try {
       const response = await fetch(
-        `${config.apiBaseURL}/inventory/${item.serial_number}/`,
+        `${config.apiBaseURL}/inventory/${serialNumber}/`,
         {
           method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ sku_number_inventory: tempSKU }),
         }
       );
 
       if (!response.ok) {
-        console.error("Failed to update SKU number:", response.statusText);
         showErrorToast("Failed to update SKU number.");
       } else {
-        // Update the state after a successful PATCHs request
         setFilteredInventory((prev) =>
           prev.map((row) =>
-            row.id === id ? { ...row, sku_number: tempSKU } : row
+            row.serial_number === serialNumber
+              ? { ...row, sku_number_inventory: tempSKU }
+              : row
           )
         );
         showSuccessToast("SKU number updated successfully!");
@@ -486,10 +489,12 @@ const Inventory = () => {
       console.error("Error updating SKU number:", error);
       showErrorToast("Error updating SKU number.");
     } finally {
-      setEditingSKU(null); // Exit edit mode
+      setEditingSKU(null);
+      setTempSKU("");
     }
   };
 
+  // Cancel
   const handleCancelEdit = () => {
     setEditingSKU(null);
     setTempSKU("");
@@ -521,26 +526,36 @@ const Inventory = () => {
             Team: item.team || "N/A",
             Remarks: item.remarks || "N/A",
           }))
-        : reportData.map((item, index) => ({
-            "S.No": index + 1,
-            "Component ID": item.component_id || "N/A",
-            "Serial Number": item.serial_number || "N/A",
-            "SKU Number Inventory": item.sku_number_inventory || "N/A",
-            Category: item.category || "N/A",
-            "Component Type": item.component_type || "N/A",
-            Specification: item.specification || "N/A",
-            UOM: item.UOM || "N/A",
-            "Vendor Name": item.vendor_name || "N/A",
-            "Created Date": item.create_date || "N/A",
-            Price:
-              item.price !== undefined && item.price !== null
-                ? `₹${parseFloat(item.price).toLocaleString("en-IN", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}`
-                : "N/A",
-            Status: item.status || "N/A",
-          }));
+        : reportData.map((item, index) => {
+            const basePrice = item?.price ?? null;
+            const gstVal = item?.gst ?? null;
+            const computedTotal =
+              basePrice != null && gstVal != null && !isNaN(Number(gstVal))
+                ? Number(basePrice) * (1 + Number(gstVal) / 100)
+                : basePrice;
+            const totalPrice = item?.total_price ?? computedTotal;
+
+            return {
+              "S.No": index + 1,
+              "Component ID": item.component_id || "N/A",
+              "Serial Number": item.serial_number || "N/A",
+              "SKU Number Inventory": item.sku_number_inventory || "N/A",
+              Category: item.category || "N/A",
+              "Component Type": item.component_type || "N/A",
+              Specification: item.specification || "N/A",
+              UOM: item.UOM || "N/A",
+              "Vendor Name": item.vendor_name || "N/A",
+              "Created Date": item.create_date || "N/A",
+              Price: basePrice != null ? formatINR(basePrice) : "N/A",
+              "GST (%)":
+                gstVal != null && !isNaN(Number(gstVal))
+                  ? `${Number(gstVal)}%`
+                  : "N/A",
+              "Total Price": totalPrice != null ? formatINR(totalPrice) : "N/A",
+              Status: item.status || "N/A",
+              Remarks: item.remarks || "",
+            };
+          });
 
     generateCSV(formattedData, status);
   };
@@ -586,7 +601,10 @@ const Inventory = () => {
         "Vendor Name",
         "Created Date",
         "Price",
+        "GST (%)",
+        "Total Price",
         "Status",
+        "Remarks",
       ];
     }
 
@@ -778,6 +796,90 @@ const Inventory = () => {
     }
   };
 
+  // ---- Add below your other functions, above `return` ----
+  const getStatusScopedItems = () => {
+    if (statusFilter === "Tool") return []; // tools don't have price in your table
+
+    if (statusFilter === "Available") {
+      // Available includes Reserved in your UI
+      return filteredInventory.filter(
+        (item) => item.status === "Available" || item.status === "Reserved"
+      );
+    }
+
+    return filteredInventory.filter((item) => item.status === statusFilter);
+  };
+
+  const computeTotalCost = () => {
+    const items = getStatusScopedItems();
+    return items.reduce((sum, item) => {
+      // prefer total_price; fallback to price
+      const n = Number(item?.total_price ?? item?.price ?? 0);
+      return sum + (isNaN(n) ? 0 : n);
+    }, 0);
+  };
+
+  const formatINR = (amount) =>
+    `₹${Number(amount).toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+
+  // Enter edit mode
+  const handleDoubleClickRemarks = (serialNumber, currentRemarks) => {
+    setEditingRemarks(serialNumber);
+    setTempRemarks(currentRemarks || "");
+  };
+
+  // Track typing
+  const handleRemarksChange = (value) => {
+    setTempRemarks(value);
+  };
+
+  // Save
+  const handleSaveRemarks = async (serialNumber) => {
+    const item = filteredInventory.find(
+      (row) => row.serial_number === serialNumber
+    );
+    if (!item) return;
+
+    try {
+      const response = await fetch(
+        `${config.apiBaseURL}/inventory/${serialNumber}/`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ remarks: tempRemarks }),
+        }
+      );
+
+      if (!response.ok) {
+        showErrorToast("Failed to update Remarks.");
+      } else {
+        setFilteredInventory((prev) =>
+          prev.map((row) =>
+            row.serial_number === serialNumber
+              ? { ...row, remarks: tempRemarks }
+              : row
+          )
+        );
+        showSuccessToast("Remarks updated successfully!");
+      }
+    } catch (error) {
+      console.error("Error updating remarks:", error);
+      showErrorToast("Error updating remarks.");
+    } finally {
+      setEditingRemarks(null); // exit edit mode
+      setTempRemarks(""); // reset
+    }
+  };
+
+  // Cancel
+  const handleCancelRemarks = () => {
+    setEditingRemarks(null);
+    setTempRemarks("");
+  };
+
   return (
     <div className="inventory-container">
       <div className="header">
@@ -881,6 +983,24 @@ const Inventory = () => {
               ).length;
             })()}
           </span>
+
+          {statusFilter !== "Tool" && (
+            <>
+              <span
+                style={{
+                  marginLeft: "20px",
+                  fontWeight: "bold",
+                  fontSize: "20px",
+                  color: "#333",
+                }}
+              >
+                Total Cost:
+              </span>
+              <span style={{ fontWeight: "bold", fontSize: "20px" }}>
+                {statusFilter === "Tool" ? "—" : formatINR(computeTotalCost())}
+              </span>
+            </>
+          )}
         </div>
         {(fromDate || toDate) && (
           <div style={{ fontSize: "14px", color: "#555" }}>
@@ -1211,10 +1331,21 @@ const Inventory = () => {
                     : ""}
                 </th>
                 <th>Status</th>
+                <th>Remarks</th>
               </tr>
             </thead>
             <tbody>
-              {Object.keys(groupedData).length > 0 ? (
+              {loading ? (
+                <tr>
+                  <td
+                    colSpan="12"
+                    style={{ textAlign: "center", padding: "20px" }}
+                  >
+                    <div className="spinner" />
+                    <span>Loading...</span>
+                  </td>
+                </tr>
+              ) : Object.keys(groupedData).length > 0 ? (
                 Object.keys(groupedData)
                   .slice(0, visibleInventory)
                   .map((componentId) => {
@@ -1269,6 +1400,7 @@ const Inventory = () => {
                             }}
                             style={{ cursor: "pointer" }}
                             className="specification-cell"
+                            title={firstRow.specification}
                           >
                             {editingComponentSpec === componentId ? (
                               <>
@@ -1294,9 +1426,7 @@ const Inventory = () => {
                                 </button>
                               </>
                             ) : (
-                              <span>
-                                {firstRow.specification || "Not Available"}
-                              </span>
+                              <span>{firstRow.specification || "No data"}</span>
                             )}
                           </td>
                           <td>{firstRow.UOM || ""}</td>
@@ -1325,6 +1455,7 @@ const Inventory = () => {
                             )}
                           </td>
                           <td></td>
+                          <td></td>
                         </tr>
 
                         {isExpanded &&
@@ -1346,36 +1477,66 @@ const Inventory = () => {
                               <td>{row.serial_number} </td>
                               <td
                                 onDoubleClick={() =>
-                                  handleDoubleClick(row.id, row.sku_number)
+                                  handleDoubleClick(
+                                    row.serial_number,
+                                    row.sku_number_inventory
+                                  )
                                 }
                                 style={{ cursor: "pointer" }}
                               >
-                                {editingSKU === row.id ? (
-                                  <>
-                                    <input
-                                      type="text"
-                                      value={tempSKU}
-                                      onChange={(e) =>
-                                        handleSKUChange(e.target.value)
-                                      }
-                                      autoFocus
-                                    />
-                                    <button
-                                      onClick={() => handleSaveSKU(row.id)}
+                                <div className="remarks-edit-container">
+                                  {editingSKU === row.serial_number ? (
+                                    <>
+                                      <input
+                                        type="text"
+                                        className="remarks-input"
+                                        value={tempSKU}
+                                        onChange={(e) =>
+                                          handleSKUChange(e.target.value)
+                                        }
+                                        autoFocus
+                                      />
+                                      <button
+                                        className="remarks-btn save-btn"
+                                        onClick={() =>
+                                          handleSaveSKU(row.serial_number)
+                                        }
+                                      >
+                                        Save
+                                      </button>
+                                      <button
+                                        className="remarks-btn cancel-btn"
+                                        onClick={handleCancelEdit}
+                                      >
+                                        Cancel
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <span
+                                      style={{
+                                        color:
+                                          row.sku_number_inventory &&
+                                          row.sku_number_inventory.trim() !== ""
+                                            ? "black"
+                                            : "gray",
+                                      }}
                                     >
-                                      Save
-                                    </button>
-                                    <button onClick={handleCancelEdit}>
-                                      Cancel
-                                    </button>
-                                  </>
-                                ) : (
-                                  <span>{row.sku_number_inventory}</span>
-                                )}
+                                      {row.sku_number_inventory &&
+                                      row.sku_number_inventory.trim() !== ""
+                                        ? row.sku_number_inventory
+                                        : "Not Available"}
+                                    </span>
+                                  )}
+                                </div>
                               </td>
                               <td>{component.category || ""}</td>
                               <td>{component.component_type || ""}</td>
-                              <td>{row.specification || ""}</td>
+                              <td
+                                className="specification-cell"
+                                title={row.specification}
+                              >
+                                {row.specification || ""}
+                              </td>
                               <td>{row.UOM || ""}</td>
                               <td>{row.vendor_name || ""}</td>
                               <td>
@@ -1412,6 +1573,59 @@ const Inventory = () => {
                                     </button>
                                   )}
                               </td>{" "}
+                              <td
+                                onDoubleClick={() =>
+                                  handleDoubleClickRemarks(
+                                    row.serial_number,
+                                    row.remarks
+                                  )
+                                }
+                                style={{ cursor: "pointer" }}
+                              >
+                                <div className="remarks-edit-container">
+                                  {editingRemarks === row.serial_number ? (
+                                    <>
+                                      <input
+                                        type="text"
+                                        className="remarks-input"
+                                        value={tempRemarks}
+                                        onChange={(e) =>
+                                          handleRemarksChange(e.target.value)
+                                        }
+                                        autoFocus
+                                      />
+                                      <button
+                                        className="remarks-btn save-btn"
+                                        onClick={() =>
+                                          handleSaveRemarks(row.serial_number)
+                                        }
+                                      >
+                                        Save
+                                      </button>
+                                      <button
+                                        className="remarks-btn cancel-btn"
+                                        onClick={handleCancelRemarks}
+                                      >
+                                        Cancel
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <span
+                                      style={{
+                                        color:
+                                          row.remarks &&
+                                          row.remarks.trim() !== ""
+                                            ? "black"
+                                            : "gray",
+                                      }}
+                                    >
+                                      {row.remarks && row.remarks.trim() !== ""
+                                        ? row.remarks
+                                        : "No data"}
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
                             </tr>
                           ))}
                       </React.Fragment>
@@ -1440,17 +1654,6 @@ const Inventory = () => {
                   </td>
                 </tr>
               )}
-              {loading && (
-                <tr>
-                  <td
-                    colSpan="11"
-                    style={{ textAlign: "center", padding: "20px" }}
-                  >
-                    <div className="spinner" />
-                    <span>Loading...</span>
-                  </td>
-                </tr>
-              )}
 
               {/* NO MORE DATA MESSAGE */}
               {!isLoadingMore &&
@@ -1459,7 +1662,7 @@ const Inventory = () => {
                 visibleInventory >= Object.keys(groupedData).length && (
                   <tr>
                     <td
-                      colSpan="11"
+                      colSpan="12"
                       style={{
                         textAlign: "center",
                         padding: "10px",
@@ -1486,16 +1689,6 @@ const Inventory = () => {
                   </td>
                 </tr>
               )}
-              {/* <tr>
-                <td style={{ fontWeight: "bold" }}>Total Inventory count</td>
-                <td>
-                   {filteredInventory.filter(
-                (row) => row.status === "Available" || row.status === "Reserved"
-              ).length || 0} 
-                  {filteredInventory.length || 0}
-                </td>
-                <td colSpan="10" className="no-data"></td>
-              </tr> */}
             </tbody>
           </table>
         ) : (

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import config from "../Config"; // Import config for API endpoints
 import DeleteIcon from "../assets/Delete.png"; //
@@ -13,6 +13,8 @@ import {
   showWarningToast,
   ToastContainerComponent,
 } from "./Toastify.jsx"; // Import Toastify utilities
+import { FaArrowLeft } from "react-icons/fa";
+
 //
 const BOMDetails = () => {
   const { bomId } = useParams(); // Retrieve bomId from URL
@@ -36,16 +38,25 @@ const BOMDetails = () => {
   const [loadingComponents, setLoadingComponents] = useState(true);
   const [priceTables, setPriceTables] = useState([]);
   const [showLatestPrice, setShowLatestPrice] = useState(false);
-    const [loading, setLoading] = useState(true);
-    
-  
+  const [loading, setLoading] = useState(true);
+
   const [vendorMasterData, setVendorMasterData] = useState([]);
+
+  // Sum of quantities in this BOM (same definition as Number of Components in the list)
+  const totalQuantity = useMemo(
+    () =>
+      (selectedComponents || []).reduce(
+        (sum, row) => sum + (Number(row?.quantity) || 0),
+        0
+      ),
+    [selectedComponents]
+  );
 
   // Fetch BOM details and related components
   useEffect(() => {
     const fetchBomDetails = async () => {
       try {
-              setLoading(true);
+        setLoading(true);
 
         const response = await fetch(`${config.apiBaseURL}/bom_list/`);
         const data = await response.json();
@@ -53,9 +64,9 @@ const BOMDetails = () => {
         setSelectedBom(bom);
       } catch (error) {
         console.error("Error fetching BOM details:", error);
-      }finally {
-      setLoading(false); // Stop loading after both calls
-    }
+      } finally {
+        setLoading(false); // Stop loading after both calls
+      }
     };
 
     const fetchBomComponents = async () => {
@@ -147,6 +158,12 @@ const BOMDetails = () => {
     fetchAllData();
   }, [bomId]);
 
+  const fmtINR = (n) =>
+    `₹${(Number.isFinite(n) ? n : 0).toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+
   const getLatestPriceInfo = (componentObj, vendorObj) => {
     if (!componentObj || !vendorObj) return { price: "-", tax: "-", date: "-" };
 
@@ -173,7 +190,7 @@ const BOMDetails = () => {
 
     return {
       price: parseFloat(latest.price),
-      tax: `${latest.tax}%`,
+      tax: parseFloat(latest?.tax ?? 0),
       date: format(parseISO(latest.current_time), "dd-MM-yyyy"),
     };
   };
@@ -295,16 +312,23 @@ const BOMDetails = () => {
       showErrorToast("An error occurred while deleting.");
     }
   };
-  const calculateTotalPrice = () => {
+  const calculateTotalPrice = (useLatest = false) => {
     let baseTotal = 0;
     let totalTaxAmount = 0;
 
-    selectedComponents.forEach((component) => {
-      const unitPrice = parseFloat(component.price || 0);
-      const quantity = parseFloat(component.quantity || 0);
-      const taxRate = parseFloat(component.tax || 0);
+    selectedComponents.forEach((row) => {
+      const qty = parseFloat(row.quantity || 0);
 
-      const base = unitPrice * quantity;
+      let unitPrice = parseFloat(row.price || 0);
+      let taxRate = parseFloat(row.tax || 0);
+
+      if (useLatest) {
+        const latest = getLatestPriceInfo(row.component, row.vendor);
+        if (Number.isFinite(latest.price)) unitPrice = latest.price;
+        if (Number.isFinite(latest.tax)) taxRate = latest.tax;
+      }
+
+      const base = unitPrice * qty;
       const taxAmount = (base * taxRate) / 100;
 
       baseTotal += base;
@@ -467,8 +491,7 @@ const BOMDetails = () => {
     });
   };
 
-  
-   if (loading)
+  if (loading)
     return (
       <div style={{ textAlign: "center", marginTop: "50px" }}>
         <div className="spinner"></div>
@@ -476,49 +499,32 @@ const BOMDetails = () => {
       </div>
     );
 
-      // if (noData) return <p>No information available for this BOM</p>;
+  // if (noData) return <p>No information available for this BOM</p>;
 
   ///
   return (
     <div style={{ padding: "20px" }}>
       {selectedBom && (
         <>
-          <h3>Selected BOM: {selectedBom.bom_name}</h3>
+          <div className="header-back">
+            <button
+              className="back-btn"
+              onClick={() => navigate(-1)}
+              title="Back to BOM List"
+            >
+              <FaArrowLeft />
+            </button>
+            <h3>Selected BOM: {selectedBom.bom_name}</h3>
+          </div>{" "}
           <p>
             <strong>BOM ID:</strong> {selectedBom.bom_id}
           </p>
-
           {selectedBom.wbom && (
             <p style={{ color: "gray", marginTop: "10px" }}>
               This is a Final BOM. Components cannot be added or removed.
             </p>
           )}
-
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginTop: "10px",
-            }}
-          >
-            <button
-              onClick={() => navigate("/bom")}
-              style={{
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                padding: "4px",
-              }}
-              title="Back to BOM List"
-            >
-              <img
-                src={Back}
-                alt="Back to BOM list "
-                style={{ width: "20px", height: "20px" }}
-              />
-            </button>
-
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <button
               onClick={() => {
                 if (!selectedBom.wbom) setShowAddComponentForm(true);
@@ -539,12 +545,11 @@ const BOMDetails = () => {
             >
               <img
                 src={AddIcon}
-                alt=""
+                alt="Add"
                 style={{ width: "20px", height: "20px" }}
               />
             </button>
           </div>
-
           {!selectedBom.wbom && showAddComponentForm && (
             <div className="modal-overlay">
               <div className="modal-content">
@@ -658,7 +663,7 @@ const BOMDetails = () => {
                       setNewComponent({
                         ...newComponent,
                         quantity: e.target.value,
-                      })      
+                      })
                     }
                   />
 
@@ -737,10 +742,10 @@ const BOMDetails = () => {
                   </select>
 
                   <label>Price</label>
-                  <input                      
-                    type="text"         
-                    value={newComponent.price}           
-                    readOnly   
+                  <input
+                    type="text"
+                    value={newComponent.price}
+                    readOnly
                     placeholder="Auto-filled based on vendor"
                   />
                 </div>
@@ -754,7 +759,6 @@ const BOMDetails = () => {
               </div>
             </div>
           )}
-
           <div className="price-button-wrapper">
             <button
               onClick={() => setShowLatestPrice(true)}
@@ -771,7 +775,6 @@ const BOMDetails = () => {
               Generate Report
             </button>
           </div>
-
           {/* <h4>Components:</h4> */}
           <div className="table-container">
             <table
@@ -790,12 +793,11 @@ const BOMDetails = () => {
                   <th>Price</th>
                   <th>Tax</th>
                   <th style={{ backgroundColor: "#82817f" }}>
-                    Latest Price
-                  </th>{" "}
-                  {/* New column */}
-                  <th style={{ backgroundColor: "#82817f" }}>
                     Latest Date
                   </th>{" "}
+                  <th style={{ backgroundColor: "#82817f" }}>Latest Price</th>{" "}
+                  {/* New column */}
+                  <th style={{ backgroundColor: "#82817f" }}>Latest Tax</th>
                   {/* New column */}
                   <th>Actions</th>
                 </tr>
@@ -835,6 +837,7 @@ const BOMDetails = () => {
                         )}
                       </td>
                       <td>{component.tax}%</td>
+                      <td>{showLatestPrice ? date : ""}</td>
                       <td style={{ textAlign: "right" }}>
                         {showLatestPrice
                           ? `₹${parseFloat(price || 0).toLocaleString("en-IN", {
@@ -843,7 +846,11 @@ const BOMDetails = () => {
                             })}`
                           : ""}
                       </td>
-                      <td>{showLatestPrice ? date : ""}</td>
+                      <td style={{ textAlign: "right" }}>
+                        {showLatestPrice
+                          ? `${Number.isFinite(tax) ? tax : 0}%`
+                          : ""}
+                      </td>
                       <td>
                         <button
                           style={{
@@ -881,62 +888,103 @@ const BOMDetails = () => {
               <tfoot>
                 {(() => {
                   const { baseTotal, totalTaxAmount, grandTotal } =
-                    calculateTotalPrice();
+                    calculateTotalPrice(false);
+                  const latestTotals = calculateTotalPrice(true);
+                  const cell = { textAlign: "right", fontWeight: "bold" };
+
                   return (
                     <>
+                      {/* Row 1: Quantity + Base Price (+ latest base price on the right) */}
                       <tr>
-                        <td
-                          colSpan="7"
-                          style={{ textAlign: "right", fontWeight: "bold" }}
-                        >
+                        <td colSpan="4" style={cell}>
+                          Total Quantity:
+                        </td>
+                        <td colSpan="1" style={cell}>
+                          {totalQuantity.toLocaleString("en-IN")}
+                        </td>
+                        <td colSpan="2" style={cell}>
                           Total Base Price:
                         </td>
-                        <td
-                          colSpan="2"
-                          style={{ textAlign: "right", fontWeight: "bold" }}
-                        >
-                          ₹
-                          {baseTotal.toLocaleString("en-IN", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
+                        <td colSpan="2" style={cell}>
+                          {fmtINR(baseTotal)}
                         </td>
+
+                        {showLatestPrice ? (
+                          <>
+                            {/* under Latest Date + Latest Price */}
+                            <td colSpan="2" style={cell}>
+                              Total Base Price (Latest):
+                            </td>
+                            {/* under Latest Tax */}
+                            <td style={cell}>
+                              {fmtINR(latestTotals.baseTotal)}
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td colSpan="2" />
+                            <td />
+                          </>
+                        )}
+
+                        {/* Actions col to keep grid/borders intact */}
+                        <td />
                       </tr>
+
+                      {/* Row 2: Tax */}
                       <tr>
-                        <td
-                          colSpan="7"
-                          style={{ textAlign: "right", fontWeight: "bold" }}
-                        >
+                        <td colSpan="7" style={cell}>
                           Total Tax (GST):
                         </td>
-                        <td
-                          colSpan="2"
-                          style={{ textAlign: "right", fontWeight: "bold" }}
-                        >
-                          ₹
-                          {totalTaxAmount.toLocaleString("en-IN", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
+                        <td colSpan="2" style={cell}>
+                          {fmtINR(totalTaxAmount)}
                         </td>
+
+                        {showLatestPrice ? (
+                          <>
+                            <td colSpan="2" style={cell}>
+                              Total Tax (GST) (Latest):
+                            </td>
+                            <td style={cell}>
+                              {fmtINR(latestTotals.totalTaxAmount)}
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td colSpan="2" />
+                            <td />
+                          </>
+                        )}
+
+                        <td />
                       </tr>
+
+                      {/* Row 3: Grand total */}
                       <tr>
-                        <td
-                          colSpan="7"
-                          style={{ textAlign: "right", fontWeight: "bold" }}
-                        >
+                        <td colSpan="7" style={cell}>
                           Grand Total (Price + GST):
                         </td>
-                        <td
-                          colSpan="2"
-                          style={{ textAlign: "right", fontWeight: "bold" }}
-                        >
-                          ₹
-                          {grandTotal.toLocaleString("en-IN", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
+                        <td colSpan="2" style={cell}>
+                          {fmtINR(grandTotal)}
                         </td>
+
+                        {showLatestPrice ? (
+                          <>
+                            <td colSpan="2" style={cell}>
+                              Grand Total (Price + GST) (Latest):
+                            </td>
+                            <td style={cell}>
+                              {fmtINR(latestTotals.grandTotal)}
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td colSpan="2" />
+                            <td />
+                          </>
+                        )}
+
+                        <td />
                       </tr>
                     </>
                   );

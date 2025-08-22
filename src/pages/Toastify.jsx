@@ -48,51 +48,73 @@ export const showInfoToast = (message) => {
 //Message with YES or NO buttons
 export const showMessageToast = ({ message, onConfirm, onCancel }) => {
   toast.info(
-    ({ closeToast }) => (
-      <div style={{ fontSize: "14px" }}>
-        {message}
-        <div
-          style={{
-            marginTop: "10px",
-            display: "flex",
-            gap: "10px",
-            justifyContent: "flex-end",
-          }}
-        >
-          <button
-            onClick={async () => {
-              closeToast();
-              onConfirm && (await onConfirm());
-            }}
+    ({ closeToast }) => {
+      // Local hover styles
+      const yesBtnBase = {
+        padding: "6px 12px",
+        backgroundColor: "#f58720",
+        color: "#fff",
+        border: "none",
+        borderRadius: "4px",
+        cursor: "pointer",
+        transition: "background-color 0.3s",
+      };
+
+      const noBtnBase = {
+        padding: "6px 12px",
+        backgroundColor: "#6c757d",
+        color: "#fff",
+        border: "none",
+        borderRadius: "4px",
+        cursor: "pointer",
+        transition: "background-color 0.3s",
+      };
+
+      return (
+        <div style={{ fontSize: "14px" }}>
+          {message}
+          <div
             style={{
-              padding: "6px 12px",
-              backgroundColor: "#f58720",
-              color: "#fff",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
+              marginTop: "10px",
+              display: "flex",
+              gap: "10px",
+              justifyContent: "flex-end",
             }}
           >
-            Yes
-          </button>
-          <button
-            onClick={() => {
-              closeToast();
-            }}
-            style={{
-              padding: "6px 12px",
-              backgroundColor: "#6c757d",
-              color: "#fff",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
-          >
-            No
-          </button>
+            <button
+              onClick={async () => {
+                closeToast();
+                onConfirm && (await onConfirm());
+              }}
+              style={yesBtnBase}
+              onMouseEnter={
+                (e) => (e.target.style.backgroundColor = "#f1ba86") // darker orange
+              }
+              onMouseLeave={
+                (e) => (e.target.style.backgroundColor = "#f58720") // reset
+              }
+            >
+              Yes
+            </button>
+            <button
+              onClick={() => {
+                closeToast();
+                onCancel && onCancel();
+              }}
+              style={noBtnBase}
+              onMouseEnter={
+                (e) => (e.target.style.backgroundColor = "#b0b0b0") // darker gray
+              }
+              onMouseLeave={
+                (e) => (e.target.style.backgroundColor = "#6c757d") // reset
+              }
+            >
+              No
+            </button>
+          </div>
         </div>
-      </div>
-    ),
+      );
+    },
     {
       position: "top-center",
       autoClose: false,
@@ -117,57 +139,80 @@ export const showTextToast = ({
   cancelText = "No",
 }) => {
   toast.info(
-    ({ closeToast }) => (
-      <div style={{ fontSize: "14px" }}>
-        {typeof message === "function" ? (
-          message({ closeToast })
-        ) : (
-          <p>{message}</p>
-        )}
-        <div
-          style={{
-            marginTop: "10px",
-            display: "flex",
-            justifyContent: "flex-end", // 🔸 Right aligned
-            gap: "10px",
-            marginLeft: "70px",
-          }}
-        >
-          <button
-            onClick={async () => {
-              closeToast();
-              if (onConfirm) await onConfirm();
-            }}
+    ({ closeToast }) => {
+      // 🔹 Base styles
+      const yesBtnBase = {
+        padding: "6px 12px",
+        backgroundColor: "#f58720",
+        color: "#fff",
+        border: "none",
+        borderRadius: "4px",
+        cursor: "pointer",
+        transition: "background-color 0.3s",
+      };
+
+      const noBtnBase = {
+        padding: "6px 12px",
+        backgroundColor: "#6c757d",
+        color: "#fff",
+        border: "none",
+        borderRadius: "4px",
+        cursor: "pointer",
+        transition: "background-color 0.3s",
+      };
+
+      return (
+        <div style={{ fontSize: "14px" }}>
+          {typeof message === "function" ? (
+            message({ closeToast })
+          ) : (
+            <p>{message}</p>
+          )}
+
+          <div
             style={{
-              padding: "6px 12px",
-              backgroundColor: "#f58720",
-              color: "#fff",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
+              marginTop: "10px",
+              display: "flex",
+              justifyContent: "flex-end", // 🔸 Right aligned
+              gap: "10px",
+              marginLeft: "70px",
             }}
           >
-            {confirmText}
-          </button>
-          <button
-            onClick={() => {
-              closeToast();
-              if (onCancel) onCancel();
-            }}
-            style={{
-              padding: "6px 12px",
-              backgroundColor: "#6c757d",
-              color: "#fff",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
-          >
-            {cancelText}
-          </button>
+            <button
+              onClick={async () => {
+                closeToast();
+                if (onConfirm) await onConfirm();
+              }}
+              style={yesBtnBase}
+              onMouseEnter={
+                (e) => (e.target.style.backgroundColor = "#f1ba86") // darker orange
+              }
+              onMouseLeave={
+                (e) => (e.target.style.backgroundColor = "#f58720") // reset
+              }
+            >
+              {confirmText}
+            </button>
+
+            <button
+              onClick={() => {
+                closeToast();
+                if (onCancel) onCancel();
+              }}
+              style={noBtnBase}
+              onMouseEnter={
+                (e) => (e.target.style.backgroundColor = "#b0b0b0") // darker gray
+              }
+              onMouseLeave={
+                (e) => (e.target.style.backgroundColor = "#6c757d") // reset
+              }
+            >
+              {cancelText}
+            </button>
+          </div>
         </div>
-      </div>
-    ),
+      );
+    },
     {
       position: "top-center",
       autoClose: false,

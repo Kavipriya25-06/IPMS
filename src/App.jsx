@@ -50,6 +50,9 @@ import OutwardSales from "./pages/OutwardSales";
 import OutwardManufacture from "./pages/OutwardManufacture";
 import OutwardEvent from "./pages/OutwardEvent";
 import JobOrderSheet from "./pages/JobOrderSheet";
+import MainDashboard from "./pages/MainDashboard";
+import QCForm from "./pages/QcQuestion";
+import QcIcon from "./pages/QcIcon";
 
 // import { useAuth } from "./AuthContext";
 // import PODetails from "./pages/PODetails";
@@ -95,6 +98,9 @@ function App() {
 
           <div style={{ display: "flex", alignItems: "center" }}>
             <div style={{ paddingLeft: "10px", fontSize: "18px" }}>
+              <QcIcon style={{ fontSize: "20px" }} />
+            </div>
+            <div style={{ paddingLeft: "10px", fontSize: "18px" }}>
               <CartIcon style={{ fontSize: "20px" }} />
             </div>
             <div style={{ paddingLeft: "10px", fontSize: "18px" }}>
@@ -103,7 +109,7 @@ function App() {
             <div style={{ paddingLeft: "10px", fontSize: "18px" }}>
               <TagIcon style={{ fontSize: "20px" }} />
             </div>
-            <div style={{ paddingLeft: "10px" }}>
+            <div style={{ paddingLeft: "10px", paddingRight:"5px" }}>
               <ProfileDropdown />
             </div>
           </div>
@@ -235,6 +241,25 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/" element={<HomePage />} />
+            {/* <Route path="/dashboard" element={<MainDashboard />} /> */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[
+                    "Admin",
+                    "Sub-Admin",
+                    "Procurement",
+                    "Inventory",
+                    "Finance",
+                    "User",
+                  ]}
+                >
+                  <MainDashboard />
+                </ProtectedRoute>
+              }
+            />
+
             <Route element={<SideBar />}>
               <Route
                 path="components"
@@ -632,6 +657,16 @@ function App() {
                     ]}
                   >
                     <MrfRequest />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="qcform"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
+                  >
+                    <QCForm />
                   </ProtectedRoute>
                 }
               />

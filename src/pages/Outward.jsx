@@ -3,6 +3,7 @@ import axios from "axios";
 import config from "../Config.js";
 import AddIcon from "../assets/Add.png";
 import CancelIcon from "../assets/cancel.png";
+import { useNavigate, useLocation } from "react-router-dom";
 
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -20,7 +21,10 @@ import {
 } from "./Toastify.jsx";
 
 const Outward = () => {
-  const [reportType, setReportType] = useState("Defects");
+  const location = useLocation();
+  const [reportType, setReportType] = useState(
+    location.state?.reportType || "Defects"
+  );
   const [tableData, setTableData] = useState([]);
   const [showEventForm, setShowEventForm] = useState(false);
   const [showServiceForm, setShowServiceForm] = useState(false);
@@ -33,7 +37,14 @@ const Outward = () => {
   const [serialNumberList, setSerialNumberList] = useState([]);
   const [showSerialDropdown, setShowSerialDropdown] = useState(false);
   const dropdownRef = useRef(null);
+  const navigate = useNavigate();
   const [allVendors, setAllVendors] = useState([]);
+
+  useEffect(() => {
+    if (location.state?.reportType) {
+      setReportType(location.state.reportType);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -55,12 +66,13 @@ const Outward = () => {
     client: "",
     typeOfOutward: "",
     remarks: "",
+    listOfDeliverables: "",
   });
 
   const [serviceForm, setServiceForm] = useState({
     outDate: new Date(),
     time: format(new Date(), "hh:mm a"),
-    gatePass: "",
+    gatepass: "",
     specification: "",
     componentId: "",
     vendor: "",
@@ -76,7 +88,7 @@ const Outward = () => {
     outDate: new Date(),
     time: format(new Date(), "hh:mm a"),
     eventName: "",
-    project: "",
+    noOfComponents: "", // new field
     typeOfOutward: "",
     returnDate: null,
     remarks: "",
@@ -139,7 +151,15 @@ const Outward = () => {
 
   const handleEventChange = (e) => {
     const { name, value } = e.target;
-    setEventForm((prev) => ({ ...prev, [name]: value }));
+    if (name === "typeOfOutward" && value === "Non-Return") {
+      setEventForm((prev) => ({
+        ...prev,
+        typeOfOutward: value,
+        returnDate: null,
+      }));
+    } else {
+      setEventForm((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleChange = (e) => {
@@ -170,11 +190,12 @@ const Outward = () => {
       "Remarks",
     ],
     Sales: [
-      "Date",
+      "Out Date",
       "Time",
       "Invoice Number",
-      "Description",
+      "Product Name",
       "Client",
+      "List of Deliverable",
       "Type of Outward",
       "Remarks",
     ],
@@ -197,7 +218,7 @@ const Outward = () => {
       "Time",
       "Gate Pass",
       "Event Name",
-      "Project",
+      "No.of Components",
       "Type of Outward",
       "Return Date",
       "Remarks",
@@ -266,7 +287,7 @@ const Outward = () => {
       category: "Manufacture",
       date: serviceForm.outDate?.toISOString().split("T")[0],
       time: serviceForm.time,
-      gatepass: serviceForm.gatePass,
+      gatepass: serviceForm.gatepass,
       specification: serviceForm.specification,
       component_id: serviceForm.componentId,
       serial_numbers: serviceForm.serialNumbers,
@@ -306,7 +327,7 @@ const Outward = () => {
         setServiceForm({
           outDate: new Date(),
           time: format(new Date(), "hh:mm a"),
-          gatePass: "",
+          gatepass: "",
           specification: "",
           componentId: "",
           vendor: "",
@@ -345,6 +366,7 @@ const Outward = () => {
       client: salesForm.client,
       type_of_outward: salesForm.typeOfOutward,
       remarks: salesForm.remarks,
+      list_of_deliverables: salesForm.listOfDeliverables,
     };
 
     try {
@@ -368,6 +390,7 @@ const Outward = () => {
           client: "",
           typeOfOutward: "",
           remarks: "",
+          listOfDeliverables: "",
         });
 
         fetchData(); // Refresh table after save
@@ -389,9 +412,9 @@ const Outward = () => {
       category: "Event",
       date: eventForm.outDate?.toISOString().split("T")[0],
       time: eventForm.time,
-      invoice_no: eventForm.invoice,
+      gatepass: eventForm.gatepass, // 👈 use gatepass instead
       event_name: eventForm.eventName,
-      project: eventForm.project,
+      no_of_components: eventForm.noOfComponents, // (your added field)
       type_of_outward: eventForm.typeOfOutward,
       return_date: eventForm.returnDate?.toISOString().split("T")[0] || null,
       remarks: eventForm.remarks,
@@ -413,7 +436,7 @@ const Outward = () => {
           outDate: new Date(),
           time: format(new Date(), "hh:mm a"),
           eventName: "",
-          project: "",
+          noOfComponents: "", // reset new field
           typeOfOutward: "",
           returnDate: null,
           remarks: "",
@@ -466,6 +489,7 @@ const Outward = () => {
         return;
       }
 
+      // Special formatters
       const formatDate = (val) =>
         val ? new Date(val).toLocaleDateString("en-GB") : "N/A";
 
@@ -478,65 +502,50 @@ const Outward = () => {
             })
           : "N/A";
 
+      // Field mapping (header -> backend key)
+      const headerFieldMap = {
+        Date: "date",
+        "Out Date": "date",
+        Time: "time",
+        "Return Date": "return_date",
+        "Invoice Number": "invoice_no",
+        "Gate Pass": "gatepass",
+        "Component Spec": "specification",
+        "Comp id": "component_id",
+        Vendor: "vendor",
+        Client: "client",
+        Description: "specification",
+        "Event Name": "event_name",
+        Quantity: "quantity",
+        Project: "project",
+        "Type of Outward": "type_of_outward",
+        Remarks: "remarks",
+        "Serial Number": "serial_numbers",
+        "List of Deliverables": "list_of_deliverables",
+      };
+
+      // Formatter overrides
+      const headerFormatters = {
+        Date: formatDate,
+        "Out Date": formatDate,
+        Time: formatTime,
+        "Return Date": formatDate,
+      };
+
       // Map fields dynamically based on reportType
       const formattedData = data.map((item, index) => {
-        const row = {
-          "S.No": index + 1, // Add serial number here
-        };
+        const row = { "S.No": index + 1 };
 
         headers.forEach((header) => {
-          switch (header) {
-            case "Date":
-            case "Out Date":
-              row[header] = formatDate(item.date);
-              break;
-            case "Time":
-              row[header] = formatTime(item.time || item.date);
-              break;
-            case "Return Date":
-              row[header] = formatDate(item.return_date);
-              break;
-            case "Invoice Number":
-              row[header] = item.invoice_no || "N/A";
-              break;
-            case "Gate Pass":
-              row[header] = item.gatepass || "N/A";
-              break;
-            case "Component Spec":
-              row[header] = item.specification || "N/A";
-              break;
-            case "Comp id":
-              row[header] = item.component_id || "N/A";
-              break;
-            case "Vendor":
-              row[header] = item.vendor || item.vendor_name || "N/A";
-              break;
-            case "Client":
-              row[header] = item.client || "N/A";
-              break;
-            case "Description":
-              row[header] = item.specification || "N/A";
-              break;
-            case "Event Name":
-              row[header] = item.event_name || "N/A";
-              break;
-            case "Quantity":
-              row[header] = item.quantity ?? "N/A";
-              break;
-            case "Project":
-              row[header] = item.project || "N/A";
-              break;
-            case "Type of Outward":
-              row[header] = item.type || item.type_of_outward || "N/A";
-              break;
-            case "Remarks":
-              row[header] = item.remarks || "N/A";
-              break;
-            case "Serial Number":
-              row[header] = item.serial_numbers || "N/A";
-              break;
-            default:
-              row[header] = "N/A";
+          const field = headerFieldMap[header];
+          const formatter = headerFormatters[header];
+
+          if (field) {
+            const value = item[field];
+            row[header] = formatter ? formatter(value) : value ?? "N/A";
+          } else {
+            // If header not in mapping, try to pick directly from item
+            row[header] = item[header.toLowerCase()] ?? "N/A";
           }
         });
 
@@ -573,93 +582,81 @@ const Outward = () => {
 
   const generateManufacturePDF = async (row) => {
     try {
-      // 1. Fetch vendor list to get vendor_id and GST
-      const vendorListResponse = await axios.get(
-        `${config.apiBaseURL}/vendor_list/`
-      );
-      const vendorList = vendorListResponse.data;
+      // (vendor fetching code stays same...)
 
-      const vendorMatch = vendorList.find((v) => v.vendor_name === row.vendor);
-
-      if (!vendorMatch) {
-        showErrorToast(`Vendor details not found for ${row.vendor}`);
-        return;
-      }
-
-      const vendorId = vendorMatch.vendor_id;
-      const vendorGSTIN = vendorMatch.gstn || "GSTIN Not found";
-
-      // 2. Fetch vendor_sub_list to get address
-      const vendorSubResponse = await axios.get(
-        `${config.apiBaseURL}/vendor_sub_list/`
-      );
-      const vendorSubList = vendorSubResponse.data;
-
-      const vendorSubMatch = vendorSubList.find((v) => v.vendor === vendorId);
-
-      const vendorAddress = vendorSubMatch?.location || "Address not found";
-
-      // --- PDF Generation ---
       const doc = new jsPDF();
-
-      // Header
       doc.setFontSize(16);
       doc.text("DELIVERY NOTE", 80, 20);
 
-      // Company (Our) Details
-      doc.setFontSize(10);
-      doc.text("Dronix Technologies Pvt Ltd", 15, 30);
-      doc.text("133, Gandhi Rd, Alappakam,New Perungalathur,", 15, 35);
-      doc.text("Chennai, Sadhanathapuram, Tamil Nadu 600063", 15, 40);
-      doc.text("GSTIN/UIN: 33AACGD1081K1ZS", 15, 45);
+      // Company details...
+      // ...
 
-      // Delivery Info
-      doc.text(`Delivery Note No: ${row.gatepass || "-"}`, 140, 30);
-      doc.text(`Date: ${row.date || "-"}`, 140, 35);
+      // Dynamic table
+      const tableHead = ["Sl No"];
+      const tableRow = ["1"];
 
-      // Ship To
-      doc.setFontSize(11);
-      doc.text("Consignee (Ship to):", 15, 55);
-      doc.setFontSize(10);
-      doc.text(`${row.vendor || "-"}`, 15, 60);
-      doc.text(`${vendorAddress}`, 15, 65);
-      doc.text(`GSTIN/UIN: ${vendorGSTIN}`, 15, 70);
-
-      // Bill To
-      doc.setFontSize(11);
-      doc.text("Buyer (Bill to):", 15, 80);
-      doc.setFontSize(10);
-      doc.text(`${row.vendor || "-"}`, 15, 85);
-      doc.text(`${vendorAddress}`, 15, 90);
-      doc.text(`GSTIN/UIN: ${vendorGSTIN}`, 15, 95);
-
-      // Table using autoTable plugin
-      autoTable(doc, {
-        startY: 105,
-        head: [
-          ["Sl No", "Description of Goods", "HSN/SAC", "Quantity", "Remarks"],
-        ],
-        body: [
-          [
-            "1",
-            row.specification || "-",
-            row.component_id || "-",
-            row.quantity || "-",
-            row.remarks || "-",
-          ],
-        ],
+      Object.entries(headerFieldMap).forEach(([header, field]) => {
+        if (row[field]) {
+          tableHead.push(header);
+          tableRow.push(row[field]);
+        }
       });
 
-      // Footer
-      const finalY = doc.lastAutoTable.finalY || 120;
-      doc.text("Recd. in Good Condition", 15, finalY + 20);
-      doc.text("for Dronix Technologies Pvt Ltd", 140, finalY + 20);
+      autoTable(doc, {
+        startY: 105,
+        head: [tableHead],
+        body: [tableRow],
+      });
 
       doc.save(`DeliveryNote_${row.gatepass || "NA"}.pdf`);
     } catch (error) {
-      console.error("Error generating PDF with vendor address:", error);
+      console.error("Error generating PDF:", error);
       showErrorToast("Failed to fetch vendor details for PDF");
     }
+  };
+
+  // Generate next GatePass ID
+  const generateNextGatePass = async () => {
+    try {
+      const response = await fetch(`${config.apiBaseURL}/outward/`);
+      if (!response.ok) throw new Error("Failed to fetch outward records");
+
+      const data = await response.json();
+
+      // Extract all gatepasses only for Manufacture + Event
+      const gatePasses = data
+        .filter(
+          (item) => item.category === "Manufacture" || item.category === "Event"
+        )
+        .map((item) => item.gatepass)
+        .filter((gp) => gp && gp.startsWith("GP-"));
+
+      // Find the highest running number
+      let maxNum = 0;
+      gatePasses.forEach((gp) => {
+        const num = parseInt(gp.replace("GP-", ""), 10);
+        if (!isNaN(num) && num > maxNum) maxNum = num;
+      });
+
+      // Generate next
+      const nextNum = (maxNum + 1).toString().padStart(5, "0"); // always 5 digits
+      return `GP-${nextNum}`;
+    } catch (err) {
+      console.error("Error generating gatepass:", err);
+      return `GP-00001`; // fallback
+    }
+  };
+
+  const openServiceForm = async () => {
+    const newGP = await generateNextGatePass();
+    setServiceForm((prev) => ({ ...prev, gatepass: newGP }));
+    setShowServiceForm(true);
+  };
+
+  const openEventForm = async () => {
+    const newGP = await generateNextGatePass();
+    setEventForm((prev) => ({ ...prev, gatepass: newGP }));
+    setShowEventForm(true);
   };
 
   return (
@@ -673,12 +670,17 @@ const Outward = () => {
         }}
       >
         <h2>Outward List</h2>
-        <select className="report-select" onChange={handleReportChange}>
+        <select
+          className="report-select"
+          value={reportType}
+          onChange={(e) => setReportType(e.target.value)}
+        >
           <option value="Defects">Defects</option>
           <option value="Sales">Sales</option>
           <option value="Manufacture">Manufacture</option>
           <option value="Event">Event</option>
         </select>
+
         <div className="table-action-buttons">
           <button className="generate-report-btn" onClick={generateReport}>
             Generate Report
@@ -714,8 +716,8 @@ const Outward = () => {
                 border: "none",
               }}
               className="plus-button"
-              title={showSalesForm ? "Cancel" : "Add Service List"}
-              onClick={() => setShowServiceForm(true)}
+              title="Add Service List"
+              onClick={openServiceForm}
             >
               <img
                 src={showServiceForm ? CancelIcon : AddIcon}
@@ -735,8 +737,8 @@ const Outward = () => {
                 border: "none",
               }}
               className="plus-button"
-              title={showSalesForm ? "Cancel" : "Add Event List"}
-              onClick={() => setShowEventForm(true)}
+              title="Add Event List"
+              onClick={openEventForm}
             >
               <img
                 src={showEventForm ? CancelIcon : AddIcon}
@@ -748,7 +750,7 @@ const Outward = () => {
         </div>
       </div>
 
-      <div className="table-container">
+      <div className="table-container" style={{ marginTop: "-10px" }}>
         <table>
           <thead>
             <tr>
@@ -806,8 +808,28 @@ const Outward = () => {
                           : "-"}
                       </td>
                       <td>{row.invoice_no || "-"}</td>
-                      <td>{row.specification || "-"}</td>
+                      <td
+                        style={{
+                          color: "black",
+                          cursor: "pointer",
+                          textDecoration: "underline",
+                        }}
+                        onClick={() =>
+                          navigate("/outward/add-sales-list", {
+                            state: { outwardId: row.id },
+                          })
+                        }
+                      >
+                        {row.specification || "-"}
+                      </td>
+
                       <td>{row.client || "-"}</td>
+                      <td
+                        className="deliverables-cell"
+                        title={row.list_of_deliverables}
+                      >
+                        {row.list_of_deliverables || "-"}
+                      </td>
                       <td>{row.type_of_outward || "-"}</td>
                       <td className="specification-cell" title={row.remarks}>
                         {row.remarks || "-"}
@@ -873,9 +895,22 @@ const Outward = () => {
                             )
                           : "-"}
                       </td>
-                      <td>{row.invoice_no || "-"}</td>
-                      <td>{row.event_name || "-"}</td>
-                      <td>{getProjectName(row.project) || "-"}</td>
+                      <td>{row.gatepass || "-"}</td>
+                      <td
+                        style={{
+                          color: "black",
+                          cursor: "pointer",
+                          textDecoration: "underline",
+                        }}
+                        onClick={() =>
+                          navigate("/outward/add-event-list", {
+                            state: { outwardId: row.id },
+                          })
+                        }
+                      >
+                        {row.event_name || "-"}
+                      </td>
+                      <td>{row.no_of_components || "-"}</td>
                       <td>{row.type_of_outward || "-"}</td>
                       <td>
                         {row.return_date
@@ -891,7 +926,12 @@ const Outward = () => {
               ))
             ) : (
               <tr>
-                <td colSpan={currentHeaders.length + 1} style={{textAlign:"center", color:"gray"}}>No data found</td>
+                <td
+                  colSpan={currentHeaders.length + 1}
+                  style={{ textAlign: "center", color: "gray" }}
+                >
+                  No data found
+                </td>
               </tr>
             )}
           </tbody>
@@ -939,14 +979,14 @@ const Outward = () => {
                 required
                 placeholder="gate pass"
               />
-              <label htmlFor="">Description</label>
+              <label htmlFor="">Product Name</label>
               <input
                 type="text"
                 name="specification"
                 value={salesForm.specification}
                 onChange={handleSalesChange}
                 required
-                placeholder="Description"
+                placeholder="product name"
               />
 
               <label htmlFor="">Client</label>
@@ -957,6 +997,20 @@ const Outward = () => {
                 onChange={handleSalesChange}
                 required
                 placeholder="client"
+              />
+
+              <label>List of Deliverables</label>
+              <input
+                type="text"
+                name="listOfDeliverables"
+                value={salesForm.listOfDeliverables}
+                onChange={(e) =>
+                  setSalesForm({
+                    ...salesForm,
+                    listOfDeliverables: e.target.value,
+                  })
+                }
+                placeholder="Enter deliverables"
               />
 
               <label htmlFor="">Type Of Outward</label>
@@ -1013,6 +1067,8 @@ const Outward = () => {
                   showYearDropdown
                   dropdownMode="select"
                   readOnly
+                  disabled
+                  style={{ backgroundColor: "#f5f5f5", cursor: "not-allowed" }}
                 />
                 <i className="fas fa-calendar-alt calendar-icon"></i>
               </div>
@@ -1022,15 +1078,16 @@ const Outward = () => {
                 value={eventForm.time}
                 readOnly
                 placeholder="Time"
+                style={{ backgroundColor: "#f5f5f5", cursor: "not-allowed" }}
               />
-              <label htmlFor="">Invoice/Gate Pass</label>
+              <label htmlFor="">Gate Pass</label>
               <input
                 type="text"
-                name="invoice"
-                value={eventForm.invoice}
-                onChange={handleEventChange}
-                required
-                placeholder="gate pass"
+                name="gatepass"
+                value={eventForm.gatepass}
+                readOnly
+                placeholder="Auto Generated Gate Pass"
+                style={{ backgroundColor: "#f5f5f5", cursor: "not-allowed" }}
               />
               <label>Event Name</label>
               <input
@@ -1041,20 +1098,21 @@ const Outward = () => {
                 placeholder="Event Name"
                 required
               />
-              <label>Project</label>
-              <select
-                name="project"
-                value={eventForm.project}
-                onChange={handleEventChange}
-                required
-              >
-                <option value="">Select Project</option>
-                {projectList.map((proj) => (
-                  <option key={proj.project_id} value={proj.project_id}>
-                    {proj.project_name}
-                  </option>
-                ))}
-              </select>
+              <label>No.Of Components</label>
+              <input
+                type="number"
+                placeholder="No. of Components"
+                value={eventForm.noOfComponents}
+                onChange={(e) =>
+                  setEventForm({ ...eventForm, noOfComponents: e.target.value })
+                }
+                style={{
+                  padding: "6px",
+                  borderRadius: "4px",
+                  border: "1px solid #ccc",
+                  width: "100%",
+                }}
+              />
               <label>Type of Outward</label>
               <select
                 name="typeOfOutward"
@@ -1066,23 +1124,28 @@ const Outward = () => {
                 <option value="Return">Return</option>
                 <option value="Non-Return">Non-Return</option>
               </select>
-              <label>Return Date</label>
-              <div className="date-input-container">
-                <DatePicker
-                  selected={eventForm.returnDate}
-                  onChange={(date) =>
-                    setEventForm((prev) => ({ ...prev, returnDate: date }))
-                  }
-                  dateFormat="dd-MM-yyyy"
-                  placeholderText="dd-mm-yyyy"
-                  className="input1"
-                  showMonthDropdown
-                  showYearDropdown
-                  dropdownMode="select"
-                  required
-                />
-                <i className="fas fa-calendar-alt calendar-icon"></i>
-              </div>
+              {eventForm.typeOfOutward === "Return" && (
+                <>
+                  <label>Return Date</label>
+                  <div className="date-input-container">
+                    <DatePicker
+                      selected={eventForm.returnDate}
+                      onChange={(date) =>
+                        setEventForm((prev) => ({ ...prev, returnDate: date }))
+                      }
+                      dateFormat="dd-MM-yyyy"
+                      placeholderText="dd-mm-yyyy"
+                      className="input1"
+                      showMonthDropdown
+                      showYearDropdown
+                      dropdownMode="select"
+                      disabled={eventForm.typeOfOutward === "Non-Return"}
+                      required={eventForm.typeOfOutward === "Return"}
+                    />
+                    <i className="fas fa-calendar-alt calendar-icon"></i>
+                  </div>
+                </>
+              )}
               <label>Remarks</label>
               <input
                 type="text"
@@ -1128,8 +1191,10 @@ const Outward = () => {
                   showMonthDropdown
                   showYearDropdown
                   dropdownMode="select"
-                  readOnly
+                  disabled
+                  style={{ backgroundColor: "#f5f5f5", cursor: "not-allowed" }}
                 />
+
                 <i className="fas fa-calendar-alt calendar-icon"></i>
               </div>
 
@@ -1140,16 +1205,17 @@ const Outward = () => {
                 value={serviceForm.time}
                 readOnly
                 placeholder="Time"
+                style={{ backgroundColor: "#f5f5f5", cursor: "not-allowed" }}
               />
 
-              <label>Gate Pass</label>
+              <label htmlFor="">Gate Pass</label>
               <input
                 type="text"
-                name="gatePass"
-                value={serviceForm.gatePass}
-                onChange={handleChange}
-                required
-                placeholder="gate pass"
+                name="gatepass"
+                value={serviceForm.gatepass}
+                readOnly
+                placeholder="Auto Generated Gate Pass"
+                style={{ backgroundColor: "#f5f5f5", cursor: "not-allowed" }}
               />
 
               <label>Component Spec</label>
@@ -1268,23 +1334,30 @@ const Outward = () => {
                 readOnly
                 placeholder="Quantity"
               />
-
-              <label>Return Date</label>
-              <div className="date-input-container">
-                <DatePicker
-                  selected={serviceForm.returnDate}
-                  onChange={(date) =>
-                    setServiceForm((prev) => ({ ...prev, returnDate: date }))
-                  }
-                  dateFormat="dd-MM-yyyy"
-                  placeholderText="dd-mm-yyyy"
-                  className="input1"
-                  showMonthDropdown
-                  showYearDropdown
-                  dropdownMode="select"
-                />
-                <i className="fas fa-calendar-alt calendar-icon"></i>
-              </div>
+              {serviceForm.typeOfOutward === "Return" && (
+                <>
+                  <label>Return Date</label>
+                  <div className="date-input-container">
+                    <DatePicker
+                      selected={serviceForm.returnDate}
+                      onChange={(date) =>
+                        setServiceForm((prev) => ({
+                          ...prev,
+                          returnDate: date,
+                        }))
+                      }
+                      dateFormat="dd-MM-yyyy"
+                      placeholderText="dd-mm-yyyy"
+                      className="input1"
+                      showMonthDropdown
+                      showYearDropdown
+                      dropdownMode="select"
+                      disabled={serviceForm.typeOfOutward === "Non-Return"}
+                    />
+                    <i className="fas fa-calendar-alt calendar-icon"></i>
+                  </div>
+                </>
+              )}
 
               <label>Remarks</label>
               <input

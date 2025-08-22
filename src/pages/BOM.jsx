@@ -361,7 +361,6 @@ const BOM = () => {
           </thead>
           <tbody>
             {loading ? (
-              //  Show spinner or loading text while data is loading
               <tr>
                 <td
                   colSpan="8"
@@ -369,6 +368,15 @@ const BOM = () => {
                 >
                   <div className="spinner"></div>
                   Loading BOM...
+                </td>
+              </tr>
+            ) : boms.length === 0 ? (
+              <tr>
+                <td
+                  colSpan="8"
+                  style={{ textAlign: "center", padding: "15px", color:"gray" }}
+                >
+                  No BOM available
                 </td>
               </tr>
             ) : (
@@ -419,7 +427,6 @@ const BOM = () => {
                       >
                         {bom.wbom ? "FBOM" : "WBOM"}
                       </button>
-
                       <button
                         onClick={() => handleDelete(bom.bom_id)}
                         className="delete-button"

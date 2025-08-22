@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import CustomMessagebox from "./CustomMessageBox.jsx";
 import config from "../Config.js";
+import Logo from "../assets/aero.png";
+import { FaArrowLeft } from "react-icons/fa"; // Install with: npm install react-icons
 
 import {
   showSuccessToast,
@@ -40,85 +42,96 @@ const Login = () => {
       }
 
       const success = await login(email, password);
+      //       if (success) {
+      //           localStorage.setItem("email", email); // <-- this is missing in your code
+
+      //         localStorage.setItem("userRole", user.role);
+
+      //         // Define sidebar tiles here (or import from a shared config file)
+      //         const tiles = [
+      //           {
+      //             label: "Components",
+      //             path: "/components",
+      //             roles: ["Admin", "Sub-Admin", "Procurement", "Inventory"],
+      //           },
+      //           {
+      //             label: "Inventory",
+      //             path: "/inventory",
+      //             roles: ["Admin", "Sub-Admin", "Inventory", "Finance"],
+      //           },
+      //           {
+      //             label: "Vendor",
+      //             path: "/vendor",
+      //             roles: ["Admin", "Sub-Admin", "Procurement"],
+      //           },
+      //           {
+      //             label: "Bom",
+      //             path: "/bom",
+      //             roles: ["Admin", "Sub-Admin", "Procurement"],
+      //           },
+      //           {
+      //             label: "Projects",
+      //             path: "/projects",
+      //             roles: [
+      //               "Admin",
+      //               "Sub-Admin",
+      //               "Inventory",
+      //               "User",
+      //               "Procurement",
+      //               "Finance",
+      //             ],
+      //           },
+      //           {
+      //             label: "Requests",
+      //             path: "/requests",
+      //             roles: ["Admin", "Sub-Admin", "Procurement", "User", "Inventory"],
+      //           },
+      //           { label: "Cart", path: "/cart", roles: ["Admin", "Procurement"] },
+      //           {
+      //             label: "PO List",
+      //             path: "/po-list",
+      //             roles: ["Admin", "Sub-Admin", "Procurement", "Finance"],
+      //           },
+      //           {
+      //             label: "Inward",
+      //             path: "/inward",
+      //             roles: ["Admin", "Sub-Admin", "Inventory"],
+      //           },
+      //           {
+      //             label: "Add Tags",
+      //             path: "/addtags",
+      //             roles: ["Admin", "Inventory", "Procurement"],
+      //           },
+      //           {
+      //             label: "MRF List",
+      //             path: "/Mrf",
+      //             roles: ["Admin", "Procurement", "Inventory", "User"],
+      //           },
+      //           {
+      //             label: "MRF Create",
+      //             path: "/MrfCreate",
+      //             roles: ["Admin", "Procurement", "Inventory", "User"],
+      //           },
+      //           { label: "Roles", path: "/roles", roles: ["Admin"] },
+      //         ];
+
+      //         const firstAllowedTile = tiles.find((tile) =>
+      //           tile.roles.includes(user.role)
+      //         );
+      //         if (firstAllowedTile) {
+      //           navigate(firstAllowedTile.path); //  Redirect to first allowed page
+      //         } else {
+      // navigate("/dashboard");  // always land on dashboard after login
+      //         }
+      //       } else {
+      //         setError("Invalid email or password");
+      //       }
       if (success) {
+        localStorage.setItem("email", email);
         localStorage.setItem("userRole", user.role);
 
-        // Define sidebar tiles here (or import from a shared config file)
-        const tiles = [
-          {
-            label: "Components",
-            path: "/components",
-            roles: ["Admin", "Sub-Admin", "Procurement", "Inventory"],
-          },
-          {
-            label: "Inventory",
-            path: "/inventory",
-            roles: ["Admin", "Sub-Admin", "Inventory", "Finance"],
-          },
-          {
-            label: "Vendor",
-            path: "/vendor",
-            roles: ["Admin", "Sub-Admin", "Procurement"],
-          },
-          {
-            label: "Bom",
-            path: "/bom",
-            roles: ["Admin", "Sub-Admin", "Procurement"],
-          },
-          {
-            label: "Projects",
-            path: "/projects",
-            roles: [
-              "Admin",
-              "Sub-Admin",
-              "Inventory",
-              "User",
-              "Procurement",
-              "Finance",
-            ],
-          },
-          {
-            label: "Requests",
-            path: "/requests",
-            roles: ["Admin", "Sub-Admin", "Procurement", "User", "Inventory"],
-          },
-          { label: "Cart", path: "/cart", roles: ["Admin", "Procurement"] },
-          {
-            label: "PO List",
-            path: "/po-list",
-            roles: ["Admin", "Sub-Admin", "Procurement", "Finance"],
-          },
-          {
-            label: "Inward",
-            path: "/inward",
-            roles: ["Admin", "Sub-Admin", "Inventory"],
-          },
-          {
-            label: "Add Tags",
-            path: "/addtags",
-            roles: ["Admin", "Inventory", "Procurement"],
-          },
-          {
-            label: "MRF List",
-            path: "/Mrf",
-            roles: ["Admin", "Procurement", "Inventory", "User"],
-          },
-          {
-            label: "MRF Create",
-            path: "/MrfCreate",
-            roles: ["Admin", "Procurement", "Inventory", "User"],
-          },
-          { label: "Roles", path: "/roles", roles: ["Admin"] },
-        ];
-
-        const firstAllowedTile = tiles.find((tile) =>
-          tile.roles.includes(user.role)
-        );
-        if (firstAllowedTile) {
-          navigate(firstAllowedTile.path); //  Redirect to first allowed page
-        } else {
-          navigate("/"); // fallback
-        }
+        // 👉 Instead of going to first allowed tile
+        navigate("/dashboard"); // Show clean dashboard after login
       } else {
         setError("Invalid email or password");
       }
@@ -134,7 +147,10 @@ const Login = () => {
       return;
     }
 
+    setError("");
+
     try {
+      showInfoToast("Sending reset link...");
       const response = await fetch(`${config.apiBaseURL}/forgot-password/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -192,7 +208,7 @@ const Login = () => {
   return (
     <div className="login-container">
       <div className="logo-container">
-        <img src="/aero.png" alt="Company Logo" />
+        <img src={Logo} alt="Company Logo" />
         {/* <img
           style={{
             marginTop: "-130px",
@@ -206,6 +222,14 @@ const Login = () => {
         /> */}
       </div>
       <div className="login-box">
+        <button
+          className="login-back"
+          onClick={() => {
+            navigate("/");
+          }}
+        >
+          <FaArrowLeft />
+        </button>
         <h2>Login</h2>
         {error && <p style={{ color: "red" }}>{error}</p>}
         <form onSubmit={handleLogin}>
@@ -264,7 +288,18 @@ const Login = () => {
           )}
         </form>
       </div>
-      <ToastContainerComponent />
+      <ToastContainerComponent
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />{" "}
     </div>
   );
 };
