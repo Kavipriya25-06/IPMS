@@ -6,6 +6,12 @@ body {
   height: 100%;
 }
 
+@font-face {
+  font-family: 'Roboto';
+  src: url('./src/fonts/Roboto-Regular.ttf') format('truetype');
+}
+
+
 .App {
   text-align: left;
   padding: 20px;
