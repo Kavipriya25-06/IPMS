@@ -521,7 +521,7 @@ const Outward = () => {
         "Type of Outward": "type_of_outward",
         Remarks: "remarks",
         "Serial Number": "serial_numbers",
-        "List of Deliverables": "list_of_deliverables", 
+        "List of Deliverables": "list_of_deliverables",
       };
 
       // Formatter overrides
@@ -750,7 +750,7 @@ const Outward = () => {
         </div>
       </div>
 
-      <div className="table-container" style={{marginTop:"-10px"}}>
+      <div className="table-container" style={{ marginTop: "-10px" }}>
         <table>
           <thead>
             <tr>
@@ -1078,8 +1078,7 @@ const Outward = () => {
                 value={eventForm.time}
                 readOnly
                 placeholder="Time"
-                  style={{ backgroundColor: "#f5f5f5", cursor: "not-allowed" }}
-
+                style={{ backgroundColor: "#f5f5f5", cursor: "not-allowed" }}
               />
               <label htmlFor="">Gate Pass</label>
               <input
@@ -1125,24 +1124,28 @@ const Outward = () => {
                 <option value="Return">Return</option>
                 <option value="Non-Return">Non-Return</option>
               </select>
-              <label>Return Date</label>
-              <div className="date-input-container">
-                <DatePicker
-                  selected={eventForm.returnDate}
-                  onChange={(date) =>
-                    setEventForm((prev) => ({ ...prev, returnDate: date }))
-                  }
-                  dateFormat="dd-MM-yyyy"
-                  placeholderText="dd-mm-yyyy"
-                  className="input1"
-                  showMonthDropdown
-                  showYearDropdown
-                  dropdownMode="select"
-                  disabled={eventForm.typeOfOutward === "Non-Return"}
-                  required={eventForm.typeOfOutward === "Return"}
-                />
-                <i className="fas fa-calendar-alt calendar-icon"></i>
-              </div>
+              {eventForm.typeOfOutward === "Return" && (
+                <>
+                  <label>Return Date</label>
+                  <div className="date-input-container">
+                    <DatePicker
+                      selected={eventForm.returnDate}
+                      onChange={(date) =>
+                        setEventForm((prev) => ({ ...prev, returnDate: date }))
+                      }
+                      dateFormat="dd-MM-yyyy"
+                      placeholderText="dd-mm-yyyy"
+                      className="input1"
+                      showMonthDropdown
+                      showYearDropdown
+                      dropdownMode="select"
+                      disabled={eventForm.typeOfOutward === "Non-Return"}
+                      required={eventForm.typeOfOutward === "Return"}
+                    />
+                    <i className="fas fa-calendar-alt calendar-icon"></i>
+                  </div>
+                </>
+              )}
               <label>Remarks</label>
               <input
                 type="text"
@@ -1331,24 +1334,30 @@ const Outward = () => {
                 readOnly
                 placeholder="Quantity"
               />
-
-              <label>Return Date</label>
-              <div className="date-input-container">
-                <DatePicker
-                  selected={serviceForm.returnDate}
-                  onChange={(date) =>
-                    setServiceForm((prev) => ({ ...prev, returnDate: date }))
-                  }
-                  dateFormat="dd-MM-yyyy"
-                  placeholderText="dd-mm-yyyy"
-                  className="input1"
-                  showMonthDropdown
-                  showYearDropdown
-                  dropdownMode="select"
-                  disabled={serviceForm.typeOfOutward === "Non-Return"}
-                />
-                <i className="fas fa-calendar-alt calendar-icon"></i>
-              </div>
+              {serviceForm.typeOfOutward === "Return" && (
+                <>
+                  <label>Return Date</label>
+                  <div className="date-input-container">
+                    <DatePicker
+                      selected={serviceForm.returnDate}
+                      onChange={(date) =>
+                        setServiceForm((prev) => ({
+                          ...prev,
+                          returnDate: date,
+                        }))
+                      }
+                      dateFormat="dd-MM-yyyy"
+                      placeholderText="dd-mm-yyyy"
+                      className="input1"
+                      showMonthDropdown
+                      showYearDropdown
+                      dropdownMode="select"
+                      disabled={serviceForm.typeOfOutward === "Non-Return"}
+                    />
+                    <i className="fas fa-calendar-alt calendar-icon"></i>
+                  </div>
+                </>
+              )}
 
               <label>Remarks</label>
               <input
