@@ -4343,6 +4343,17 @@ ul {
   border: none;
 }
 
+.disabled-date {
+  background-color: #f0f0f0; /* gray background */
+  color: #888; /* gray text */
+  cursor: not-allowed;
+}
+
+.disabled-icon {
+  color: #888; /* gray icon */
+  pointer-events: none; /* prevent opening calendar */
+}
+
 .input-enabled {
   background-color: white;
   color: black;

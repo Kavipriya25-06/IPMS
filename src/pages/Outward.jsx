@@ -1124,28 +1124,29 @@ const Outward = () => {
                 <option value="Return">Return</option>
                 <option value="Non-Return">Non-Return</option>
               </select>
-              {eventForm.typeOfOutward === "Return" && (
-                <>
-                  <label>Return Date</label>
-                  <div className="date-input-container">
-                    <DatePicker
-                      selected={eventForm.returnDate}
-                      onChange={(date) =>
-                        setEventForm((prev) => ({ ...prev, returnDate: date }))
-                      }
-                      dateFormat="dd-MM-yyyy"
-                      placeholderText="dd-mm-yyyy"
-                      className="input1"
-                      showMonthDropdown
-                      showYearDropdown
-                      dropdownMode="select"
-                      disabled={eventForm.typeOfOutward === "Non-Return"}
-                      required={eventForm.typeOfOutward === "Return"}
-                    />
-                    <i className="fas fa-calendar-alt calendar-icon"></i>
-                  </div>
-                </>
-              )}
+              <label>Return Date</label>
+<div className="date-input-container">
+  <DatePicker
+    selected={eventForm.returnDate}
+    onChange={(date) =>
+      setEventForm((prev) => ({ ...prev, returnDate: date }))
+    }
+    dateFormat="dd-MM-yyyy"
+    placeholderText="dd-mm-yyyy"
+    className={`input1 ${eventForm.typeOfOutward === "Non-Return" ? "disabled-date" : ""}`}
+    showMonthDropdown
+    showYearDropdown
+    dropdownMode="select"
+    disabled={eventForm.typeOfOutward === "Non-Return"}
+    required={eventForm.typeOfOutward === "Return"}
+  />
+  <i
+    className={`fas fa-calendar-alt calendar-icon ${
+      eventForm.typeOfOutward === "Non-Return" ? "disabled-icon" : ""
+    }`}
+  ></i>
+</div>
+
               <label>Remarks</label>
               <input
                 type="text"
@@ -1334,30 +1335,30 @@ const Outward = () => {
                 readOnly
                 placeholder="Quantity"
               />
-              {serviceForm.typeOfOutward === "Return" && (
-                <>
-                  <label>Return Date</label>
-                  <div className="date-input-container">
-                    <DatePicker
-                      selected={serviceForm.returnDate}
-                      onChange={(date) =>
-                        setServiceForm((prev) => ({
-                          ...prev,
-                          returnDate: date,
-                        }))
-                      }
-                      dateFormat="dd-MM-yyyy"
-                      placeholderText="dd-mm-yyyy"
-                      className="input1"
-                      showMonthDropdown
-                      showYearDropdown
-                      dropdownMode="select"
-                      disabled={serviceForm.typeOfOutward === "Non-Return"}
-                    />
-                    <i className="fas fa-calendar-alt calendar-icon"></i>
-                  </div>
-                </>
-              )}
+              <label>Return Date</label>
+              <div className="date-input-container">
+                <DatePicker
+                  selected={serviceForm.returnDate}
+                  onChange={(date) =>
+                    setServiceForm((prev) => ({
+                      ...prev,
+                      returnDate: date,
+                    }))
+                  }
+                  dateFormat="dd-MM-yyyy"
+                  placeholderText="dd-mm-yyyy"
+                  className={`input1 ${
+                    serviceForm.typeOfOutward === "Non-Return"
+                      ? "disabled-date"
+                      : ""
+                  }`}
+                  showMonthDropdown
+                  showYearDropdown
+                  dropdownMode="select"
+                  disabled={serviceForm.typeOfOutward === "Non-Return"}
+                />
+                <i className="fas fa-calendar-alt calendar-icon"></i>
+              </div>
 
               <label>Remarks</label>
               <input
