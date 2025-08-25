@@ -1301,7 +1301,9 @@ const RequestDetails = ({ user }) => {
                         <td>
                           {detail.assign !== true ? `${detail.qty}` : `0`}
                         </td>
-                        <td>{availableQty}</td>
+                        <td style={{ backgroundColor: "#eceaeaff" }}>
+                          {availableQty}
+                        </td>
                         {/* <td>
                       <button
                         onClick={() => handleApproval(detail.request_id, detail.id)} // Ensure `detail.id` is used if `id` is a property of `detail`

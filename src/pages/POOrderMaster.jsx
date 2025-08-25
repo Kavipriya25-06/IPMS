@@ -681,35 +681,35 @@ const POOrderMaster = ({ user }) => {
     const r2ValueX = r2ColonX + 8;
 
     // ✅ values now come from extraFields
-   const metaRows = [
-  ["Ref Date", refDate ? format(new Date(refDate), "dd.MM.yyyy") : ""],
-  ["Quotation No", quotationNo || ""],
-  ["Payment terms", paymentTerms || ""],
-  ["Mode of delivery", deliveryMode || ""],
-  ["Contact Person", String(vendorPOC?.name || "")],
-  ["Contact Details", String(vendorPOC?.phone || vendorPOC?.email || "")],
-];
+    const metaRows = [
+      ["Ref Date", refDate ? format(new Date(refDate), "dd.MM.yyyy") : ""],
+      ["Quotation No", quotationNo || ""],
+      ["Payment terms", paymentTerms || ""],
+      ["Mode of delivery", deliveryMode || ""],
+      ["Contact Person", String(vendorPOC?.name || "")],
+      ["Contact Details", String(vendorPOC?.phone || vendorPOC?.email || "")],
+    ];
 
-// Reduce top gap before metaRows
-const metaTopGap = 30; // smaller than previous 12
-let metaY = y - metaTopGap; 
+    // Reduce top gap before metaRows
+    const metaTopGap = 30; // smaller than previous 12
+    let metaY = y - metaTopGap;
 
-const metaLineSpacing = 15; // optional: slightly smaller than lh
-metaRows.forEach(([label, value]) => {
-  const wrapped = doc.splitTextToSize(value, rightW - 120);
-  const h = Math.max(metaLineSpacing, wrapped.length * metaLineSpacing);
+    const metaLineSpacing = 15; // optional: slightly smaller than lh
+    metaRows.forEach(([label, value]) => {
+      const wrapped = doc.splitTextToSize(value, rightW - 120);
+      const h = Math.max(metaLineSpacing, wrapped.length * metaLineSpacing);
 
-  doc.setFont(font, "bold");
-  doc.text(label, r2LabelX, metaY + metaLineSpacing);
-  
-  doc.setFont(font, "normal");
-  doc.text(":", r2ColonX, metaY + metaLineSpacing);
-  doc.text(wrapped, r2ValueX, metaY + metaLineSpacing);
+      doc.setFont(font, "bold");
+      doc.text(label, r2LabelX, metaY + metaLineSpacing);
 
-  metaY += h;
-});
+      doc.setFont(font, "normal");
+      doc.text(":", r2ColonX, metaY + metaLineSpacing);
+      doc.text(wrapped, r2ValueX, metaY + metaLineSpacing);
 
-y = Math.max(supY, metaY) + BLOCK_GAP; // update y after section
+      metaY += h;
+    });
+
+    y = Math.max(supY, metaY) + BLOCK_GAP; // update y after section
 
     // ───────────────── Order details ─────────────────
     const boxPad = 8;
@@ -1487,7 +1487,7 @@ y = Math.max(supY, metaY) + BLOCK_GAP; // update y after section
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/po_master/${row.id}/`,
+        `${config.apiBaseURL}/po_master/${row.id}/`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -1785,7 +1785,8 @@ y = Math.max(supY, metaY) + BLOCK_GAP; // update y after section
                   <th>GST</th>
                   <th>Total Cost</th>
                   {(isAdmin || isProcurement) &&
-                    poData?.status !== "Approved" && <th>Actions</th>}
+                    poData?.status !== "Approved" &&
+                    poData?.status !== "Ordered" && <th>Actions</th>}
                 </tr>
               </thead>
               <tbody>
@@ -1800,6 +1801,7 @@ y = Math.max(supY, metaY) + BLOCK_GAP; // update y after section
                     <td style={{ position: "relative", paddingRight: "30px" }}>
                       {isAdmin &&
                       poData?.status !== "Approved" &&
+                      poData?.status !== "Ordered" &&
                       editingIndex === index ? (
                         <input
                           type="number"
@@ -1820,32 +1822,34 @@ y = Math.max(supY, metaY) + BLOCK_GAP; // update y after section
                       )}
 
                       {/* Only show edit icon if not approved */}
-                      {isAdmin && poData?.status !== "Approved" && (
-                        <span
-                          style={{
-                            position: "absolute",
-                            right: "5px",
-                            top: "50%",
-                            transform: "translateY(-50%)",
-                            cursor: "pointer",
-                            color:
-                              editingIndex === index ? "green" : "#1f1f1fff",
-                            fontSize: "14px",
-                          }}
-                          onClick={() => {
-                            if (editingIndex === index) {
-                              saveQuantity(index); // validate + toast + exit
-                            } else {
-                              setEditingIndex(index); // enter edit mode
+                      {isAdmin &&
+                        poData?.status !== "Approved" &&
+                        poData?.status !== "Ordered" && (
+                          <span
+                            style={{
+                              position: "absolute",
+                              right: "5px",
+                              top: "50%",
+                              transform: "translateY(-50%)",
+                              cursor: "pointer",
+                              color:
+                                editingIndex === index ? "green" : "#1f1f1fff",
+                              fontSize: "14px",
+                            }}
+                            onClick={() => {
+                              if (editingIndex === index) {
+                                saveQuantity(index); // validate + toast + exit
+                              } else {
+                                setEditingIndex(index); // enter edit mode
+                              }
+                            }}
+                            title={
+                              editingIndex === index ? "Save Qty" : "Edit Qty"
                             }
-                          }}
-                          title={
-                            editingIndex === index ? "Save Qty" : "Edit Qty"
-                          }
-                        >
-                          {editingIndex === index ? <FaCheck /> : <FaEdit />}
-                        </span>
-                      )}
+                          >
+                            {editingIndex === index ? <FaCheck /> : <FaEdit />}
+                          </span>
+                        )}
                     </td>
 
                     <td>
@@ -1874,15 +1878,17 @@ y = Math.max(supY, metaY) + BLOCK_GAP; // update y after section
                       )}
                     </td>
 
-                    {isAdmin && poData?.status !== "Approved" && (
-                      <td style={{ textAlign: "center" }}>
-                        <FaTrashAlt
-                          style={{ color: "red", cursor: "pointer" }}
-                          title="Delete Item"
-                          onClick={() => handleDeleteItem(po.id)}
-                        />
-                      </td>
-                    )}
+                    {isAdmin &&
+                      poData?.status !== "Approved" &&
+                      poData?.status !== "Ordered" && (
+                        <td style={{ textAlign: "center" }}>
+                          <FaTrashAlt
+                            style={{ color: "red", cursor: "pointer" }}
+                            title="Delete Item"
+                            onClick={() => handleDeleteItem(po.id)}
+                          />
+                        </td>
+                      )}
                   </tr>
                 ))}
 
