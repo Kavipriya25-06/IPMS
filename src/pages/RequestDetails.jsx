@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import CustomMessagebox from "./CustomMessageBox.jsx";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import Back from "../assets/Back.png";
 import config from "../Config"; // Import config for API endpoints
 //////////////////////////////////////////////////////////////////////
@@ -321,7 +321,7 @@ const RequestDetails = ({ user }) => {
                 body: JSON.stringify({
                   cart_assign: true,
                   assign: false,
-                  status: "Assigned",
+                  status: "Added To cart",
                   vendor: vendor_id,
                 }),
               }
@@ -1060,7 +1060,7 @@ const RequestDetails = ({ user }) => {
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ approve: true }),
+            body: JSON.stringify({ approve: true, status: "Approved" }),
           }
         )
       );
@@ -1167,6 +1167,7 @@ const RequestDetails = ({ user }) => {
             <table>
               <thead>
                 <tr>
+                  <th>Component ID</th>
                   <th>Status</th>
                   <th>Category</th>
                   <th>Component Type</th>
@@ -1196,9 +1197,22 @@ const RequestDetails = ({ user }) => {
                     return (
                       <tr key={`${detail.id}-${detail.component_id}`}>
                         <td>
-                          {requestStatus.find(
+                          <Link
+                            to={`/components/${detail.component_id}`}
+                            style={{
+                              textDecoration: "underline",
+                              color: "inherit",
+                            }}
+                            title={`Open ${detail.component_id} in CDP`}
+                          >
+                            {detail.component_id}
+                          </Link>
+                        </td>
+                        <td>
+                          {detail.status}
+                          {/* {requestStatus.find(
                             (status) => status.request_id === detail.id
-                          )?.po_status || ""}
+                          )?.po_status || ""} */}
                         </td>
                         <td>{detail.category}</td>
                         <td>{detail.component_type}</td>
