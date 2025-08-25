@@ -145,31 +145,13 @@ const Cart = ({ user }) => {
       const poMasterPromises = Object.entries(group.requests_by_date).flatMap(
         ([date, statusGroupedRequests]) =>
           Object.entries(statusGroupedRequests)
-            .filter(([status]) => status === "false")
-            .flatMap(([status, requests]) => {
-              // 🔹 Merge duplicates before posting
-              const merged = Object.values(
-                requests.reduce((acc, item) => {
-                  const key = `${item.component_id}-${item.vendor_id}-${date}`;
-                  if (!acc[key]) {
-                    acc[key] = { ...item };
-                  } else {
-                    acc[key].quantity =
-                      Number(acc[key].quantity) + Number(item.quantity);
-                    acc[key].total_cost =
-                      Number(acc[key].total_cost) + Number(item.total_cost);
-                  }
-                  return acc;
-                }, {})
-              );
-
-              return merged.map((item) => {
+            .filter(([status]) => status === "false") // Only process items with `order_placed: false`
+            .flatMap(([status, requests]) =>
+              requests.map((item) => {
                 const poMasterPayload = {
-                  PO_id: poListId,
-                  cart_id: item.id, // still need a valid cart id
-                  quantity: item.quantity, // ✅ send combined qty
-                  total_cost: item.total_cost, // ✅ send combined cost
-                  status: "Pending",
+                  PO_id: poListId, // Use the generated PO_list ID
+                  cart_id: item.id, // Use the cart item ID
+                  status: "Pending", // Order status
                 };
 
                 return fetch(`${config.apiBaseURL}/po_master/`, {
@@ -177,8 +159,8 @@ const Cart = ({ user }) => {
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify(poMasterPayload),
                 });
-              });
-            })
+              })
+            )
       );
 
       const poMasterResponses = await Promise.all(poMasterPromises);
@@ -439,73 +421,58 @@ const Cart = ({ user }) => {
                                       </tr>
                                     </thead>
                                     <tbody>
-                                      {Object.values(
-                                        reqs
-                                          .filter((item) => !item.order_placed)
-                                          .reduce((acc, item) => {
-                                            const key = `${item.component_id}-${item.vendor_id}-${date}`;
-                                            if (!acc[key]) {
-                                              acc[key] = { ...item };
-                                            } else {
-                                              acc[key].quantity =
-                                                Number(acc[key].quantity) +
-                                                Number(item.quantity);
-                                              acc[key].total_cost =
-                                                Number(acc[key].total_cost) +
-                                                Number(item.total_cost);
-                                            }
-                                            return acc;
-                                          }, {})
-                                      ).map((item) => (
-                                        <tr key={item.id}>
-                                          <td>{item.component_id}</td>
-                                          <td>{item.component_type}</td>
-                                          <td>
-                                            {item.component_specification}
-                                          </td>
-                                          <td>{item.quantity}</td>
-                                          <td>{item.category}</td>
-                                          <td>{item.unit_of_measurement}</td>
-                                          <td style={{ textAlign: "right" }}>
-                                            ₹
-                                            {parseFloat(
-                                              item.unit_price
-                                            ).toLocaleString("en-IN", {
-                                              minimumFractionDigits: 2,
-                                              maximumFractionDigits: 2,
-                                            })}
-                                          </td>
-                                          <td style={{ textAlign: "right" }}>
-                                            {item.GST}%
-                                          </td>
-                                          <td style={{ textAlign: "right" }}>
-                                            ₹
-                                            {parseFloat(
-                                              item.total_cost
-                                            ).toLocaleString("en-IN", {
-                                              minimumFractionDigits: 2,
-                                              maximumFractionDigits: 2,
-                                            })}
-                                          </td>
-                                          <td>
-                                            <button
-                                              onClick={() =>
-                                                handleRemoveFromCart(item)
-                                              }
-                                              style={{
-                                                backgroundColor: "#b0aeae",
-                                                color: "black",
-                                                border: "none",
-                                                padding: "5px 15px",
-                                                cursor: "pointer",
-                                                borderRadius: "5px",
-                                              }}
-                                            >
-                                              Remove
-                                            </button>
-                                          </td>
-                                        </tr>
-                                      ))}
+                                      {reqs
+                                        .filter((item) => !item.order_placed)
+                                        .map((item) => (
+                                          <tr key={item.id}>
+                                            <td>{item.component_id}</td>
+                                            <td>{item.component_type}</td>
+                                            <td>
+                                              {item.component_specification}
+                                            </td>
+                                            <td>{item.quantity}</td>
+                                            <td>{item.category}</td>
+                                            <td>{item.unit_of_measurement}</td>
+                                            <td style={{ textAlign: "right" }}>
+                                              ₹
+                                              {parseFloat(
+                                                item.unit_price
+                                              ).toLocaleString("en-IN", {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2,
+                                              })}
+                                            </td>
+                                            <td style={{ textAlign: "right" }}>
+                                              {item.GST}%
+                                            </td>
+                                            <td style={{ textAlign: "right" }}>
+                                              ₹
+                                              {parseFloat(
+                                                item.total_cost
+                                              ).toLocaleString("en-IN", {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2,
+                                              })}
+                                            </td>
+                                            <td>
+                                              <button
+                                                onClick={() =>
+                                                  handleRemoveFromCart(item)
+                                                }
+                                                style={{
+                                                  backgroundColor: "#b0aeae",
+                                                  color: "black",
+                                                  border: "none",
+                                                  padding: "5px 15px",
+                                                  cursor: "pointer",
+                                                  borderRadius: "5px",
+                                                }}
+                                              >
+                                                Remove
+                                              </button>
+                                            </td>
+                                          </tr>
+                                        ))}
                                     </tbody>
                                   </table>
                                 </div>

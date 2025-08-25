@@ -462,6 +462,11 @@ const RequestForm = () => {
   };
 
   const formattedDate = format(new Date(), "dd-MM-yyyy");
+  const handleCancel = () => {
+    setSelectedProject(""); // clear project dropdown
+    setSelectedBom(""); // clear bom dropdown
+    navigate(-1);
+  };
 
   return (
     <div>
@@ -668,18 +673,29 @@ const RequestForm = () => {
                 </option>
               ))}
             </select>
-            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <div style={{ display: "flex", justifyContent: "flex-end" , gap: "10px" }}>
               <button
                 className="edit-btn"
                 style={{
                   borderRadius: "5px",
-                  border: "1px solid #ccc",
                   cursor: "pointer",
                   marginTop: "20px",
                 }}
                 onClick={handleSubmit}
               >
                 Submit Request
+              </button>
+              <button
+                className="cancel-btn"
+                style={{
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                  marginTop: "20px",
+                
+                }}
+                onClick={handleCancel}
+              >
+                Cancel
               </button>
             </div>
           </div>

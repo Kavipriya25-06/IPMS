@@ -1315,7 +1315,7 @@ const RequestDetails = ({ user }) => {
                         <td>
                           {detail.assign !== true ? `${detail.qty}` : `0`}
                         </td>
-                        <td style={{ backgroundColor: "#eceaeaff" }}>
+                        <td style={{ backgroundColor: "#eceaeaff", color:"grey" }}>
                           {availableQty}
                         </td>
                         {/* <td>

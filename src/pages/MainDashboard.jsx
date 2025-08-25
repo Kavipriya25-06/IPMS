@@ -13,6 +13,9 @@ const MainDashboard = () => {
   const [projectCount, setProjectCount] = useState(0);
   const [pendingInwardCount, setPendingInwardCount] = useState(0);
   const [defectOutwardCount, setDefectOutwardCount] = useState(0);
+  const [requestListCount, setRequestListCount] = useState(0);
+    const [poMasterCount, setPoMasterCount] = useState(0);
+
 
   useEffect(() => {
     const role = localStorage.getItem("userRole");
@@ -68,7 +71,7 @@ const MainDashboard = () => {
       .catch((err) => console.error("Inward fetch error:", err));
 
     // Outward: count only those with category = "Defects"
-    
+
     fetch(`${config.apiBaseURL}/outward/defects/`)
       .then((res) => res.json())
       .then((data) => {
@@ -76,6 +79,18 @@ const MainDashboard = () => {
         setDefectOutwardCount(data.length);
       })
       .catch((err) => console.error("Outward fetch error:", err));
+
+    //Requests
+    fetch(`${config.apiBaseURL}/request_list/`)
+      .then((res) => res.json())
+      .then((data) => setRequestListCount(data.length || 0))
+      .catch((err) => console.error("request_list error:", err));
+
+    //PO Master
+    fetch(`${config.apiBaseURL}/po_master/`)
+      .then((res) => res.json())
+      .then((data) => setPoMasterCount(data.length || 0))
+      .catch((err) => console.error("po_master error:", err));
   }, []);
 
   const handleRequestComponentClick = () => {
@@ -150,11 +165,17 @@ const MainDashboard = () => {
       label: "Requests",
       path: "requests",
       roles: ["Admin", "Sub-Admin", "Procurement", "User", "Inventory"],
+      counts: {
+        request: requestListCount,
+      },
     },
     {
       label: "PO Orders",
       path: "po-list",
       roles: ["Admin", "Sub-Admin", "Procurement", "Finance"],
+      counts: {
+        pomaster: poMasterCount,
+      },
     },
     {
       label: "Inward",
@@ -169,11 +190,11 @@ const MainDashboard = () => {
       counts: { defects: defectOutwardCount },
     },
 
-    {
-      label: "Roles",
-      path: "roles",
-      roles: ["Admin"],
-    },
+    // {
+    //   label: "Roles",
+    //   path: "roles",
+    //   roles: ["Admin"],
+    // },
   ];
 
   const visibleTiles = tiles.filter((tile) =>
@@ -261,6 +282,20 @@ const MainDashboard = () => {
                   <div className="count-column">
                     <div className="count-number">{tile.counts.defects}</div>
                     <div className="count-label">Defect Outwards</div>
+                  </div>
+                )}
+
+                {tile.counts.request !== undefined && (
+                  <div className="count-column">
+                    <div className="count-number">{tile.counts.request}</div>
+                    <div className="count-label">Request List Count</div>
+                  </div>
+                )}
+
+                {tile.counts.pomaster !== undefined && (
+                  <div className="count-column">
+                    <div className="count-number">{tile.counts.pomaster}</div>
+                    <div className="count-label">Po Master Count</div>
                   </div>
                 )}
               </div>
