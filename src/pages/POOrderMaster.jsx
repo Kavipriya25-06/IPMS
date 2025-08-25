@@ -550,6 +550,7 @@ const POOrderMaster = ({ user }) => {
     let y = M;
 
     // ───────────────── Header ─────────────────
+    // ─── Header ───
     doc.setDrawColor(40);
     doc.line(M, y - 10, pageWidth - M, y - 10);
 
@@ -568,11 +569,15 @@ const POOrderMaster = ({ user }) => {
 
     doc.setFont(font, "bold");
     doc.setFontSize(20);
-    doc.text("Purchase Order", pageWidth / 2, y + 10, { align: "center" });
+    doc.text("Purchase Order", pageWidth / 2, y + 20, { align: "center" });
 
+    // Adjust PO No / Date to be slightly below the title
+    const poStartY = y + 10; // 30 points below top line / header
     doc.setFontSize(10);
+
     const rLabelX = pageWidth - M - 110;
     const rValueX = pageWidth - M;
+
     [
       ["PO No", String(poId || "")],
       [
@@ -582,14 +587,14 @@ const POOrderMaster = ({ user }) => {
           : format(new Date(), "dd.MM.yyyy"),
       ],
     ].forEach(([k, v], i) => {
-      const yy = y + i * lh;
+      const yy = poStartY + i * lh; // use poStartY as base
       doc.text(k + " :", rLabelX - 20, yy);
       doc.setFont(font, "normal");
       doc.text(v, rValueX, yy, { align: "right" });
       doc.setFont(font, "bold");
     });
 
-    y += GAP_AFTER_TITLE + 24;
+    y = poStartY + 2 * lh; // update y after this block
     doc.setDrawColor(180);
     doc.line(M, y, pageWidth - M, y);
     y += 12;
@@ -597,9 +602,12 @@ const POOrderMaster = ({ user }) => {
     // ───────────────── Invoice/Consignee ─────────────────
     const colW = Math.floor((usable - GAP_BETWEEN_COLS) / 2);
 
+    const topGap = 10; // increase to add more space from previous section
+    y += topGap;
+
     const invoiceTo = [
       "Dronix Technologies Private Limited",
-      "No.7, KRU Building, 3rd Floor, Welders Street, Mount Road, Chennai.",
+      "No.7, KRJ Building, 3rd Floor, Welders Street, Mount Road, Chennai.",
       "E-mail : finance@aero360.co.in",
       "GSTIN/UIN : 33AACGDI081K1ZS",
       "State Name : Tamil Nadu, Code : 33",
@@ -615,7 +623,7 @@ const POOrderMaster = ({ user }) => {
     doc.setFont(font, "bold");
     doc.text("Invoice To", M, y);
     doc.text("Consignee (Ship to)", M + colW + GAP_BETWEEN_COLS, y);
-    y += 10;
+    y += 15;
 
     doc.setFont(font, "normal");
     const leftLines = invoiceTo.flatMap((t) => doc.splitTextToSize(t, colW));
@@ -633,7 +641,8 @@ const POOrderMaster = ({ user }) => {
       rightY += lh;
     });
 
-    y = Math.max(leftY, rightY) + GAP_BELOW_COLS;
+    const sectionGap = 10; // smaller than GAP_BELOW_COLS
+    y = Math.max(leftY, rightY) + sectionGap;
 
     doc.setDrawColor(210);
     doc.line(M, y - SECTION_DIVIDER_H, pageWidth - M, y - SECTION_DIVIDER_H);
@@ -642,6 +651,8 @@ const POOrderMaster = ({ user }) => {
     const leftW = Math.floor(usable * 0.55);
     const rightW = usable - leftW;
 
+    const topGapSupplier = 12; // adjust as needed
+    y += topGapSupplier;
     doc.setFont(font, "bold");
     doc.text("Supplier  (Bill form)", M, y);
     y += 12;
@@ -670,28 +681,35 @@ const POOrderMaster = ({ user }) => {
     const r2ValueX = r2ColonX + 8;
 
     // ✅ values now come from extraFields
-    const metaRows = [
-      ["Ref Date", refDate ? format(new Date(refDate), "dd.MM.yyyy") : ""],
-      ["Quotation No", quotationNo || ""],
-      ["Payment terms", paymentTerms || ""],
-      ["Mode of delivery", deliveryMode || ""],
-      ["Contact Person", String(vendorPOC?.name || "")],
-      ["Contact Details", String(vendorPOC?.phone || vendorPOC?.email || "")],
-    ];
+   const metaRows = [
+  ["Ref Date", refDate ? format(new Date(refDate), "dd.MM.yyyy") : ""],
+  ["Quotation No", quotationNo || ""],
+  ["Payment terms", paymentTerms || ""],
+  ["Mode of delivery", deliveryMode || ""],
+  ["Contact Person", String(vendorPOC?.name || "")],
+  ["Contact Details", String(vendorPOC?.phone || vendorPOC?.email || "")],
+];
 
-    let metaY = y - 12;
-    metaRows.forEach(([label, value]) => {
-      const wrapped = doc.splitTextToSize(value, rightW - 120);
-      const h = Math.max(lh, wrapped.length * lh);
-      doc.setFont(font, "bold");
-      doc.text(label, r2LabelX, metaY + lh);
-      doc.setFont(font, "normal");
-      doc.text(":", r2ColonX, metaY + lh);
-      doc.text(wrapped, r2ValueX, metaY + lh);
-      metaY += h;
-    });
+// Reduce top gap before metaRows
+const metaTopGap = 30; // smaller than previous 12
+let metaY = y - metaTopGap; 
 
-    y = Math.max(supY, metaY) + BLOCK_GAP;
+const metaLineSpacing = 15; // optional: slightly smaller than lh
+metaRows.forEach(([label, value]) => {
+  const wrapped = doc.splitTextToSize(value, rightW - 120);
+  const h = Math.max(metaLineSpacing, wrapped.length * metaLineSpacing);
+
+  doc.setFont(font, "bold");
+  doc.text(label, r2LabelX, metaY + metaLineSpacing);
+  
+  doc.setFont(font, "normal");
+  doc.text(":", r2ColonX, metaY + metaLineSpacing);
+  doc.text(wrapped, r2ValueX, metaY + metaLineSpacing);
+
+  metaY += h;
+});
+
+y = Math.max(supY, metaY) + BLOCK_GAP; // update y after section
 
     // ───────────────── Order details ─────────────────
     const boxPad = 8;
@@ -837,18 +855,22 @@ const POOrderMaster = ({ user }) => {
     doc.text(doc.splitTextToSize(remarksText, usable * 0.62 - 24), M + 12, ry);
 
     // ───────────────── Signature + footer ─────────────────
-    const sigY = remarksTop + remarksH + 54;
+    const sigBoxWidth = 160;
+    const sigBoxHeight = 30;
+    const sigX = pageWidth - M - sigBoxWidth;
+    const sigY = pageHeight - M - sigBoxHeight;
+
     doc.setFont(font, "bold");
-    doc.text("Authorized Signature", pageWidth - M - 160, sigY, {
-      align: "left",
-    });
+    doc.setFontSize(10);
+    doc.text("Authorized Signature", sigX + 8, sigY + 18);
+
     doc.setFont(font, "normal");
     doc.setFontSize(9);
     doc.text(
       poData?.cart_details?.company_name ||
         "For Dronix Technologies Private Limited",
-      pageWidth - M - 160,
-      sigY + 12
+      sigX + 8,
+      sigY + 32
     );
 
     doc.setDrawColor(40);
@@ -1866,10 +1888,12 @@ const POOrderMaster = ({ user }) => {
 
                 {/* Totals Row */}
                 <tr style={{ fontWeight: "bold" }}>
-                  <td colSpan="5">Totals</td>
+                  <td colSpan="5" style={{ textAlign: "right" }}>
+                    Total Quantity
+                  </td>
                   <td>{totalquantity}</td>
                   <td></td>
-                  <td></td>
+                  <td style={{ textAlign: "right" }}> Grand Total Cost</td>
                   <td style={{ textAlign: "right" }}>
                     ₹
                     {parseFloat(totalcost).toLocaleString("en-IN", {
