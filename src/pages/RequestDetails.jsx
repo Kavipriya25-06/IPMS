@@ -1163,7 +1163,7 @@ const RequestDetails = ({ user }) => {
             )}
           </div>
 
-          <div className="table-container">
+      <div className="table-container-request">
             <table>
               <thead>
                 <tr>
@@ -1420,7 +1420,7 @@ const RequestDetails = ({ user }) => {
                 ) && (
                   <>
                     <tr style={{ fontWeight: "bold" }}>
-                      <td colSpan="6" style={{ textAlign: "right" }}>
+                      <td colSpan="8" style={{ textAlign: "right" }}>
                         Total Base Price:
                       </td>
                       <td colSpan="1" style={{ textAlign: "right" }}>
@@ -1434,7 +1434,7 @@ const RequestDetails = ({ user }) => {
                     </tr>
 
                     <tr style={{ fontWeight: "bold" }}>
-                      <td colSpan="6" style={{ textAlign: "right" }}>
+                      <td colSpan="8" style={{ textAlign: "right" }}>
                         Total Tax (GST):
                       </td>
                       <td colSpan="1" style={{ textAlign: "right" }}>
@@ -1447,7 +1447,7 @@ const RequestDetails = ({ user }) => {
                       <td colSpan="4"></td>
                     </tr>
                     <tr style={{ fontWeight: "bold" }}>
-                      <td colSpan="6" style={{ textAlign: "right" }}>
+                      <td colSpan="8" style={{ textAlign: "right" }}>
                         Grand Total (Price + GST):
                       </td>
                       <td colSpan="1" style={{ textAlign: "right" }}>

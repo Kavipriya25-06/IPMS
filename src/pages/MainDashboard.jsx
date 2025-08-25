@@ -14,8 +14,7 @@ const MainDashboard = () => {
   const [pendingInwardCount, setPendingInwardCount] = useState(0);
   const [defectOutwardCount, setDefectOutwardCount] = useState(0);
   const [requestListCount, setRequestListCount] = useState(0);
-    const [poMasterCount, setPoMasterCount] = useState(0);
-
+  const [poMasterCount, setPoMasterCount] = useState(0);
 
   useEffect(() => {
     const role = localStorage.getItem("userRole");
@@ -94,7 +93,7 @@ const MainDashboard = () => {
   }, []);
 
   const handleRequestComponentClick = () => {
-    navigate("/components/addcomponents");
+    navigate("/components/addcomponents/");
   };
 
   const tiles = [
@@ -226,7 +225,10 @@ const MainDashboard = () => {
                     <div className="count-number">{tile.counts.requests}</div>
                     <div
                       className="count-label"
-                      onClick={handleRequestComponentClick}
+                      onClick={(e) => {
+                        e.stopPropagation(); // prevent parent tile click
+                        handleRequestComponentClick();
+                      }}
                       style={{ textDecoration: "underline", cursor: "pointer" }}
                     >
                       Requests Component

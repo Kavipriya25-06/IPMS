@@ -118,28 +118,25 @@ const RequestForm = () => {
     setSelectedProject(project);
   };
 
-  const handleAddComponent = () => {
-    setSelectedComponents([
-      ...selectedComponents,
-      { component: null, quantity: 1, vendor: { vendor_name: "N/A" } },
-    ]);
-    setNewComponentsAdded(true); // Mark that a new component has been added
+const handleAddComponent = () => {
+  // Check if all components are already added
+  const availableIds = availableComponents.map((comp) => comp.component_id);
+  const remainingIds = availableIds.filter((id) => !selectedIds.includes(id));
 
-    // Check if all components are already added
-    const availableIds = availableComponents.map((comp) => comp.component_id);
-    const remainingIds = availableIds.filter((id) => !selectedIds.includes(id));
+  if (remainingIds.length === 0) {
+    showInfoToast("All available components have already been added.");
+    return;
+  }
 
-    if (remainingIds.length === 0) {
-      showInfoToast("All available components have already been added.");
-      return;
-    }
+  // Add new row at the top instead of bottom
+  setSelectedComponents([
+    { component: null, quantity: 1, vendor: { vendor_name: "N/A" } },
+    ...selectedComponents,
+  ]);
 
-    // Add a blank row for selecting a new component
-    setSelectedComponents([
-      ...selectedComponents,
-      { component: null, quantity: 1, vendor: { vendor_name: "N/A" } },
-    ]);
-  };
+  setNewComponentsAdded(true);
+};
+
 
   const handleDeleteComponent = (index) => {
     setSelectedComponents(selectedComponents.filter((_, i) => i !== index));

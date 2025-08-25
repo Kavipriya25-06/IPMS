@@ -8,6 +8,7 @@ import Back from "../assets/Back.png";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { FaTrashAlt, FaEdit, FaCheck } from "react-icons/fa";
+import CompanyLogo from "../assets/aero360.png";
 
 import {
   showSuccessToast,
@@ -62,6 +63,7 @@ const POOrderMaster = ({ user }) => {
   const [vendorPOC, setVendorPOC] = useState(null);
   const [editingIndex, setEditingIndex] = useState(null);
   const [poPdfPopupOpen, setPoPdfPopupOpen] = useState(false);
+  const [logoDataUrl, setLogoDataUrl] = useState(null);
 
   const [extraFields, setExtraFields] = useState({
     refDate: "",
@@ -97,6 +99,23 @@ const POOrderMaster = ({ user }) => {
     if (!row) return null;
     return row.location || null; // your API uses "location"
   };
+
+  useEffect(() => {
+    const toDataURL = async (url) => {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result); // base64 data URL
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    };
+
+    toDataURL(CompanyLogo)
+      .then(setLogoDataUrl)
+      .catch((e) => console.error("Logo load failed:", e));
+  }, []);
 
   // If multiple sub-rows exist for the vendor, prefer default_poc === true
   const pickBestSubRow = (rows) => {
@@ -514,7 +533,8 @@ const POOrderMaster = ({ user }) => {
     vendor_gstn,
     vendorLocation,
     vendorPOC,
-    extraFields, // ✅ added for new values
+    extraFields,
+    logoDataUrl,
   }) => {
     const {
       refDate,
@@ -536,7 +556,7 @@ const POOrderMaster = ({ user }) => {
 
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    const M = 32; // outer margin
+    const M = 22; // outer margin
     const usable = pageWidth - M * 2;
     const lh = 14; // line height
 
@@ -549,30 +569,54 @@ const POOrderMaster = ({ user }) => {
 
     let y = M;
 
-    // ───────────────── Header ─────────────────
-    // ─── Header ───
-    doc.setDrawColor(40);
-    doc.line(M, y - 10, pageWidth - M, y - 10);
+    // ─── Full Page Border ───
+    doc.setDrawColor(100); // border color (dark gray)
+    doc.setLineWidth(1); // thickness
 
-    if (doc.__logoDataUrl) {
-      doc.addImage(
-        doc.__logoDataUrl,
-        "PNG",
-        M,
-        y - 2,
-        96,
-        28,
-        undefined,
-        "FAST"
-      );
+    const borderPadding = 12; // optional extra gap inside page edges
+    doc.rect(
+      borderPadding, // x
+      borderPadding, // y
+      pageWidth - borderPadding * 2, // width
+      pageHeight - borderPadding * 2 // height
+    );
+
+    // ─── Header line
+    // ─── Header Area (Logo + Title) ───
+    const logoMaxWidth = 120; // max allowed logo width
+    const logoMaxHeight = 40; // max allowed logo height
+    let logoHeightUsed = 0;
+
+    if (logoDataUrl) {
+      const imgProps = doc.getImageProperties(logoDataUrl);
+      const ratio = imgProps.width / imgProps.height;
+
+      let drawWidth = logoMaxWidth;
+      let drawHeight = logoMaxWidth / ratio;
+
+      if (drawHeight > logoMaxHeight) {
+        drawHeight = logoMaxHeight;
+        drawWidth = logoMaxHeight * ratio;
+      }
+
+      doc.addImage(logoDataUrl, "PNG", M, y, drawWidth, drawHeight);
+      logoHeightUsed = drawHeight;
     }
 
+    // Title (centered relative to page, slightly lower than logo top)
     doc.setFont(font, "bold");
     doc.setFontSize(20);
-    doc.text("Purchase Order", pageWidth / 2, y + 20, { align: "center" });
+    const titleY = y + (logoHeightUsed > 0 ? logoHeightUsed / 2 + 8 : 24);
+    doc.text("Purchase Order", pageWidth / 2, titleY, { align: "center" });
+
+    // ─── Divider line BELOW header (use max of logo bottom or title baseline)
+    const headerBottom = Math.max(y + logoHeightUsed, titleY);
+
+    // update Y for next section
+    y = headerBottom + 12;
 
     // Adjust PO No / Date to be slightly below the title
-    const poStartY = y + 10; // 30 points below top line / header
+    const poStartY = y + 5; // 30 points below top line / header
     doc.setFontSize(10);
 
     const rLabelX = pageWidth - M - 110;
@@ -651,10 +695,12 @@ const POOrderMaster = ({ user }) => {
     const leftW = Math.floor(usable * 0.55);
     const rightW = usable - leftW;
 
-    const topGapSupplier = 12; // adjust as needed
+    const topGapSupplier = 12;
     y += topGapSupplier;
+
+    // Supplier (Bill from)
     doc.setFont(font, "bold");
-    doc.text("Supplier  (Bill form)", M, y);
+    doc.text("Supplier (Bill from)", M, y);
     y += 12;
 
     doc.setFont(font, "normal");
@@ -676,34 +722,37 @@ const POOrderMaster = ({ user }) => {
       supY += lh;
     });
 
-    const r2LabelX = M + leftW + 12;
-    const r2ColonX = r2LabelX + 90;
-    const r2ValueX = r2ColonX + 8;
+    // Meta Info (Right side)
+    const r2LabelX = M + leftW - 20; // Label start
+    const r2ColonX = r2LabelX + 85; // Colon aligned position
+    const r2ValueX = r2ColonX + 8; // Value after colon
 
-    // ✅ values now come from extraFields
     const metaRows = [
       ["Ref Date", refDate ? format(new Date(refDate), "dd.MM.yyyy") : ""],
       ["Quotation No", quotationNo || ""],
-      ["Payment terms", paymentTerms || ""],
-      ["Mode of delivery", deliveryMode || ""],
+      ["Payment Terms", paymentTerms || ""],
+      ["Mode of Delivery", deliveryMode || ""],
       ["Contact Person", String(vendorPOC?.name || "")],
       ["Contact Details", String(vendorPOC?.phone || vendorPOC?.email || "")],
     ];
 
-    // Reduce top gap before metaRows
-    const metaTopGap = 30; // smaller than previous 12
+    const metaTopGap = 30;
     let metaY = y - metaTopGap;
 
-    const metaLineSpacing = 15; // optional: slightly smaller than lh
+    const metaLineSpacing = 15;
     metaRows.forEach(([label, value]) => {
       const wrapped = doc.splitTextToSize(value, rightW - 120);
       const h = Math.max(metaLineSpacing, wrapped.length * metaLineSpacing);
 
+      // Label
       doc.setFont(font, "bold");
       doc.text(label, r2LabelX, metaY + metaLineSpacing);
 
-      doc.setFont(font, "normal");
+      // Colon (aligned vertically)
       doc.text(":", r2ColonX, metaY + metaLineSpacing);
+
+      // Value
+      doc.setFont(font, "normal");
       doc.text(wrapped, r2ValueX, metaY + metaLineSpacing);
 
       metaY += h;
@@ -855,17 +904,17 @@ const POOrderMaster = ({ user }) => {
     doc.text(doc.splitTextToSize(remarksText, usable * 0.62 - 24), M + 12, ry);
 
     // ───────────────── Signature + footer ─────────────────
-    const sigBoxWidth = 160;
+    const sigBoxWidth = 190;
     const sigBoxHeight = 30;
     const sigX = pageWidth - M - sigBoxWidth;
     const sigY = pageHeight - M - sigBoxHeight;
 
     doc.setFont(font, "bold");
-    doc.setFontSize(10);
-    doc.text("Authorized Signature", sigX + 8, sigY + 18);
+    doc.setFontSize(11);
+    doc.text("Authorized Signature", sigX + 40, sigY + 18);
 
     doc.setFont(font, "normal");
-    doc.setFontSize(9);
+    doc.setFontSize(10);
     doc.text(
       poData?.cart_details?.company_name ||
         "For Dronix Technologies Private Limited",
@@ -873,13 +922,11 @@ const POOrderMaster = ({ user }) => {
       sigY + 32
     );
 
-    doc.setDrawColor(40);
-    doc.setFontSize(8);
-    doc.line(M, pageHeight - 18, pageWidth - M, pageHeight - 18);
+    doc.setFontSize(5);
     doc.text(
       "This is a Computer Generated Document",
       pageWidth / 2,
-      pageHeight - 10,
+      pageHeight - 5,
       { align: "center" }
     );
 
@@ -1757,6 +1804,7 @@ const POOrderMaster = ({ user }) => {
                         vendorLocation,
                         vendorPOC,
                         extraFields,
+                        logoDataUrl,
                       });
                       setPoPdfPopupOpen(false);
                     }}

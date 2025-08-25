@@ -273,7 +273,9 @@ const Outward = () => {
 
   // To display project name in table
   const getProjectName = (projectId) => {
-    const project = projectList.find((p) => p.project_id === projectId);
+    const project = projectList.find(
+      (p) => String(p.project_id) === String(projectId)
+    );
     return project?.project_name || "-";
   };
 
@@ -785,7 +787,7 @@ const Outward = () => {
                       <td>{row.vendor || "-"}</td>
                       <td>{row.specification || "-"}</td>
                       <td>{row.quantity || "-"}</td>
-                      <td>{getProjectName(row.project) || "-"}</td>
+                      <td>{getProjectName(row.project?.project_id) || "-"}</td>
                       <td>{row.type_of_outward || "-"}</td>
                       <td className="specification-cell" title={row.remarks}>
                         {row.remarks || "-"}
@@ -1125,28 +1127,33 @@ const Outward = () => {
                 <option value="Non-Return">Non-Return</option>
               </select>
               <label>Return Date</label>
-<div className="date-input-container">
-  <DatePicker
-    selected={eventForm.returnDate}
-    onChange={(date) =>
-      setEventForm((prev) => ({ ...prev, returnDate: date }))
-    }
-    dateFormat="dd-MM-yyyy"
-    placeholderText="dd-mm-yyyy"
-    className={`input1 ${eventForm.typeOfOutward === "Non-Return" ? "disabled-date" : ""}`}
-    showMonthDropdown
-    showYearDropdown
-    dropdownMode="select"
-    disabled={eventForm.typeOfOutward === "Non-Return"}
-    required={eventForm.typeOfOutward === "Return"}
-  />
-  <i
-    className={`fas fa-calendar-alt calendar-icon ${
-      eventForm.typeOfOutward === "Non-Return" ? "disabled-icon" : ""
-    }`}
-  ></i>
-</div>
-
+              <div className="date-input-container">
+                <DatePicker
+                  selected={eventForm.returnDate}
+                  onChange={(date) =>
+                    setEventForm((prev) => ({ ...prev, returnDate: date }))
+                  }
+                  dateFormat="dd-MM-yyyy"
+                  placeholderText="dd-mm-yyyy"
+                  className={`input1 ${
+                    eventForm.typeOfOutward === "Non-Return"
+                      ? "disabled-date"
+                      : ""
+                  }`}
+                  showMonthDropdown
+                  showYearDropdown
+                  dropdownMode="select"
+                  disabled={eventForm.typeOfOutward === "Non-Return"}
+                  required={eventForm.typeOfOutward === "Return"}
+                />
+                <i
+                  className={`fas fa-calendar-alt calendar-icon ${
+                    eventForm.typeOfOutward === "Non-Return"
+                      ? "disabled-icon"
+                      : ""
+                  }`}
+                ></i>
+              </div>
               <label>Remarks</label>
               <input
                 type="text"
