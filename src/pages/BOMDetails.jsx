@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import config from "../Config"; // Import config for API endpoints
 import DeleteIcon from "../assets/Delete.png"; //
 import AddIcon from "../assets/Add.png";
@@ -783,6 +783,7 @@ const BOMDetails = () => {
             >
               <thead>
                 <tr>
+                  <th>Component ID</th>
                   <th>Category</th>
                   <th>Component Type</th>
                   <th>Specification</th>
@@ -811,6 +812,18 @@ const BOMDetails = () => {
 
                   return (
                     <tr key={index}>
+                      <td>
+                        <Link
+                          to={`/components/${component.component.component_id}`}
+                          style={{
+                            textDecoration: "underline",
+                            color: "inherit",
+                          }}
+                          title={`Open ${component.component.component_id} in CDP`}
+                        >
+                          {component.component.component_id}
+                        </Link>
+                      </td>
                       <td>{component.component.category}</td>
                       <td>{component.component.component_type}</td>
                       <td className="specification-cell">
