@@ -118,25 +118,33 @@ const RequestForm = () => {
     setSelectedProject(project);
   };
 
-const handleAddComponent = () => {
-  // Check if all components are already added
-  const availableIds = availableComponents.map((comp) => comp.component_id);
-  const remainingIds = availableIds.filter((id) => !selectedIds.includes(id));
+  const handleAddComponent = () => {
+    // Check if all components are already added
+    const availableIds = availableComponents.map((comp) => comp.component_id);
+    const selectedIds = selectedComponents
+      .filter((c) => c.component)
+      .map((c) => c.component.component_id);
 
-  if (remainingIds.length === 0) {
-    showInfoToast("All available components have already been added.");
-    return;
-  }
+    const remainingIds = availableIds.filter((id) => !selectedIds.includes(id));
 
-  // Add new row at the top instead of bottom
-  setSelectedComponents([
-    { component: null, quantity: 1, vendor: { vendor_name: "N/A" } },
-    ...selectedComponents,
-  ]);
+    if (remainingIds.length === 0) {
+      showInfoToast("All available components have already been added.");
+      return;
+    }
 
-  setNewComponentsAdded(true);
-};
+    // Add new row at the top with vendorOptions initialized
+    setSelectedComponents([
+      {
+        component: null,
+        quantity: 1,
+        vendor: { vendor_name: "N/A", vendor_id: "" },
+        vendorOptions: [],
+      },
+      ...selectedComponents,
+    ]);
 
+    setNewComponentsAdded(true);
+  };
 
   const handleDeleteComponent = (index) => {
     setSelectedComponents(selectedComponents.filter((_, i) => i !== index));
@@ -670,7 +678,13 @@ const handleAddComponent = () => {
                 </option>
               ))}
             </select>
-            <div style={{ display: "flex", justifyContent: "flex-end" , gap: "10px" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "10px",
+              }}
+            >
               <button
                 className="edit-btn"
                 style={{
@@ -688,7 +702,6 @@ const handleAddComponent = () => {
                   borderRadius: "5px",
                   cursor: "pointer",
                   marginTop: "20px",
-                
                 }}
                 onClick={handleCancel}
               >
