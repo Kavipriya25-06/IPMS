@@ -7,15 +7,12 @@ import Back from "../assets/Back.png";
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { FaTrashAlt, FaEdit, FaCheck } from "react-icons/fa";
-import CompanyLogo from "../assets/aero360.png";
 
 import {
   showSuccessToast,
   showErrorToast,
   showInfoToast,
   showWarningToast,
-  showMessageToast,
   ToastContainerComponent,
 } from "./Toastify.jsx"; // Import Toastify utilities
 import { format } from "date-fns";
@@ -36,7 +33,7 @@ const POOrderMaster = ({ user }) => {
   const [inwardLoadingIds, setInwardLoadingIds] = useState([]);
   const navigate = useNavigate(); // Initialize useNavigate
   const [showPlaceOrderPopup, setShowPlaceOrderPopup] = useState(false);
-  const [placeOrderDateTime, setPlaceOrderDateTime] = useState(new Date());
+  const [placeOrderDateTime, setPlaceOrderDateTime] = useState("");
 
   const [showOrderedTable, setShowOrderedTable] = useState(false);
   const [orderedItems, setOrderedItems] = useState([]);
@@ -61,61 +58,12 @@ const POOrderMaster = ({ user }) => {
 
   const [vendorLocation, setVendorLocation] = useState("N/A");
   const [vendorPOC, setVendorPOC] = useState(null);
-  const [editingIndex, setEditingIndex] = useState(null);
-  const [poPdfPopupOpen, setPoPdfPopupOpen] = useState(false);
-  const [logoDataUrl, setLogoDataUrl] = useState(null);
-
-  const [extraFields, setExtraFields] = useState({
-    refDate: "",
-    quotationNo: "",
-    paymentTerms: "",
-    deliveryMode: "",
-    remarks: "",
-    shippingCharges: 0,
-  });
-
-  const overlayStyle = {
-    position: "fixed",
-    inset: 0,
-    background: "rgba(0,0,0,0.45)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 1000,
-  };
-
-  const modalStyle = {
-    width: "min(720px, 96vw)",
-    background: "#fff",
-    borderRadius: "10px",
-    padding: "16px",
-    maxHeight: "85vh",
-    overflow: "auto",
-    boxShadow: "0 10px 40px rgba(0,0,0,0.2)",
-  };
 
   // Pick a sensible "location" string from a vendor_sub_list row
   const extractLocation = (row) => {
     if (!row) return null;
     return row.location || null; // your API uses "location"
   };
-
-  useEffect(() => {
-    const toDataURL = async (url) => {
-      const res = await fetch(url);
-      const blob = await res.blob();
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result); // base64 data URL
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-    };
-
-    toDataURL(CompanyLogo)
-      .then(setLogoDataUrl)
-      .catch((e) => console.error("Logo load failed:", e));
-  }, []);
 
   // If multiple sub-rows exist for the vendor, prefer default_poc === true
   const pickBestSubRow = (rows) => {
@@ -177,7 +125,6 @@ const POOrderMaster = ({ user }) => {
   const isAdmin = user?.role === "Admin";
   const isProcurement = user?.role === "Procurement";
   const isFinance = user?.role === "Finance";
-  const isSubAdmin = user?.role === "Sub-Admin";
 
   const handleEmailChange = (e) => {
     const { name, value } = e.target;
@@ -192,15 +139,7 @@ const POOrderMaster = ({ user }) => {
     try {
       const response = await fetch(`${config.apiBaseURL}/po_master/`);
       const result = await response.json();
-      // const filteredPO = result.filter((order) => order.PO_id === poId);
-      // setPODetails(filteredPO);
-      const filteredPO = result
-        .filter((order) => order.PO_id === poId)
-        .map((item) => ({
-          ...item,
-          // keep the original quantity so edits can't exceed it later
-          original_quantity: item.cart_details?.quantity ?? 0,
-        }));
+      const filteredPO = result.filter((order) => order.PO_id === poId);
       setPODetails(filteredPO);
       setLoading(false);
     } catch (error) {
@@ -447,8 +386,8 @@ const POOrderMaster = ({ user }) => {
   const computeTotals = () => {
     const totals = poDetails.reduce(
       (acc, po) => {
-        const totalquantity = parseFloat(po.edited_quantity || 0);
-        const totalcost = parseFloat(po.edited_total_cost || 0);
+        const totalquantity = parseFloat(po.cart_details.quantity || 0);
+        const totalcost = parseFloat(po.cart_details.total_cost || 0);
         acc.totalquantity += totalquantity; // Exclude GST from total price
         acc.totalcost += totalcost;
         // acc.finalTotal += totalCost + gst; // Include GST in final total
@@ -523,415 +462,6 @@ const POOrderMaster = ({ user }) => {
     });
 
     return doc.output("blob");
-  };
-
-  // --- FINAL generateStyledPOPdf (old + new merged) ---
-  const generateStyledPOPdf = async ({
-    poId,
-    poData,
-    poDetails,
-    vendorName,
-    vendor_gstn,
-    vendorLocation,
-    vendorPOC,
-    extraFields,
-    logoDataUrl,
-  }) => {
-    const {
-      refDate,
-      quotationNo,
-      paymentTerms,
-      deliveryMode,
-      remarks,
-      shippingCharges,
-    } = extraFields || {}; // ✅ safely destructure
-
-    const doc = new jsPDF({ unit: "pt", format: "a4" }); // 595 x 842
-    const font = "helvetica";
-    const INR = (n) =>
-      "INR " +
-      Number(n || 0).toLocaleString("en-IN", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      });
-
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const M = 22; // outer margin
-    const usable = pageWidth - M * 2;
-    const lh = 14; // line height
-
-    // spacing knobs
-    const GAP_AFTER_TITLE = 12;
-    const GAP_BETWEEN_COLS = 14;
-    const GAP_BELOW_COLS = 22;
-    const SECTION_DIVIDER_H = 10;
-    const BLOCK_GAP = 12;
-
-    let y = M;
-
-    // ─── Full Page Border ───
-    doc.setDrawColor(100); // border color (dark gray)
-    doc.setLineWidth(1); // thickness
-
-    const borderPadding = 12; // optional extra gap inside page edges
-    doc.rect(
-      borderPadding, // x
-      borderPadding, // y
-      pageWidth - borderPadding * 2, // width
-      pageHeight - borderPadding * 2 // height
-    );
-
-    // ─── Header line
-    // ─── Header Area (Logo + Title) ───
-    const logoMaxWidth = 120; // max allowed logo width
-    const logoMaxHeight = 40; // max allowed logo height
-    let logoHeightUsed = 0;
-
-    if (logoDataUrl) {
-      const imgProps = doc.getImageProperties(logoDataUrl);
-      const ratio = imgProps.width / imgProps.height;
-
-      let drawWidth = logoMaxWidth;
-      let drawHeight = logoMaxWidth / ratio;
-
-      if (drawHeight > logoMaxHeight) {
-        drawHeight = logoMaxHeight;
-        drawWidth = logoMaxHeight * ratio;
-      }
-
-      doc.addImage(logoDataUrl, "PNG", M, y, drawWidth, drawHeight);
-      logoHeightUsed = drawHeight;
-    }
-
-    // Title (centered relative to page, slightly lower than logo top)
-    doc.setFont(font, "bold");
-    doc.setFontSize(20);
-    const titleY = y + (logoHeightUsed > 0 ? logoHeightUsed / 2 + 8 : 24);
-    doc.text("Purchase Order", pageWidth / 2, titleY, { align: "center" });
-
-    // ─── Divider line BELOW header (use max of logo bottom or title baseline)
-    const headerBottom = Math.max(y + logoHeightUsed, titleY);
-
-    // update Y for next section
-    y = headerBottom + 12;
-
-    // Adjust PO No / Date to be slightly below the title
-    const poStartY = y + 5; // 30 points below top line / header
-    doc.setFontSize(10);
-
-    const rLabelX = pageWidth - M - 110;
-    const rValueX = pageWidth - M;
-
-    [
-      ["PO No", String(poId || "")],
-      [
-        "Date",
-        poData?.date
-          ? format(new Date(poData.date), "dd.MM.yyyy")
-          : format(new Date(), "dd.MM.yyyy"),
-      ],
-    ].forEach(([k, v], i) => {
-      const yy = poStartY + i * lh; // use poStartY as base
-      doc.text(k + " :", rLabelX - 20, yy);
-      doc.setFont(font, "normal");
-      doc.text(v, rValueX, yy, { align: "right" });
-      doc.setFont(font, "bold");
-    });
-
-    y = poStartY + 2 * lh; // update y after this block
-    doc.setDrawColor(180);
-    doc.line(M, y, pageWidth - M, y);
-    y += 12;
-
-    // ───────────────── Invoice/Consignee ─────────────────
-    const colW = Math.floor((usable - GAP_BETWEEN_COLS) / 2);
-
-    const topGap = 10; // increase to add more space from previous section
-    y += topGap;
-
-    const invoiceTo = [
-      "Dronix Technologies Private Limited",
-      "No.7, KRJ Building, 3rd Floor, Welders Street, Mount Road, Chennai.",
-      "E-mail : finance@aero360.co.in",
-      "GSTIN/UIN : 33AACGDI081K1ZS",
-      "State Name : Tamil Nadu, Code : 33",
-    ];
-    const consignee = [
-      "Dronix Technologies Private Limited",
-      "133, Gandhi Rd, Alappakam, New Perungalathur, Chennai,",
-      "Sadhaangathapuram, Tamil Nadu 600063",
-      "Phone: 099624 58751",
-      "Email: finance@aero360.co.in",
-    ];
-
-    doc.setFont(font, "bold");
-    doc.text("Invoice To", M, y);
-    doc.text("Consignee (Ship to)", M + colW + GAP_BETWEEN_COLS, y);
-    y += 15;
-
-    doc.setFont(font, "normal");
-    const leftLines = invoiceTo.flatMap((t) => doc.splitTextToSize(t, colW));
-    const rightLines = consignee.flatMap((t) => doc.splitTextToSize(t, colW));
-
-    let leftY = y;
-    leftLines.forEach((t) => {
-      doc.text(t, M, leftY);
-      leftY += lh;
-    });
-
-    let rightY = y;
-    rightLines.forEach((t) => {
-      doc.text(t, M + colW + GAP_BETWEEN_COLS, rightY);
-      rightY += lh;
-    });
-
-    const sectionGap = 10; // smaller than GAP_BELOW_COLS
-    y = Math.max(leftY, rightY) + sectionGap;
-
-    doc.setDrawColor(210);
-    doc.line(M, y - SECTION_DIVIDER_H, pageWidth - M, y - SECTION_DIVIDER_H);
-
-    // ───────────────── Supplier + Meta ─────────────────
-    const leftW = Math.floor(usable * 0.55);
-    const rightW = usable - leftW;
-
-    const topGapSupplier = 12;
-    y += topGapSupplier;
-
-    // Supplier (Bill from)
-    doc.setFont(font, "bold");
-    doc.text("Supplier (Bill from)", M, y);
-    y += 12;
-
-    doc.setFont(font, "normal");
-    const supplierLines = [
-      poData?.cart_details?.vendor_name || vendorName || "",
-      poData?.cart_details?.vendor_address || vendorLocation || "",
-      `GSTIN/UIN : ${poData?.cart_details?.gstn || vendor_gstn || ""}`,
-      `State Name : ${poData?.cart_details?.state_name || ""}, Code : ${
-        poData?.cart_details?.state_code || ""
-      }`,
-    ].filter(Boolean);
-
-    const supWrapped = supplierLines.flatMap((t) =>
-      doc.splitTextToSize(String(t), leftW)
-    );
-    let supY = y;
-    supWrapped.forEach((t) => {
-      doc.text(t, M, supY);
-      supY += lh;
-    });
-
-    // Meta Info (Right side)
-    const r2LabelX = M + leftW - 20; // Label start
-    const r2ColonX = r2LabelX + 85; // Colon aligned position
-    const r2ValueX = r2ColonX + 8; // Value after colon
-
-    const metaRows = [
-      ["Ref Date", refDate ? format(new Date(refDate), "dd.MM.yyyy") : ""],
-      ["Quotation No", quotationNo || ""],
-      ["Payment Terms", paymentTerms || ""],
-      ["Mode of Delivery", deliveryMode || ""],
-      ["Contact Person", String(vendorPOC?.name || "")],
-      ["Contact Details", String(vendorPOC?.phone || vendorPOC?.email || "")],
-    ];
-
-    const metaTopGap = 30;
-    let metaY = y - metaTopGap;
-
-    const metaLineSpacing = 15;
-    metaRows.forEach(([label, value]) => {
-      const wrapped = doc.splitTextToSize(value, rightW - 120);
-      const h = Math.max(metaLineSpacing, wrapped.length * metaLineSpacing);
-
-      // Label
-      doc.setFont(font, "bold");
-      doc.text(label, r2LabelX, metaY + metaLineSpacing);
-
-      // Colon (aligned vertically)
-      doc.text(":", r2ColonX, metaY + metaLineSpacing);
-
-      // Value
-      doc.setFont(font, "normal");
-      doc.text(wrapped, r2ValueX, metaY + metaLineSpacing);
-
-      metaY += h;
-    });
-
-    y = Math.max(supY, metaY) + BLOCK_GAP; // update y after section
-
-    // ───────────────── Order details ─────────────────
-    const boxPad = 8;
-    const innerX = M + boxPad;
-    const innerW = usable - boxPad * 2;
-
-    const boxTitleY = y + 18;
-    const boxStartY = y;
-
-    doc.setFont(font, "bold");
-    doc.text("Order details", innerX, boxTitleY - 6);
-
-    // compute rows + totals
-    let baseTotal = 0;
-    let gstTotal = 0;
-    const bodyRows = poDetails.map((po, i) => {
-      const spec = po?.cart_details?.component_specification || "";
-      const uom = po?.cart_details?.unit_of_measurement || "";
-      const qty = Number(po?.cart_details?.quantity || 0);
-      const unit = Number(po?.cart_details?.unit_price || 0);
-      const gstP = Number(po?.cart_details?.GST || 0);
-      const base = unit * qty;
-      const gst = (base * gstP) / 100;
-      const total = base + gst;
-      baseTotal += base;
-      gstTotal += gst;
-      return [i + 1, spec, uom, qty, INR(unit), `${gstP}%`, INR(total)];
-    });
-
-    const raw = { c0: 36, c1: 200, c2: 46, c3: 56, c4: 86, c5: 40, c6: 67 };
-    const sumW = Object.values(raw).reduce((a, b) => a + b, 0);
-    const scale = innerW / sumW;
-    const w = Object.fromEntries(
-      Object.entries(raw).map(([k, v]) => [k, Math.floor(v * scale)])
-    );
-
-    autoTable(doc, {
-      startY: boxTitleY + 6,
-      head: [
-        [
-          "S.no",
-          "Description",
-          "UOM",
-          "Quantity",
-          "Unit Price",
-          "GST",
-          "Total Cost",
-        ],
-      ],
-      body: bodyRows,
-      theme: "grid",
-      margin: { left: innerX, right: innerX },
-      tableWidth: innerW,
-      styles: {
-        font,
-        fontSize: 10,
-        cellPadding: { top: 4, right: 6, bottom: 4, left: 6 },
-        lineColor: [210, 210, 210],
-        valign: "middle",
-      },
-      headStyles: {
-        font,
-        fontStyle: "bold",
-        fillColor: [255, 153, 0],
-        textColor: 255,
-        halign: "center",
-      },
-      alternateRowStyles: { fillColor: [248, 248, 248] },
-      columnStyles: {
-        0: { halign: "center", cellWidth: w.c0 },
-        1: { cellWidth: w.c1 },
-        2: { halign: "center", cellWidth: w.c2 },
-        3: { halign: "right", cellWidth: w.c3 },
-        4: { halign: "right", cellWidth: w.c4 },
-        5: { halign: "center", cellWidth: w.c5 },
-        6: { halign: "right", cellWidth: w.c6 },
-      },
-    });
-
-    let lastY = doc.lastAutoTable.finalY;
-
-    // ✅ shipping comes from popup
-    const shipping = Number(shippingCharges || 0);
-
-    const totals = [
-      ["Total Base Price", INR(baseTotal)],
-      ["Total GST%", INR(gstTotal)],
-      ["Shipping Charges", INR(shipping)],
-      ["Grand Total(Base+GST)", INR(baseTotal + gstTotal + shipping)],
-    ];
-
-    const totalsLabelW = 260;
-    const totalsValueW = 120;
-    const totalsW = totalsLabelW + totalsValueW;
-
-    autoTable(doc, {
-      startY: lastY + 8,
-      theme: "plain",
-      body: totals,
-      margin: { left: innerX + innerW - totalsW, right: innerX },
-      styles: {
-        font,
-        fontSize: 10,
-        cellPadding: { top: 6, right: 6, bottom: 6, left: 6 },
-      },
-      columnStyles: {
-        0: { cellWidth: totalsLabelW, halign: "right", fontStyle: "bold" },
-        1: { cellWidth: totalsValueW, halign: "right", fontStyle: "bold" },
-      },
-      didDrawCell: (d) => {
-        if (d.section === "body" && d.column.index === 1) {
-          doc.setDrawColor(230);
-          doc.line(
-            d.cell.x - totalsLabelW,
-            d.cell.y + d.cell.height,
-            d.cell.x + d.cell.width,
-            d.cell.y + d.cell.height
-          );
-        }
-      },
-    });
-
-    lastY = doc.lastAutoTable.finalY;
-    const boxEndY = lastY + 8;
-
-    doc.setDrawColor(120);
-    doc.setLineWidth(0.7);
-    doc.roundedRect(M, boxStartY, usable, boxEndY - boxStartY, 6, 6);
-
-    // ───────────────── Remarks ─────────────────
-    doc.setFont(font, "bold");
-    doc.text("Remarks", M, boxEndY + 20);
-    doc.setFont(font, "normal");
-
-    const remarksTop = boxEndY + 28;
-    const remarksH = 96;
-    doc.setDrawColor(170);
-    doc.setFillColor(248, 248, 248);
-    doc.roundedRect(M, remarksTop, usable * 0.62, remarksH, 6, 6, "FD");
-
-    const remarksText = remarks || "No remarks"; // ✅ popup value
-    let ry = remarksTop + 18;
-    doc.text(doc.splitTextToSize(remarksText, usable * 0.62 - 24), M + 12, ry);
-
-    // ───────────────── Signature + footer ─────────────────
-    const sigBoxWidth = 190;
-    const sigBoxHeight = 30;
-    const sigX = pageWidth - M - sigBoxWidth;
-    const sigY = pageHeight - M - sigBoxHeight;
-
-    doc.setFont(font, "bold");
-    doc.setFontSize(11);
-    doc.text("Authorized Signature", sigX + 40, sigY + 18);
-
-    doc.setFont(font, "normal");
-    doc.setFontSize(10);
-    doc.text(
-      poData?.cart_details?.company_name ||
-        "For Dronix Technologies Private Limited",
-      sigX + 8,
-      sigY + 32
-    );
-
-    doc.setFontSize(5);
-    doc.text(
-      "This is a Computer Generated Document",
-      pageWidth / 2,
-      pageHeight - 5,
-      { align: "center" }
-    );
-
-    doc.save(`PO_${poId}.pdf`);
   };
 
   const handleSendEmail = async () => {
@@ -1364,7 +894,7 @@ const POOrderMaster = ({ user }) => {
       />
     );
   });
-  
+
   const CustomReceivedDateInput = React.forwardRef(
     ({ value, onClick, item }, ref) => {
       const receivedQty =
@@ -1382,7 +912,7 @@ const POOrderMaster = ({ user }) => {
         (item.received_date && item.received_quantity) ||
         isPOCancelled; // Already saved
 
-      const handleClick = (e) => {
+      const handleFocus = (e) => {
         if (shippedQty <= 0) {
           showWarningToast(
             "Cannot select Received Date before Shipping is done."
@@ -1390,8 +920,11 @@ const POOrderMaster = ({ user }) => {
           e.preventDefault();
           return;
         }
+
         if (!isDisabled) {
-          onClick(e); // IMPORTANT: must call onClick to open calendar
+          onClick(e);
+        } else {
+          e.preventDefault();
         }
       };
 
@@ -1399,13 +932,12 @@ const POOrderMaster = ({ user }) => {
         <input
           ref={ref}
           value={value}
-          onClick={handleClick}
-          disabled={isDisabled}
+          onClick={handleFocus}
+          readOnly
           className={`input2 ${
             isDisabled ? "datepicker-disabled" : "datepicker-enabled"
           }`}
           placeholder="dd-mm-yyyy"
-          readOnly // important! DatePicker manages the value
         />
       );
     }
@@ -1498,113 +1030,6 @@ const POOrderMaster = ({ user }) => {
     document.body.removeChild(a);
   };
 
-  // only updates value while typing
-  const handleQuantityChange = (index, newQty) => {
-    setPODetails((prev) => {
-      const updated = [...prev];
-      const po = updated[index];
-
-      const qty = Number(newQty) || 0;
-      po.edited_quantity = qty; // ✅ use edited_quantity, not cart_details.quantity
-
-      // Recalculate total cost with GST
-      const unitPrice = parseFloat(po.cart_details.unit_price) || 0;
-      const gstPercent = parseFloat(po.cart_details.GST) || 0;
-      const base = unitPrice * qty;
-      const gst = (base * gstPercent) / 100;
-      po.edited_total_cost = (base + gst).toFixed(2);
-
-      return updated;
-    });
-  };
-
-  const saveQuantity = async (index) => {
-    const row = poDetails[index];
-    const qty = Number(row.edited_quantity);
-    const cap = Number(row.original_quantity ?? 0);
-
-    if (!Number.isFinite(qty)) {
-      showErrorToast("Invalid quantity");
-      return;
-    }
-    if (qty > cap) {
-      showErrorToast(`Quantity cannot exceed original (${cap})`);
-      handleQuantityChange(index, cap);
-      return;
-    }
-    if (qty < 1) {
-      showErrorToast("Quantity must be at least 1");
-      handleQuantityChange(index, 1);
-      return;
-    }
-
-    // ✅ Only send edited fields
-    const updatedData = {
-      edited_quantity: qty,
-      edited_total_cost: row.edited_total_cost,
-    };
-
-    try {
-      const response = await fetch(
-        `${config.apiBaseURL}/po_master/${row.id}/`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(updatedData),
-        }
-      );
-
-      if (!response.ok) throw new Error("Failed to update PO item");
-
-      const updatedItem = await response.json();
-
-      setPODetails((prev) => {
-        const updated = [...prev];
-        updated[index] = {
-          ...prev[index],
-          ...updatedItem,
-          cart_details: {
-            ...prev[index].cart_details,
-            ...updatedItem.cart_details,
-          },
-        };
-        return updated;
-      });
-
-      showSuccessToast("Quantity updated successfully");
-      setEditingIndex(null);
-    } catch (error) {
-      console.error("Update failed:", error);
-      showErrorToast("Failed to update PO item");
-    }
-  };
-
-  const handleDeleteItem = async (id) => {
-    showMessageToast({
-      message: "Are you sure you want to delete this item?",
-      onConfirm: async () => {
-        try {
-          const res = await fetch(`${config.apiBaseURL}/po_master/${id}/`, {
-            method: "DELETE",
-          });
-
-          if (res.ok) {
-            setPODetails((prev) => prev.filter((item) => item.id !== id));
-            showSuccessToast("Item deleted successfully.");
-          } else {
-            showErrorToast("Failed to delete item.");
-          }
-        } catch (err) {
-          console.error(err);
-          showErrorToast("Error deleting item.");
-        }
-      },
-      onCancel: () => {
-        showInfoToast("Delete cancelled.");
-      },
-    });
-  };
-
   return (
     <div>
       <h2>PO Details</h2>
@@ -1631,205 +1056,20 @@ const POOrderMaster = ({ user }) => {
       ) : (
         <>
           <div className="po-header">
-            <div
-              className="po-details"
-              style={{ display: "flex", gap: "100px", flexWrap: "wrap" }}
-            >
-              <h3
-                style={{
-                  maxWidth: "250px",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  cursor: "pointer",
-                }}
-                title={poId} // full content on hover
-              >
-                PO Number: {poId}
-              </h3>
-              <h3
-                style={{
-                  maxWidth: "250px",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  cursor: "pointer",
-                }}
-                title={vendorName}
-              >
-                Vendor Name: {vendorName}
-              </h3>
-              <h3
-                style={{
-                  maxWidth: "250px",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  cursor: "pointer",
-                }}
-                title={vendor_gstn}
-              >
-                GSTIN: {vendor_gstn}
-              </h3>
-              <h3
-                style={{
-                  maxWidth: "250px",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  cursor: "pointer",
-                }}
-                title={vendorLocation}
-              >
-                Location: {vendorLocation}
-              </h3>
+            <div className="po-details">
+              <h3>PO Number: {poId}</h3>
+              <h3>Vendor Name: {vendorName}</h3>
+              <h3>GSTIN: {vendor_gstn}</h3>
+              <h3>Location: {vendorLocation}</h3>
             </div>
 
             <button
               className="generate-report-btn"
-              onClick={() => setPoPdfPopupOpen(true)}
+              onClick={() => generatePOCSV(poDetails, totalquantity, totalcost)}
             >
               Generate Report
             </button>
           </div>
-          {poPdfPopupOpen && (
-            <div
-              className="modal-overlay"
-              onClick={(e) => {
-                if (e.target === e.currentTarget) setPoPdfPopupOpen(false);
-              }}
-            >
-              <div
-                className="modal-content"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <h2 style={{ marginTop: "5px" }}>Create Purchase Order</h2>
-                <div className="form-grid">
-                  <label>Ref Date</label>
-                  <div className="date-input-container">
-                    <DatePicker
-                      selected={
-                        extraFields.refDate
-                          ? new Date(extraFields.refDate)
-                          : null
-                      }
-                      onChange={(date) =>
-                        setExtraFields({
-                          ...extraFields,
-                          refDate: date ? date.toISOString().split("T")[0] : "",
-                        })
-                      }
-                      dateFormat="dd-MM-yyyy"
-                      placeholderText="dd-mm-yyyy"
-                      className="input1"
-                      showMonthDropdown
-                      showYearDropdown
-                      dropdownMode="select"
-                    />
-                    <i className="fas fa-calendar-alt calendar-icon"></i>
-                  </div>
-
-                  <label>Quotation No</label>
-                  <input
-                    type="text"
-                    name="quotationNo"
-                    value={extraFields.quotationNo}
-                    onChange={(e) =>
-                      setExtraFields({
-                        ...extraFields,
-                        quotationNo: e.target.value,
-                      })
-                    }
-                    placeholder="Quotation No"
-                  />
-
-                  <label>Payment Terms</label>
-                  <input
-                    type="text"
-                    name="paymentTerms"
-                    value={extraFields.paymentTerms}
-                    onChange={(e) =>
-                      setExtraFields({
-                        ...extraFields,
-                        paymentTerms: e.target.value,
-                      })
-                    }
-                    placeholder="Payment Terms"
-                  />
-
-                  <label htmlFor="deliveryMode">Mode of Delivery</label>
-                  <select
-                    value={extraFields.deliveryMode}
-                    onChange={(e) =>
-                      setExtraFields({
-                        ...extraFields,
-                        deliveryMode: e.target.value,
-                      })
-                    }
-                    required
-                  >
-                    <option value="">Select Mode</option>
-                    <option value="By Sea">By Sea</option>
-                    <option value="By Road">By Road</option>
-                    <option value="By Air">By Air</option>
-                  </select>
-
-                  <label>Shipping Charges</label>
-                  <input
-                    type="number"
-                    name="shippingCharges"
-                    value={extraFields.shippingCharges}
-                    onChange={(e) =>
-                      setExtraFields({
-                        ...extraFields,
-                        shippingCharges: e.target.value, // keep as string
-                      })
-                    }
-                    placeholder="Shipping Charges"
-                  />
-
-                  <label>Remarks</label>
-                  <textarea
-                    name="remarks"
-                    value={extraFields.remarks}
-                    onChange={(e) =>
-                      setExtraFields({
-                        ...extraFields,
-                        remarks: e.target.value,
-                      })
-                    }
-                    placeholder="Remarks"
-                    rows={3}
-                  />
-                </div>
-
-                <div className="modal-actions">
-                  <button
-                    className="generate-report-btn"
-                    onClick={() => {
-                      generateStyledPOPdf({
-                        poId,
-                        poData,
-                        poDetails,
-                        vendorName,
-                        vendor_gstn,
-                        vendorLocation,
-                        vendorPOC,
-                        extraFields,
-                        logoDataUrl,
-                      });
-                      setPoPdfPopupOpen(false);
-                    }}
-                  >
-                    Download PDF
-                  </button>
-                  <button onClick={() => setPoPdfPopupOpen(false)}>
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
 
           <div className="table-container">
             <table>
@@ -1844,92 +1084,22 @@ const POOrderMaster = ({ user }) => {
                   <th>Unit Price</th>
                   <th>GST</th>
                   <th>Total Cost</th>
-                  {(isAdmin || isProcurement || isSubAdmin) &&
-                    poData?.status !== "Approved" &&
-                    poData?.status !== "Ordered" && <th>Actions</th>}
+                  {/* {(isAdmin || isProcurement) && <th>Actions</th>} */}
                 </tr>
               </thead>
               <tbody>
                 {poDetails.map((po, index) => (
                   <tr key={index}>
-                    <td>{po?.cart_details?.component_id || "-"}</td>
-                    <td>{po?.cart_details?.category || "-"}</td>
-                    <td>{po?.cart_details?.component_type || "-"}</td>
-                    <td>{po?.cart_details?.component_specification || "-"}</td>
-                    <td>{po?.cart_details?.unit_of_measurement || "-"}</td>
+                    <td>{po.cart_details.component_id}</td>
+                    <td>{po.cart_details.category}</td>
+                    <td>{po.cart_details.component_type}</td>
+                    <td>{po.cart_details.component_specification}</td>
+                    <td>{po.cart_details.unit_of_measurement}</td>
+                    <td>{po.cart_details.quantity}</td>
 
-                    <td style={{ position: "relative", paddingRight: "30px" }}>
-                      {(isAdmin || isSubAdmin) &&
-                      poData?.status !== "Approved" &&
-                      poData?.status !== "Ordered" &&
-                      editingIndex === index ? (
-                        <input
-                          type="number"
-                          value={po.edited_quantity}
-                          min="1"
-                          max={po.original_quantity}
-                          onChange={(e) =>
-                            handleQuantityChange(index, e.target.value)
-                          }
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") saveQuantity(index);
-                          }}
-                          style={{ width: "60px" }}
-                          autoFocus
-                        />
-                      ) : (
-                        po.edited_quantity
-                      )}
-
-                      {/* Only show edit icon if not approved */}
-                      {(isAdmin || isSubAdmin) &&
-                        poData?.status !== "Approved" &&
-                        poData?.status !== "Ordered" && (
-                          <span
-                            style={{
-                              position: "absolute",
-                              right: "5px",
-                              top: "50%",
-                              transform: "translateY(-50%)",
-                              cursor: "pointer",
-                              color:
-                                editingIndex === index ? "green" : "#1f1f1fff",
-                              fontSize: "14px",
-                            }}
-                            onClick={() => {
-                              if (editingIndex === index) {
-                                saveQuantity(index); // validate + toast + exit
-                              } else {
-                                setEditingIndex(index); // enter edit mode
-                              }
-                            }}
-                            title={
-                              editingIndex === index ? "Save Qty" : "Edit Qty"
-                            }
-                          >
-                            {editingIndex === index ? <FaCheck /> : <FaEdit />}
-                          </span>
-                        )}
-                    </td>
-
-                    <td>
-                      ₹
-                      {parseFloat(
-                        po?.cart_details?.unit_price ?? 0
-                      ).toLocaleString("en-IN", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </td>
-                    <td style={{ textAlign: "right" }}>
-                      {parseFloat(po?.cart_details?.GST ?? 0).toLocaleString(
-                        "en-IN"
-                      )}
-                      %
-                    </td>
                     <td style={{ textAlign: "right" }}>
                       ₹
-                      {parseFloat(po?.edited_total_cost ?? 0).toLocaleString(
+                      {parseFloat(po.cart_details.unit_price).toLocaleString(
                         "en-IN",
                         {
                           minimumFractionDigits: 2,
@@ -1937,29 +1107,32 @@ const POOrderMaster = ({ user }) => {
                         }
                       )}
                     </td>
-
-                    {(isAdmin || isSubAdmin) &&
-                      poData?.status !== "Approved" &&
-                      poData?.status !== "Ordered" && (
-                        <td style={{ textAlign: "center" }}>
-                          <FaTrashAlt
-                            style={{ color: "red", cursor: "pointer" }}
-                            title="Delete Item"
-                            onClick={() => handleDeleteItem(po.id)}
-                          />
-                        </td>
+                    <td style={{ textAlign: "right" }}>
+                      {parseFloat(po.cart_details.GST).toLocaleString("en-IN", {
+                        // minimumFractionDigits: 2,
+                        // maximumFractionDigits: 2
+                      })}
+                      %
+                    </td>
+                    <td style={{ textAlign: "right" }}>
+                      ₹
+                      {parseFloat(po.cart_details.total_cost).toLocaleString(
+                        "en-IN",
+                        {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        }
                       )}
+                    </td>
                   </tr>
                 ))}
 
                 {/* Totals Row */}
                 <tr style={{ fontWeight: "bold" }}>
-                  <td colSpan="5" style={{ textAlign: "right" }}>
-                    Total Quantity
-                  </td>
+                  <td colSpan="5">Totals</td>
                   <td>{totalquantity}</td>
                   <td></td>
-                  <td style={{ textAlign: "right" }}> Grand Total Cost</td>
+                  <td></td>
                   <td style={{ textAlign: "right" }}>
                     ₹
                     {parseFloat(totalcost).toLocaleString("en-IN", {
@@ -1978,15 +1151,12 @@ const POOrderMaster = ({ user }) => {
         <div className="po-actions">
           {poData?.status === "Approved" && (
             <>
-              {/* <button className="email-button" onClick={handleOpenModal}>
+              <button className="email-button" onClick={handleOpenModal}>
                 Send Email
-              </button> */}
+              </button>
               <button
                 className="place-order-button"
-                onClick={() => {
-                  setPlaceOrderDateTime(new Date());
-                  setShowPlaceOrderPopup(true);
-                }}
+                onClick={() => setShowPlaceOrderPopup(true)}
               >
                 Place Order
               </button>
@@ -2149,8 +1319,8 @@ const POOrderMaster = ({ user }) => {
         <div className="modal-overlay">
           <div className="popup" style={{ marginTop: "-80px" }}>
             <div className="popup-content">
-              <h3>Place Order</h3>
-              <label>Select Date</label>
+              <h3>Place Order - Date & Time</h3>
+              <label>Select Date and Time:</label>
               <div className="date-input-containers">
                 <DatePicker
                   selected={placeOrderDateTime}
@@ -2722,7 +1892,7 @@ const POOrderMaster = ({ user }) => {
                         shipped_quantity: enteredQty,
                         received_quantity: enteredQty,
                         shipped_date: shippedInput.date,
-                        po_master: selectedPendingItem.po_master.id, // always the ID
+                        po_master: selectedPendingItem.po_master.id,
                         order_placed_date_time:
                           selectedPendingItem.order_placed_date_time,
                         status: "Shipped",
