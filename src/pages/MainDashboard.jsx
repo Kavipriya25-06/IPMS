@@ -68,7 +68,7 @@ const MainDashboard = () => {
       .catch((err) => console.error("Inward fetch error:", err));
 
     // Outward: count only those with category = "Defects"
-    
+
     fetch(`${config.apiBaseURL}/outward/defects/`)
       .then((res) => res.json())
       .then((data) => {

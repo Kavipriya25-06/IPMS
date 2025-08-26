@@ -715,7 +715,7 @@ const RequestDetails = ({ user }) => {
       const requestMasterPayload = {
         assign: newRequiredQty > 0 ? false : true, // Keep assign false if more are needed
         // qty: newRequiredQty, // Update qty to match remaining required quantity
-        status: newRequiredQty > 0 ? "Partially Assigned" : "Fully Assigned", // Dynamic status
+        status: newRequiredQty > 0 ? "Partially Assigned" : "Reserved", // Dynamic status
         cart_assign: true,
       };
 
