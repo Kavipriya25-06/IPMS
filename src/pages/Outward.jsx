@@ -996,7 +996,7 @@ const openEventForm = async () => {
                 value={salesForm.invoice}
                 onChange={handleSalesChange}
                 required
-                placeholder="gate pass"
+                placeholder="Invoice no"
               />
               <label htmlFor="">Product Name</label>
               <input
