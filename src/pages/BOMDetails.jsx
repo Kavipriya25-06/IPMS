@@ -909,7 +909,7 @@ const BOMDetails = () => {
                     <>
                       {/* Row 1: Quantity + Base Price (+ latest base price on the right) */}
                       <tr>
-                        <td colSpan="4" style={cell}>
+                        <td colSpan="5" style={cell}>
                           Total Quantity:
                         </td>
                         <td colSpan="1" style={cell}>
@@ -918,7 +918,7 @@ const BOMDetails = () => {
                         <td colSpan="2" style={cell}>
                           Total Base Price:
                         </td>
-                        <td colSpan="2" style={cell}>
+                        <td colSpan="1" style={cell}>
                           {fmtINR(baseTotal)}
                         </td>
 
@@ -946,10 +946,10 @@ const BOMDetails = () => {
 
                       {/* Row 2: Tax */}
                       <tr>
-                        <td colSpan="7" style={cell}>
+                        <td colSpan="8" style={cell}>
                           Total Tax (GST):
                         </td>
-                        <td colSpan="2" style={cell}>
+                        <td colSpan="1" style={cell}>
                           {fmtINR(totalTaxAmount)}
                         </td>
 
@@ -974,10 +974,10 @@ const BOMDetails = () => {
 
                       {/* Row 3: Grand total */}
                       <tr>
-                        <td colSpan="7" style={cell}>
+                        <td colSpan="8" style={cell}>
                           Grand Total (Price + GST):
                         </td>
-                        <td colSpan="2" style={cell}>
+                        <td colSpan="1" style={cell}>
                           {fmtINR(grandTotal)}
                         </td>
 

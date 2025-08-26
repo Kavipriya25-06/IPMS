@@ -5,7 +5,6 @@ import {
   showSuccessToast,
   showErrorToast,
   showWarningToast,
-  showInfoToast,
   ToastContainerComponent,
 } from "./Toastify.jsx";
 import DatePicker from "react-datepicker";
@@ -18,31 +17,23 @@ const OutwardEvent = () => {
 
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [newRow, setNewRow] = useState(null);
+  const [eventItems, setEventItems] = useState([]);
+  const [eventName, setEventName] = useState("");
+  const [loading, setLoading] = useState(true);
 
   const location = useLocation();
   const outwardId = location.state?.outwardId;
 
-  const [eventName, setEventName] = useState("");
-  const [loading, setLoading] = useState(true);
-
-  // Fetch Event details
+  // Fetch Event details and items
   useEffect(() => {
     if (!outwardId) return;
 
     setLoading(true);
-
-    fetch(`${config.apiBaseURL}/outward/event/`)
+    fetch(`${config.apiBaseURL}/outward/event/${outwardId}/`)
       .then((res) => res.json())
       .then((data) => {
-        // find event record by outwardId
-        const eventRecord = data.find((item) => item.id === outwardId);
-
-        if (eventRecord) {
-          setEventName(eventRecord.event_name || "No event linked");
-        } else {
-          setEventName("No event linked");
-        }
-
+        setEventName(data.event_name || "No event linked");
+        setEventItems(data.event_items || []);
         setLoading(false);
       })
       .catch(() => {
@@ -51,7 +42,7 @@ const OutwardEvent = () => {
       });
   }, [outwardId]);
 
-  // --- Scroll to top ---
+  // Scroll to top logic
   useEffect(() => {
     const handleScroll = () => setShowScrollTop(window.scrollY > 300);
     window.addEventListener("scroll", handleScroll);
@@ -62,22 +53,65 @@ const OutwardEvent = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
- const handleAddRow = () => {
-  if (newRow) {
-    showWarningToast("Please fill or save the event data first.");
-    return;
-  }
-  setNewRow({ component: "", serialNumber: "", quantity: "",remarks: "" });
-};
-  // Validate serialNumber as well
-  const handleSaveRow = () => {
-    if (!newRow.component || !newRow.serialNumber || !newRow.quantity || !newRow.remarks) {
+  // Add new row
+  const handleAddRow = () => {
+    if (newRow) {
+      showWarningToast("Please fill or save the current row first.");
+      return;
+    }
+    setNewRow({ component: "", serial_number: "", quantity: "", remarks: "" });
+  };
+
+  // Save single row to backend
+  const handleSaveRow = async () => {
+    if (
+      !newRow.component ||
+      !newRow.serial_number ||
+      !newRow.quantity ||
+      !newRow.remarks
+    ) {
       showErrorToast("Please fill all fields.");
       return;
     }
-    console.log("Saving row:", newRow);
-    setNewRow(null);
-    showSuccessToast("Row added.");
+
+    if (!outwardId) {
+      showErrorToast("No event selected.");
+      return;
+    }
+
+    // Prepare payload for a single item
+   const payload = {
+  component: newRow.component,
+  serial_number: newRow.serial_number, // use the correct state field
+  quantity: newRow.quantity,
+  remarks: newRow.remarks,
+};
+
+
+    try {
+      const res = await fetch(
+        `${config.apiBaseURL}/outward/event/${outwardId}/items/`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (res.ok) {
+        // Add the row to frontend state after backend confirms success
+        setEventItems((prev) => [...prev, payload]);
+        setNewRow(null);
+        showSuccessToast("Row saved successfully!");
+      } else {
+        const errText = await res.text(); // Use text to avoid JSON parse error
+        console.error("Error saving item:", errText);
+        showErrorToast("Failed to save row: " + errText);
+      }
+    } catch (err) {
+      console.error(err);
+      showErrorToast("Network error while saving row.");
+    }
   };
 
   const handleCancelRow = () => setNewRow(null);
@@ -103,7 +137,6 @@ const OutwardEvent = () => {
             >
               <FaArrowLeft />
             </button>
-
             <h2 style={{ margin: 0 }}>
               Event Name : {loading ? "Loading..." : eventName}
             </h2>
@@ -124,7 +157,6 @@ const OutwardEvent = () => {
               dateFormat="dd-MMM-yyyy"
               readOnly
               className="date-sales-picker"
-              style={{ fontSize: "20px", padding: "4px 6px" }}
             />
           </div>
         </div>
@@ -144,7 +176,7 @@ const OutwardEvent = () => {
               background: "transparent",
               border: "none",
             }}
-            title="Add Vendor"
+            title="Add Item"
             onClick={handleAddRow}
           >
             <img src={Add} alt="" style={{ width: "20px", height: "20px" }} />
@@ -152,7 +184,6 @@ const OutwardEvent = () => {
         </div>
       </div>
 
-      {/* Table */}
       <div className="table-container">
         <table>
           <thead>
@@ -166,17 +197,19 @@ const OutwardEvent = () => {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>1</td>
-              <td>Sample Component</td>
-              <td>WERT32145382583</td>
-              <td>10</td>
-              <td>good</td>
-            </tr>
+            {eventItems.map((item, idx) => (
+              <tr key={idx}>
+                <td>{idx + 1}</td>
+                <td>{item.component}</td>
+                <td>{item.serial_number}</td>
+                <td>{item.quantity}</td>
+                <td>{item.remarks}</td>
+              </tr>
+            ))}
 
             {newRow && (
               <tr>
-                <td>2</td>
+                <td>{eventItems.length + 1}</td>
                 <td>
                   <input
                     type="text"
@@ -184,17 +217,19 @@ const OutwardEvent = () => {
                     onChange={(e) =>
                       setNewRow({ ...newRow, component: e.target.value })
                     }
-                    placeholder="Component Name"
+                    placeholder="Component"
+                    className="outward-sales-input"
                   />
                 </td>
                 <td>
                   <input
                     type="text"
-                    value={newRow.serialNumber}
+                    value={newRow.serial_number}
                     onChange={(e) =>
-                      setNewRow({ ...newRow, serialNumber: e.target.value })
+                      setNewRow({ ...newRow, serial_number: e.target.value })
                     }
                     placeholder="Serial Number"
+                    className="outward-sales-input"
                   />
                 </td>
                 <td>
@@ -205,21 +240,33 @@ const OutwardEvent = () => {
                       setNewRow({ ...newRow, quantity: e.target.value })
                     }
                     placeholder="Quantity"
+                    className="outward-sales-input"
                   />
                 </td>
-                <td className="specification-cell" title={newRow.remarks}>
+                <td>
                   <input
                     type="text"
                     value={newRow.remarks}
                     onChange={(e) =>
                       setNewRow({ ...newRow, remarks: e.target.value })
                     }
-                    placeholder="remarks"
+                    placeholder="Remarks"
+                    className="outward-sales-input"
                   />
                 </td>
-                <td className="event-buttons">
-                  <button onClick={handleSaveRow}>Save</button>
-                  <button onClick={handleCancelRow}>Cancel</button>
+                <td>
+                  <button
+                    className="outward-sales-btn save-btn"
+                    onClick={handleSaveRow}
+                  >
+                    Save
+                  </button>
+                  <button
+                    className="outward-sales-btn cancel-btn"
+                    onClick={handleCancelRow}
+                  >
+                    Cancel
+                  </button>
                 </td>
               </tr>
             )}
@@ -227,7 +274,6 @@ const OutwardEvent = () => {
         </table>
       </div>
 
-      {/* Scroll to top */}
       {showScrollTop && (
         <button
           style={{
@@ -249,7 +295,7 @@ const OutwardEvent = () => {
         </button>
       )}
 
-      <ToastContainerComponent />
+      <ToastContainerComponent position="top-right" autoClose={3000} />
     </div>
   );
 };

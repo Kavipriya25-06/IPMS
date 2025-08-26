@@ -297,7 +297,7 @@ const handleAddComponent = () => {
         component: component.component.component_id,
         vendor: component.vendor.vendor_id,
         qty: component.quantity,
-        status: "pending",
+        status: "Pending",
         assign: false,
         project_id: selectedProject ? selectedProject.project_id : null,
       }));
@@ -377,7 +377,7 @@ const handleAddComponent = () => {
         component: component.component.component_id,
         vendor: component.vendor.vendor_id,
         qty: component.quantity,
-        status: "pending",
+        status: "Pending",
         assign: false,
         project_id: selectedProject.project_id,
       }));

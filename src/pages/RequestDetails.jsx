@@ -52,6 +52,7 @@ const RequestDetails = ({ user }) => {
   const isAdmin = user?.role === "Admin";
   const isProcurement = user?.role === "Procurement";
   const isInventory = user?.role === "Inventory";
+  const isUser = user?.role === "User";
 
   useEffect(() => {
     fetchRequestDetails();
@@ -411,7 +412,7 @@ const RequestDetails = ({ user }) => {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                   qty: remainingQty,
-                  status: remainingQty > 0 ? "pending" : "completed",
+                  status: remainingQty > 0 ? "Pending" : "completed",
                   cart_assign: false,
                   assign: false,
                 }),
@@ -1163,12 +1164,12 @@ const RequestDetails = ({ user }) => {
             )}
           </div>
 
-      <div className="table-container-request">
+          <div className="table-container-request">
             <table>
               <thead>
                 <tr>
                   <th>Component ID</th>
-                  <th>Status</th>
+                  {(isAdmin || isProcurement || isInventory) && <th>Status</th>}
                   <th>Category</th>
                   <th>Component Type</th>
                   <th>Specification</th>
@@ -1182,6 +1183,7 @@ const RequestDetails = ({ user }) => {
                   {(isAdmin || isProcurement || isInventory) && (
                     <th>Actions</th>
                   )}
+                  {isUser && <th>Status</th>}
                 </tr>
               </thead>
               <tbody>
@@ -1208,12 +1210,16 @@ const RequestDetails = ({ user }) => {
                             {detail.component_id}
                           </Link>
                         </td>
-                        <td>
-                          {detail.status}
-                          {/* {requestStatus.find(
+                        {(isAdmin || isProcurement || isInventory) && (
+                          <td
+                            style={{ color: "#030303ff", fontWeight: "bold" }}
+                          >
+                            {detail.status}
+                            {/* {requestStatus.find(
                             (status) => status.request_id === detail.id
                           )?.po_status || ""} */}
-                        </td>
+                          </td>
+                        )}
                         <td>{detail.category}</td>
                         <td>{detail.component_type}</td>
                         <td className="specification-cell">
@@ -1315,7 +1321,12 @@ const RequestDetails = ({ user }) => {
                         <td>
                           {detail.assign !== true ? `${detail.qty}` : `0`}
                         </td>
-                        <td style={{ backgroundColor: "#eceaeaff", color:"grey" }}>
+                        <td
+                          style={{
+                            backgroundColor: "#eceaeaff",
+                            color: "grey",
+                          }}
+                        >
                           {availableQty}
                         </td>
                         {/* <td>
@@ -1410,6 +1421,16 @@ const RequestDetails = ({ user }) => {
                                 ? "Added to Cart"
                                 : "Add to Cart"}
                             </button>
+                          </td>
+                        )}
+                        {isUser && (
+                          <td
+                            style={{ color: "#030303ff", fontWeight: "bold" }}
+                          >
+                            {detail.status}
+                            {/* {requestStatus.find(
+                            (status) => status.request_id === detail.id
+                          )?.po_status || ""} */}
                           </td>
                         )}
                       </tr>

@@ -61,7 +61,7 @@ const Outward = () => {
     outDate: new Date(),
     time: format(new Date(), "hh:mm a"),
     invoice: "",
-    specification: "",
+    productName: "",
     bom: "",
     client: "",
     typeOfOutward: "",
@@ -228,11 +228,21 @@ const Outward = () => {
   const currentHeaders = tableHeaders[reportType] || [];
 
   // Fetch data from API when reportType changes
+  // Fetch data from API when reportType changes
   const fetchData = async () => {
     try {
+      if (!reportType) {
+        setTableData([]);
+        return;
+      }
+
+      // Convert reportType (e.g., "Defects") → lowercase ("defects")
+      const endpoint = reportType.toLowerCase();
+
       const response = await axios.get(
-        `${config.apiBaseURL}/outward/${reportType}/`
+        `${config.apiBaseURL}/outward/${endpoint}/`
       );
+
       setTableData(response.data || []);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -241,7 +251,7 @@ const Outward = () => {
   };
 
   useEffect(() => {
-    fetchData(); // call on report type change
+    fetchData();
   }, [reportType]);
 
   useEffect(() => {
@@ -302,7 +312,7 @@ const Outward = () => {
     };
 
     try {
-      const res = await fetch(`${config.apiBaseURL}/outward/`, {
+      const res = await fetch(`${config.apiBaseURL}/outward/manufacture/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -363,7 +373,7 @@ const Outward = () => {
       date: salesForm.outDate?.toISOString().split("T")[0],
       time: salesForm.time,
       invoice_no: salesForm.invoice,
-      specification: salesForm.specification,
+      product_name: salesForm.productName,
       bom: salesForm.bom,
       client: salesForm.client,
       type_of_outward: salesForm.typeOfOutward,
@@ -372,7 +382,7 @@ const Outward = () => {
     };
 
     try {
-      const res = await fetch(`${config.apiBaseURL}/outward/`, {
+      const res = await fetch(`${config.apiBaseURL}/outward/sales/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -387,7 +397,7 @@ const Outward = () => {
           outDate: new Date(),
           time: format(new Date(), "hh:mm a"),
           invoice: "",
-          specification: "",
+          productName: "",
           bom: "",
           client: "",
           typeOfOutward: "",
@@ -423,7 +433,7 @@ const Outward = () => {
     };
 
     try {
-      const res = await fetch(`${config.apiBaseURL}/outward/`, {
+      const res = await fetch(`${config.apiBaseURL}/outward/event/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -618,48 +628,55 @@ const Outward = () => {
   };
 
   // Generate next GatePass ID
-  const generateNextGatePass = async () => {
-    try {
-      const response = await fetch(`${config.apiBaseURL}/outward/`);
-      if (!response.ok) throw new Error("Failed to fetch outward records");
+  // Generate next GatePass ID (shared between Manufacture + Event)
+const generateNextGatePass = async () => {
+  try {
+    // Fetch latest manufacture + event records
+    const [manufactureRes, eventRes] = await Promise.all([
+      fetch(`${config.apiBaseURL}/outward/manufacture/`),
+      fetch(`${config.apiBaseURL}/outward/event/`),
+    ]);
 
-      const data = await response.json();
+    if (!manufactureRes.ok || !eventRes.ok) throw new Error("Failed to fetch outward records");
 
-      // Extract all gatepasses only for Manufacture + Event
-      const gatePasses = data
-        .filter(
-          (item) => item.category === "Manufacture" || item.category === "Event"
-        )
-        .map((item) => item.gatepass)
-        .filter((gp) => gp && gp.startsWith("GP-"));
+    const [manufactureData, eventData] = await Promise.all([
+      manufactureRes.json(),
+      eventRes.json(),
+    ]);
 
-      // Find the highest running number
-      let maxNum = 0;
-      gatePasses.forEach((gp) => {
-        const num = parseInt(gp.replace("GP-", ""), 10);
-        if (!isNaN(num) && num > maxNum) maxNum = num;
-      });
+    const allData = [...manufactureData, ...eventData];
 
-      // Generate next
-      const nextNum = (maxNum + 1).toString().padStart(5, "0"); // always 5 digits
-      return `GP-${nextNum}`;
-    } catch (err) {
-      console.error("Error generating gatepass:", err);
-      return `GP-00001`; // fallback
-    }
-  };
+    const gatePasses = allData
+      .map((item) => item.gatepass)
+      .filter((gp) => gp && gp.startsWith("GP-"));
 
-  const openServiceForm = async () => {
-    const newGP = await generateNextGatePass();
-    setServiceForm((prev) => ({ ...prev, gatepass: newGP }));
-    setShowServiceForm(true);
-  };
+    let maxNum = 0;
+    gatePasses.forEach((gp) => {
+      const num = parseInt(gp.replace("GP-", ""), 10);
+      if (!isNaN(num) && num > maxNum) maxNum = num;
+    });
 
-  const openEventForm = async () => {
-    const newGP = await generateNextGatePass();
-    setEventForm((prev) => ({ ...prev, gatepass: newGP }));
-    setShowEventForm(true);
-  };
+    const nextNum = (maxNum + 1).toString().padStart(5, "0");
+    return `GP-${nextNum}`;
+  } catch (err) {
+    console.error("Error generating gatepass:", err);
+    return `GP-00001`;
+  }
+};
+
+
+const openServiceForm = async () => {
+  const newGP = await generateNextGatePass(); // always fetch latest
+  setServiceForm((prev) => ({ ...prev, gatepass: newGP }));
+  setShowServiceForm(true);
+};
+
+const openEventForm = async () => {
+  const newGP = await generateNextGatePass(); // always fetch latest
+  setEventForm((prev) => ({ ...prev, gatepass: newGP }));
+  setShowEventForm(true);
+};
+
 
   return (
     <div>
@@ -822,7 +839,7 @@ const Outward = () => {
                           })
                         }
                       >
-                        {row.specification || "-"}
+                        {row.product_name || "-"}
                       </td>
 
                       <td>{row.client || "-"}</td>
@@ -984,8 +1001,8 @@ const Outward = () => {
               <label htmlFor="">Product Name</label>
               <input
                 type="text"
-                name="specification"
-                value={salesForm.specification}
+                name="productName"
+                value={salesForm.productName}
                 onChange={handleSalesChange}
                 required
                 placeholder="product name"
