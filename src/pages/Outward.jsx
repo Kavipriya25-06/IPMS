@@ -988,7 +988,7 @@ const openEventForm = async () => {
                 readOnly
                 placeholder="Time"
               />
-              <label htmlFor="">Invoice/Gate Pass</label>
+              <label htmlFor="">Invoice Number</label>
 
               <input
                 type="text"
