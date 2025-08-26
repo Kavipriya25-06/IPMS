@@ -396,17 +396,34 @@ const RequestComponent = () => {
 
   return (
     <div>
-      <div className="header">
+      <div className="header-requests">
         <div className="header-back">
           <button
             className="back-btn"
-            onClick={() => navigate(-1)} // Goes back to previous page
+            onClick={() => navigate(-1)} 
+            title="Back to Component List"
           >
             <FaArrowLeft />
           </button>
           <h2>New Component</h2>
-          <h3 style={{marginLeft:"60px"}}>Total Requests: {filteredComponents.length}</h3>
+          <h3 style={{ marginLeft: "60px" }}>
+            Total Requests: {filteredComponents.length}
+          </h3>
         </div>{" "}
+        <div className="header-center">
+          <div className="search-bar-container">
+            <input
+              type="text"
+              className="search-bar"
+              placeholder="Search by Spec..."
+              value={searchSpec}
+              onChange={(e) => setSearchSpec(e.target.value)}
+            />
+            <span className="search-icon">
+              <i className="fa fa-search" aria-hidden="true"></i>
+            </span>
+          </div>
+        </div>
         <div className="button-group">
           <button className="add-comp" onClick={() => setShowModal(true)}>
             Request Component
@@ -511,20 +528,6 @@ const RequestComponent = () => {
               </div>
             </div>
           )}
-        </div>
-      </div>
-      <div class="center-wrapper">
-        <div className="search-bar-container">
-          <input
-            type="text"
-            className="search-bar"
-            placeholder="Search by Spec..."
-            value={searchSpec}
-            onChange={(e) => setSearchSpec(e.target.value)}
-          />
-          <span className="search-icon">
-            <i className="fa fa-search" aria-hidden="true"></i>
-          </span>
         </div>
       </div>
 

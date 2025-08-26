@@ -215,6 +215,18 @@ table {
   margin-bottom: 50px; /* Add space before footer */
 }
 
+.table-container-request {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-width: 100%;
+  white-space: nowrap;
+  border-radius: 5px;
+  max-height: calc(
+    100vh - 270px
+  ); /* Adjust based on your footer and header height */
+  margin-bottom: 50px; /* Add space before footer */
+}
+
 .main-content {
   min-height: fit-content;
 }
@@ -931,6 +943,55 @@ tbody tr:hover {
   align-items: center;
   margin-bottom: 10px;
 }
+
+.header-requests {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative; 
+  flex-wrap: wrap;
+  margin-bottom: -10px;
+}
+
+
+.header-back {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-center {
+  flex: 1; 
+  display: flex;
+  justify-content: center;
+  min-width: 200px;
+    transform: translateX(-10%); /*perfectly center */
+
+}
+
+.search-bar-container {
+  position: relative;
+  width: 100%;
+  max-width: 300px;
+}
+
+.search-bar {
+  width: 100%;
+  padding: 8px 34px 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.search-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
+  pointer-events: none;
+}
+
+
 .tag-dropdown-wrapper {
   position: relative;
 }
@@ -5057,13 +5118,6 @@ ul {
   color: #666;
 }
 
-
-
-.header-back {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
 
 .back-btn {
   background: none;
