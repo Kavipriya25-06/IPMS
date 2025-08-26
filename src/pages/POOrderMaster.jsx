@@ -177,6 +177,8 @@ const POOrderMaster = ({ user }) => {
   const isAdmin = user?.role === "Admin";
   const isProcurement = user?.role === "Procurement";
   const isFinance = user?.role === "Finance";
+  const isSubAdmin = user?.role === "Sub-Admin";
+  
 
   const handleEmailChange = (e) => {
     const { name, value } = e.target;
@@ -1832,7 +1834,7 @@ const POOrderMaster = ({ user }) => {
                   <th>Unit Price</th>
                   <th>GST</th>
                   <th>Total Cost</th>
-                  {(isAdmin || isProcurement) &&
+                  {(isAdmin || isProcurement || isSubAdmin) &&
                     poData?.status !== "Approved" &&
                     poData?.status !== "Ordered" && <th>Actions</th>}
                 </tr>
@@ -1847,7 +1849,7 @@ const POOrderMaster = ({ user }) => {
                     <td>{po?.cart_details?.unit_of_measurement || "-"}</td>
 
                     <td style={{ position: "relative", paddingRight: "30px" }}>
-                      {isAdmin &&
+                      {(isAdmin || isSubAdmin)  &&
                       poData?.status !== "Approved" &&
                       poData?.status !== "Ordered" &&
                       editingIndex === index ? (
@@ -1870,7 +1872,7 @@ const POOrderMaster = ({ user }) => {
                       )}
 
                       {/* Only show edit icon if not approved */}
-                      {isAdmin &&
+                      {(isAdmin || isSubAdmin)  &&
                         poData?.status !== "Approved" &&
                         poData?.status !== "Ordered" && (
                           <span
@@ -1926,7 +1928,7 @@ const POOrderMaster = ({ user }) => {
                       )}
                     </td>
 
-                    {isAdmin &&
+                    {(isAdmin || isSubAdmin)  &&
                       poData?.status !== "Approved" &&
                       poData?.status !== "Ordered" && (
                         <td style={{ textAlign: "center" }}>
