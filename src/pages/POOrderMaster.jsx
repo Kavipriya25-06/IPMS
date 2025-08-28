@@ -545,6 +545,50 @@ const POOrderMaster = ({ user }) => {
     return doc.output("blob");
   };
 
+  // --- helper: group PO items by component_id for PDF ---
+  const groupPOItemsByComponent = (poDetails) => {
+    const map = new Map();
+
+    poDetails.forEach((po) => {
+      const cd = po?.cart_details || {};
+      const key = cd.component_id || "UNKNOWN";
+      const qty = Number(po?.edited_quantity ?? cd.quantity ?? 0);
+      const unit = Number(cd.unit_price ?? 0);
+      const gstP = Number(cd.GST ?? 0);
+
+      const base = unit * qty;
+      const gst = (base * gstP) / 100;
+
+      if (!map.has(key)) {
+        map.set(key, {
+          component_id: key,
+          spec: cd.component_specification || "",
+          uom: cd.unit_of_measurement || "",
+          qty: 0,
+          unitPrices: new Set(), // track if multiple prices appear
+          gstPercents: new Set(), // track if multiple GSTs appear
+          sumBase: 0,
+          sumGst: 0,
+        });
+      }
+
+      const g = map.get(key);
+      g.qty += qty;
+      g.unitPrices.add(unit);
+      g.gstPercents.add(gstP);
+      g.sumBase += base;
+      g.sumGst += gst;
+    });
+
+    return Array.from(map.values()).map((g) => ({
+      ...g,
+      // If there’s exactly one unique unit price / GST, show it; otherwise show null and we’ll render "—"
+      unit_price: g.unitPrices.size === 1 ? [...g.unitPrices][0] : null,
+      gst_percent: g.gstPercents.size === 1 ? [...g.gstPercents][0] : null,
+      sumTotal: g.sumBase + g.sumGst,
+    }));
+  };
+
   // --- FINAL generateStyledPOPdf (old + new merged) ---
   const generateStyledPOPdf = async ({
     poId,
@@ -564,9 +608,10 @@ const POOrderMaster = ({ user }) => {
       deliveryMode,
       remarks,
       shippingCharges,
-    } = extraFields || {};
+      dueDate,
+    } = extraFields || {}; // safely destructure
 
-    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const doc = new jsPDF({ unit: "pt", format: "a4" }); // 595 x 842
     const font = "helvetica";
     const INR = (n) =>
       "INR " +
@@ -577,10 +622,11 @@ const POOrderMaster = ({ user }) => {
 
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    const M = 22;
+    const M = 22; // outer margin
     const usable = pageWidth - M * 2;
-    const lh = 14;
+    const lh = 14; // line height
 
+    // spacing knobs
     const GAP_AFTER_TITLE = 12;
     const GAP_BETWEEN_COLS = 14;
     const GAP_BELOW_COLS = 22;
@@ -589,20 +635,28 @@ const POOrderMaster = ({ user }) => {
 
     let y = M;
 
-    // page border
-    doc.setDrawColor(100);
-    doc.setLineWidth(1);
-    const borderPadding = 12;
-    doc.rect(
-      borderPadding,
-      borderPadding,
-      pageWidth - borderPadding * 2,
-      pageHeight - borderPadding * 2
-    );
+    // ─── Full Page Border ───
+    // ─── Helper: Draw full page border ───
+    const borderPadding = 12; // optional extra gap inside page edges
 
-    // header (logo + title)
-    const logoMaxWidth = 120;
-    const logoMaxHeight = 40;
+    const drawOuterBorder = () => {
+      doc.setDrawColor(100); // dark gray border
+      doc.setLineWidth(1);
+      doc.rect(
+        borderPadding,
+        borderPadding,
+        pageWidth - borderPadding * 2,
+        pageHeight - borderPadding * 2
+      );
+    };
+
+    // Call for first page
+    drawOuterBorder();
+
+    // ─── Header line
+    // ─── Header Area (Logo + Title) ───
+    const logoMaxWidth = 120; // max allowed logo width
+    const logoMaxHeight = 40; // max allowed logo height
     let logoHeightUsed = 0;
 
     if (logoDataUrl) {
@@ -621,16 +675,20 @@ const POOrderMaster = ({ user }) => {
       logoHeightUsed = drawHeight;
     }
 
+    // Title (centered relative to page, slightly lower than logo top)
     doc.setFont(font, "bold");
     doc.setFontSize(20);
     const titleY = y + (logoHeightUsed > 0 ? logoHeightUsed / 2 + 8 : 24);
     doc.text("Purchase Order", pageWidth / 2, titleY, { align: "center" });
 
+    // ─── Divider line BELOW header (use max of logo bottom or title baseline)
     const headerBottom = Math.max(y + logoHeightUsed, titleY);
+
+    // update Y for next section
     y = headerBottom + 12;
 
-    // PO No / Date
-    const poStartY = y + 5;
+    // Adjust PO No / Date to be slightly below the title
+    const poStartY = y + 5; // 30 points below top line / header
     doc.setFontSize(10);
 
     const rLabelX = pageWidth - M - 110;
@@ -645,21 +703,22 @@ const POOrderMaster = ({ user }) => {
           : format(new Date(), "dd.MM.yyyy"),
       ],
     ].forEach(([k, v], i) => {
-      const yy = poStartY + i * lh;
+      const yy = poStartY + i * lh; // use poStartY as base
       doc.text(k + " :", rLabelX - 20, yy);
       doc.setFont(font, "normal");
       doc.text(v, rValueX, yy, { align: "right" });
       doc.setFont(font, "bold");
     });
 
-    y = poStartY + 2 * lh;
+    y = poStartY + 2 * lh; // update y after this block
     doc.setDrawColor(180);
     doc.line(M, y, pageWidth - M, y);
     y += 12;
 
-    // Invoice / Consignee
+    // ───────────────── Invoice/Consignee ─────────────────
     const colW = Math.floor((usable - GAP_BETWEEN_COLS) / 2);
-    const topGap = 10;
+
+    const topGap = 10; // increase to add more space from previous section
     y += topGap;
 
     const invoiceTo = [
@@ -698,24 +757,24 @@ const POOrderMaster = ({ user }) => {
       rightY += lh;
     });
 
-    const sectionGap = 10;
+    const sectionGap = 10; // smaller than GAP_BELOW_COLS
     y = Math.max(leftY, rightY) + sectionGap;
 
     doc.setDrawColor(210);
     doc.line(M, y - SECTION_DIVIDER_H, pageWidth - M, y - SECTION_DIVIDER_H);
 
-    // Supplier + Meta
-    const leftW = Math.floor(usable * 0.55);
-    const rightW = usable - leftW;
+    // ───────────────── Supplier + Meta ─────────────────
+    const colW2 = Math.floor((usable - GAP_BETWEEN_COLS) / 2);
 
     const topGapSupplier = 12;
     y += topGapSupplier;
 
-    // Supplier
+    // Title (Left only)
     doc.setFont(font, "bold");
     doc.text("Supplier (Bill from)", M, y);
     y += 12;
 
+    // Left column (Supplier details)
     doc.setFont(font, "normal");
     const supplierLines = [
       poData?.cart_details?.vendor_name || vendorName || "",
@@ -727,19 +786,15 @@ const POOrderMaster = ({ user }) => {
     ].filter(Boolean);
 
     const supWrapped = supplierLines.flatMap((t) =>
-      doc.splitTextToSize(String(t), leftW)
+      doc.splitTextToSize(String(t), colW2)
     );
-    let supY = y;
+    let leftY2 = y + 3;
     supWrapped.forEach((t) => {
-      doc.text(t, M, supY);
-      supY += lh;
+      doc.text(t, M, leftY2);
+      leftY2 += lh;
     });
 
-    // Meta
-    const r2LabelX = M + leftW - 20;
-    const r2ColonX = r2LabelX + 85;
-    const r2ValueX = r2ColonX + 8;
-
+    // Right column (Meta Info)
     const metaRows = [
       ["Ref Date", refDate ? format(new Date(refDate), "dd.MM.yyyy") : ""],
       ["Quotation No", quotationNo || ""],
@@ -747,30 +802,48 @@ const POOrderMaster = ({ user }) => {
       ["Mode of Delivery", deliveryMode || ""],
       ["Contact Person", String(vendorPOC?.name || "")],
       ["Contact Details", String(vendorPOC?.phone || vendorPOC?.email || "")],
+      ["Due Date", dueDate ? format(new Date(dueDate), "dd.MM.yyyy") : ""],
     ];
 
-    const metaTopGap = 30;
-    let metaY = y - metaTopGap;
+    let rightY2 = y - 10; // start from the SAME y as supplier
+    const metaLineSpacing = 17;
 
-    const metaLineSpacing = 15;
+    // fixed label width so that ":" aligns
+    const LABEL_WIDTH = 60; // adjust until it looks perfect
+
     metaRows.forEach(([label, value]) => {
-      const wrapped = doc.splitTextToSize(value, rightW - 120);
+      const wrapped = doc.splitTextToSize(value, colW2 - LABEL_WIDTH - 20);
       const h = Math.max(metaLineSpacing, wrapped.length * metaLineSpacing);
 
+      // Label (right-aligned to LABEL_WIDTH)
       doc.setFont(font, "bold");
-      doc.text(label, r2LabelX, metaY + metaLineSpacing);
+      doc.text(
+        label.padEnd(15, " "), // for consistent spacing
+        M + colW2 + GAP_BETWEEN_COLS,
+        rightY2
+      );
 
-      doc.text(":", r2ColonX, metaY + metaLineSpacing);
+      // Colon
+      doc.text(":", M + colW2 + GAP_BETWEEN_COLS + LABEL_WIDTH + 25, rightY2);
 
+      // Value
       doc.setFont(font, "normal");
-      doc.text(wrapped, r2ValueX, metaY + metaLineSpacing);
+      doc.text(
+        wrapped,
+        M + colW2 + GAP_BETWEEN_COLS + LABEL_WIDTH + 40, // little gap after colon
+        rightY2
+      );
 
-      metaY += h;
+      rightY2 += h;
     });
 
-    y = Math.max(supY, metaY) + BLOCK_GAP;
+    // Update y for next section
+    y = Math.max(leftY2, rightY2) + BLOCK_GAP;
+    doc.setDrawColor(180);
+    doc.line(M, y, pageWidth - M, y);
+    y += 12;
 
-    // ───────────────── Order details (AGGREGATED) ─────────────────
+    // ───────────────── Order details ─────────────────
     const boxPad = 8;
     const innerX = M + boxPad;
     const innerW = usable - boxPad * 2;
@@ -780,13 +853,11 @@ const POOrderMaster = ({ user }) => {
 
     doc.setFont(font, "bold");
     doc.text("Order details", innerX, boxTitleY - 6);
-
-    // aggregate rows by component_id
     const grouped = groupPOItemsByComponent(poDetails);
 
+    // compute rows + totals
     let baseTotal = 0;
     let gstTotal = 0;
-
     const bodyRows = grouped.map((g, i) => {
       baseTotal += g.sumBase;
       gstTotal += g.sumGst;
@@ -820,7 +891,7 @@ const POOrderMaster = ({ user }) => {
       head: [
         [
           "S.no",
-          "Description (with Component ID)",
+          "Description",
           "UOM",
           "Quantity",
           "Unit Price",
@@ -835,9 +906,9 @@ const POOrderMaster = ({ user }) => {
       styles: {
         font,
         fontSize: 10,
-        cellPadding: { top: 4, right: 6, bottom: 4, left: 6 },
-        lineColor: [210, 210, 210],
+        cellPadding: 4,
         valign: "middle",
+        lineColor: [210, 210, 210],
       },
       headStyles: {
         font,
@@ -856,17 +927,33 @@ const POOrderMaster = ({ user }) => {
         5: { halign: "center", cellWidth: w.c5 },
         6: { halign: "right", cellWidth: w.c6 },
       },
+      didDrawPage: (data) => {
+        drawOuterBorder();
+        if (data.table?.top != null && data.table?.bottom != null) {
+          doc.setDrawColor(120);
+          doc.setLineWidth(0.7);
+          doc.roundedRect(
+            M,
+            data.table.top - 8,
+            usable,
+            data.table.bottom - data.table.top + 16,
+            6,
+            6
+          );
+        }
+      },
     });
 
     let lastY = doc.lastAutoTable.finalY;
 
+    //  shipping comes from popup
     const shipping = Number(shippingCharges || 0);
 
     const totals = [
       ["Total Base Price", INR(baseTotal)],
-      ["Total GST Amount", INR(gstTotal)],
+      ["Total GST%", INR(gstTotal)],
       ["Shipping Charges", INR(shipping)],
-      ["Grand Total (Base + GST)", INR(baseTotal + gstTotal + shipping)],
+      ["Grand Total(Base+GST)", INR(baseTotal + gstTotal + shipping)],
     ];
 
     const totalsLabelW = 260;
@@ -903,26 +990,69 @@ const POOrderMaster = ({ user }) => {
     lastY = doc.lastAutoTable.finalY;
     const boxEndY = lastY + 8;
 
-    doc.setDrawColor(120);
-    doc.setLineWidth(0.7);
-    doc.roundedRect(M, boxStartY, usable, boxEndY - boxStartY, 6, 6);
+    // doc.setDrawColor(120);
+    // doc.setLineWidth(0.7);
+    // doc.roundedRect(M, boxStartY, usable, boxEndY - boxStartY, 6, 6);
 
-    // Remarks
+    // ───────────────── Remarks ─────────────────
     doc.setFont(font, "bold");
-    doc.text("Remarks", M, boxEndY + 20);
+    doc.text("Terms & Conditions", M, boxEndY + 20);
     doc.setFont(font, "normal");
 
     const remarksTop = boxEndY + 28;
-    const remarksH = 96;
-    doc.setDrawColor(170);
-    doc.setFillColor(248, 248, 248);
-    doc.roundedRect(M, remarksTop, usable * 0.62, remarksH, 6, 6, "FD");
+    const remarksWidth = usable * 0.62;
 
+    // Split text into wrapped lines
     const remarksText = remarks || "No remarks";
-    let ry = remarksTop + 18;
-    doc.text(doc.splitTextToSize(remarksText, usable * 0.62 - 24), M + 12, ry);
+    const wrappedRemarks = doc.splitTextToSize(remarksText, remarksWidth - 24);
 
-    // Signature + footer
+    const lineHeight = 12; // line spacing
+    const padding = 24;
+
+    let currentY = remarksTop;
+    let i = 0;
+
+    while (i < wrappedRemarks.length) {
+      // How many lines fit in this page
+      const linesThatFit = Math.floor(
+        (pageHeight - currentY - 60) / lineHeight
+      );
+
+      // Lines for this page
+      const pageLines = wrappedRemarks.slice(i, i + linesThatFit);
+
+      // Box height for these lines
+      const remarksH = pageLines.length * lineHeight + padding;
+
+      // Draw border box (on *every* page, not just first)
+      doc.setDrawColor(170);
+      doc.setFillColor(248, 248, 248);
+      doc.roundedRect(M, currentY, remarksWidth, remarksH, 6, 6, "FD");
+
+      // Insert text
+      doc.text(pageLines, M + 12, currentY + 18);
+
+      // Move index
+      i += linesThatFit;
+
+      if (i < wrappedRemarks.length) {
+        // Still more text → add new page
+        doc.addPage();
+
+        // Draw border on the new page
+        drawOuterBorder();
+
+        // Title on next page
+        doc.setFont(font, "bold");
+        doc.text("Terms & Conditions (contd...)", M, 40);
+        doc.setFont(font, "normal");
+
+        // Reset Y for new page
+        currentY = 48;
+      }
+    }
+
+    // ───────────────── Signature + footer ─────────────────
     const sigBoxWidth = 190;
     const sigBoxHeight = 30;
     const sigX = pageWidth - M - sigBoxWidth;
@@ -941,17 +1071,23 @@ const POOrderMaster = ({ user }) => {
       sigY + 32
     );
 
-    doc.setFontSize(5);
-    doc.text(
-      "This is a Computer Generated Document",
-      pageWidth / 2,
-      pageHeight - 5,
-      { align: "center" }
-    );
+    // After finishing all drawing (before doc.save)
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFont(font, "normal");
+      doc.setFontSize(5);
+      doc.text(
+        "This is a Computer Generated Document",
+        pageWidth / 2,
+        pageHeight - 5,
+        { align: "center" }
+      );
+    }
 
     doc.save(`PO_${poId}.pdf`);
   };
-  
+
   const handleSendEmail = async () => {
     try {
       const pdfBlob = generatePDF();
@@ -1351,6 +1487,7 @@ const POOrderMaster = ({ user }) => {
         : item.shipped_quantity || 0;
 
     const isDisabled =
+      shippingQty <= 0 ||
       shippingQty > item.quantity ||
       (item.shipped_date && item.shipped_quantity) ||
       isPOCancelled;
@@ -1396,6 +1533,7 @@ const POOrderMaster = ({ user }) => {
           : item.shipped_quantity || 0;
 
       const isDisabled =
+        receivedQty <= 0 ||
         receivedQty > shippedQty || // Block if over-shipped
         (item.received_date && item.received_quantity) ||
         isPOCancelled; // Already saved
@@ -1805,6 +1943,29 @@ const POOrderMaster = ({ user }) => {
                     }
                     placeholder="Shipping Charges"
                   />
+                  <label>Due Date</label>
+                  <div className="date-input-container">
+                    <DatePicker
+                      selected={
+                        extraFields.dueDate
+                          ? new Date(extraFields.dueDate)
+                          : null
+                      }
+                      onChange={(date) =>
+                        setExtraFields({
+                          ...extraFields,
+                          dueDate: date ? date.toISOString().split("T")[0] : "",
+                        })
+                      }
+                      dateFormat="dd-MM-yyyy"
+                      placeholderText="dd-mm-yyyy"
+                      className="input1"
+                      showMonthDropdown
+                      showYearDropdown
+                      dropdownMode="select"
+                    />
+                    <i className="fas fa-calendar-alt calendar-icon"></i>
+                  </div>
 
                   <label>Remarks</label>
                   <textarea

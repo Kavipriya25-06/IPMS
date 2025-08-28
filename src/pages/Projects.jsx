@@ -296,7 +296,7 @@ const ProjectList = () => {
               <tr>
                 <td
                   colSpan="8"
-                  style={{ textAlign: "center", padding: "20px" }}
+                  style={{ textAlign: "center", padding: "10px" }}
                 >
                   <div className="spinner"></div>
                   Loading Projects...

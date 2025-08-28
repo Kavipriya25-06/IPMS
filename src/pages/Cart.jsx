@@ -299,7 +299,7 @@ const Cart = ({ user }) => {
         />
       )}
 
-      <div style={{ position: "relative" }}>
+<div style={{ position: "relative", paddingBottom: "40px" }}>
         <h2 style={{ display: "inline-block" }}>Cart</h2>
         {/* Total Quantity at top-right */}
         <span

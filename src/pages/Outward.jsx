@@ -88,7 +88,7 @@ const Outward = () => {
     outDate: new Date(),
     time: format(new Date(), "hh:mm a"),
     eventName: "",
-    noOfComponents: "", // new field
+    num_components: 0, // 👈 match backend
     typeOfOutward: "",
     returnDate: null,
     remarks: "",
@@ -185,7 +185,7 @@ const Outward = () => {
       "Vendor",
       "Specification",
       "Quantity",
-      "Project",
+      // "Project",
       "Type of Outward",
       "Remarks",
     ],
@@ -209,9 +209,9 @@ const Outward = () => {
       "Vendor",
       "Quantity",
       "Project",
+      "Return Date",
       "Type of Outward",
       "Remarks",
-      "Attachments",
     ],
     Event: [
       "Out Date",
@@ -424,9 +424,9 @@ const Outward = () => {
       category: "Event",
       date: eventForm.outDate?.toISOString().split("T")[0],
       time: eventForm.time,
-      gatepass: eventForm.gatepass, // 👈 use gatepass instead
+      gatepass: eventForm.gatepass,
       event_name: eventForm.eventName,
-      no_of_components: eventForm.noOfComponents, // (your added field)
+      num_components: eventForm.num_components || 0, // 👈 consistent
       type_of_outward: eventForm.typeOfOutward,
       return_date: eventForm.returnDate?.toISOString().split("T")[0] || null,
       remarks: eventForm.remarks,
@@ -629,54 +629,53 @@ const Outward = () => {
 
   // Generate next GatePass ID
   // Generate next GatePass ID (shared between Manufacture + Event)
-const generateNextGatePass = async () => {
-  try {
-    // Fetch latest manufacture + event records
-    const [manufactureRes, eventRes] = await Promise.all([
-      fetch(`${config.apiBaseURL}/outward/manufacture/`),
-      fetch(`${config.apiBaseURL}/outward/event/`),
-    ]);
+  const generateNextGatePass = async () => {
+    try {
+      // Fetch latest manufacture + event records
+      const [manufactureRes, eventRes] = await Promise.all([
+        fetch(`${config.apiBaseURL}/outward/manufacture/`),
+        fetch(`${config.apiBaseURL}/outward/event/`),
+      ]);
 
-    if (!manufactureRes.ok || !eventRes.ok) throw new Error("Failed to fetch outward records");
+      if (!manufactureRes.ok || !eventRes.ok)
+        throw new Error("Failed to fetch outward records");
 
-    const [manufactureData, eventData] = await Promise.all([
-      manufactureRes.json(),
-      eventRes.json(),
-    ]);
+      const [manufactureData, eventData] = await Promise.all([
+        manufactureRes.json(),
+        eventRes.json(),
+      ]);
 
-    const allData = [...manufactureData, ...eventData];
+      const allData = [...manufactureData, ...eventData];
 
-    const gatePasses = allData
-      .map((item) => item.gatepass)
-      .filter((gp) => gp && gp.startsWith("GP-"));
+      const gatePasses = allData
+        .map((item) => item.gatepass)
+        .filter((gp) => gp && gp.startsWith("GP-"));
 
-    let maxNum = 0;
-    gatePasses.forEach((gp) => {
-      const num = parseInt(gp.replace("GP-", ""), 10);
-      if (!isNaN(num) && num > maxNum) maxNum = num;
-    });
+      let maxNum = 0;
+      gatePasses.forEach((gp) => {
+        const num = parseInt(gp.replace("GP-", ""), 10);
+        if (!isNaN(num) && num > maxNum) maxNum = num;
+      });
 
-    const nextNum = (maxNum + 1).toString().padStart(5, "0");
-    return `GP-${nextNum}`;
-  } catch (err) {
-    console.error("Error generating gatepass:", err);
-    return `GP-00001`;
-  }
-};
+      const nextNum = (maxNum + 1).toString().padStart(5, "0");
+      return `GP-${nextNum}`;
+    } catch (err) {
+      console.error("Error generating gatepass:", err);
+      return `GP-00001`;
+    }
+  };
 
+  const openServiceForm = async () => {
+    const newGP = await generateNextGatePass(); // always fetch latest
+    setServiceForm((prev) => ({ ...prev, gatepass: newGP }));
+    setShowServiceForm(true);
+  };
 
-const openServiceForm = async () => {
-  const newGP = await generateNextGatePass(); // always fetch latest
-  setServiceForm((prev) => ({ ...prev, gatepass: newGP }));
-  setShowServiceForm(true);
-};
-
-const openEventForm = async () => {
-  const newGP = await generateNextGatePass(); // always fetch latest
-  setEventForm((prev) => ({ ...prev, gatepass: newGP }));
-  setShowEventForm(true);
-};
-
+  const openEventForm = async () => {
+    const newGP = await generateNextGatePass(); // always fetch latest
+    setEventForm((prev) => ({ ...prev, gatepass: newGP }));
+    setShowEventForm(true);
+  };
 
   return (
     <div>
@@ -804,7 +803,7 @@ const openEventForm = async () => {
                       <td>{row.vendor || "-"}</td>
                       <td>{row.specification || "-"}</td>
                       <td>{row.quantity || "-"}</td>
-                      <td>{getProjectName(row.project?.project_id) || "-"}</td>
+                      {/* <td>{getProjectName(row.project?.project_id) || "-"}</td> */}
                       <td>{row.type_of_outward || "-"}</td>
                       <td className="specification-cell" title={row.remarks}>
                         {row.remarks || "-"}
@@ -826,18 +825,25 @@ const openEventForm = async () => {
                             )
                           : "-"}
                       </td>
-                      <td>{row.invoice_no || "-"}</td>
+                      <td className="specification-cell" title={row.invoice_no}>
+                        {row.invoice_no || "-"}
+                      </td>
                       <td
                         style={{
                           color: "black",
-                          cursor: "pointer",
-                          textDecoration: "underline",
+                          cursor: row.product_name ? "pointer" : "default",
+                          textDecoration: row.product_name
+                            ? "underline"
+                            : "none",
                         }}
                         onClick={() =>
+                          row.product_name &&
                           navigate("/outward/add-sales-list", {
                             state: { outwardId: row.id },
                           })
                         }
+                        className="specification-cell"
+                        title={row.product_name || ""}
                       >
                         {row.product_name || "-"}
                       </td>
@@ -871,19 +877,27 @@ const openEventForm = async () => {
                           : "-"}
                       </td>
                       <td>{row.gatepass || "-"}</td>
-                      <td>{row.specification || "-"}</td>
+                      <td
+                        className="specification-cell"
+                        title={row.specification}
+                      >
+                        {row.specification || "-"}
+                      </td>
                       <td>{row.component_id || "-"}</td>
                       <td>{row.serial_numbers || "-"}</td>
-                      <td>{row.vendor || "-"}</td>
+                      <td className="specification-cell" title={row.vendor}>
+                        {row.vendor || "-"}
+                      </td>
                       <td>{row.quantity || "-"}</td>
                       <td>{getProjectName(row.project) || "-"}</td>
+                      <td>Return date</td>
                       <td>{row.type_of_outward || "-"}</td>
                       <td className="specification-cell" title={row.remarks}>
                         {row.remarks || "-"}
                       </td>
 
                       {/* New Column - PDF Button */}
-                      <td>
+                      {/* <td>
                         <button
                           style={{
                             cursor: "pointer",
@@ -895,7 +909,7 @@ const openEventForm = async () => {
                         >
                           📄
                         </button>
-                      </td>
+                      </td> */}
                     </>
                   )}
 
@@ -926,10 +940,12 @@ const openEventForm = async () => {
                             state: { outwardId: row.id },
                           })
                         }
+                        className="specification-cell"
+                        title={row.event_name}
                       >
                         {row.event_name || "-"}
                       </td>
-                      <td>{row.no_of_components || "-"}</td>
+                      <td>{row.num_components || "-"}</td>
                       <td>{row.type_of_outward || "-"}</td>
                       <td>
                         {row.return_date
@@ -971,7 +987,7 @@ const openEventForm = async () => {
                   selected={new Date()} //
                   dateFormat="dd-MM-yyyy"
                   placeholderText="dd-mm-yyyy"
-                  className="input1"
+                  className="input1 disabled-date"
                   showMonthDropdown
                   showYearDropdown
                   dropdownMode="select"
@@ -987,6 +1003,11 @@ const openEventForm = async () => {
                 value={salesForm.time}
                 readOnly
                 placeholder="Time"
+                style={{
+                  backgroundColor: "#f0f0f0ff",
+                  color: "gray",
+                  cursor: "not-allowed",
+                }}
               />
               <label htmlFor="">Invoice Number</label>
 
@@ -1081,15 +1102,14 @@ const openEventForm = async () => {
                   selected={new Date()}
                   dateFormat="dd-MM-yyyy"
                   placeholderText="dd-mm-yyyy"
-                  className="input1"
+                  className="input1 disabled-date"
                   showMonthDropdown
                   showYearDropdown
                   dropdownMode="select"
                   readOnly
                   disabled
-                  style={{ backgroundColor: "#f5f5f5", cursor: "not-allowed" }}
                 />
-                <i className="fas fa-calendar-alt calendar-icon"></i>
+                <i className="fas fa-calendar-alt calendar-icon disabled-icon"></i>
               </div>
               <label>Time</label>
               <input
@@ -1097,7 +1117,11 @@ const openEventForm = async () => {
                 value={eventForm.time}
                 readOnly
                 placeholder="Time"
-                style={{ backgroundColor: "#f5f5f5", cursor: "not-allowed" }}
+                style={{
+                  backgroundColor: "#f0f0f0ff",
+                  color: "gray",
+                  cursor: "not-allowed",
+                }}
               />
               <label htmlFor="">Gate Pass</label>
               <input
@@ -1106,7 +1130,11 @@ const openEventForm = async () => {
                 value={eventForm.gatepass}
                 readOnly
                 placeholder="Auto Generated Gate Pass"
-                style={{ backgroundColor: "#f5f5f5", cursor: "not-allowed" }}
+                style={{
+                  backgroundColor: "#f0f0f0ff",
+                  color: "gray",
+                  cursor: "not-allowed",
+                }}
               />
               <label>Event Name</label>
               <input
@@ -1121,10 +1149,16 @@ const openEventForm = async () => {
               <input
                 type="number"
                 placeholder="No. of Components"
-                value={eventForm.noOfComponents}
-                onChange={(e) =>
-                  setEventForm({ ...eventForm, noOfComponents: e.target.value })
+                value={
+                  eventForm.num_components === 0 ? "" : eventForm.num_components
                 }
+                onChange={(e) => {
+                  let val = e.target.value.replace(/^0+(?=\d)/, ""); // remove leading zeros
+                  setEventForm({
+                    ...eventForm,
+                    num_components: val ? Number(val) : "", // keep empty if nothing
+                  });
+                }}
                 style={{
                   padding: "6px",
                   borderRadius: "4px",
@@ -1212,7 +1246,7 @@ const openEventForm = async () => {
                 <DatePicker
                   selected={serviceForm.outDate}
                   dateFormat="dd-MM-yyyy"
-                  className="input1"
+                  className="input1 disabled-date"
                   showMonthDropdown
                   showYearDropdown
                   dropdownMode="select"
@@ -1230,7 +1264,8 @@ const openEventForm = async () => {
                 value={serviceForm.time}
                 readOnly
                 placeholder="Time"
-                style={{ backgroundColor: "#f5f5f5", cursor: "not-allowed" }}
+                style={{  backgroundColor: "#f0f0f0ff",
+                  color: "gray",cursor: "not-allowed" }}
               />
 
               <label htmlFor="">Gate Pass</label>
@@ -1240,7 +1275,8 @@ const openEventForm = async () => {
                 value={serviceForm.gatepass}
                 readOnly
                 placeholder="Auto Generated Gate Pass"
-                style={{ backgroundColor: "#f5f5f5", cursor: "not-allowed" }}
+                style={{  backgroundColor: "#f0f0f0ff",
+                  color: "gray", cursor: "not-allowed" }}
               />
 
               <label>Component Spec</label>

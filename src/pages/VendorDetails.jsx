@@ -641,7 +641,7 @@ const handleImageChange = (index, files) => {
   const handleAddNewProduct = async () => {
     // Validation: Check if required fields are filled
     const requiredFields = [
-      "product_description",
+      //"product_description",
       // "last_price",
       // "tax",
       "category",
@@ -1043,14 +1043,15 @@ const handleImageChange = (index, files) => {
               ))}
             </select>
 
-            <input
-              type="text"
-              placeholder="Product Description"
-              value={newProduct.product_description}
-              onChange={(e) =>
-                handleInputChange("product_description", e.target.value)
-              }
-            />
+           <input
+  type="text"
+  placeholder="Product Description (Optional)"
+  value={newProduct.product_description || ""}
+  onChange={(e) =>
+    handleInputChange("product_description", e.target.value)
+  }
+/>
+
             {/* <input
             type="number"
             placeholder="Price"
