@@ -3,12 +3,10 @@ import { useLocation, useNavigate } from "react-router-dom";
 import config from "../Config";
 import Add from "../assets/Add.png";
 import { FaArrowLeft } from "react-icons/fa";
-
 import {
   showSuccessToast,
   showErrorToast,
   showWarningToast,
-  showInfoToast,
   ToastContainerComponent,
 } from "./Toastify.jsx";
 import DatePicker from "react-datepicker";
@@ -17,49 +15,41 @@ import "react-datepicker/dist/react-datepicker.css";
 const OutwardSales = () => {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [newRow, setNewRow] = useState(null);
+  const [salesItems, setSalesItems] = useState([]);
 
-  const [componentOptions, setComponentOptions] = useState([
-    "Component A",
-    "Component B",
-    "Component C",
-  ]);
   const navigate = useNavigate();
-
   const location = useLocation();
   const outwardId = location.state?.outwardId;
 
   const [productName, setProductName] = useState("");
   const [loading, setLoading] = useState(true);
 
+  // Fetch sales record
   useEffect(() => {
     if (!outwardId) return;
 
     setLoading(true);
-
-    // Fetch all Sales records
     fetch(`${config.apiBaseURL}/outward/sales/`)
       .then((res) => res.json())
       .then((data) => {
-        console.log("Sales API data:", data);
-
-        // Find the sales record with this outwardId
         const saleRecord = data.find((item) => item.id === outwardId);
-
         if (saleRecord) {
-          setProductName(saleRecord.specification || "No product linked");
+          setProductName(saleRecord.product_name || "-");
+          setSalesItems(saleRecord.sales_items || []);
         } else {
-          setProductName("No product linked");
+          setProductName("-");
+          setSalesItems([]);
         }
-
         setLoading(false);
       })
       .catch(() => {
-        setProductName("No product linked");
+        setProductName("-");
+        setSalesItems([]);
         setLoading(false);
       });
   }, [outwardId]);
 
-  // --- Scroll to top ---
+  // Scroll to top
   useEffect(() => {
     const handleScroll = () => setShowScrollTop(window.scrollY > 300);
     window.addEventListener("scroll", handleScroll);
@@ -70,97 +60,88 @@ const OutwardSales = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // Add new row
   const handleAddRow = () => {
     if (newRow) {
       showWarningToast("Please fill or save the sales data first.");
       return;
     }
-    setNewRow({ component: "", quantity: "", serial: "", remarks: "" });
+    setNewRow({ component: "", serial: "", quantity: "", remarks: "" });
   };
 
-  const handleSaveRow = () => {
-    if (
-      !newRow.component ||
-      !newRow.quantity ||
-      !newRow.serial ||
-      !newRow.remarks
-    ) {
+  // Save row to backend
+  const handleSaveRow = async () => {
+    if (!newRow.component || !newRow.serial || !newRow.quantity || !newRow.remarks) {
       showErrorToast("Please fill all fields.");
       return;
     }
-    console.log("Saving row:", newRow);
-    setNewRow(null);
-    showSuccessToast("Row added.");
+
+    if (!outwardId) {
+      showErrorToast("No outward selected.");
+      return;
+    }
+
+    const payload = {
+      component: newRow.component,
+      serial_number: newRow.serial,
+      quantity: newRow.quantity,
+      remarks: newRow.remarks,
+    };
+
+    try {
+      const res = await fetch(`${config.apiBaseURL}/outward/sales/${outwardId}/items/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        setSalesItems((prev) => [...prev, payload]);
+        setNewRow(null);
+        showSuccessToast("Row saved successfully!");
+      } else {
+        const errText = await res.text();
+        showErrorToast("Failed to save row: " + errText);
+      }
+    } catch (err) {
+      showErrorToast("Network error while saving row.");
+    }
   };
 
   const handleCancelRow = () => setNewRow(null);
 
   return (
     <div style={{ marginTop: "10px" }}>
-      <div
-        className="header"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
+      <div className="header" style={{ display: "flex", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "100px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
             <button
               className="back-btn"
-              onClick={() =>
-                navigate("/outward", { state: { reportType: "Sales" } })
-              }
+              onClick={() => navigate("/outward", { state: { reportType: "Sales" } })}
               title="Back to Sales List"
             >
               <FaArrowLeft />
             </button>
-
-            <h2 style={{ margin: 0 }}>
-              Product Name : {loading ? "N/A" : productName}
-            </h2>
+            <h2 style={{ margin: 0 }}>Product Name : {loading ? "N/A" : productName}</h2>
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px", // space between "Date:" and picker
-              fontSize: "20px", // same font size for both
-              marginTop: "5px",
-            }}
-          >
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "20px", marginTop: "5px" }}>
             <span style={{ color: "black", fontWeight: "bold" }}>Date:</span>
             <DatePicker
               selected={new Date()}
               dateFormat="dd-MMM-yyyy"
-              placeholderText="dd-mm-yyyy"
-              showMonthDropdown
-              showYearDropdown
-              dropdownMode="select"
               readOnly
               className="date-sales-picker"
-              style={{ fontSize: "20px", padding: "4px 6px" }} // normalize input look
+              style={{ fontSize: "20px", padding: "4px 6px" }}
             />
           </div>
         </div>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            margin: "10px 0",
-            gap: "20px",
-          }}
-        >
+
+        <div style={{ display: "flex", justifyContent: "flex-end", margin: "10px 0", gap: "20px" }}>
           <button className="generate-report-btn">Generate Report</button>
           <button
-            style={{
-              cursor: "pointer",
-              background: "transparent",
-              border: "none",
-            }}
-            title="Add Vendor"
+            style={{ cursor: "pointer", background: "transparent", border: "none" }}
+            title="Add Item"
             onClick={handleAddRow}
           >
             <img src={Add} alt="" style={{ width: "20px", height: "20px" }} />
@@ -168,7 +149,6 @@ const OutwardSales = () => {
         </div>
       </div>
 
-      {/* Table */}
       <div className="table-container">
         <table>
           <thead>
@@ -182,69 +162,62 @@ const OutwardSales = () => {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>1</td>
-              <td>Backend BOM List table changes</td>
-              <td>12</td>
-              <td>8000</td>
-              <td>8%</td>
-            </tr>
-
-            {newRow && (
-              <tr>
-                <td>2</td>
-                <td>
-                  <select
-                    value={newRow.component}
-                    onChange={(e) =>
-                      setNewRow({ ...newRow, component: e.target.value })
-                    }
-                  >
-                    <option value="">Select</option>
-                    {componentOptions.map((comp) => (
-                      <option key={comp} value={comp}>
-                        {comp}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-                <td>
-                  <input
-                    type="text"
-                    value={newRow.serial}
-                    onChange={(e) =>
-                      setNewRow({ ...newRow, serial: e.target.value })
-                    }
-                    placeholder="Serial Number"
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    value={newRow.quantity}
-                    onChange={(e) =>
-                      setNewRow({ ...newRow, quantity: e.target.value })
-                    }
-                    placeholder="Quantity"
-                  />
-                </td>
-                <td className="specification-cell" title={newRow.remarks}>
-                  <input
-                    type="text"
-                    value={newRow.remarks}
-                    onChange={(e) =>
-                      setNewRow({ ...newRow, remarks: e.target.value })
-                    }
-                    placeholder="Remarks"
-                  />
-                </td>
-
-                <td className="event-buttons">
-                  <button onClick={handleSaveRow}>Save</button>
-                  <button onClick={handleCancelRow}>Cancel</button>
-                </td>
+            {salesItems.map((item, idx) => (
+              <tr key={idx}>
+                <td>{idx + 1}</td>
+                <td>{item.component}</td>
+                <td>{item.serial_number}</td>
+                <td>{item.quantity}</td>
+                <td>{item.remarks}</td>
               </tr>
-            )}
+            ))}
+
+       {newRow && (
+  <tr>
+    <td>{salesItems.length + 1}</td>
+    <td>
+      <input
+        type="text"
+        value={newRow.component}
+        onChange={(e) => setNewRow({ ...newRow, component: e.target.value })}
+        placeholder="Component"
+        className="outward-sales-input"
+      />
+    </td>
+    <td>
+      <input
+        type="text"
+        value={newRow.serial}
+        onChange={(e) => setNewRow({ ...newRow, serial: e.target.value })}
+        placeholder="Serial Number"
+        className="outward-sales-input"
+      />
+    </td>
+    <td>
+      <input
+        type="number"
+        value={newRow.quantity}
+        onChange={(e) => setNewRow({ ...newRow, quantity: e.target.value })}
+        placeholder="Quantity"
+        className="outward-sales-input"
+      />
+    </td>
+    <td>
+      <input
+        type="text"
+        value={newRow.remarks}
+        onChange={(e) => setNewRow({ ...newRow, remarks: e.target.value })}
+        placeholder="Remarks"
+        className="outward-sales-input"
+      />
+    </td>
+    <td>
+      <button className="outward-sales-btn save-btn" onClick={handleSaveRow}>Save</button>
+      <button className="outward-sales-btn cancel-btn" onClick={handleCancelRow}>Cancel</button>
+    </td>
+  </tr>
+)}
+
           </tbody>
         </table>
       </div>

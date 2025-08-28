@@ -597,7 +597,7 @@ const Inward = () => {
         OUTWARD_CATEGORY_CHOICES: "Defects",
       };
 
-      const response = await fetch(`${config.apiBaseURL}/outward/`, {
+      const response = await fetch(`${config.apiBaseURL}/outward/defects/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(postData),

@@ -150,11 +150,19 @@ const RequestComponent = () => {
       try {
         const res = await fetch(url);
         const data = await res.json();
-        setComponentList(data);
+
+        // Role-based filtering
+        let filteredData = data;
+        if (user?.role === "User") {
+          const username = user.email.split("@")[0];
+          filteredData = data.filter((item) => item.name === username);
+        }
+
+        setComponentList(filteredData);
       } catch (err) {
         console.error("Error fetching request data:", err);
       } finally {
-        setLoading(false); // Ensure loader is hidden at the end
+        setLoading(false);
       }
     };
 
@@ -400,7 +408,7 @@ const RequestComponent = () => {
         <div className="header-back">
           <button
             className="back-btn"
-            onClick={() => navigate(-1)} 
+            onClick={() => navigate(-1)}
             title="Back to Component List"
           >
             <FaArrowLeft />

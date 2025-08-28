@@ -29,7 +29,33 @@ const MainDashboard = () => {
     // Request Components
     fetch(`${config.apiBaseURL}/request_component/`)
       .then((res) => res.json())
-      .then((data) => setRequestComponentCount(data.length))
+      .then((data) => {
+        const loggedInEmail = localStorage.getItem("email"); // e.g. kanna@gmail.com
+        const role = localStorage.getItem("userRole");
+
+        if (role === "Admin") {
+          setRequestComponentCount(data.length); // Admin sees all
+        } else {
+          const username = loggedInEmail?.split("@")[0]?.toLowerCase();
+
+          const userRequests = data.filter((req) => {
+            const reqName = req.name?.toLowerCase();
+            return (
+              reqName === username || // match "kanna"
+              reqName === loggedInEmail?.toLowerCase() || // match "kanna@gmail.com"
+              reqName?.includes(username) // match "kanna s", "kanna123" etc
+            );
+          });
+
+          setRequestComponentCount(userRequests.length);
+        }
+        console.log("LoggedInEmail:", loggedInEmail);
+        console.log("Username:", username);
+        console.log(
+          "API Names:",
+          data.map((d) => d.name)
+        );
+      })
       .catch((err) => console.error("Request component fetch error:", err));
 
     // Inventory
@@ -231,7 +257,14 @@ const MainDashboard = () => {
                       }}
                       style={{ textDecoration: "underline", cursor: "pointer" }}
                     >
-                      Requests Component
+                      {[
+                        "Admin",
+                        "Sub-Admin",
+                        "Inventory",
+                        "Procurement",
+                      ].includes(localStorage.getItem("userRole"))
+                        ? "Total Requests"
+                        : "My Requests"}
                     </div>
                   </div>
                 )}

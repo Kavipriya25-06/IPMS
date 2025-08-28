@@ -80,7 +80,7 @@ const ComponentDetailsPage = () => {
   const allowedRoles = ["Admin", "Sub-Admin", "Inventory", "Procurement"];
   const canEdit = allowedRoles.includes(user?.role);
 
-  const allowedRolesPlus = ["Admin", "Procurement"];
+  const allowedRolesPlus = ["Admin","Sub-Admin", "Procurement"];
   const canEditPlus = allowedRolesPlus.includes(user?.role);
 
   const handleMouseMove = (e) => {

@@ -2767,6 +2767,20 @@ main {
 
 .serial-modal {
   margin: 0;
+  max-height: 80vh;       /* Prevents modal from growing too tall */
+  overflow-y: auto;       /* Enables vertical scroll if content exceeds height */
+  padding: 10px;
+}
+ 
+.serial-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 15px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  max-height: 50vh;       /* Restrict the list height */
+  overflow-y: auto;       /* Make list scrollable if too many items */
 }
 
 .serial-modal h3 {
@@ -2778,15 +2792,6 @@ main {
   border: none;
   font-size: 24px;
   cursor: pointer;
-}
-
-.serial-list {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 15px 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
 }
 
 .serial-list li {
@@ -5501,4 +5506,43 @@ ul {
 textarea.input1 {
   text-align: left;
   vertical-align: top;
+}
+
+
+/* Inputs */
+.outward-sales-input {
+  width: 200px;
+  padding: 5px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.outward-sales-input:focus {
+  outline: none;
+  border-color: #f57c00;
+}
+
+/* Buttons */
+.outward-sales-btn {
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  border: none;
+  cursor: pointer;
+  margin-right: 5px;
+}
+
+.outward-sales-btn.save-btn {
+  background-color: #f57c00;
+  color: white;
+}
+
+.outward-sales-btn.cancel-btn {
+  background-color: gray;
+  color: white;
+}
+
+.outward-sales-btn:hover {
+  opacity: 0.5;
 }
