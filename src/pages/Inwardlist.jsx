@@ -32,6 +32,8 @@ const Inwardlist = () => {
   const [invoiceDateInput, setInvoiceDateInput] = useState("");
   const [filterDate, setFilterDate] = useState(null);
   const [showDateFilter, setShowDateFilter] = useState(false);
+    const [loading, setLoading] = useState(true);
+  
 
   const navigate = useNavigate();
 
@@ -51,6 +53,8 @@ const Inwardlist = () => {
   const fetchInwardData = async () => {
     try {
       // 1. Fetch inward data
+            setLoading(true);
+
       const inwardRes = await fetch(`${config.apiBaseURL}/inward/`);
       const inwardData = await inwardRes.json();
       const result = inwardData.filter(
@@ -95,6 +99,8 @@ const Inwardlist = () => {
       setFilteredData(groupedData);
     } catch (err) {
       console.error("Error fetching inward data:", err);
+    } finally {
+      setLoading(false); // Stop loading after both calls
     }
   };
 
@@ -394,7 +400,17 @@ const Inwardlist = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredByDate.map((item, index) => (
+             {loading ? (
+              <tr>
+                <td
+                  colSpan="13"
+                  style={{ textAlign: "center", padding: "10px" }}
+                >
+                  <div className="spinner"></div>
+                  Loading Inward data...
+                </td>
+              </tr>
+            ) : filteredByDate.map((item, index) => (
               <tr key={index}>
                 <td>{getNestedValue(item, "po_master.PO_id")}</td>
                 <td>{getNestedValue(item, "po_master.cart.component_id")}</td>

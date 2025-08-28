@@ -33,6 +33,7 @@ const POOrderList = ({ user }) => {
 
   const [sortField, setSortField] = useState("");
   const [sortOrder, setSortOrder] = useState("asc");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchPOOrders();
@@ -131,6 +132,8 @@ const POOrderList = ({ user }) => {
   // Fetch PO orders
   const fetchPOOrders = async () => {
     try {
+      setLoading(true);
+
       const response = await fetch(`${config.apiBaseURL}/po_list/`);
       const result = await response.json();
       if (Array.isArray(result)) {
@@ -141,6 +144,8 @@ const POOrderList = ({ user }) => {
       }
     } catch (error) {
       console.error("Error fetching PO List:", error);
+    } finally {
+      setLoading(false); // Stop loading after both calls
     }
   };
 
@@ -299,7 +304,9 @@ const POOrderList = ({ user }) => {
       }
     } catch (error) {
       console.error("Error during file upload or email send:", error);
-      showErrorToast("An error occurred while uploading the file or sending the email.");
+      showErrorToast(
+        "An error occurred while uploading the file or sending the email."
+      );
     }
   };
 
@@ -357,39 +364,48 @@ const POOrderList = ({ user }) => {
   const formatDate = (date) =>
     date ? new Date(date).toLocaleDateString("en-CA") : "";
 
-  const filteredPOOrders = poOrders
-    .filter((order) => {
-      const { status } = getAggregatedStatus(order.id);
-      const matchesName = order.cart_details.vendor_name
-        .toLowerCase()
-        .includes(nameFilter.toLowerCase());
-      const matchesStatus = statusFilter ? status === statusFilter : true;
-      const matchesDate = dateFilter
-        ? new Date(order.date).toLocaleDateString("en-CA") ===
-          formatDate(dateFilter)
-        : true;
-      return matchesName && matchesStatus && matchesDate;
-    })
-    .sort((a, b) => {
-      if (!sortField) return 0;
+const filteredPOOrders = poOrders
+  .filter((order) => {
+    const { status } = getAggregatedStatus(order.id);
 
-      let aValue, bValue;
+    const q = (nameFilter || "").trim().toLowerCase();
+    const matchesQuery =
+      !q ||
+      (order?.cart_details?.vendor_name || "").toLowerCase().includes(q) ||
+      String(order?.id || "").toLowerCase().includes(q); // ← PO ID match
 
-      if (sortField === "id") {
-        aValue = a.id;
-        bValue = b.id;
-      } else if (sortField === "total_cost") {
-        aValue = finalCost(a.id);
-        bValue = finalCost(b.id);
-      } else if (sortField === "date") {
-        aValue = new Date(a.date);
-        bValue = new Date(b.date);
-      }
+    const matchesStatus = statusFilter ? status === statusFilter : true;
 
-      if (aValue < bValue) return sortOrder === "asc" ? -1 : 1;
-      if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
-      return 0;
-    });
+    const matchesDate = dateFilter
+      ? new Date(order.date).toLocaleDateString("en-CA") ===
+        (dateFilter
+          ? new Date(dateFilter).toLocaleDateString("en-CA")
+          : "")
+      : true;
+
+    return matchesQuery && matchesStatus && matchesDate;
+  })
+  .sort((a, b) => {
+    if (!sortField) return 0;
+
+    let aValue, bValue;
+    if (sortField === "id") {
+      aValue = a.id;
+      bValue = b.id;
+    } else if (sortField === "total_cost") {
+      aValue = finalCost(a.id);
+      bValue = finalCost(b.id);
+    } else if (sortField === "date") {
+      aValue = new Date(a.date);
+      bValue = new Date(b.date);
+    }
+
+    if (aValue < bValue) return sortOrder === "asc" ? -1 : 1;
+    if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
+    return 0;
+  });
+
+
 
   // Close Status Popup
   const handleClosePopup = () => {
@@ -429,7 +445,7 @@ const POOrderList = ({ user }) => {
         <div className="search-bar-container">
           <input
             type="text"
-            placeholder="Filter by Name"
+            placeholder="Filter by PO-ID  or Vendor Name"
             value={nameFilter}
             onChange={(e) => setNameFilter(e.target.value)}
             className="search-bar"
@@ -441,7 +457,7 @@ const POOrderList = ({ user }) => {
       </div>
       <div className="table-container">
         {poOrders.length === 0 ? (
-          <p style={{ color:"gray"}}>No Purchase Orders found.</p>
+          <p style={{ color: "gray" }}>No Purchase Orders found.</p>
         ) : (
           <table>
             <thead>
@@ -563,7 +579,17 @@ const POOrderList = ({ user }) => {
               </tr>
             </thead>
             <tbody>
-              {filteredPOOrders.length > 0 ? (
+              {loading ? (
+                <tr>
+                  <td
+                    colSpan="5"
+                    style={{ textAlign: "center", padding: "10px" }}
+                  >
+                    <div className="spinner"></div>
+                    Loading PO List...
+                  </td>
+                </tr>
+              ) : filteredPOOrders.length > 0 ? (
                 filteredPOOrders.map((order) => {
                   const { status } = getAggregatedStatus(order.id);
                   const finalPrice = finalCost(order.id);

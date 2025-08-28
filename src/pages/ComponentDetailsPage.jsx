@@ -13,6 +13,7 @@ import {
   showInfoToast,
   ToastContainerComponent,
 } from "./Toastify.jsx";
+import emptyFile from "../assets/emptyfile.svg"; // adjust path as needed
 
 /** Fallback POST helper for price create — tries multiple likely endpoints */
 const postPriceRow = async (baseURL, payload) => {
@@ -80,10 +81,22 @@ const ComponentDetailsPage = () => {
   const allowedRoles = ["Admin", "Sub-Admin", "Inventory", "Procurement"];
   const canEdit = allowedRoles.includes(user?.role);
 
-  const allowedRolesPlus = ["Admin","Sub-Admin", "Procurement"];
+  const allowedRolesPlus = ["Admin", "Sub-Admin", "Procurement"];
   const canEditPlus = allowedRolesPlus.includes(user?.role);
+  const isPlaceholder = (src) => {
+    if (!src) return true;
+    const s = String(src).toLowerCase();
+    return (
+      s.includes("emptyfile.svg") ||
+      s.includes("/placeholder.jpg") ||
+      s.includes("placeholder.jpg") ||
+      s === "null"
+    );
+  };
 
   const handleMouseMove = (e) => {
+    if (!imgRef.current) return;
+    if (isPlaceholder(mainImage)) return;
     const rect = imgRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -184,7 +197,7 @@ const ComponentDetailsPage = () => {
   useEffect(() => {
     const loadVendorOptions = async () => {
       try {
-        const r = await fetch(`http://127.0.0.1:8000/vendor_list/`);
+        const r = await fetch(`${config.apiBaseURL}/vendor_list/`);
         if (!r.ok) throw new Error("Failed to fetch vendor_list");
         const data = await r.json();
 
@@ -419,17 +432,14 @@ const ComponentDetailsPage = () => {
 
     const formData = new FormData();
     newImages.forEach(({ file }) => {
-      formData.append("images", file); // Backend expects 'images'
+      formData.append("images", file);
     });
 
     setUploadingImages(true);
     try {
       const response = await fetch(
         `${config.apiBaseURL}/component_images/by-component/${componentId}/`,
-        {
-          method: "POST",
-          body: formData,
-        }
+        { method: "POST", body: formData }
       );
 
       if (!response.ok) {
@@ -440,20 +450,24 @@ const ComponentDetailsPage = () => {
         return;
       }
 
-      const uploaded = await response.json(); // expect [{id, image}, ...]
+      const uploaded = await response.json();
       const toAbs = (p) =>
         String(p).startsWith("http") ? p : `${config.apiBaseURL}${p}`;
       const uploadedUrls = (Array.isArray(uploaded) ? uploaded : [])
         .map((item) => item?.image)
         .filter(Boolean)
-        .map(toAbs);
+        .map(toAbs)
+        .filter((u) => !isPlaceholder(u));
 
-      setImageList((prev) => [...prev, ...uploadedUrls]);
-      if (mainImage === "/placeholder.jpg" && uploadedUrls.length) {
+      setImageList((prev) => {
+        const cleanedPrev = (prev || []).filter((p) => !isPlaceholder(p));
+        return [...cleanedPrev, ...uploadedUrls];
+      });
+
+      if (isPlaceholder(mainImage) && uploadedUrls.length) {
         setMainImage(uploadedUrls[0]);
       }
 
-      // cleanup previews
       newImages.forEach((img) => URL.revokeObjectURL(img.preview));
       setNewImages([]);
       setIsEditingImage(false);
@@ -465,7 +479,11 @@ const ComponentDetailsPage = () => {
       setUploadingImages(false);
     }
   };
-
+  const validThumbnails = Array.isArray(imageList)
+    ? imageList.filter((s) => !isPlaceholder(s))
+    : [];
+  const showThumbnails =
+    validThumbnails.length > 0 && !isPlaceholder(mainImage);
   // ================================================
 
   return (
@@ -481,28 +499,35 @@ const ComponentDetailsPage = () => {
             >
               <img
                 ref={imgRef}
-                src={mainImage}
+                src={
+                  mainImage && mainImage !== "/placeholder.jpg"
+                    ? mainImage
+                    : emptyFile
+                }
                 alt="No Image"
                 className="main-img"
               />
+
               {lensVisible && mainImage && mainImage !== "/placeholder.jpg" && (
                 <div className="zoom-result" style={zoomResultStyle} />
               )}
             </div>
 
-            <div className="thumbnails-wrapper">
-              <div className="thumbnails">
-                {imageList.map((src, index) => (
-                  <img
-                    key={index}
-                    src={src}
-                    alt={`Image ${index + 1}`}
-                    className={mainImage === src ? "active-thumbnail" : ""}
-                    onClick={() => setMainImage(src)}
-                  />
-                ))}
+            {showThumbnails && (
+              <div className="thumbnails-wrapper">
+                <div className="thumbnails">
+                  {validThumbnails.map((src, index) => (
+                    <img
+                      key={index}
+                      src={src}
+                      alt={`Image ${index + 1}`}
+                      className={mainImage === src ? "active-thumbnail" : ""}
+                      onClick={() => setMainImage(src)}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* NEW: Image upload controls */}
             <div className="image-upload-controls">
@@ -752,12 +777,42 @@ const ComponentDetailsPage = () => {
                     <td className="truncate-cell" title={vendor.vendor_name}>
                       {vendor.vendor_name}
                     </td>
-                    <td style={{ textAlign: "right" }}>
+                    {/* <td style={{ textAlign: "right" }}>
                       ₹
                       {priceDataMap[vendor.product_id]?.price ??
                         vendor.last_price ??
                         "-"}
+                    </td> */}
+                    <td style={{ textAlign: "right" }}>
+                      ₹
+                      {(() => {
+                        const rawPrice =
+                          priceDataMap[vendor.product_id]?.price ??
+                          vendor.last_price ??
+                          "-";
+                        if (rawPrice === "-") return "-";
+
+                        const str = String(rawPrice);
+
+                        if (str.includes(".")) {
+                          const [intPart, decPart] = str.split(".");
+                          // If all decimals are zeros → show 2 decimals (.00)
+                          if (/^0+$/.test(decPart)) {
+                            return `${intPart}.00`;
+                          }
+                          // If decimals > 2 → keep full decimal part
+                          if (decPart.length > 2) {
+                            return `${intPart}.${decPart}`;
+                          }
+                          // If decimals ≤ 2 → normalize to 2 decimals
+                          return Number(str).toFixed(2);
+                        }
+
+                        // No decimals → force .00
+                        return Number(str).toFixed(2);
+                      })()}
                     </td>
+
                     <td style={{ textAlign: "right" }}>
                       {priceDataMap[vendor.product_id]?.tax ??
                         vendor.tax ??
