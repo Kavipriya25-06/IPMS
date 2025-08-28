@@ -564,9 +564,9 @@ const POOrderMaster = ({ user }) => {
       deliveryMode,
       remarks,
       shippingCharges,
-    } = extraFields || {}; // safely destructure
+    } = extraFields || {};
 
-    const doc = new jsPDF({ unit: "pt", format: "a4" }); // 595 x 842
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
     const font = "helvetica";
     const INR = (n) =>
       "INR " +
@@ -577,11 +577,10 @@ const POOrderMaster = ({ user }) => {
 
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    const M = 22; // outer margin
+    const M = 22;
     const usable = pageWidth - M * 2;
-    const lh = 14; // line height
+    const lh = 14;
 
-    // spacing knobs
     const GAP_AFTER_TITLE = 12;
     const GAP_BETWEEN_COLS = 14;
     const GAP_BELOW_COLS = 22;
@@ -590,22 +589,20 @@ const POOrderMaster = ({ user }) => {
 
     let y = M;
 
-    // ─── Full Page Border ───
-    doc.setDrawColor(100); // border color (dark gray)
-    doc.setLineWidth(1); // thickness
-
-    const borderPadding = 12; // optional extra gap inside page edges
+    // page border
+    doc.setDrawColor(100);
+    doc.setLineWidth(1);
+    const borderPadding = 12;
     doc.rect(
-      borderPadding, // x
-      borderPadding, // y
-      pageWidth - borderPadding * 2, // width
-      pageHeight - borderPadding * 2 // height
+      borderPadding,
+      borderPadding,
+      pageWidth - borderPadding * 2,
+      pageHeight - borderPadding * 2
     );
 
-    // ─── Header line
-    // ─── Header Area (Logo + Title) ───
-    const logoMaxWidth = 120; // max allowed logo width
-    const logoMaxHeight = 40; // max allowed logo height
+    // header (logo + title)
+    const logoMaxWidth = 120;
+    const logoMaxHeight = 40;
     let logoHeightUsed = 0;
 
     if (logoDataUrl) {
@@ -624,20 +621,16 @@ const POOrderMaster = ({ user }) => {
       logoHeightUsed = drawHeight;
     }
 
-    // Title (centered relative to page, slightly lower than logo top)
     doc.setFont(font, "bold");
     doc.setFontSize(20);
     const titleY = y + (logoHeightUsed > 0 ? logoHeightUsed / 2 + 8 : 24);
     doc.text("Purchase Order", pageWidth / 2, titleY, { align: "center" });
 
-    // ─── Divider line BELOW header (use max of logo bottom or title baseline)
     const headerBottom = Math.max(y + logoHeightUsed, titleY);
-
-    // update Y for next section
     y = headerBottom + 12;
 
-    // Adjust PO No / Date to be slightly below the title
-    const poStartY = y + 5; // 30 points below top line / header
+    // PO No / Date
+    const poStartY = y + 5;
     doc.setFontSize(10);
 
     const rLabelX = pageWidth - M - 110;
@@ -652,22 +645,21 @@ const POOrderMaster = ({ user }) => {
           : format(new Date(), "dd.MM.yyyy"),
       ],
     ].forEach(([k, v], i) => {
-      const yy = poStartY + i * lh; // use poStartY as base
+      const yy = poStartY + i * lh;
       doc.text(k + " :", rLabelX - 20, yy);
       doc.setFont(font, "normal");
       doc.text(v, rValueX, yy, { align: "right" });
       doc.setFont(font, "bold");
     });
 
-    y = poStartY + 2 * lh; // update y after this block
+    y = poStartY + 2 * lh;
     doc.setDrawColor(180);
     doc.line(M, y, pageWidth - M, y);
     y += 12;
 
-    // ───────────────── Invoice/Consignee ─────────────────
+    // Invoice / Consignee
     const colW = Math.floor((usable - GAP_BETWEEN_COLS) / 2);
-
-    const topGap = 10; // increase to add more space from previous section
+    const topGap = 10;
     y += topGap;
 
     const invoiceTo = [
@@ -706,20 +698,20 @@ const POOrderMaster = ({ user }) => {
       rightY += lh;
     });
 
-    const sectionGap = 10; // smaller than GAP_BELOW_COLS
+    const sectionGap = 10;
     y = Math.max(leftY, rightY) + sectionGap;
 
     doc.setDrawColor(210);
     doc.line(M, y - SECTION_DIVIDER_H, pageWidth - M, y - SECTION_DIVIDER_H);
 
-    // ───────────────── Supplier + Meta ─────────────────
+    // Supplier + Meta
     const leftW = Math.floor(usable * 0.55);
     const rightW = usable - leftW;
 
     const topGapSupplier = 12;
     y += topGapSupplier;
 
-    // Supplier (Bill from)
+    // Supplier
     doc.setFont(font, "bold");
     doc.text("Supplier (Bill from)", M, y);
     y += 12;
@@ -743,10 +735,10 @@ const POOrderMaster = ({ user }) => {
       supY += lh;
     });
 
-    // Meta Info (Right side)
-    const r2LabelX = M + leftW - 20; // Label start
-    const r2ColonX = r2LabelX + 85; // Colon aligned position
-    const r2ValueX = r2ColonX + 8; // Value after colon
+    // Meta
+    const r2LabelX = M + leftW - 20;
+    const r2ColonX = r2LabelX + 85;
+    const r2ValueX = r2ColonX + 8;
 
     const metaRows = [
       ["Ref Date", refDate ? format(new Date(refDate), "dd.MM.yyyy") : ""],
@@ -765,23 +757,20 @@ const POOrderMaster = ({ user }) => {
       const wrapped = doc.splitTextToSize(value, rightW - 120);
       const h = Math.max(metaLineSpacing, wrapped.length * metaLineSpacing);
 
-      // Label
       doc.setFont(font, "bold");
       doc.text(label, r2LabelX, metaY + metaLineSpacing);
 
-      // Colon (aligned vertically)
       doc.text(":", r2ColonX, metaY + metaLineSpacing);
 
-      // Value
       doc.setFont(font, "normal");
       doc.text(wrapped, r2ValueX, metaY + metaLineSpacing);
 
       metaY += h;
     });
 
-    y = Math.max(supY, metaY) + BLOCK_GAP; // update y after section
+    y = Math.max(supY, metaY) + BLOCK_GAP;
 
-    // ───────────────── Order details ─────────────────
+    // ───────────────── Order details (AGGREGATED) ─────────────────
     const boxPad = 8;
     const innerX = M + boxPad;
     const innerW = usable - boxPad * 2;
@@ -792,24 +781,34 @@ const POOrderMaster = ({ user }) => {
     doc.setFont(font, "bold");
     doc.text("Order details", innerX, boxTitleY - 6);
 
-    // compute rows + totals
+    // aggregate rows by component_id
+    const grouped = groupPOItemsByComponent(poDetails);
+
     let baseTotal = 0;
     let gstTotal = 0;
-    const bodyRows = poDetails.map((po, i) => {
-      const spec = po?.cart_details?.component_specification || "";
-      const uom = po?.cart_details?.unit_of_measurement || "";
-      const qty = Number(po?.cart_details?.quantity || 0);
-      const unit = Number(po?.cart_details?.unit_price || 0);
-      const gstP = Number(po?.cart_details?.GST || 0);
-      const base = unit * qty;
-      const gst = (base * gstP) / 100;
-      const total = base + gst;
-      baseTotal += base;
-      gstTotal += gst;
-      return [i + 1, spec, uom, qty, INR(unit), `${gstP}%`, INR(total)];
+
+    const bodyRows = grouped.map((g, i) => {
+      baseTotal += g.sumBase;
+      gstTotal += g.sumGst;
+
+      // description includes component_id for clarity
+      const desc = g.spec
+        ? `${g.spec} (${g.component_id})`
+        : `(${g.component_id})`;
+
+      return [
+        i + 1,
+        desc,
+        g.uom,
+        g.qty,
+        g.unit_price != null ? INR(g.unit_price) : "—",
+        g.gst_percent != null ? `${g.gst_percent}%` : "—",
+        INR(g.sumTotal),
+      ];
     });
 
-    const raw = { c0: 36, c1: 200, c2: 46, c3: 56, c4: 86, c5: 40, c6: 67 };
+    // column widths
+    const raw = { c0: 36, c1: 240, c2: 50, c3: 60, c4: 86, c5: 46, c6: 77 };
     const sumW = Object.values(raw).reduce((a, b) => a + b, 0);
     const scale = innerW / sumW;
     const w = Object.fromEntries(
@@ -821,7 +820,7 @@ const POOrderMaster = ({ user }) => {
       head: [
         [
           "S.no",
-          "Description",
+          "Description (with Component ID)",
           "UOM",
           "Quantity",
           "Unit Price",
@@ -861,14 +860,13 @@ const POOrderMaster = ({ user }) => {
 
     let lastY = doc.lastAutoTable.finalY;
 
-    //  shipping comes from popup
     const shipping = Number(shippingCharges || 0);
 
     const totals = [
       ["Total Base Price", INR(baseTotal)],
-      ["Total GST%", INR(gstTotal)],
+      ["Total GST Amount", INR(gstTotal)],
       ["Shipping Charges", INR(shipping)],
-      ["Grand Total(Base+GST)", INR(baseTotal + gstTotal + shipping)],
+      ["Grand Total (Base + GST)", INR(baseTotal + gstTotal + shipping)],
     ];
 
     const totalsLabelW = 260;
@@ -909,7 +907,7 @@ const POOrderMaster = ({ user }) => {
     doc.setLineWidth(0.7);
     doc.roundedRect(M, boxStartY, usable, boxEndY - boxStartY, 6, 6);
 
-    // ───────────────── Remarks ─────────────────
+    // Remarks
     doc.setFont(font, "bold");
     doc.text("Remarks", M, boxEndY + 20);
     doc.setFont(font, "normal");
@@ -920,11 +918,11 @@ const POOrderMaster = ({ user }) => {
     doc.setFillColor(248, 248, 248);
     doc.roundedRect(M, remarksTop, usable * 0.62, remarksH, 6, 6, "FD");
 
-    const remarksText = remarks || "No remarks"; //  popup value
+    const remarksText = remarks || "No remarks";
     let ry = remarksTop + 18;
     doc.text(doc.splitTextToSize(remarksText, usable * 0.62 - 24), M + 12, ry);
 
-    // ───────────────── Signature + footer ─────────────────
+    // Signature + footer
     const sigBoxWidth = 190;
     const sigBoxHeight = 30;
     const sigX = pageWidth - M - sigBoxWidth;
@@ -953,7 +951,7 @@ const POOrderMaster = ({ user }) => {
 
     doc.save(`PO_${poId}.pdf`);
   };
-
+  
   const handleSendEmail = async () => {
     try {
       const pdfBlob = generatePDF();
@@ -1384,7 +1382,7 @@ const POOrderMaster = ({ user }) => {
       />
     );
   });
-  
+
   const CustomReceivedDateInput = React.forwardRef(
     ({ value, onClick, item }, ref) => {
       const receivedQty =

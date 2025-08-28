@@ -23,36 +23,35 @@ const Requests = () => {
   const loggedInName = loggedInEmail.split("@")[0] || "";
   const loggedInRole = user?.role || "";
 
-useEffect(() => {
-  fetch(`${config.apiBaseURL}/request_list/`)
-    .then((response) => response.json())
-    .then((data) => {
-      // Sort by request_id number ascending
-      const sortedData = [...data].sort((a, b) => {
-        const numA = parseInt(String(a.request_id).replace(/\D/g, ""), 10);
-        const numB = parseInt(String(b.request_id).replace(/\D/g, ""), 10);
-        return numA - numB;
-      });
+  useEffect(() => {
+    fetch(`${config.apiBaseURL}/request_list/`)
+      .then((response) => response.json())
+      .then((data) => {
+        // Sort by request_id number ascending
+        const sortedData = [...data].sort((a, b) => {
+          const numA = parseInt(String(a.request_id).replace(/\D/g, ""), 10);
+          const numB = parseInt(String(b.request_id).replace(/\D/g, ""), 10);
+          return numA - numB;
+        });
 
-      // Role-based filtering after sorting
-      if (
-        loggedInRole === "Admin" ||
-        loggedInRole === "Sub-Admin" ||
-        loggedInRole === "Inventory"
-      ) {
-        setRequests(sortedData); // See all requests
-      } else {
-        setRequests(
-          sortedData.filter((req) => req.requester_name === loggedInName) // Only own requests
-        );
-      }
-    })
-    .catch((error) => console.error("Error fetching requests:", error));
+        // Role-based filtering after sorting
+        if (
+          loggedInRole === "Admin" ||
+          loggedInRole === "Sub-Admin" ||
+          loggedInRole === "Inventory"
+        ) {
+          setRequests(sortedData); // See all requests
+        } else {
+          setRequests(
+            sortedData.filter((req) => req.requester_name === loggedInName) // Only own requests
+          );
+        }
+      })
+      .catch((error) => console.error("Error fetching requests:", error));
 
-  fetchRequestDetails();
-  fetchRequestStatus();
-}, [loggedInRole, loggedInName]);
-
+    fetchRequestDetails();
+    fetchRequestStatus();
+  }, [loggedInRole, loggedInName]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -202,13 +201,23 @@ useEffect(() => {
   };
 
   // Sorting the requests array based on the sortField and sortOrder.
+  // Sorting the requests array based on the sortField and sortOrder.
   const sortedRequests = [...requests].sort((a, b) => {
     if (!sortField) return 0;
+
+    // numeric extractor for IDs like "REQ_00012"
+    const idNum = (v) => {
+      const n = parseInt(String(v ?? "").replace(/\D/g, ""), 10);
+      return Number.isFinite(n) ? n : 0;
+    };
+
     let aVal = a[sortField];
     let bVal = b[sortField];
 
-    // For the date field, convert the values to Date objects.
-    if (sortField === "date") {
+    if (sortField === "request_id") {
+      aVal = idNum(a.request_id);
+      bVal = idNum(b.request_id);
+    } else if (sortField === "date") {
       aVal = new Date(aVal);
       bVal = new Date(bVal);
     }
@@ -217,6 +226,17 @@ useEffect(() => {
     if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
     return 0;
   });
+
+  const filteredRequests = React.useMemo(() => {
+    const q = (searchQuery || "").trim().toLowerCase();
+    if (!q) return sortedRequests;
+
+    return sortedRequests.filter((request) => {
+      const name = (request.requester_name || "").toLowerCase();
+      const idStr = String(request.request_id || "").toLowerCase(); // supports REQ_00012
+      return name.includes(q) || idStr.includes(q);
+    });
+  }, [sortedRequests, searchQuery]);
 
   return (
     <div>
@@ -239,7 +259,7 @@ useEffect(() => {
             <input
               type="text"
               className="search-bar"
-              placeholder="Search by Requester Name"
+              placeholder="Search by Requester ID or Name"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -310,70 +330,54 @@ useEffect(() => {
                   Loading Requests...
                 </td>
               </tr>
-            ) : sortedRequests.length === 0 ? (
-              <tr>
-                <td colSpan="5" style={{ textAlign: "center", color: "gray" }}>
-                  No requests available
-                </td>
-              </tr>
-            ) : sortedRequests.filter((request) =>
-                request.requester_name
-                  ?.toLowerCase()
-                  .includes(searchQuery.toLowerCase())
-              ).length > 0 ? (
-              sortedRequests
-                .filter((request) =>
-                  request.requester_name
-                    ?.toLowerCase()
-                    .includes(searchQuery.toLowerCase())
-                )
-                .map((request) => {
-                  const { status } = getAggregatedStatus(request.request_id);
-                  return (
-                    <tr
-                      key={request.request_id}
-                      style={{ borderBottom: "1px solid #ddd" }}
-                    >
-                      <td
-                        onClick={() => handleRequestClick(request.request_id)}
-                        style={{
-                          cursor: "pointer",
-                          textDecoration: "underline",
-                          padding: "10px",
-                        }}
-                      >
-                        {request.request_id}
-                      </td>
-                      <td style={{ padding: "10px" }}>
-                        {request.requester_name}
-                      </td>
-                      <td style={{ padding: "10px" }}>
-                        {request.date
-                          ? format(parseISO(request.date), "dd-MM-yyyy")
-                          : "--"}
-                      </td>
-                      <td
-                        onClick={() => statusPopup(request.request_id)}
-                        style={{
-                          cursor: "pointer",
-                          textDecoration: "underline",
-                          padding: "10px",
-                        }}
-                      >
-                        {status}
-                      </td>
-                      <td style={{ padding: "10px" }}>
-                        {request.last_modified_by}
-                      </td>
-                    </tr>
-                  );
-                })
-            ) : (
+            ) : filteredRequests.length === 0 ? (
               <tr>
                 <td colSpan="5" style={{ textAlign: "center", color: "gray" }}>
                   No requests found for "<strong>{searchQuery}</strong>"
                 </td>
               </tr>
+            ) : (
+              filteredRequests.map((request) => {
+                const { status } = getAggregatedStatus(request.request_id);
+                return (
+                  <tr
+                    key={request.request_id}
+                    style={{ borderBottom: "1px solid #ddd" }}
+                  >
+                    <td
+                      onClick={() => handleRequestClick(request.request_id)}
+                      style={{
+                        cursor: "pointer",
+                        textDecoration: "underline",
+                        padding: "10px",
+                      }}
+                    >
+                      {request.request_id}
+                    </td>
+                    <td style={{ padding: "10px" }}>
+                      {request.requester_name}
+                    </td>
+                    <td style={{ padding: "10px" }}>
+                      {request.date
+                        ? format(parseISO(request.date), "dd-MM-yyyy")
+                        : "--"}
+                    </td>
+                    <td
+                      onClick={() => statusPopup(request.request_id)}
+                      style={{
+                        cursor: "pointer",
+                        textDecoration: "underline",
+                        padding: "10px",
+                      }}
+                    >
+                      {status}
+                    </td>
+                    <td style={{ padding: "10px" }}>
+                      {request.last_modified_by}
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
