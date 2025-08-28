@@ -994,63 +994,62 @@ const POOrderMaster = ({ user }) => {
     // doc.setLineWidth(0.7);
     // doc.roundedRect(M, boxStartY, usable, boxEndY - boxStartY, 6, 6);
 
-    // ───────────────── Remarks ─────────────────
+  // ───────────────── Remarks ─────────────────
+doc.setFont(font, "bold");
+doc.text("Terms & Conditions", M, boxEndY + 20);
+doc.setFont(font, "normal");
+
+const remarksTop = boxEndY + 28;
+const remarksWidth = usable * 0.62;
+
+// Split text into wrapped lines
+const remarksText = remarks || "No remarks";
+const wrappedRemarks = doc.splitTextToSize(remarksText, remarksWidth - 24);
+
+const lineHeight = 12; // line spacing
+const padding = 24;
+const minBoxHeight = 80; // increased default height
+
+let currentY = remarksTop;
+let i = 0;
+
+while (i < wrappedRemarks.length) {
+  // How many lines fit in this page
+  const linesThatFit = Math.floor((pageHeight - currentY - 60) / lineHeight);
+
+  // Lines for this page
+  const pageLines = wrappedRemarks.slice(i, i + linesThatFit);
+
+  // Box height for these lines (minimum height applied)
+  const remarksH = Math.max(pageLines.length * lineHeight + padding, minBoxHeight);
+
+  // Draw border box (on *every* page, not just first)
+  doc.setDrawColor(170);
+  doc.setFillColor(248, 248, 248);
+  doc.roundedRect(M, currentY, remarksWidth, remarksH, 3, 3, "FD");
+
+  // Insert text
+  doc.text(pageLines, M + 12, currentY + 18);
+
+  // Move index
+  i += linesThatFit;
+
+  if (i < wrappedRemarks.length) {
+    // Still more text → add new page
+    doc.addPage();
+
+    // Draw border on the new page
+    drawOuterBorder();
+
+    // Title on next page
     doc.setFont(font, "bold");
-    doc.text("Terms & Conditions", M, boxEndY + 20);
+    doc.text("Terms & Conditions (contd...)", M, 40);
     doc.setFont(font, "normal");
 
-    const remarksTop = boxEndY + 28;
-    const remarksWidth = usable * 0.62;
-
-    // Split text into wrapped lines
-    const remarksText = remarks || "No remarks";
-    const wrappedRemarks = doc.splitTextToSize(remarksText, remarksWidth - 24);
-
-    const lineHeight = 12; // line spacing
-    const padding = 24;
-
-    let currentY = remarksTop;
-    let i = 0;
-
-    while (i < wrappedRemarks.length) {
-      // How many lines fit in this page
-      const linesThatFit = Math.floor(
-        (pageHeight - currentY - 60) / lineHeight
-      );
-
-      // Lines for this page
-      const pageLines = wrappedRemarks.slice(i, i + linesThatFit);
-
-      // Box height for these lines
-      const remarksH = pageLines.length * lineHeight + padding;
-
-      // Draw border box (on *every* page, not just first)
-      doc.setDrawColor(170);
-      doc.setFillColor(248, 248, 248);
-      doc.roundedRect(M, currentY, remarksWidth, remarksH, 6, 6, "FD");
-
-      // Insert text
-      doc.text(pageLines, M + 12, currentY + 18);
-
-      // Move index
-      i += linesThatFit;
-
-      if (i < wrappedRemarks.length) {
-        // Still more text → add new page
-        doc.addPage();
-
-        // Draw border on the new page
-        drawOuterBorder();
-
-        // Title on next page
-        doc.setFont(font, "bold");
-        doc.text("Terms & Conditions (contd...)", M, 40);
-        doc.setFont(font, "normal");
-
-        // Reset Y for new page
-        currentY = 48;
-      }
-    }
+    // Reset Y for new page
+    currentY = 48;
+  }
+}
 
     // ───────────────── Signature + footer ─────────────────
     const sigBoxWidth = 190;

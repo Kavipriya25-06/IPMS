@@ -890,7 +890,11 @@ const Outward = () => {
                       </td>
                       <td>{row.quantity || "-"}</td>
                       <td>{getProjectName(row.project) || "-"}</td>
-                      <td>Return date</td>
+                      <td>
+                        {row.return_date
+                          ? format(new Date(row.return_date), "dd-MM-yyyy")
+                          : "-"}
+                      </td>
                       <td>{row.type_of_outward || "-"}</td>
                       <td className="specification-cell" title={row.remarks}>
                         {row.remarks || "-"}
@@ -1264,8 +1268,11 @@ const Outward = () => {
                 value={serviceForm.time}
                 readOnly
                 placeholder="Time"
-                style={{  backgroundColor: "#f0f0f0ff",
-                  color: "gray",cursor: "not-allowed" }}
+                style={{
+                  backgroundColor: "#f0f0f0ff",
+                  color: "gray",
+                  cursor: "not-allowed",
+                }}
               />
 
               <label htmlFor="">Gate Pass</label>
@@ -1275,8 +1282,11 @@ const Outward = () => {
                 value={serviceForm.gatepass}
                 readOnly
                 placeholder="Auto Generated Gate Pass"
-                style={{  backgroundColor: "#f0f0f0ff",
-                  color: "gray", cursor: "not-allowed" }}
+                style={{
+                  backgroundColor: "#f0f0f0ff",
+                  color: "gray",
+                  cursor: "not-allowed",
+                }}
               />
 
               <label>Component Spec</label>
