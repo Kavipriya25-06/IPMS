@@ -65,6 +65,26 @@ const POOrderMaster = ({ user }) => {
   const [poPdfPopupOpen, setPoPdfPopupOpen] = useState(false);
   const [logoDataUrl, setLogoDataUrl] = useState(null);
 
+  const [inwardSubmitting, setInwardSubmitting] = useState({});
+
+  // a tiny helper that ensures only one in-flight request per row
+  const guardInward = async (item, fn) => {
+    const rowKey = item.id || item.po_master_id || item.PO_id; // whichever uniquely identifies your row
+    if (inwardSubmitting[rowKey]) return; // already running, ignore click
+
+    setInwardSubmitting((prev) => ({ ...prev, [rowKey]: true }));
+    try {
+      await fn(item); // your existing async handler (handleInward)
+    } finally {
+      // if you prefer to keep it disabled until the table refreshes, remove this finally block
+      setInwardSubmitting((prev) => {
+        const next = { ...prev };
+        delete next[rowKey];
+        return next;
+      });
+    }
+  };
+
   const [extraFields, setExtraFields] = useState({
     refDate: "",
     quotationNo: "",
@@ -543,7 +563,7 @@ const POOrderMaster = ({ user }) => {
       deliveryMode,
       remarks,
       shippingCharges,
-    } = extraFields || {}; // ✅ safely destructure
+    } = extraFields || {}; // safely destructure
 
     const doc = new jsPDF({ unit: "pt", format: "a4" }); // 595 x 842
     const font = "helvetica";
@@ -840,7 +860,7 @@ const POOrderMaster = ({ user }) => {
 
     let lastY = doc.lastAutoTable.finalY;
 
-    // ✅ shipping comes from popup
+    //  shipping comes from popup
     const shipping = Number(shippingCharges || 0);
 
     const totals = [
@@ -899,7 +919,7 @@ const POOrderMaster = ({ user }) => {
     doc.setFillColor(248, 248, 248);
     doc.roundedRect(M, remarksTop, usable * 0.62, remarksH, 6, 6, "FD");
 
-    const remarksText = remarks || "No remarks"; // ✅ popup value
+    const remarksText = remarks || "No remarks"; //  popup value
     let ry = remarksTop + 18;
     doc.text(doc.splitTextToSize(remarksText, usable * 0.62 - 24), M + 12, ry);
 
@@ -1493,7 +1513,7 @@ const POOrderMaster = ({ user }) => {
       const po = updated[index];
 
       const qty = Number(newQty) || 0;
-      po.edited_quantity = qty; // ✅ use edited_quantity, not cart_details.quantity
+      po.edited_quantity = qty; //  use edited_quantity, not cart_details.quantity
 
       // Recalculate total cost with GST
       const unitPrice = parseFloat(po.cart_details.unit_price) || 0;
@@ -2464,25 +2484,31 @@ const POOrderMaster = ({ user }) => {
                       {/* Inward Button */}
                       <td>
                         <button
-                          onClick={() => handleInward(item)}
+                          onClick={() => guardInward(item, handleInward)}
                           disabled={
                             item.inward ||
                             !item.received_date ||
                             !item.received_quantity ||
                             item.received_quantity <= 0 ||
-                            isPOCancelled
+                            isPOCancelled ||
+                            inwardSubmitting[item.id] // ← new: lock while request is running
                           }
                           className={`edit-btn ${
                             item.inward ||
                             !item.received_date ||
                             !item.received_quantity ||
                             isPOCancelled ||
-                            item.received_quantity <= 0
+                            item.received_quantity <= 0 ||
+                            inwardSubmitting[item.id] // ← keep disabled styling
                               ? "disabled-btn"
                               : ""
                           }`}
                         >
-                          {item.inward ? "Inwarded" : "Inward"}
+                          {item.inward
+                            ? "Inwarded"
+                            : inwardSubmitting[item.id]
+                            ? "Inwarding..." // ← immediate visual feedback
+                            : "Inward"}
                         </button>
                       </td>
                     </tr>
