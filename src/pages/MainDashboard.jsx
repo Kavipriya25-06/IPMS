@@ -26,37 +26,40 @@ const MainDashboard = () => {
       .then((data) => setComponentCount(data.length))
       .catch((err) => console.error("Component fetch error:", err));
 
-    // Request Components
-    fetch(`${config.apiBaseURL}/request_component/`)
-      .then((res) => res.json())
-      .then((data) => {
-        const loggedInEmail = localStorage.getItem("email"); // e.g. kanna@gmail.com
-        const role = localStorage.getItem("userRole");
+   // Request Components
+fetch(`${config.apiBaseURL}/request_component/`)
+  .then((res) => res.json())
+  .then((data) => {
+    const role = localStorage.getItem("userRole");
+    const loggedInEmail = localStorage.getItem("email")?.toLowerCase();
+    const username = loggedInEmail?.split("@")[0];
 
-        if (role === "Admin") {
-          setRequestComponentCount(data.length); // Admin sees all
-        } else {
-          const username = loggedInEmail?.split("@")[0]?.toLowerCase();
+    if (role === "Admin" || role === "Sub-Admin") {
+      // Admin sees all requests
+      setRequestComponentCount(data.length);
+    } else if (role === "Inventory") {
+      // Inventory → count only Pending requests
+      const pending = data.filter((req) => req.status === "Pending");
+      setRequestComponentCount(pending.length);
+    } else if (role === "Procurement") {
+      // Procurement → vendor_added = false
+      const vendorActions = data.filter(
+        (req) => req.status === "Added" && req.vendor_added === false
+      );
+      setRequestComponentCount(vendorActions.length);
+    } else {
+      // Normal User → only their requests
+      const userRequests = data.filter(
+        (req) =>
+          req.name?.toLowerCase() === username ||
+          req.name?.toLowerCase() === loggedInEmail
+      );
+      setRequestComponentCount(userRequests.length);
+    }
+  })
+  .catch((err) => console.error("Request component fetch error:", err));
 
-          const userRequests = data.filter((req) => {
-            const reqName = req.name?.toLowerCase();
-            return (
-              reqName === username || // match "kanna"
-              reqName === loggedInEmail?.toLowerCase() || // match "kanna@gmail.com"
-              reqName?.includes(username) // match "kanna s", "kanna123" etc
-            );
-          });
 
-          setRequestComponentCount(userRequests.length);
-        }
-        console.log("LoggedInEmail:", loggedInEmail);
-        console.log("Username:", username);
-        console.log(
-          "API Names:",
-          data.map((d) => d.name)
-        );
-      })
-      .catch((err) => console.error("Request component fetch error:", err));
 
     // Inventory
     fetch(`${config.apiBaseURL}/inventory/`)
@@ -121,6 +124,11 @@ const MainDashboard = () => {
   const handleRequestComponentClick = () => {
     navigate("/components/addcomponents/");
   };
+
+  const handleActionComplete = () => {
+  setRequestComponentCount((prev) => Math.max(prev - 1, 0));
+};
+
 
   const tiles = [
     {
@@ -249,23 +257,20 @@ const MainDashboard = () => {
                 {tile.counts.requests !== undefined && (
                   <div className="count-column">
                     <div className="count-number">{tile.counts.requests}</div>
-                    <div
-                      className="count-label"
-                      onClick={(e) => {
+                   <div className="count-label"  onClick={(e) => {
                         e.stopPropagation(); // prevent parent tile click
                         handleRequestComponentClick();
                       }}
-                      style={{ textDecoration: "underline", cursor: "pointer" }}
-                    >
-                      {[
-                        "Admin",
-                        "Sub-Admin",
-                        "Inventory",
-                        "Procurement",
-                      ].includes(localStorage.getItem("userRole"))
-                        ? "Total Requests"
-                        : "My Requests"}
-                    </div>
+                      style={{ textDecoration: "underline", cursor: "pointer" }}>
+  {currentUserRole === "Admin" || currentUserRole === "Sub-Admin"
+    ? "Total Requests"
+    : currentUserRole === "Inventory"
+    ? "Pending Actions"
+    : currentUserRole === "Procurement"
+    ? "To Be Added to Vendor"
+    : "My Requests"}
+</div>
+
                   </div>
                 )}
 

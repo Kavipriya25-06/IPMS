@@ -561,55 +561,54 @@ const VendorDetails = () => {
   };
 
   // Handler for updating the image
-const handleImageChange = (index, files) => {
-  setSelectedVendorData((prevState) => {
-    const updatedProducts = [...prevState];
-    const product = updatedProducts[index];
+  const handleImageChange = (index, files) => {
+    setSelectedVendorData((prevState) => {
+      const updatedProducts = [...prevState];
+      const product = updatedProducts[index];
 
-    // Existing saved images (backend)
-    const existingImages = (product.images || []).map((imgObj) =>
-      String(imgObj.image).toLowerCase()
-    );
-
-    // Already staged (not yet uploaded)
-    const alreadySelected = (product.newImages || []).map(
-      (f) => `${f.name.toLowerCase()}-${f.size}`
-    );
-
-    const added = [];
-    files.forEach((file) => {
-      const uniqueKey = `${file.name.toLowerCase()}-${file.size}`;
-
-      // Check if already in staged list
-      if (alreadySelected.includes(uniqueKey)) {
-        showInfoToast(`"${file.name}" is already selected — skipping.`);
-        return;
-      }
-
-      // Check if already saved in backend
-      const baseName = file.name.toLowerCase().split(".")[0];
-      const isSaved = existingImages.some((saved) =>
-        saved.includes(baseName)
+      // Existing saved images (backend)
+      const existingImages = (product.images || []).map((imgObj) =>
+        String(imgObj.image).toLowerCase()
       );
-      if (isSaved) {
-        showInfoToast(`"${file.name}" already exists in saved images.`);
-        return;
-      }
 
-      // If unique, add it
-      added.push(file);
+      // Already staged (not yet uploaded)
+      const alreadySelected = (product.newImages || []).map(
+        (f) => `${f.name.toLowerCase()}-${f.size}`
+      );
+
+      const added = [];
+      files.forEach((file) => {
+        const uniqueKey = `${file.name.toLowerCase()}-${file.size}`;
+
+        // Check if already in staged list
+        if (alreadySelected.includes(uniqueKey)) {
+          showInfoToast(`"${file.name}" is already selected — skipping.`);
+          return;
+        }
+
+        // Check if already saved in backend
+        const baseName = file.name.toLowerCase().split(".")[0];
+        const isSaved = existingImages.some((saved) =>
+          saved.includes(baseName)
+        );
+        if (isSaved) {
+          showInfoToast(`"${file.name}" already exists in saved images.`);
+          return;
+        }
+
+        // If unique, add it
+        added.push(file);
+      });
+
+      // Always merge new files with previous ones
+      updatedProducts[index] = {
+        ...product,
+        newImages: [...(product.newImages || []), ...added],
+      };
+
+      return updatedProducts;
     });
-
-    // Always merge new files with previous ones
-    updatedProducts[index] = {
-      ...product,
-      newImages: [...(product.newImages || []), ...added],
-    };
-
-    return updatedProducts;
-  });
-};
-
+  };
 
   // Handler for updating the attachment
   const handleAttachmentChange = (index, file) => {
@@ -641,7 +640,7 @@ const handleImageChange = (index, files) => {
   const handleAddNewProduct = async () => {
     // Validation: Check if required fields are filled
     const requiredFields = [
-      //"product_description",
+      "product_description",
       // "last_price",
       // "tax",
       "category",
@@ -663,6 +662,7 @@ const handleImageChange = (index, files) => {
           .join(", ")}`
       );
       setShowMessageBox(true);
+      showWarningToast("Please fill all the required fields");
       console.log("please fill details");
       return; // Stop execution if validation fails
     }
@@ -687,6 +687,7 @@ const handleImageChange = (index, files) => {
 
       if (response.ok) {
         const addedProduct = await response.json();
+        showSuccessToast("Product saved successfully");
 
         const componentId = addedProduct.component_id;
 
@@ -753,9 +754,13 @@ const handleImageChange = (index, files) => {
           );
         }
       } else {
+        showErrorToast("Failed to save product");
+
         console.error("Error adding product:", response.statusText);
       }
     } catch (error) {
+      showErrorToast("Something went wrong. Please try again");
+
       console.error("Error adding product:", error);
     }
   };
@@ -1043,15 +1048,14 @@ const handleImageChange = (index, files) => {
               ))}
             </select>
 
-           <input
-  type="text"
-  placeholder="Product Description (Optional)"
-  value={newProduct.product_description || ""}
-  onChange={(e) =>
-    handleInputChange("product_description", e.target.value)
-  }
-/>
-
+            <input
+              type="text"
+              placeholder="Product Description"
+              value={newProduct.product_description}
+              onChange={(e) =>
+                handleInputChange("product_description", e.target.value)
+              }
+            />
             {/* <input
             type="number"
             placeholder="Price"
@@ -1691,7 +1695,7 @@ const handleImageChange = (index, files) => {
                                 border: "1px solid #ccc",
                                 borderRadius: "6px",
                                 padding: "5px",
-                                
+
                                 backgroundColor: "#fff",
                               }}
                             >
@@ -1771,7 +1775,9 @@ const handleImageChange = (index, files) => {
                               View Attachment
                             </a>
                           ) : (
-                            <span  style={{ fontSize: "15px", color: "#888" }}>No Attachments</span>
+                            <span style={{ fontSize: "15px", color: "#888" }}>
+                              No Attachments
+                            </span>
                           )}
                         </div>
 

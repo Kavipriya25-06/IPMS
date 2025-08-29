@@ -53,6 +53,7 @@ const RequestDetails = ({ user }) => {
   const isProcurement = user?.role === "Procurement";
   const isInventory = user?.role === "Inventory";
   const isUser = user?.role === "User";
+    const isSubAdmin = user?.role === "Sub-Admin";
 
   useEffect(() => {
     fetchRequestDetails();
@@ -1137,7 +1138,7 @@ const RequestDetails = ({ user }) => {
                 Project name: {project.project_name} | BOM name: {bomName}
               </h4>
             </div>
-            {(isAdmin || isProcurement) && (
+            {(isAdmin || isProcurement || isSubAdmin) && (
               <button
                 onClick={() => handleApproval()}
                 disabled={details.every((detail) => detail.approve)}
@@ -1169,18 +1170,18 @@ const RequestDetails = ({ user }) => {
               <thead>
                 <tr>
                   <th>Component ID</th>
-                  {(isAdmin || isProcurement || isInventory) && <th>Status</th>}
+                  {(isAdmin || isProcurement || isInventory || isSubAdmin) && <th>Status</th>}
                   <th>Category</th>
                   <th>Component Type</th>
                   <th>Specification</th>
                   <th>Unit of Measurement</th>
                   <th>Vendor Name</th>
-                  {(isAdmin || isProcurement) && <th>Price</th>}
-                  {(isAdmin || isProcurement) && <th>Tax %</th>}
+                  {(isAdmin || isProcurement || isSubAdmin) && <th>Price</th>}
+                  {(isAdmin || isProcurement || isSubAdmin) && <th>Tax %</th>}
                   <th>Quantity</th>
                   <th>Available Quantity</th>
                   {/* <th>Approval</th> */}
-                  {(isAdmin || isProcurement || isInventory) && (
+                  {(isAdmin || isProcurement || isInventory || isSubAdmin) && (
                     <th>Actions</th>
                   )}
                   {isUser && <th>Status</th>}
@@ -1210,7 +1211,7 @@ const RequestDetails = ({ user }) => {
                             {detail.component_id}
                           </Link>
                         </td>
-                        {(isAdmin || isProcurement || isInventory) && (
+                        {(isAdmin || isProcurement || isInventory || isSubAdmin) && (
                           <td
                             style={{ color: "#030303ff", fontWeight: "bold" }}
                           >
@@ -1281,7 +1282,7 @@ const RequestDetails = ({ user }) => {
                           )}
                         </td>
 
-                        {(isAdmin || isProcurement) && (
+                        {(isAdmin || isProcurement || isSubAdmin) && (
                           <td style={{ textAlign: "right" }}>
                             ₹
                             {parseFloat(
@@ -1301,7 +1302,7 @@ const RequestDetails = ({ user }) => {
                             })}
                           </td>
                         )}
-                        {(isAdmin || isProcurement) && (
+                        {(isAdmin || isProcurement || isSubAdmin) && (
                           <td style={{ textAlign: "right" }}>
                             {detail.tax !== undefined
                               ? `${detail.tax}`
@@ -1342,7 +1343,7 @@ const RequestDetails = ({ user }) => {
                         {detail.approve ? "Approved" : "Approve"}
                       </button>
                     </td> */}
-                        {(isAdmin || isProcurement || isInventory) && (
+                        {(isAdmin || isProcurement || isInventory || isSubAdmin) && (
                           <td>
                             {detail.assign || detail.qty === 0 ? (
                               <button

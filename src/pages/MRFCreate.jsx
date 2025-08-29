@@ -269,7 +269,7 @@ const MRFCreate = () => {
   };
 
   return (
-    <div style={{ padding: "0px", fontFamily: "Arial, sans-serif" }}>
+    <div style={{ paddingBottom: "50px", fontFamily: "Arial, sans-serif" }}>
       <h2>Material Request Form</h2>
 
       <div

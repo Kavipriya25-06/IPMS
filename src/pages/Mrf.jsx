@@ -188,7 +188,7 @@ const Mrf = () => {
         <h2>Material Requests (MRF)</h2>
       </div>
 
-      <div className="search-wrapper-container">
+      <div className="search-wrapper-container" style={{marginBottom: '10px'}}>
         <div className="search-wrapper">
           <div className="search-bar-container">
             <input

@@ -448,7 +448,7 @@ const Outward = () => {
           outDate: new Date(),
           time: format(new Date(), "hh:mm a"),
           eventName: "",
-          noOfComponents: "", // reset new field
+          num_components: "", // reset new field
           typeOfOutward: "",
           returnDate: null,
           remarks: "",

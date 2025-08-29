@@ -45,6 +45,7 @@ const Inward = () => {
   const location = useLocation();
   const po_id = new URLSearchParams(location.search).get("po_id");
   const component_id = new URLSearchParams(location.search).get("component_id");
+  const [loading, setLoading] = useState(true);
 
   // Utility function to safely access nested fields
   const getNestedValue = (obj, keyPath, defaultValue = "Not Available") => {
@@ -79,6 +80,8 @@ const Inward = () => {
   // Fetch Inward Data
   const fetchInwardData = async () => {
     try {
+      setLoading(true);
+
       const response = await fetch(
         `${config.apiBaseURL}/inward/?po_id=${po_id}&component_id=${component_id}`
       );
@@ -93,6 +96,8 @@ const Inward = () => {
       }
     } catch (err) {
       console.error("Error fetching inward data:", err);
+    } finally {
+      setLoading(false); // Stop loading after both calls
     }
   };
 
@@ -123,7 +128,7 @@ const Inward = () => {
 
     // Prepare the PATCH payload with all required fields
     const patchPayload = {
-      quality_check: "pass", // Pass or Fail
+      quality_check: "Pass", // Pass or Fail
     };
 
     // PATCH request to update the overall status in the inward API
@@ -729,7 +734,7 @@ const Inward = () => {
     fetchInwardData();
     fetchComponent();
     fetchpodetails();
-  }, []);
+  }, [po_id, component_id]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -791,75 +796,89 @@ const Inward = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredData.map((item, index) => (
-              <tr key={index}>
-                <td>{getNestedValue(item, "po_master.PO_id")}</td>
-                <td>{getNestedValue(item, "po_master.cart.component_id")}</td>
+            {loading ? (
+              <tr>
                 <td
-                  className="specification-cell"
-                  title={item.po_master.cart.component_specification}
+                  colSpan="9"
+                  style={{ textAlign: "center", padding: "10px" }}
                 >
-                  {getNestedValue(
-                    item,
-                    "po_master.cart.component_specification"
-                  )}
-                </td>
-                <td
-                  className="specification-cell"
-                  title={item.po_master.cart.vendor_name}
-                >
-                  {getNestedValue(item, "po_master.cart.vendor_name")}
-                </td>
-                <td>{item.serial_number || "Not Available"}</td>
-                <td>
-                  {item.date ? format(new Date(item.date), "dd-MM-yyyy") : "-"}
-                </td>
-                <td>{item.quality_check || "Not Available"}</td>
-                <td className="sku-cell">
-                  {item.sku_number ? (
-                    <span className="sku-number">{item.sku_number}</span>
-                  ) : (
-                    <button
-                      className="add-sku-button"
-                      onClick={() => handleSkuNumberClick(item)}
-                    >
-                      Add SKU
-                    </button>
-                  )}
-                </td>
-
-                <td className="action-buttons-cell">
-                  <button
-                    className="qc-button"
-                    onClick={() => handleQCClick(item)}
-                    disabled={
-                      item.quality_check === "Pass" ||
-                      item.quality_check === "Fail"
-                    }
-                  >
-                    QC
-                  </button>
-                  {item.quality_check === "Pass" && (
-                    <button
-                      className="move-inventory-button"
-                      onClick={() => handleMoveToInventory(item)}
-                      disabled={!item.mode_to_inventory}
-                    >
-                      Move to Inventory
-                    </button>
-                  )}
-                  {item.quality_check === "Fail" && (
-                    <button
-                      className="move-outward-button"
-                      onClick={() => handleMoveToOutward(item)}
-                      disabled={!item.mode_to_inventory}
-                    >
-                      Move to Outward
-                    </button>
-                  )}
+                  <div className="spinner"></div>
+                  Loading Inward list...
                 </td>
               </tr>
-            ))}
+            ) : (
+              filteredData.map((item, index) => (
+                <tr key={index}>
+                  <td>{getNestedValue(item, "po_master.PO_id")}</td>
+                  <td>{getNestedValue(item, "po_master.cart.component_id")}</td>
+                  <td
+                    className="specification-cell"
+                    title={item.po_master.cart.component_specification}
+                  >
+                    {getNestedValue(
+                      item,
+                      "po_master.cart.component_specification"
+                    )}
+                  </td>
+                  <td
+                    className="specification-cell"
+                    title={item.po_master.cart.vendor_name}
+                  >
+                    {getNestedValue(item, "po_master.cart.vendor_name")}
+                  </td>
+                  <td>{item.serial_number || "Not Available"}</td>
+                  <td>
+                    {item.date
+                      ? format(new Date(item.date), "dd-MM-yyyy")
+                      : "-"}
+                  </td>
+                  <td>{item.quality_check || "Not Available"}</td>
+                  <td className="sku-cell">
+                    {item.sku_number ? (
+                      <span className="sku-number">{item.sku_number}</span>
+                    ) : (
+                      <button
+                        className="add-sku-button"
+                        onClick={() => handleSkuNumberClick(item)}
+                      >
+                        Add SKU
+                      </button>
+                    )}
+                  </td>
+
+                  <td className="action-buttons-cell">
+                    <button
+                      className="qc-button"
+                      onClick={() => handleQCClick(item)}
+                      disabled={
+                        item.quality_check === "Pass" ||
+                        item.quality_check === "Fail"
+                      }
+                    >
+                      QC
+                    </button>
+                    {item.quality_check === "Pass" && (
+                      <button
+                        className="move-inventory-button"
+                        onClick={() => handleMoveToInventory(item)}
+                        disabled={!item.mode_to_inventory}
+                      >
+                        Move to Inventory
+                      </button>
+                    )}
+                    {item.quality_check === "Fail" && (
+                      <button
+                        className="move-outward-button"
+                        onClick={() => handleMoveToOutward(item)}
+                        disabled={!item.mode_to_inventory}
+                      >
+                        Move to Outward
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

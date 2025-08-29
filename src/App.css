@@ -5546,3 +5546,18 @@ textarea.input1 {
 .outward-sales-btn:hover {
   opacity: 0.5;
 }
+
+.clear-date-button {
+  margin-left: 10px;
+  padding: 2px 6px;
+  font-size: 12px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  border-radius: 4px;
+  background-color: #ccc; /* optional, keeps button background white */
+  transition: all 0.2s ease;
+}
+
+.clear-date-button:hover {
+  opacity: 0.6;
+}

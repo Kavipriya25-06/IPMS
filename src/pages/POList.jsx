@@ -8,6 +8,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { FaCalendarAlt } from "react-icons/fa";
 import { format } from "date-fns";
 import { showErrorToast, showSuccessToast, showWarningToast } from "./Toastify";
+import Filter from "../assets/Filter_icon.svg";
 
 const POOrderList = ({ user }) => {
   const [poOrders, setPOOrders] = useState([]); // State to store PO orders
@@ -34,6 +35,9 @@ const POOrderList = ({ user }) => {
   const [sortField, setSortField] = useState("");
   const [sortOrder, setSortOrder] = useState("asc");
   const [loading, setLoading] = useState(true);
+  const [showDateFilter, setShowDateFilter] = useState(false);
+  const [fromDate, setFromDate] = useState(null);
+  const [toDate, setToDate] = useState(null);
 
   useEffect(() => {
     fetchPOOrders();
@@ -378,10 +382,17 @@ const POOrderList = ({ user }) => {
 
       const matchesStatus = statusFilter ? status === statusFilter : true;
 
-      const matchesDate = dateFilter
-        ? new Date(order.date).toLocaleDateString("en-CA") ===
-          (dateFilter ? new Date(dateFilter).toLocaleDateString("en-CA") : "")
-        : true;
+      const matchesDate =
+        fromDate && toDate
+          ? (() => {
+              const orderDate = new Date(order.date);
+              orderDate.setHours(0, 0, 0, 0);
+              return (
+                orderDate >= new Date(fromDate.setHours(0, 0, 0, 0)) &&
+                orderDate <= new Date(toDate.setHours(23, 59, 59, 999))
+              );
+            })()
+          : true;
 
       return matchesQuery && matchesStatus && matchesDate;
     })
@@ -438,6 +449,38 @@ const POOrderList = ({ user }) => {
     <div>
       <div className="header">
         <h2>PO Order List</h2>
+        <button
+          style={{
+            cursor: "pointer",
+            background: "transparent",
+            border: "none",
+          }}
+          title="Filter by Date"
+          onClick={() => setShowDateFilter(true)}
+        >
+          <img
+            src={Filter}
+            alt="Filter"
+            style={{ width: "25px", height: "30px" }}
+          />
+        </button>
+        {(fromDate || toDate) && (
+          <div style={{ fontSize: "14px", margin: "10px 0", color: "#555" }}>
+            🗓️ {fromDate && `From: ${format(fromDate, "dd-MM-yyyy")}`}
+            {fromDate && toDate && " | "}
+            {toDate && `To: ${format(toDate, "dd-MM-yyyy")}`}
+            <button
+              className="clear-date-button"
+              onClick={() => {
+                setFromDate(null);
+                setToDate(null);
+              }}
+              title="Clear Date Filter"
+            >
+              Clear
+            </button>
+          </div>
+        )}
       </div>
       <div class="center-wrapper">
         <div className="search-bar-container">
@@ -453,6 +496,7 @@ const POOrderList = ({ user }) => {
           </span>
         </div>
       </div>
+
       <div className="table-container">
         {poOrders.length === 0 ? (
           <p style={{ color: "gray" }}>No Purchase Orders found.</p>
@@ -544,7 +588,7 @@ const POOrderList = ({ user }) => {
                     }}
                   >
                     {!dateFilter && <span style={{}}>Date</span>}
-                    <DatePicker
+                    {/* <DatePicker
                       selected={dateFilter}
                       onChange={(date) => setDateFilter(date)}
                       ref={datePickerRef}
@@ -560,7 +604,7 @@ const POOrderList = ({ user }) => {
                       <span style={{ fontSize: "16px", color: "White" }}>
                         {format(dateFilter, "dd-MM-yyyy")}
                       </span>
-                    )}
+                    )} */}
 
                     <FaCalendarAlt
                       style={{
@@ -568,7 +612,7 @@ const POOrderList = ({ user }) => {
                         cursor: "pointer",
                         color: "#333",
                       }}
-                      onClick={() => datePickerRef.current.setOpen(true)}
+                      // onClick={() => datePickerRef.current.setOpen(true)}
                     />
                   </div>
                 </th>
@@ -587,7 +631,48 @@ const POOrderList = ({ user }) => {
                     Loading PO List...
                   </td>
                 </tr>
-              ) : filteredPOOrders.length > 0 ? (
+              ) : filteredPOOrders.length === 0 && fromDate && toDate ? (
+                <tr>
+                  <td
+                    colSpan="5"
+                    style={{
+                      textAlign: "center",
+                      color: "gray",
+                      padding: "10px",
+                    }}
+                  >
+                    No data for selected date range:{" "}
+                    {format(fromDate, "dd-MM-yyyy")} to{" "}
+                    {format(toDate, "dd-MM-yyyy")}
+                  </td>
+                </tr>
+              ) : filteredPOOrders.length === 0 && nameFilter.trim() ? (
+                <tr>
+                  <td
+                    colSpan="5"
+                    style={{
+                      textAlign: "center",
+                      color: "gray",
+                      padding: "10px",
+                    }}
+                  >
+                    No data found for name "{nameFilter}"
+                  </td>
+                </tr>
+              ) : filteredPOOrders.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan="5"
+                    style={{
+                      textAlign: "center",
+                      color: "gray",
+                      padding: "10px",
+                    }}
+                  >
+                    No purchase orders available.
+                  </td>
+                </tr>
+              ) : (
                 filteredPOOrders.map((order) => {
                   const { status } = getAggregatedStatus(order.id);
                   const finalPrice = finalCost(order.id);
@@ -603,7 +688,6 @@ const POOrderList = ({ user }) => {
                         {order.id}
                       </td>
                       <td>{order.cart_details.vendor_name}</td>
-                      {/* <td>{status}</td> */}
                       <td>{order.status}</td>
                       <td style={{ textAlign: "right" }}>
                         ₹
@@ -616,17 +700,6 @@ const POOrderList = ({ user }) => {
                     </tr>
                   );
                 })
-              ) : (
-                <tr>
-                  <td
-                    colSpan="5"
-                    style={{ textAlign: "center", color: "gray" }}
-                  >
-                    {nameFilter.trim()
-                      ? `No data found for name "${nameFilter}"`
-                      : "No purchase orders available."}
-                  </td>
-                </tr>
               )}
             </tbody>
           </table>
@@ -753,6 +826,199 @@ const POOrderList = ({ user }) => {
           <button onClick={handleClosePopup}>Close</button>
         </div>
       )}
+
+      {showDateFilter && (
+        <div className="modal-overlay" onClick={() => setShowDateFilter(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <span
+              className="x-button"
+              style={{ fontWeight: "lighter" }}
+              onClick={() => setShowDateFilter(false)}
+            >
+              &times;
+            </span>
+
+            <h4 style={{ marginTop: "20px", marginBottom: "10px" }}>
+              Filter Date
+            </h4>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+              }}
+              className=""
+            >
+              <label style={{ whiteSpace: "nowrap" }}>From Date:</label>
+              <div className="date-input-container">
+                <DatePicker
+                  selected={fromDate}
+                  onChange={(date) => setFromDate(date)} // required to update the value
+                  dateFormat="dd-MM-yyyy"
+                  placeholderText="dd-mm-yyyy"
+                  className="input1"
+                  showMonthDropdown
+                  showYearDropdown
+                  dropdownMode="select"
+                  popperPlacement="bottom"
+                  portalId="datepicker-portal-target"
+                  style={{ marginTop: "20px" }}
+                />
+
+                <i
+                  className="fas fa-calendar-alt calendar-icon"
+                  style={{ marginTop: "-4px" }}
+                ></i>
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+              }}
+            >
+              <label style={{ whiteSpace: "nowrap" }}>To Date:</label>
+              <div className="date-input-container">
+                <DatePicker
+                  selected={toDate}
+                  onChange={(date) => setToDate(date)}
+                  dateFormat="dd-MM-yyyy"
+                  placeholderText="dd-mm-yyyy"
+                  className="input1"
+                  showMonthDropdown
+                  showYearDropdown
+                  dropdownMode="select"
+                  popperPlacement="bottom-start"
+                  portalId="datepicker-portal-target"
+                />
+
+                <i
+                  className="fas fa-calendar-alt calendar-icon"
+                  style={{ marginTop: "-4px" }}
+                ></i>
+              </div>
+            </div>
+
+            <div
+              className="modal-actions"
+              style={{
+                marginTop: "10px",
+                display: "flex",
+                gap: "10px",
+                justifyContent: "flex-end",
+              }}
+            >
+              <button
+                onClick={() => {
+                  setShowDateFilter(false); // just close the popup
+                }}
+              >
+                Apply
+              </button>
+
+              <button
+                onClick={() => {
+                  setFromDate(null);
+                  setToDate(null);
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+          <div id="datepicker-portal-target"></div>
+        </div>
+      )}
+      <style>{`
+              .disabled-row {
+                background-color: #e0e0e0;
+                color: #a0a0a0;
+                pointer-events: none;
+              }
+              .disabled-row button {
+                cursor: not-allowed;
+              }
+      
+              .react-datepicker__day,
+              .react-datepicker__day-name {
+                width: 2em;
+                line-height: 2em;
+              }
+      
+              .react-datepicker__current-month,
+              .react-datepicker__header {
+                font-size: 14px;
+              }
+      
+              .return-button {
+                background-color: red;
+                color: white;
+                border: none;
+                padding: 5px 10px;
+                cursor: pointer;
+                border-radius: 4px;
+                font-size: 12px;
+                margin-left: 10px;
+              }
+              .return-button:hover {
+                background-color: darkred;
+              }
+              .modal {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                transform: translate(-50%, -50%);
+              }
+              .modal-content {
+                background: white;
+                padding: 15px; 
+                width: 350px;
+                text-align: center;
+                position:absolute;
+              }
+              .modal-content input {
+                width: 100%;
+                padding: 8px;
+                margin-top: 5px;
+                margin-bottom: 10px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+              }
+              .modal-buttons {
+                display: flex;
+                justify-content: space-between;
+              }
+              .confirm-button {
+                background-color: green;
+                color: white;
+                padding: 8px 12px;
+                border: none;
+                cursor: pointer;
+                border-radius: 5px;
+              }
+              .confirm-button:hover {
+                background-color: darkgreen;
+              }
+              .cancel-button {
+                background-color: gray;
+                color: white;
+                padding: 8px 12px;
+                border: none;
+                cursor: pointer;
+                border-radius: 5px;
+              }
+              .cancel-button:hover {
+                background-color: darkgray;
+              }
+      
+      
+            `}</style>
+
       {showScrollTop && (
         <button
           style={{

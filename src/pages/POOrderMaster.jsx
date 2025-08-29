@@ -1202,7 +1202,7 @@ const POOrderMaster = ({ user }) => {
           po_master: po.id,
           component_id: item.component_id,
           specification: item.component_specification,
-          quantity: item.quantity,
+          quantity: po.edited_quantity || item.quantity,
           order_placed_date_time: orderDate.toISOString(), // no timezone offset
         };
 

@@ -32,6 +32,8 @@ const Inwardlist = () => {
   const [invoiceDateInput, setInvoiceDateInput] = useState("");
   const [filterDate, setFilterDate] = useState(null);
   const [showDateFilter, setShowDateFilter] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [nameFilter, setNameFilter] = useState("");
 
   const navigate = useNavigate();
 
@@ -47,22 +49,21 @@ const Inwardlist = () => {
     }
   };
 
-  // Fetch Inward Data
   const fetchInwardData = async () => {
     try {
-      // 1. Fetch inward data
-      const inwardRes = await fetch(`${config.apiBaseURL}/inward/`);
-      const inwardData = await inwardRes.json();
-      const result = inwardData.filter(
-        (item) => item.mode_to_inventory === true
-      );
-
-      // 2. Fetch po_delivery data (for received_quantity)
-      const deliveryRes = await fetch(`${config.apiBaseURL}/po_delivery/`);
+      // 1) Get ALL inward rows (do NOT filter by mode_to_inventory here)
+      setLoading(true);
+      const [inwardRes, deliveryRes] = await Promise.all([
+        fetch(`${config.apiBaseURL}/inward/`),
+        fetch(`${config.apiBaseURL}/po_delivery/`),
+      ]);
+      const allInward = await inwardRes.json();
       const deliveryData = await deliveryRes.json();
 
-      const grouped = {};
-      result.forEach((item) => {
+      // 2) Group by PO + Component
+      const grouped = new Map();
+
+      allInward.forEach((item) => {
         const poId = getNestedValue(item, "po_master.PO_id", "");
         const componentId = getNestedValue(
           item,
@@ -71,30 +72,48 @@ const Inwardlist = () => {
         );
         const key = `${poId}_${componentId}`;
 
-        //  Sum all received_quantity for this PO & Component
-        const receivedQty = deliveryData
-          .filter((d) => d.PO_id === poId && d.component_id === componentId)
-          .reduce((sum, d) => sum + (d.received_quantity || 0), 0);
-
-        if (!grouped[key]) {
-          grouped[key] = {
+        if (!grouped.has(key)) {
+          grouped.set(key, {
             ...item,
-            quantity: 1, // inward qty (live)
-            totalQuantity: receivedQty, //sum of all received qty
-            totalPrice: item.price || 0,
+            // we'll treat these more clearly:
+            quantity: 0, // Pending qty (mode_to_inventory === true)
+            movedQuantity: 0, // Already moved/outward (mode_to_inventory === false)
+            totalQuantity: 0, // From po_delivery
+            totalPrice: 0,
             gst: item.gst || 0,
-          };
-        } else {
-          grouped[key].quantity += 1;
-          grouped[key].totalPrice += item.price || 0;
+          });
         }
+
+        const g = grouped.get(key);
+        if (item.mode_to_inventory) g.quantity += 1;
+        else g.movedQuantity += 1;
+
+        g.totalPrice += item.price || 0;
+        grouped.set(key, g);
       });
 
-      const groupedData = Object.values(grouped);
+      // 3) Fill totalQuantity from po_delivery (sum of all received_quantity)
+      grouped.forEach((g) => {
+        const poKey = String(getNestedValue(g, "po_master.PO_id", ""));
+        const compKey = String(
+          getNestedValue(g, "po_master.cart.component_id", "")
+        );
+        g.totalQuantity = deliveryData
+          .filter(
+            (d) =>
+              String(d.PO_id) === poKey && String(d.component_id) === compKey
+          )
+          .reduce((sum, d) => sum + Number(d.received_quantity || 0), 0);
+      });
+      const groupedData = Array.from(grouped.values());
+
+      // IMPORTANT: don't filter out rows with quantity === 0
       setInwardData(groupedData);
       setFilteredData(groupedData);
     } catch (err) {
       console.error("Error fetching inward data:", err);
+    } finally {
+      setLoading(false); // Stop loading after both calls
     }
   };
 
@@ -312,6 +331,42 @@ const Inwardlist = () => {
     if (filterDate) window.scrollTo({ top: 0, behavior: "smooth" });
   }, [filterDate]);
 
+  const formatPrice = (value) => {
+    if (value == null || value === "") return "-";
+
+    const strVal = value.toString();
+
+    if (strVal.includes(".")) {
+      const [intPart, fracPart] = strVal.split(".");
+
+      // Case 1: fractional part is all zeros → return .00
+      if (/^0+$/.test(fracPart)) {
+        return `${intPart}.00`;
+      }
+
+      // Case 2: keep fractional part exactly as is
+      return `${intPart}.${fracPart}`;
+    }
+
+    // Case 3: no decimal → add .00
+    return `${strVal}.00`;
+  };
+
+  const displayedData = filteredByDate.filter((item) => {
+    const poId = getNestedValue(item, "po_master.PO_id", "").toLowerCase();
+    const vendorName = getNestedValue(
+      item,
+      "po_master.cart.vendor_name",
+      ""
+    ).toLowerCase();
+
+    if (!nameFilter) return true; // no filter
+    return (
+      poId.includes(nameFilter.toLowerCase()) ||
+      vendorName.includes(nameFilter.toLowerCase())
+    );
+  });
+
   return (
     <div>
       <div className="header">
@@ -327,6 +382,15 @@ const Inwardlist = () => {
               }}
             >
               🗓️ <span>{format(filterDate, "dd-MM-yyyy")}</span>
+              <button
+                className="clear-date-button"
+                onClick={() => {
+                  setFilterDate(null);
+                }}
+                title="Clear Date Filter"
+              >
+                Clear
+              </button>
             </div>
           )}
           <div style={{ position: "relative", display: "inline-block" }}>
@@ -373,8 +437,22 @@ const Inwardlist = () => {
           </button>
         </div>
       </div>
+      <div class="center-wrapper">
+        <div className="search-bar-container">
+          <input
+            type="text"
+            placeholder="Filter by PO-ID  or Vendor Name"
+            value={nameFilter}
+            onChange={(e) => setNameFilter(e.target.value)}
+            className="search-bar"
+          />
+          <span className="search-icon">
+            <i className="fa fa-search" aria-hidden="true"></i>
+          </span>
+        </div>
+      </div>
 
-      <div className="table-container" style={{ marginTop: "-10px" }}>
+      <div className="table-container">
         <table>
           <thead>
             <tr>
@@ -394,172 +472,229 @@ const Inwardlist = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredByDate.map((item, index) => (
-              <tr key={index}>
-                <td>{getNestedValue(item, "po_master.PO_id")}</td>
-                <td>{getNestedValue(item, "po_master.cart.component_id")}</td>
+            {loading ? (
+              <tr>
                 <td
-                  className="specification-cell"
-                  title={item.po_master.cart.component_specification}
+                  colSpan="13"
+                  style={{ textAlign: "center", padding: "10px" }}
                 >
-                  {getNestedValue(
-                    item,
-                    "po_master.cart.component_specification"
-                  )}
+                  <div className="spinner"></div>
+                  Loading Inward Data...
                 </td>
+              </tr>
+            ) : filteredByDate.length === 0 && filterDate ? (
+              <tr>
                 <td
-                  className="specification-cell"
-                  title={item.po_master.cart.vendor_name}
+                  colSpan="13"
+                  style={{
+                    textAlign: "center",
+                    color: "gray",
+                    padding: "10px",
+                  }}
                 >
-                  {getNestedValue(item, "po_master.cart.vendor_name")}
+                  No data for selected date: {format(filterDate, "dd-MM-yyyy")}
                 </td>
-                <td>
-                  {item.date ? format(new Date(item.date), "dd-MM-yyyy") : "-"}
+              </tr>
+            ) : displayedData.length === 0 && nameFilter ? (
+              <tr>
+                <td
+                  colSpan="13"
+                  style={{
+                    textAlign: "center",
+                    color: "gray",
+                    padding: "10px",
+                  }}
+                >
+                  No data for your search: "{nameFilter}"
                 </td>
-                <td>
-                  {editingIndex === index ? (
-                    <input
-                      type="text"
-                      value={invoiceNumberInput}
-                      onChange={(e) => setInvoiceNumberInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
+              </tr>
+            ) : displayedData.length === 0 ? (
+              <tr>
+                <td
+                  colSpan="13"
+                  style={{
+                    textAlign: "center",
+                    color: "gray",
+                    padding: "10px",
+                  }}
+                >
+                  No inward data available.
+                </td>
+              </tr>
+            ) : (
+              displayedData.map((item, index) => (
+                <tr key={index}>
+                  <td>{getNestedValue(item, "po_master.PO_id")}</td>
+                  <td>{getNestedValue(item, "po_master.cart.component_id")}</td>
+                  <td
+                    className="specification-cell"
+                    title={item.po_master.cart.component_specification}
+                  >
+                    {getNestedValue(
+                      item,
+                      "po_master.cart.component_specification"
+                    )}
+                  </td>
+                  <td
+                    className="specification-cell"
+                    title={item.po_master.cart.vendor_name}
+                  >
+                    {getNestedValue(item, "po_master.cart.vendor_name")}
+                  </td>
+                  <td>
+                    {item.date
+                      ? format(new Date(item.date), "dd-MM-yyyy")
+                      : "-"}
+                  </td>
+                  <td>
+                    {editingIndex === index ? (
+                      <input
+                        type="text"
+                        value={invoiceNumberInput}
+                        onChange={(e) => setInvoiceNumberInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            updateInvoiceForPO(
+                              item.po_master.PO_id,
+                              invoiceNumberInput,
+                              invoiceDateInput
+                            );
+                            setEditingIndex(null);
+                          }
+                        }}
+                        placeholder="Enter Invoice No"
+                        style={{
+                          width: "100%",
+                          border: "1px solid #ccc",
+                          borderRadius: "3px",
+                          padding: "3px",
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
+                        <span
+                          style={{ flex: 1 }}
+                          className="specification-cell"
+                          title={item.invoice_number}
+                        >
+                          {item.invoice_number || "-"}
+                        </span>
+                        <FaEdit
+                          onClick={() => {
+                            setEditingIndex(index);
+                            setInvoiceNumberInput(item.invoice_number || "");
+                            setInvoiceDateInput(
+                              item.invoice_date
+                                ? item.invoice_date.slice(0, 10)
+                                : ""
+                            );
+                          }}
+                          style={{ marginLeft: "8px", cursor: "pointer" }}
+                        />
+                      </div>
+                    )}
+                  </td>
+
+                  <td style={{ minWidth: "120px" }}>
+                    {editingIndex === index ? (
+                      <DatePicker
+                        selected={
+                          invoiceDateInput ? new Date(invoiceDateInput) : null
+                        }
+                        onChange={(date) => {
+                          const formattedDate = date
+                            .toISOString()
+                            .split("T")[0]; // Format to yyyy-MM-dd
+                          setInvoiceDateInput(formattedDate);
                           updateInvoiceForPO(
                             item.po_master.PO_id,
                             invoiceNumberInput,
-                            invoiceDateInput
+                            formattedDate
                           );
                           setEditingIndex(null);
-                        }
-                      }}
-                      placeholder="Enter Invoice No"
-                      style={{
-                        width: "100%",
-                        border: "1px solid #ccc",
-                        borderRadius: "3px",
-                        padding: "3px",
-                      }}
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <span
-                        style={{ flex: 1 }}
-                        className="specification-cell"
-                        title={item.invoice_number}
+                        }}
+                        dateFormat="dd-MM-yyyy"
+                        showMonthDropdown
+                        showYearDropdown
+                        dropdownMode="select"
+                        customInput={<CustomDateInput />}
+                        wrapperClassName="date-picker-wrapper"
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          width: "100%",
+                        }}
                       >
-                        {item.invoice_number || "-"}
-                      </span>
-                      <FaEdit
-                        onClick={() => {
-                          setEditingIndex(index);
-                          setInvoiceNumberInput(item.invoice_number || "");
-                          setInvoiceDateInput(
-                            item.invoice_date
-                              ? item.invoice_date.slice(0, 10)
-                              : ""
-                          );
-                        }}
-                        style={{ marginLeft: "8px", cursor: "pointer" }}
-                      />
-                    </div>
-                  )}
-                </td>
-
-                <td style={{ minWidth: "120px" }}>
-                  {editingIndex === index ? (
-                    <DatePicker
-                      selected={
-                        invoiceDateInput ? new Date(invoiceDateInput) : null
+                        <span>
+                          {item.invoice_date
+                            ? format(new Date(item.invoice_date), "dd-MM-yyyy")
+                            : "-"}
+                        </span>
+                        <FaEdit
+                          onClick={() => {
+                            setEditingIndex(index);
+                            setInvoiceNumberInput(item.invoice_number || "");
+                            setInvoiceDateInput(
+                              item.invoice_date
+                                ? item.invoice_date.slice(0, 10)
+                                : ""
+                            );
+                          }}
+                          style={{ cursor: "pointer" }}
+                        />
+                      </div>
+                    )}
+                  </td>
+                  <td style={{ textAlign: "right" }}>{item.totalQuantity}</td>
+                  <td style={{ textAlign: "right" }}>{item.quantity}</td>
+                  <td style={{ textAlign: "right" }}>
+                    ₹{formatPrice(item.price)}
+                  </td>
+                  <td style={{ textAlign: "right" }}>
+                    {item.gst % 1 === 0
+                      ? parseInt(item.gst)
+                      : parseFloat(item.gst)}
+                    %
+                  </td>
+                  <td style={{ textAlign: "right" }}>
+                    ₹
+                    {calculateGrandTotal(
+                      item.price,
+                      item.totalQuantity,
+                      item.gst
+                    ).toFixed(2)}
+                  </td>
+                  <td className="action-buttons-cell">
+                    <button
+                      className="qc-button"
+                      onClick={() =>
+                        navigate(
+                          `/inward?po_id=${getNestedValue(
+                            item,
+                            "po_master.PO_id"
+                          )}&component_id=${getNestedValue(
+                            item,
+                            "po_master.cart.component_id"
+                          )}`
+                        )
                       }
-                      onChange={(date) => {
-                        const formattedDate = date.toISOString().split("T")[0]; // Format to yyyy-MM-dd
-                        setInvoiceDateInput(formattedDate);
-                        updateInvoiceForPO(
-                          item.po_master.PO_id,
-                          invoiceNumberInput,
-                          formattedDate
-                        );
-                        setEditingIndex(null);
-                      }}
-                      dateFormat="dd-MM-yyyy"
-                      showMonthDropdown
-                      showYearDropdown
-                      dropdownMode="select"
-                      customInput={<CustomDateInput />}
-                      wrapperClassName="date-picker-wrapper"
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        width: "100%",
-                      }}
                     >
-                      <span>
-                        {item.invoice_date
-                          ? format(new Date(item.invoice_date), "dd-MM-yyyy")
-                          : "-"}
-                      </span>
-                      <FaEdit
-                        onClick={() => {
-                          setEditingIndex(index);
-                          setInvoiceNumberInput(item.invoice_number || "");
-                          setInvoiceDateInput(
-                            item.invoice_date
-                              ? item.invoice_date.slice(0, 10)
-                              : ""
-                          );
-                        }}
-                        style={{ cursor: "pointer" }}
-                      />
-                    </div>
-                  )}
-                </td>
-                <td style={{ textAlign: "right" }}>{item.totalQuantity}</td>
-                <td style={{ textAlign: "right" }}>{item.quantity}</td>
-                <td style={{ textAlign: "right" }}>₹{item.price || "-"}</td>
-                <td style={{ textAlign: "right" }}>
-                  {item.gst % 1 === 0
-                    ? parseInt(item.gst)
-                    : parseFloat(item.gst)}
-                  %
-                </td>
-                <td style={{ textAlign: "right" }}>
-                  ₹
-                  {calculateGrandTotal(
-                    item.price,
-                    item.totalQuantity,
-                    item.gst
-                  ).toFixed(2)}
-                </td>
-                <td className="action-buttons-cell">
-                  <button
-                    className="qc-button"
-                    onClick={() =>
-                      navigate(
-                        `/inward?po_id=${getNestedValue(
-                          item,
-                          "po_master.PO_id"
-                        )}&component_id=${getNestedValue(
-                          item,
-                          "po_master.cart.component_id"
-                        )}`
-                      )
-                    }
-                  >
-                    QC
-                  </button>
-                </td>
-              </tr>
-            ))}
+                      QC
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
