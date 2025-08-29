@@ -364,48 +364,46 @@ const POOrderList = ({ user }) => {
   const formatDate = (date) =>
     date ? new Date(date).toLocaleDateString("en-CA") : "";
 
-const filteredPOOrders = poOrders
-  .filter((order) => {
-    const { status } = getAggregatedStatus(order.id);
+  const filteredPOOrders = poOrders
+    .filter((order) => {
+      const { status } = getAggregatedStatus(order.id);
 
-    const q = (nameFilter || "").trim().toLowerCase();
-    const matchesQuery =
-      !q ||
-      (order?.cart_details?.vendor_name || "").toLowerCase().includes(q) ||
-      String(order?.id || "").toLowerCase().includes(q); // ← PO ID match
+      const q = (nameFilter || "").trim().toLowerCase();
+      const matchesQuery =
+        !q ||
+        (order?.cart_details?.vendor_name || "").toLowerCase().includes(q) ||
+        String(order?.id || "")
+          .toLowerCase()
+          .includes(q); // ← PO ID match
 
-    const matchesStatus = statusFilter ? status === statusFilter : true;
+      const matchesStatus = statusFilter ? status === statusFilter : true;
 
-    const matchesDate = dateFilter
-      ? new Date(order.date).toLocaleDateString("en-CA") ===
-        (dateFilter
-          ? new Date(dateFilter).toLocaleDateString("en-CA")
-          : "")
-      : true;
+      const matchesDate = dateFilter
+        ? new Date(order.date).toLocaleDateString("en-CA") ===
+          (dateFilter ? new Date(dateFilter).toLocaleDateString("en-CA") : "")
+        : true;
 
-    return matchesQuery && matchesStatus && matchesDate;
-  })
-  .sort((a, b) => {
-    if (!sortField) return 0;
+      return matchesQuery && matchesStatus && matchesDate;
+    })
+    .sort((a, b) => {
+      if (!sortField) return 0;
 
-    let aValue, bValue;
-    if (sortField === "id") {
-      aValue = a.id;
-      bValue = b.id;
-    } else if (sortField === "total_cost") {
-      aValue = finalCost(a.id);
-      bValue = finalCost(b.id);
-    } else if (sortField === "date") {
-      aValue = new Date(a.date);
-      bValue = new Date(b.date);
-    }
+      let aValue, bValue;
+      if (sortField === "id") {
+        aValue = a.id;
+        bValue = b.id;
+      } else if (sortField === "total_cost") {
+        aValue = finalCost(a.id);
+        bValue = finalCost(b.id);
+      } else if (sortField === "date") {
+        aValue = new Date(a.date);
+        bValue = new Date(b.date);
+      }
 
-    if (aValue < bValue) return sortOrder === "asc" ? -1 : 1;
-    if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
-    return 0;
-  });
-
-
+      if (aValue < bValue) return sortOrder === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
+      return 0;
+    });
 
   // Close Status Popup
   const handleClosePopup = () => {
@@ -605,7 +603,8 @@ const filteredPOOrders = poOrders
                         {order.id}
                       </td>
                       <td>{order.cart_details.vendor_name}</td>
-                      <td>{status}</td>
+                      {/* <td>{status}</td> */}
+                      <td>{order.status}</td>
                       <td style={{ textAlign: "right" }}>
                         ₹
                         {parseFloat(finalPrice).toLocaleString("en-IN", {
