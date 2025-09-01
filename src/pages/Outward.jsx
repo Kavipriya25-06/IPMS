@@ -11,6 +11,7 @@ import { format, parseISO } from "date-fns";
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { FaEdit, FaSave } from "react-icons/fa";
 
 import {
   showSuccessToast,
@@ -677,6 +678,51 @@ const Outward = () => {
     setShowEventForm(true);
   };
 
+const [editingReturnDateId, setEditingReturnDateId] = useState(null);
+const [editedReturnDate, setEditedReturnDate] = useState(null);
+
+const handleSaveReturnDate = async (rowId) => {
+  if (!editedReturnDate) {
+    showWarningToast("Please select a date before saving.");
+    return;
+  }
+
+  const payload = {
+    id: rowId, // specify which row to save
+    return_date: editedReturnDate.toISOString().split("T")[0], // yyyy-MM-dd
+  };
+
+  try {
+    const res = await fetch(`${config.apiBaseURL}/outward/manufacture/`, {
+      method: "POST", // POST for new return_date
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.ok) {
+      // update frontend state for only this row
+      setData((prev) =>
+        prev.map((row) =>
+          row.id === rowId ? { ...row, return_date: payload.return_date } : row
+        )
+      );
+      showSuccessToast("Return date saved successfully!");
+      setEditingReturnDateId(null);
+      setEditedReturnDate(null);
+    } else {
+      const err = await res.json();
+      console.error("Error saving return date:", err);
+      showErrorToast("Failed to save return date");
+    }
+  } catch (err) {
+    console.error("Network error:", err);
+    showErrorToast("Network error while saving return date");
+  }
+};
+
+
+
+
   return (
     <div>
       <div
@@ -890,11 +936,49 @@ const Outward = () => {
                       </td>
                       <td>{row.quantity || "-"}</td>
                       <td>{getProjectName(row.project) || "-"}</td>
-                      <td>
-                        {row.return_date
-                          ? format(new Date(row.return_date), "dd-MM-yyyy")
-                          : "-"}
-                      </td>
+                     
+<td>
+  {row.return_date ? (
+    // Already has a return date → display only
+    <span>{format(new Date(row.return_date), "dd-MM-yyyy")}</span>
+  ) : editingReturnDateId === row.id ? (
+    // Null return date & currently editing → show DatePicker + Save
+    <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+      <DatePicker
+        selected={editedReturnDate}
+        onChange={(date) => setEditedReturnDate(date)}
+        dateFormat="dd-MM-yyyy"
+        showMonthDropdown
+        showYearDropdown
+        dropdownMode="select"
+        autoFocus
+      />
+      <FaSave
+        style={{ cursor: "pointer", color: "green" }}
+        title="Save Date"
+        onClick={() => handleSaveReturnDate(row.id)}
+      />
+    </div>
+  ) : (
+    // Null return date → show edit/add icon
+    <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+      <span>-</span>
+      <FaEdit
+        style={{ cursor: "pointer" }}
+        title="Add Return Date"
+        onClick={() => {
+          setEditingReturnDateId(row.id);
+          setEditedReturnDate(null);
+        }}
+      />
+    </div>
+  )}
+</td>
+
+
+
+
+
                       <td>{row.type_of_outward || "-"}</td>
                       <td className="specification-cell" title={row.remarks}>
                         {row.remarks || "-"}
@@ -1405,7 +1489,7 @@ const Outward = () => {
                 readOnly
                 placeholder="Quantity"
               />
-              <label>Return Date</label>
+              {/* <label>Return Date</label>
               <div className="date-input-container">
                 <DatePicker
                   selected={serviceForm.returnDate}
@@ -1428,7 +1512,7 @@ const Outward = () => {
                   disabled={serviceForm.typeOfOutward === "Non-Return"}
                 />
                 <i className="fas fa-calendar-alt calendar-icon"></i>
-              </div>
+              </div> */}
 
               <label>Remarks</label>
               <input

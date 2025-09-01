@@ -6,7 +6,13 @@ import CancelIcon from "../assets/cancel.png";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { format, parseISO } from "date-fns";
-
+import {
+  showSuccessToast,
+  showErrorToast,
+  showInfoToast,
+  showWarningToast,
+  ToastContainerComponent,
+} from "./Toastify.jsx"; // Import Toastify utilities
 const ProjectList = () => {
   const [projects, setProjects] = useState([]);
   const [newProject, setNewProject] = useState({
@@ -85,8 +91,10 @@ const ProjectList = () => {
           project_type: "",
         }); // Reset form
         setShowAddForm(false); // Hide form
+        showSuccessToast("Project created successfully!"); // Show success toast
       } else {
         console.error("Failed to add project.");
+        showErrorToast("Failed to add project. Please try again."); // Show error toast
       }
     } catch (error) {
       console.error("Error adding project:", error);
