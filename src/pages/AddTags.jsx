@@ -216,7 +216,7 @@ const AddTags = () => {
         </button>
       </div>
 
-      <div className="table-container" style={{marginTop:"-14px"}}>
+      <div className="table-container" style={{ marginTop: "-14px" }}>
         <table className="full-width-table">
           <thead>
             <tr>
@@ -269,14 +269,6 @@ const AddTags = () => {
                                   e.stopPropagation(); // Prevent triggering the parent click
                                   handleDeleteTag(tag.id);
                                 }}
-                                // style={{
-                                //   marginLeft: "8px",
-                                //   background: "none",
-                                //   border: "none",
-                                //   color: "red",
-                                //   fontWeight: "bold",
-                                //   cursor: "pointer",
-                                // }}
                               >
                                 ×
                               </button>
@@ -376,4 +368,3 @@ const AddTags = () => {
 };
 
 export default AddTags;
-

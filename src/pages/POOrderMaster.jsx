@@ -1571,93 +1571,6 @@ const POOrderMaster = ({ user }) => {
     }
   );
 
-  const generatePOCSV = (poDetails, totalquantity, totalcost) => {
-    const headers = [
-      "S.No",
-      "Component ID",
-      "Category",
-      "Type",
-      "Specification",
-      "UOM",
-      "Quantity",
-      "Unit Price",
-      "GST",
-      "Total Cost",
-    ];
-
-    const rows = poDetails.map((po, index) => [
-      index + 1,
-      po.cart_details.component_id || "",
-      po.cart_details.category || "",
-      po.cart_details.component_type || "",
-      po.cart_details.component_specification || "",
-      po.cart_details.unit_of_measurement || "",
-      po.cart_details.quantity || "",
-      `₹${parseFloat(po.cart_details.unit_price).toLocaleString("en-IN", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })}`,
-      `${parseFloat(po.cart_details.GST || 0).toLocaleString("en-IN")}%`,
-      `₹${parseFloat(po.cart_details.total_cost).toLocaleString("en-IN", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })}`,
-    ]);
-
-    // Add Totals Row
-    rows.push([
-      "",
-      "",
-      "",
-      "",
-      "",
-      "Totals",
-      totalquantity || "",
-      "",
-      "",
-      `₹${parseFloat(totalcost).toLocaleString("en-IN", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })}`,
-    ]);
-
-    const csvContent = [
-      headers.join(","),
-      ...rows.map((row) => row.map((val) => `"${val}"`).join(",")),
-    ].join("\n");
-
-    // BOM to support ₹ symbol in Excel
-    const BOM = "\uFEFF";
-
-    const indianTime = new Date().toLocaleString("en-IN", {
-      timeZone: "Asia/Kolkata",
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
-
-    const formattedTime = indianTime
-      .replace(/:/g, "-")
-      .replace(/, /g, "_")
-      .toLowerCase();
-
-    const filename = `PO_Report_${formattedTime}.csv`;
-
-    const blob = new Blob([BOM + csvContent], {
-      type: "text/csv;charset=utf-8;",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  };
-
   // only updates value while typing
   const handleQuantityChange = (index, newQty) => {
     setPODetails((prev) => {
@@ -1698,7 +1611,7 @@ const POOrderMaster = ({ user }) => {
       return;
     }
 
-    // ✅ Only send edited fields
+    // Only send edited fields
     const updatedData = {
       edited_quantity: qty,
       edited_total_cost: row.edited_total_cost,
@@ -2175,15 +2088,6 @@ const POOrderMaster = ({ user }) => {
               </button>
             </>
           )}
-          {/* 
-          {(poData?.status === "Approved" || poData?.status === "Ordered") && (
-            <button
-              className="cancel-button"
-              onClick={() => updatePOMasterStatuses(poId, "Cancelled")}
-            >
-              Cancel Order
-            </button>
-          )} */}
 
           {(poData?.status === "Approved" || poData?.status === "Ordered") &&
             (pendingItems.length > 0 ||
@@ -2771,7 +2675,7 @@ const POOrderMaster = ({ user }) => {
                         opacity: isPOCancelled ? 0.6 : 1,
                       }}
                       onClick={() => {
-                        if (isPOCancelled) return; // 🚫 Prevent action if cancelled
+                        if (isPOCancelled) return; // Prevent action if cancelled
 
                         setSelectedPendingItem((prev) => ({
                           ...item,
@@ -2831,6 +2735,33 @@ const POOrderMaster = ({ user }) => {
                     onChange={(date) => {
                       if (!date) return;
 
+                      const orderDate =
+                        selectedPendingItem?.order_placed_date_time
+                          ? new Date(selectedPendingItem.order_placed_date_time)
+                          : null;
+
+                      // Validation: shipped date should not be before order date
+                      if (orderDate) {
+                        const shippingDateOnly = new Date(
+                          date.getFullYear(),
+                          date.getMonth(),
+                          date.getDate()
+                        );
+                        const orderedDateOnly = new Date(
+                          orderDate.getFullYear(),
+                          orderDate.getMonth(),
+                          orderDate.getDate()
+                        );
+
+                        if (shippingDateOnly < orderedDateOnly) {
+                          showErrorToast(
+                            "Shipped date cannot be before order date"
+                          );
+                          return;
+                        }
+                      }
+
+                      // Merge with current time
                       const now = new Date();
                       const mergedDateTime = new Date(
                         date.getFullYear(),
@@ -2852,7 +2783,13 @@ const POOrderMaster = ({ user }) => {
                     showMonthDropdown
                     showYearDropdown
                     dropdownMode="select"
+                    minDate={
+                      selectedPendingItem?.order_placed_date_time
+                        ? new Date(selectedPendingItem.order_placed_date_time)
+                        : null
+                    }
                   />
+
                   <i
                     className="fas fa-calendar-alt calendar-icon"
                     style={{ marginTop: "2px" }}
@@ -2909,7 +2846,7 @@ const POOrderMaster = ({ user }) => {
                         specification: selectedPendingItem.specification,
                         quantity: enteredQty,
                         shipped_quantity: enteredQty,
-                        received_quantity: enteredQty,
+                        received_quantity: 0,
                         shipped_date: shippedInput.date,
                         po_master: selectedPendingItem.po_master.id, // always the ID
                         order_placed_date_time:

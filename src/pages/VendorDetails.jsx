@@ -765,46 +765,6 @@ const VendorDetails = () => {
     }
   };
 
-  // Handle Add button click
-  // const handleAddComponent = async (product) => {
-  //   const payload = {
-  //     product_id: product.product_id,
-  //     component_type: product.component_type,
-  //     component_specification: product.component_specification,
-  //     unit_of_measurement: product.unit_of_measurement,
-  //     category: product.category,
-  //     vendor_id: vendorId,
-  //   };
-
-  //   try {
-  //     const response = await fetch(`${config.apiBaseURL}/component/`, {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify(payload),
-  //     });
-
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       console.log("Component successfully added:", data);
-
-  //       // Update the componentMasterData state with the new component_id
-  //       setComponentMasterData((prevData) => ({
-  //         ...prevData,
-  //         [product.product_id]: data.component_id, // Assume `data` contains the new component_id
-  //       }));
-  //       showSuccessToast("Component added successfully!");
-  //     } else {
-  //       console.error("Error adding component:", response.statusText);
-  //       alert("Failed to add component.");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error adding component:", error);
-  //     alert("Error occurred while adding component.");
-  //   }
-  // };
-
   const handleBackClick = () => {
     navigate("/vendor");
   };
@@ -887,30 +847,6 @@ const VendorDetails = () => {
       console.error("Error updating vendor status:", error);
     }
   };
-
-  // const enableEditField = (index, field) => {
-  //   setSelectedVendorData((prevState) => {
-  //     const updatedProducts = [...prevState];
-  //     updatedProducts[index] = {
-  //       ...updatedProducts[index],
-  //       [field]: true,
-  //       editableRemarks: updatedProducts[index].remarks || "",
-  //     };
-  //     return updatedProducts;
-  //   });
-  // };
-
-  // const cancelEditField = (index, field) => {
-  //   setSelectedVendorData((prevState) => {
-  //     const updatedProducts = [...prevState];
-  //     updatedProducts[index] = {
-  //       ...updatedProducts[index],
-  //       [field]: false,
-  //       editableRemarks: "", // Clear temp remarks
-  //     };
-  //     return updatedProducts;
-  //   });
-  // };
 
   const saveRemarks = async (index) => {
     const product = selectedVendorData[index];
@@ -1056,19 +992,6 @@ const VendorDetails = () => {
                 handleInputChange("product_description", e.target.value)
               }
             />
-            {/* <input
-            type="number"
-            placeholder="Price"
-            value={newProduct.last_price}
-            onChange={(e) => handleInputChange("last_price", e.target.value)}
-          />
-          <input
-            type="number"
-            placeholder="Tax %"
-            value={newProduct.tax}
-            onChange={(e) => handleInputChange("tax", e.target.value)}
-          /> */}
-
             {/* Auto-filled category (readonly) */}
             <input
               type="text"
@@ -1099,17 +1022,6 @@ const VendorDetails = () => {
               value={newProduct.unit_of_measurement}
               readOnly
             />
-
-            {/* <input
-              type="file"
-              onChange={(e) => handleInputChange("img", e.target.files[0])}
-            />
-            <input
-              type="file"
-              onChange={(e) =>
-                handleInputChange("attachments", e.target.files[0])
-              }
-            /> */}
 
             <div className="popup-actions">
               <button onClick={handleAddNewProduct}>Save Product</button>
@@ -1817,24 +1729,6 @@ const VendorDetails = () => {
                         </div>
                       </div>
                     </td>
-
-                    {/* <td>
-                    <div style={{ display: "flex", gap: "10px" }}>
-                      <button
-                        onClick={() => handleEditClickVendorMaster(index)}
-                        className="edit-button"
-                      >
-                        Edit
-                      </button>
-
-                      <button
-                        onClick={() => handleAddComponent(product)}
-                        disabled={isAddedToComp}
-                      >
-                        {isAddedToComp ? "Already Added" : "Add to Comp"}
-                      </button>
-                    </div>
-                  </td> */}
                     <td>
                       <button
                         className={`vendor-status-button ${

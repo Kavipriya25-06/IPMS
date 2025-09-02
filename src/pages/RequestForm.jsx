@@ -335,17 +335,6 @@ const RequestForm = () => {
   };
 
   const handleSubmit = async () => {
-    // if (newComponentsAdded || newComponentsDeleted) {
-    //   // Show a confirmation dialog
-    //   const saveNewBom = window.confirm("Do you want to save a new BOM?");
-
-    //   if (saveNewBom) {
-    //     // Show popup for entering details (name, BOM name, BOM ID)
-    //     setShowPopup(true);
-    //     return; // Wait for user to fill the popup and handle submission in the popup logic
-    //   }
-    // }
-
     // If user doesn't want to save a new BOM or no new components were added/removed
     try {
       const requestListResponse = await fetch(
@@ -430,32 +419,6 @@ const RequestForm = () => {
         return;
       }
 
-      ///////////////// Email notification
-      //  // POST to new_submit_notification endpoint
-      //  const notificationData = {
-      //   request_id: generatedRequestId,
-      //   requester_name: requesterName,
-      //   project_id: selectedProject ? selectedProject.project_id : null,
-      // };
-
-      // const notificationResponse = await fetch(
-      //   `${config.apiBaseURL}/new_submit_notification/`,
-      //   {
-      //     method: "POST",
-      //     headers: {
-      //       "Content-Type": "application/json",
-      //     },
-      //     body: JSON.stringify(notificationData),
-      //   }
-      // );
-
-      // if (!notificationResponse.ok) {
-      //   const notificationErrorData = await notificationResponse.json();
-      //   console.error("Error in notification submission:", notificationErrorData);
-      //   alert("Failed to send the notification. Please try again.");
-      //   return;
-      // }
-
       console.log("All request master entries successfully added.");
       console.log("Project successfully updated with new request ID.");
       showSuccessToast("Request submitted successfully!");
@@ -508,47 +471,14 @@ const RequestForm = () => {
               placeholder="Enter BOM ID"
             />
             <div style={{ marginTop: "10px" }}>
-              <button
-                onClick={handlePopupSubmit}
-                // style={{
-                //   padding: "10px",
-                //   marginRight: "10px",
-                //   borderRadius: "5px",
-                //   backgroundColor: "#007bff",
-                //   color: "#fff",
-                //   cursor: "pointer",
-                //   border: "none",
-                // }}
-              >
-                Submit
-              </button>
-              <button
-                onClick={() => setShowPopup(false)}
-                // style={{
-                //   padding: "10px",
-                //   borderRadius: "5px",
-                //   backgroundColor: "#6c757d",
-                //   color: "#fff",
-                //   cursor: "pointer",
-                //   border: "none",
-                // }}
-              >
-                Cancel
-              </button>
+              <button onClick={handlePopupSubmit}>Submit</button>
+              <button onClick={() => setShowPopup(false)}>Cancel</button>
             </div>
           </div>
         </div>
       )}
 
-      <div
-      // style={{
-      //   display: "flex",
-      //   flexDirection: "column",
-      //   justifyContent: "flex-start",
-      //   height: "55vh",
-      //   paddingTop: "20px",
-      // }}
-      >
+      <div>
         {/* Render CustomMessagebox when showMessageBox is true */}
         {showMessageBox && (
           <CustomMessagebox
@@ -618,25 +548,6 @@ const RequestForm = () => {
               }}
             />
           </div>
-
-          {/* <div style={{ marginBottom: "15px", width: "95%" }}>
-            <label style={{ display: "block", marginBottom: "5px" }}>
-              Date:
-            </label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              required
-              style={{
-                width: "100%",
-                padding: "8px",
-                borderRadius: "4px",
-                border: "1px solid #ccc",
-              }}
-            />
-          </div> */}
-
           <div style={{ marginBottom: "15px", width: "100%" }}>
             <label style={{ display: "block", marginBottom: "5px" }}>
               Select Project:
@@ -845,35 +756,10 @@ const RequestForm = () => {
               </tbody>
             </table>
           </div>
-          {/* <button
-            onClick={handleAddComponent}
-            className="edit-button"
-            style={{
-              padding: "10px 15px",
-              borderRadius: "5px",
-              cursor: "pointer",
-              marginTop: "-30px",
-              zIndex: 1000,
-              position: "fixed",
-            }}
-          >
-            Add Component
-          </button> */}
         </div>
       )}
 
       <ToastContainer />
-      {/* <button
-        onClick={() => navigate("/requests")}
-        style={{
-          padding: "10px 20px",
-          borderRadius: "5px",
-          border: "1px solid #ccc",
-          cursor: "pointer",
-        }}
-      >
-        Save and Exit
-      </button> */}
     </div>
   );
 };

@@ -53,7 +53,7 @@ const RequestDetails = ({ user }) => {
   const isProcurement = user?.role === "Procurement";
   const isInventory = user?.role === "Inventory";
   const isUser = user?.role === "User";
-    const isSubAdmin = user?.role === "Sub-Admin";
+  const isSubAdmin = user?.role === "Sub-Admin";
 
   useEffect(() => {
     fetchRequestDetails();
@@ -70,15 +70,6 @@ const RequestDetails = ({ user }) => {
       fetchProjectDetails();
     }
   }, [details]);
-
-  // useEffect(() => {
-  //   if (details.length && priceViewData.length) {
-  //     const updatedDetails = mergePriceWithRequests(details, priceViewData);
-  //     setDetails(updatedDetails);
-  //     console.log("Updated details", updatedDetails);
-  //   }
-
-  // }, [priceViewData]);
 
   const fetchRequestDetails = async () => {
     try {
@@ -397,12 +388,6 @@ const RequestDetails = ({ user }) => {
               showErrorToast("Failed to add to cart.");
               return;
             }
-            // <<<<<<< HEAD
-            //         );
-            //       }
-            //       ``;
-            // =======
-            // >>>>>>> 51e9f20ca36afde5da76e6dd49c870cfb3d9b9c6
 
             const remainingQty = detail.qty - enteredQuantity;
 
@@ -1010,47 +995,6 @@ const RequestDetails = ({ user }) => {
 
   const { baseTotal, taxTotal, grandTotal } = calculateCostBreakdown();
 
-  // const handleApproval = async () => {
-  //   try {
-  //     const approvalPromises = details.map((detail) =>
-  //       !detail.approve
-  //         ? fetch(
-  //             `${config.apiBaseURL}/request_master/${detail.request_id}/`,
-  //             {
-  //               method: "PATCH",
-  //               headers: {
-  //                 "Content-Type": "application/json",
-  //               },
-  //               body: JSON.stringify({ approve: true }),
-  //             }
-  //           )
-  //         : null
-  //     );
-
-  //     const results = await Promise.all(approvalPromises);
-
-  //     results.forEach((response, index) => {
-  //       if (response && !response.ok) {
-  //         console.error(
-  //           `Failed to approve request: ${details[index].request_id}`
-  //         );
-  //       }
-  //     });
-
-  //     setDetails((prevDetails) =>
-  //       prevDetails.map((detail) => ({
-  //         ...detail,
-  //         approve: true,
-  //       }))
-  //     );
-
-  //     console.log("All requests approved successfully.");
-  //   } catch (error) {
-  //     console.error("Error approving all requests:", error);
-  //     alert("Failed to approve all requests.");
-  //   }
-  // };
-
   const handleApproval = async () => {
     try {
       // Iterate over each detail and send a PATCH request
@@ -1104,16 +1048,6 @@ const RequestDetails = ({ user }) => {
         </button>
         <h2>Request Details for {requestId}</h2>
       </div>{" "}
-      {/* <div className="header-back">
-              <button
-                className="back-btn"
-                onClick={() => navigate(-1)}
-                title="Back to Request List"
-              >
-                <FaArrowLeft />
-              </button>
-      <h2>Request Details for {requestId}</h2>
-            </div>{" "} */}
       {/* Render CustomMessagebox when showMessageBox is true */}
       {showMessageBox && (
         <CustomMessagebox
@@ -1170,7 +1104,9 @@ const RequestDetails = ({ user }) => {
               <thead>
                 <tr>
                   <th>Component ID</th>
-                  {(isAdmin || isProcurement || isInventory || isSubAdmin) && <th>Status</th>}
+                  {(isAdmin || isProcurement || isInventory || isSubAdmin) && (
+                    <th>Status</th>
+                  )}
                   <th>Category</th>
                   <th>Component Type</th>
                   <th>Specification</th>
@@ -1211,7 +1147,10 @@ const RequestDetails = ({ user }) => {
                             {detail.component_id}
                           </Link>
                         </td>
-                        {(isAdmin || isProcurement || isInventory || isSubAdmin) && (
+                        {(isAdmin ||
+                          isProcurement ||
+                          isInventory ||
+                          isSubAdmin) && (
                           <td
                             style={{ color: "#030303ff", fontWeight: "bold" }}
                           >
@@ -1330,20 +1269,11 @@ const RequestDetails = ({ user }) => {
                         >
                           {availableQty}
                         </td>
-                        {/* <td>
-                      <button
-                        onClick={() => handleApproval(detail.request_id, detail.id)} // Ensure `detail.id` is used if `id` is a property of `detail`
-                        disabled={detail.approve} // Disable button if already approved
-                        style={{
-                          cursor: detail.approve ? "not-allowed" : "pointer",
-                          backgroundColor: detail.approve ? "#ddd" : "#4caf50",
-                          color: detail.approve ? "#888" : "#fff",
-                        }}
-                      >
-                        {detail.approve ? "Approved" : "Approve"}
-                      </button>
-                    </td> */}
-                        {(isAdmin || isProcurement || isInventory || isSubAdmin) && (
+
+                        {(isAdmin ||
+                          isProcurement ||
+                          isInventory ||
+                          isSubAdmin) && (
                           <td>
                             {detail.assign || detail.qty === 0 ? (
                               <button
@@ -1429,9 +1359,6 @@ const RequestDetails = ({ user }) => {
                             style={{ color: "#030303ff", fontWeight: "bold" }}
                           >
                             {detail.status}
-                            {/* {requestStatus.find(
-                            (status) => status.request_id === detail.id
-                          )?.po_status || ""} */}
                           </td>
                         )}
                       </tr>
@@ -1728,109 +1655,3 @@ const RequestDetails = ({ user }) => {
 };
 
 export default RequestDetails;
-
-// UNASSIGN FUNCTION
-// const handleUnassign = async (componentId,newQty) => {
-//   try {
-//     const componentData = inventoryData[componentId];
-//     const assignedSerials = componentData.serialNumbers.filter(
-//       (sn) => sn.status === false
-//     );
-
-//     if (assignedSerials.length === 0) {
-//       alert("No assigned serial numbers found to unassign.");
-//       return;
-//     }
-
-//     // Unassign each assigned serial number
-//     for (const serial of assignedSerials) {
-//       const inventoryPayload = {
-//         component: componentId,
-//         serial_number: serial.serialNumber,
-//         vendor: componentData.vendor || "V_00001",
-//         com_id: componentId,
-//         // qty: 1,
-//         status: true, // Reverting status to true in inventory
-//       };
-
-//       // Update each serial in inventory to set status back to true
-//       const inventoryResponse = await fetch(
-//         `${config.apiBaseURL}/inventory/${serial.serialNumber}`,
-//         {
-//           method: "PUT",
-//           headers: {
-//             "Content-Type": "application/json",
-//           },
-//           body: JSON.stringify(inventoryPayload),
-//         }
-//       );
-
-//       if (!inventoryResponse.ok) {
-//         console.error("Error unassigning serial number in inventory.");
-//         alert("Could not unassign the serial number. Please try again.");
-//         return;
-//       }
-//     }
-
-//     // Update request_master to reflect all quantities are unassigned
-//     const updatedQty = componentData.qty ; // Recalculate the qty
-//     const requestMasterPayload = {
-//       request_id: requestId,
-//       component_id: componentId,
-//       bom_master_id: componentData.bom_master_id,
-//       status: "Unassigned",
-//       vendor_id: componentData.vendor || "V_00001",
-//       component_type: componentData.component_type,
-//       component_specification: componentData.component_specification,
-//       unit_of_measurement: componentData.unit_of_measurement,
-//       category: componentData.category,
-//       bom_detail: componentData.bom_detail,
-//       bom_name: componentData.bom_name,
-//       quantity: componentData.quantity,
-//       qty: newQty, // Set qty back with total after unassigning all serials
-//       assign: false,
-//     };
-
-//     // Update request_master with the new qty and assign status
-//     const requestMasterResponse = await fetch(
-//       `${config.apiBaseURL}/request_master/${requestId}/`,
-//       {
-//         method: "PUT",
-//         headers: {
-//           "Content-Type": "application/json",
-//         },
-//         body: JSON.stringify(requestMasterPayload),
-//       }
-//     );
-
-//     if (requestMasterResponse.ok) {
-//       setInventoryData((prevData) => {
-//         const currentComponentData = prevData[componentId] || {};
-//         const updatedSerialNumbers = currentComponentData.serialNumbers.map(
-//           (sn) => (assignedSerials.includes(sn.serialNumber) ? { ...sn, status: true } : sn)
-//         );
-
-//         return {
-//           ...prevData,
-//           [componentId]: {
-//             ...currentComponentData,
-//             qty: updatedQty, // Update with the new qty after unassigning all serials
-//             serialNumbers: updatedSerialNumbers,
-//           },
-//         };
-//       });
-
-//       setAssignedComponents((prevAssigned) => ({
-//         ...prevAssigned,
-//         [componentId]: false,
-//       }));
-//     } else {
-//       console.error("Error updating request master status.");
-//       alert("Could not update the request master status.");
-//     }
-//   } catch (error) {
-//     console.error("Error unassigning serial numbers:", error);
-//   }
-// };
-
-/////////////////////////////////////////////////////////////

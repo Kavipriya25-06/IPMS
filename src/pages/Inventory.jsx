@@ -148,17 +148,6 @@ const Inventory = () => {
     setToDate(null);
   };
 
-  // useEffect(() => {
-  //   if (statusFilter === "Tool") {
-  //     fetchToolInventoryData(); // Fetch tool inventory
-  //   } else {
-  //     fetchInventoryData(statusFilter); // Fetch normal inventory
-  //   }
-  //   fetchComponentMasterData();
-  //   fetchVendorMasterData();
-  //   fetchMetaTags();
-  // }, [statusFilter]);
-
   useEffect(() => {
     const loadData = async () => {
       if (statusFilter === "Tool") {
@@ -449,7 +438,7 @@ const Inventory = () => {
 
   // Enter edit mode
   const handleDoubleClick = (serialNumber, currentSKU) => {
-    setEditingSKU(serialNumber); // ✅ use unique serial_number
+    setEditingSKU(serialNumber); //use unique serial_number
     setTempSKU(currentSKU || "");
   };
 
@@ -722,12 +711,7 @@ const Inventory = () => {
 
   const filteredStatusInventory = filteredInventory;
 
-  // 🔹 Remove this duplicated fetch —  DELETE
-  // useEffect(() => {
-  //   fetchInventoryData();
-  // }, [selectedStatus]);
-
-  // 🔹 Prevent autoLoadUntilScrollable from running on the first mount
+  // Prevent autoLoadUntilScrollable from running on the first mount
   const firstLoad = useRef(true);
   useEffect(() => {
     if (firstLoad.current) {
@@ -738,10 +722,6 @@ const Inventory = () => {
       setTimeout(autoLoadUntilScrollable, 300);
     }
   }, [loading, filteredInventory, hasMore]);
-
-  // useEffect(() => {
-  //   filterByDate();
-  // }, [statusFilter]);
 
   const handleSaveToolRow = async () => {
     const toolToSave = {
@@ -1923,12 +1903,6 @@ const Inventory = () => {
                   )
                 ) : (
                   <tr>
-                    {/* <td
-                      colSpan="8"
-                      style={{ textAlign: "center", color: "gray" }}
-                    >
-                      No Tool Inventory found
-                    </td> */}
                     <td
                       colSpan="11"
                       style={{ textAlign: "center", color: "gray" }}

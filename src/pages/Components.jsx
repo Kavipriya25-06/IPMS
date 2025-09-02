@@ -266,72 +266,6 @@ const Component = () => {
     }
   }, [components]);
 
-  // const fetchComponents = async (isFiltering = false, resetPage = false) => {
-  //   if ((!nextPageUrl && !isFiltering) || loading) {
-  //     return;
-  //   } // Stop if there's no next page or already loading
-
-  //   try {
-  //     setLoading(true);
-  //     const pageParam = resetPage || isFiltering ? 1 : currentPage;
-
-  //     // Construct the API URL with filters
-  //     const url = new URL(`${config.apiBaseURL}/tag_search/`);
-  //     url.searchParams.append("page", pageParam);
-  //     // url.searchParams.append("page_size", 10); // Add this here
-
-  //     if (selectedSpecification)
-  //       url.searchParams.append("search", selectedSpecification);
-  //     if (selectedCategory)
-  //       url.searchParams.append("category", selectedCategory);
-  //     if (selectedComponentType)
-  //       url.searchParams.append("component_type", selectedComponentType);
-  //     if (tagsChoices)
-  //       url.searchParams.append("tags_choices__tags", tagsChoices);
-
-  //     console.log("Fetching data from URL:", url.toString());
-  //     const response = await fetch(url);
-  //     const data = await response.json();
-  //     console.log("API Response:", data);
-
-  //     if (!data || !Array.isArray(data.results)) {
-  //       console.error("Invalid API response structure:", data);
-  //       setLoading(false);
-  //       return;
-  //     }
-
-  //     setComponents((prevComponents) => {
-  //       if (resetPage || isFiltering) {
-  //         return data.results; // Replace results when filtering
-  //       }
-  //       const componentMap = new Map(
-  //         prevComponents.map((c) => [c.component_id, c])
-  //       );
-
-  //       data.results.forEach((c) => {
-  //         if (!componentMap.has(c.component_id)) {
-  //           componentMap.set(c.component_id, c);
-  //         }
-  //       });
-
-  //       return Array.from(componentMap.values());
-  //     });
-  //     // Update next page URL and hasMore
-  //     // console.log("Next page URL:", data.next);
-  //     setNextPageUrl(data.next); // Update next page URL
-  //     setHasMore(data.next !== null); // Check if more data is available
-
-  //     // Increment page only if not filtering
-  //     if (!resetPage) {
-  //       setCurrentPage((prevPage) => prevPage + 1);
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching components:", error);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false; // Mark the first render as complete
@@ -353,37 +287,6 @@ const Component = () => {
     selectedComponentType,
     tagsChoices,
   ]);
-
-  // Infinite scroll handler
-  // const handleScroll = () => {
-  //   if (
-  //     window.innerHeight + window.scrollY >= document.body.offsetHeight - 100 &&
-  //     hasMore &&
-  //     !loading
-  //   ) {
-  //     fetchComponents(); // Fetch next page when scrolled near bottom
-  //   }
-
-  //   // Show or hide scroll-to-top button
-  //   if (window.scrollY > 300) {
-  //     setShowScrollTop(true);
-  //   } else {
-  //     setShowScrollTop(false);
-  //   }
-  // };
-
-  // Wrap the scroll handler with debounce
-  // const debouncedHandleScroll = useCallback(debounce(handleScroll, 200), [
-  //   hasMore,
-  //   loading,
-  //   nextPageUrl,
-  // ]);
-
-  // Attach scroll event listener
-  // useEffect(() => {
-  //   window.addEventListener("scroll", debouncedHandleScroll);
-  //   return () => window.removeEventListener("scroll", debouncedHandleScroll); // Cleanup
-  // }, [debouncedHandleScroll]);
 
   // Scroll to top handler
   const scrollToTop = () => {
@@ -510,35 +413,38 @@ const Component = () => {
     }
   };
 
-const deleteTag = async (tagId, componentId) => {
-  try {
-    const response = await fetch(`${config.apiBaseURL}/tags/${tagId}/`, {
-      method: "DELETE",
-    });
+  const deleteTag = async (tagId, componentId) => {
+    try {
+      const response = await fetch(`${config.apiBaseURL}/tags/${tagId}/`, {
+        method: "DELETE",
+      });
 
-    if (response.ok) {
-      // Get the tag name for this id
-      const deletedTag = tags.find(t => t.id === tagId)?.tags;
+      if (response.ok) {
+        // Get the tag name for this id
+        const deletedTag = tags.find((t) => t.id === tagId)?.tags;
 
-      // Remove from table tags
-      setTags(prevTags => prevTags.filter(t => t.id !== tagId));
+        // Remove from table tags
+        setTags((prevTags) => prevTags.filter((t) => t.id !== tagId));
 
-      //Remove from testTags based on tag name & component id
-      setTestTags(prev =>
-        prev.filter(t =>
-          !(t.tags.includes(deletedTag) && t.component_id.component_id === componentId)
-        )
-      );
+        //Remove from testTags based on tag name & component id
+        setTestTags((prev) =>
+          prev.filter(
+            (t) =>
+              !(
+                t.tags.includes(deletedTag) &&
+                t.component_id.component_id === componentId
+              )
+          )
+        );
 
-      showSuccessToast("Tag deleted successfully!");
-    } else {
-      console.error("Failed to delete the tag:", response.statusText);
+        showSuccessToast("Tag deleted successfully!");
+      } else {
+        console.error("Failed to delete the tag:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error deleting the tag:", error);
     }
-  } catch (error) {
-    console.error("Error deleting the tag:", error);
-  }
-};
-
+  };
 
   const handleTagIconClick = () => {
     setShowPopup(true);

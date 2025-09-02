@@ -63,17 +63,11 @@ export default function Sidebar() {
       path: "/requests",
       roles: ["Admin", "Sub-Admin", "Procurement", "User", "Inventory"],
     },
-    // { label: "Cart", path: "/cart", roles: ["Admin", "Procurement"] },
     {
       label: "PO List",
       path: "/po-list",
       roles: ["Admin", "Sub-Admin", "Procurement", "Finance"],
     },
-    // {
-    //   label: "Inward",
-    //   path: "/inward",
-    //   roles: ["Admin", "Sub-Admin", "Inventory"],
-    // },
     {
       label: "Inward",
       path: "/inwardlist",
@@ -84,15 +78,7 @@ export default function Sidebar() {
       path: "/outward",
       roles: ["Admin", "Sub-Admin", "Inventory"],
     },
-    //  {
-    //   label: "Job Order Sheet",
-    //   path: "/jobordersheet",
-    //   roles: ["Admin", "Sub-Admin", "Inventory"],
-    // },
-    // { label: "Add Tags", path: "/addtags", roles: ["Admin", "Inventory", "Procurement"] },
-    // { label: "MRF List", path: "/Mrf", roles: ["Admin", "Procurement", "Inventory", "User"] },
-    // { label: "MRF Request", path: "/MrfRequest", roles: ["Admin", "Procurement", "Inventory", "User"] },
-    // { label: "Roles", path: "/roles", roles: ["Admin"] },
+
   ];
 
   const topLevelPaths = tiles.map((tile) => tile.path);
@@ -135,18 +121,6 @@ export default function Sidebar() {
           </div>
         )}
       </aside>
-
-      {/* <main
-        className={`main-content ${
-          showSidebar
-            ? isMenuOpen
-              ? "sidebar-open"
-              : "sidebar-closed"
-            : "full-width"
-        }`}
-      >
-        <Outlet />
-      </main> */}
       <main
         className={`main-content ${
           isMenuOpen ? "sidebar-open" : "sidebar-closed"

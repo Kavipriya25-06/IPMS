@@ -89,7 +89,7 @@ const Outward = () => {
     outDate: new Date(),
     time: format(new Date(), "hh:mm a"),
     eventName: "",
-    num_components: 0, // 👈 match backend
+    num_components: 0, // match backend
     typeOfOutward: "",
     returnDate: null,
     remarks: "",
@@ -427,7 +427,7 @@ const Outward = () => {
       time: eventForm.time,
       gatepass: eventForm.gatepass,
       event_name: eventForm.eventName,
-      num_components: eventForm.num_components || 0, // 👈 consistent
+      num_components: eventForm.num_components || 0, // consistent
       type_of_outward: eventForm.typeOfOutward,
       return_date: eventForm.returnDate?.toISOString().split("T")[0] || null,
       remarks: eventForm.remarks,
@@ -678,50 +678,49 @@ const Outward = () => {
     setShowEventForm(true);
   };
 
-const [editingReturnDateId, setEditingReturnDateId] = useState(null);
-const [editedReturnDate, setEditedReturnDate] = useState(null);
+  const [editingReturnDateId, setEditingReturnDateId] = useState(null);
+  const [editedReturnDate, setEditedReturnDate] = useState(null);
 
-const handleSaveReturnDate = async (rowId) => {
-  if (!editedReturnDate) {
-    showWarningToast("Please select a date before saving.");
-    return;
-  }
-
-  const payload = {
-    id: rowId, // specify which row to save
-    return_date: editedReturnDate.toISOString().split("T")[0], // yyyy-MM-dd
-  };
-
-  try {
-    const res = await fetch(`${config.apiBaseURL}/outward/manufacture/`, {
-      method: "POST", // POST for new return_date
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (res.ok) {
-      // update frontend state for only this row
-      setData((prev) =>
-        prev.map((row) =>
-          row.id === rowId ? { ...row, return_date: payload.return_date } : row
-        )
-      );
-      showSuccessToast("Return date saved successfully!");
-      setEditingReturnDateId(null);
-      setEditedReturnDate(null);
-    } else {
-      const err = await res.json();
-      console.error("Error saving return date:", err);
-      showErrorToast("Failed to save return date");
+  const handleSaveReturnDate = async (rowId) => {
+    if (!editedReturnDate) {
+      showWarningToast("Please select a date before saving.");
+      return;
     }
-  } catch (err) {
-    console.error("Network error:", err);
-    showErrorToast("Network error while saving return date");
-  }
-};
 
+    const payload = {
+      id: rowId, // specify which row to save
+      return_date: editedReturnDate.toISOString().split("T")[0], // yyyy-MM-dd
+    };
 
+    try {
+      const res = await fetch(`${config.apiBaseURL}/outward/manufacture/`, {
+        method: "POST", // POST for new return_date
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
+      if (res.ok) {
+        // update frontend state for only this row
+        setData((prev) =>
+          prev.map((row) =>
+            row.id === rowId
+              ? { ...row, return_date: payload.return_date }
+              : row
+          )
+        );
+        showSuccessToast("Return date saved successfully!");
+        setEditingReturnDateId(null);
+        setEditedReturnDate(null);
+      } else {
+        const err = await res.json();
+        console.error("Error saving return date:", err);
+        showErrorToast("Failed to save return date");
+      }
+    } catch (err) {
+      console.error("Network error:", err);
+      showErrorToast("Network error while saving return date");
+    }
+  };
 
   return (
     <div>
@@ -936,68 +935,63 @@ const handleSaveReturnDate = async (rowId) => {
                       </td>
                       <td>{row.quantity || "-"}</td>
                       <td>{getProjectName(row.project) || "-"}</td>
-                     
-<td>
-  {row.return_date ? (
-    // Already has a return date → display only
-    <span>{format(new Date(row.return_date), "dd-MM-yyyy")}</span>
-  ) : editingReturnDateId === row.id ? (
-    // Null return date & currently editing → show DatePicker + Save
-    <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-      <DatePicker
-        selected={editedReturnDate}
-        onChange={(date) => setEditedReturnDate(date)}
-        dateFormat="dd-MM-yyyy"
-        showMonthDropdown
-        showYearDropdown
-        dropdownMode="select"
-        autoFocus
-      />
-      <FaSave
-        style={{ cursor: "pointer", color: "green" }}
-        title="Save Date"
-        onClick={() => handleSaveReturnDate(row.id)}
-      />
-    </div>
-  ) : (
-    // Null return date → show edit/add icon
-    <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-      <span>-</span>
-      <FaEdit
-        style={{ cursor: "pointer" }}
-        title="Add Return Date"
-        onClick={() => {
-          setEditingReturnDateId(row.id);
-          setEditedReturnDate(null);
-        }}
-      />
-    </div>
-  )}
-</td>
 
-
-
-
+                      <td>
+                        {row.return_date ? (
+                          // Already has a return date → display only
+                          <span>
+                            {format(new Date(row.return_date), "dd-MM-yyyy")}
+                          </span>
+                        ) : editingReturnDateId === row.id ? (
+                          // Null return date & currently editing → show DatePicker + Save
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "5px",
+                            }}
+                          >
+                            <DatePicker
+                              selected={editedReturnDate}
+                              onChange={(date) => setEditedReturnDate(date)}
+                              dateFormat="dd-MM-yyyy"
+                              showMonthDropdown
+                              showYearDropdown
+                              dropdownMode="select"
+                              autoFocus
+                            />
+                            <FaSave
+                              style={{ cursor: "pointer", color: "green" }}
+                              title="Save Date"
+                              onClick={() => handleSaveReturnDate(row.id)}
+                            />
+                          </div>
+                        ) : (
+                          // Null return date → show edit/add icon
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "5px",
+                            }}
+                          >
+                            <span>-</span>
+                            <FaEdit
+                              style={{ cursor: "pointer" }}
+                              title="Add Return Date"
+                              onClick={() => {
+                                setEditingReturnDateId(row.id);
+                                setEditedReturnDate(null);
+                              }}
+                            />
+                          </div>
+                        )}
+                      </td>
 
                       <td>{row.type_of_outward || "-"}</td>
                       <td className="specification-cell" title={row.remarks}>
                         {row.remarks || "-"}
                       </td>
-
-                      {/* New Column - PDF Button */}
-                      {/* <td>
-                        <button
-                          style={{
-                            cursor: "pointer",
-                            background: "transparent",
-                            border: "none",
-                          }}
-                          title="Generate PDF"
-                          onClick={() => generateManufacturePDF(row)}
-                        >
-                          📄
-                        </button>
-                      </td> */}
                     </>
                   )}
 
@@ -1489,31 +1483,6 @@ const handleSaveReturnDate = async (rowId) => {
                 readOnly
                 placeholder="Quantity"
               />
-              {/* <label>Return Date</label>
-              <div className="date-input-container">
-                <DatePicker
-                  selected={serviceForm.returnDate}
-                  onChange={(date) =>
-                    setServiceForm((prev) => ({
-                      ...prev,
-                      returnDate: date,
-                    }))
-                  }
-                  dateFormat="dd-MM-yyyy"
-                  placeholderText="dd-mm-yyyy"
-                  className={`input1 ${
-                    serviceForm.typeOfOutward === "Non-Return"
-                      ? "disabled-date"
-                      : ""
-                  }`}
-                  showMonthDropdown
-                  showYearDropdown
-                  dropdownMode="select"
-                  disabled={serviceForm.typeOfOutward === "Non-Return"}
-                />
-                <i className="fas fa-calendar-alt calendar-icon"></i>
-              </div> */}
-
               <label>Remarks</label>
               <input
                 type="text"

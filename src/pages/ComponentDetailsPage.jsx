@@ -649,19 +649,6 @@ const ComponentDetailsPage = () => {
               margin: "8px 0",
             }}
           >
-            {/* <button
-              title="Add vendor & price"
-              onClick={() => setShowAddRow((s) => !s)}
-              style={{
-                width: 32,
-                height: 32,
-                lineHeight: "16px",
-                fontSize: 20,
-                borderRadius: 16,
-              }}
-            >
-              {showAddRow ? "–" : "+"}
-            </button> */}
             <>
               {/* Show Add Images button only if role allowed */}
               {canEditPlus && (
@@ -777,12 +764,6 @@ const ComponentDetailsPage = () => {
                     <td className="truncate-cell" title={vendor.vendor_name}>
                       {vendor.vendor_name}
                     </td>
-                    {/* <td style={{ textAlign: "right" }}>
-                      ₹
-                      {priceDataMap[vendor.product_id]?.price ??
-                        vendor.last_price ??
-                        "-"}
-                    </td> */}
                     <td style={{ textAlign: "right" }}>
                       ₹
                       {(() => {

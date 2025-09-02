@@ -702,31 +702,6 @@ const Mrfrequest = () => {
                 Close
               </button>
             </div>
-            {/* <div>
-            <h4>Overall Status</h4>
-            <label>
-              Pass
-              <input
-                type="radio"
-                name="overall-status"
-                onChange={() =>
-                  setNewQuestion((prev) => ({ ...prev, overallStatus: "Pass" }))
-                }
-              />
-            </label>
-            <label>
-              Fail
-              <input
-                type="radio"
-                name="overall-status"
-                onChange={() =>
-                  setNewQuestion((prev) => ({ ...prev, overallStatus: "Fail" }))
-                }
-              />
-            </label>
-          </div>
-          <button onClick={handleSubmitQC}>Submit QC</button>
-          <button onClick={() => setShowQCPopup(false)}>Close</button> */}
           </div>
         </div>
       )}

@@ -374,7 +374,11 @@ const BOM = () => {
               <tr>
                 <td
                   colSpan="8"
-                  style={{ textAlign: "center", padding: "15px", color:"gray" }}
+                  style={{
+                    textAlign: "center",
+                    padding: "15px",
+                    color: "gray",
+                  }}
                 >
                   No BOM available
                 </td>
@@ -432,11 +436,6 @@ const BOM = () => {
                         className="delete-button"
                         title="Delete"
                       >
-                        {/* <img
-                      src={Delete}
-                      alt="Delete"
-                      style={{ width: "20px", height: "20px" }}
-                    /> */}
                         Delete
                       </button>
                     </div>

@@ -18,13 +18,6 @@ const Roles = () => {
     password: "",
     role: "User",
   });
-  const [confirmation, setConfirmation] = useState({
-    show: false,
-    userId: null,
-    newRole: "",
-    email: "",
-  });
-
   const roles = [
     "Admin",
     "Sub-Admin",
@@ -90,66 +83,6 @@ const Roles = () => {
         showWarningToast("Role update cancelled.");
       },
     });
-  };
-
-  // Handle confirmed role change
-  const handleConfirmedRoleChange = async () => {
-    const { userId, newRole } = confirmation;
-    try {
-      const updatedUsers = users.map((user) =>
-        user.id === userId ? { ...user, role: newRole } : user
-      );
-      setUsers(updatedUsers);
-
-      // Make an API call to update the role
-      const payload = { role: newRole };
-      const response = await fetch(`${config.apiBaseURL}/register/${userId}/`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error updating role: ${response.statusText}`);
-      }
-      console.log("Role updated successfully");
-      setConfirmation({ show: false, userId: null, newRole: "", email: "" });
-    } catch (error) {
-      console.error("Error updating role:", error);
-    }
-  };
-
-  const handleCancelConfirmation = () => {
-    setConfirmation({ show: false, userId: null, newRole: "", email: "" });
-  };
-
-  // Handle role change
-  const handleRoleChange = async (userId, newRole) => {
-    try {
-      const updatedUsers = users.map((user) =>
-        user.id === userId ? { ...user, role: newRole } : user
-      );
-      setUsers(updatedUsers);
-
-      // Optional: Make an API call to update the role
-      const payload = { role: newRole };
-      const response = await fetch(`${config.apiBaseURL}/register/${userId}/`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error updating role: ${response.statusText}`);
-      }
-      console.log("Role updated successfully");
-    } catch (error) {
-      console.error("Error updating role:", error);
-    }
   };
 
   // Handle add user
@@ -295,14 +228,7 @@ const Roles = () => {
                   required
                 />
               </div>
-              {/* <div className="form-group checkbox-group">
-        <input
-          type="checkbox"
-          checked={showPassword}
-          onChange={() => setShowPassword((prev) => !prev)}
-        />
-        <label className="form-label">Show Password</label>
-      </div> */}
+            
               <div className="form-group">
                 <label className="form-label">Role:</label>
                 <select
@@ -336,38 +262,7 @@ const Roles = () => {
         </div>
       )}
 
-      {/* {confirmation.show && (
-        <div className="popup">
-          <h3>Confirmation</h3>
-          <p>
-            Are you sure you want to assign{" "}
-            <strong>{confirmation.email}</strong> to the role of{" "}
-            <strong>{confirmation.newRole}</strong>?
-          </p>
-          <div className="modal-actions">
-            <button
-              style={{
-                border: "none",
-                borderRadius: "5px",
-                padding: "5px 10px",
-              }}
-              onClick={handleConfirmedRoleChange}
-            >
-              Yes
-            </button>
-            <button
-              style={{
-                border: "none",
-                borderRadius: "5px",
-                padding: "5px 10px",
-              }}
-              onClick={handleCancelConfirmation}
-            >
-              No
-            </button>
-          </div>
-        </div>
-      )} */}
+  
 
       <ToastContainerComponent />
     </div>

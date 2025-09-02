@@ -89,7 +89,7 @@ const Vendors = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // 1️⃣ Fetch vendors
+  // 1️ Fetch vendors
   const fetchVendorData = async () => {
     try {
       setLoadingVendors(true);
@@ -116,7 +116,7 @@ const Vendors = () => {
     }
   };
 
-  // 2️⃣ Auto-load if container can't scroll
+  // 2 Auto-load if container can't scroll
   const checkAndLoadMoreVendors = () => {
     const container = document.getElementById("vendor-table-wrapper");
 
@@ -142,7 +142,7 @@ const Vendors = () => {
     }
   };
 
-  // 4️⃣ Keep checking after load
+  // 4 Keep checking after load
   useEffect(() => {
     if (!loadingVendors && filteredVendorData.length > 0 && hasMoreVendors) {
       setTimeout(checkAndLoadMoreVendors, 300);
@@ -176,13 +176,6 @@ const Vendors = () => {
     setSelectedVendorId(vendor_id);
     setShowPocPopup(true);
   };
-
-  // const handlePrimaryPocSelect = (vendorId, pocId) => {
-  //   setPrimaryPocSelection((prevSelection) => ({
-  //     ...prevSelection,
-  //     [vendorId]: pocId, // Update only the POC for the specific vendor
-  //   }));
-  // };
 
   // Get the default POC for a given vendor
   const getDefaultPocForVendor = (vendorId) => {
@@ -267,43 +260,6 @@ const Vendors = () => {
   const handleInputChange = (field, value) => {
     setNewPOC((prevPOC) => ({ ...prevPOC, [field]: value }));
   };
-
-  // const handleAddPOC = async () => {
-  //   try {
-
-  //     const isFirstPoc = !pocData.some((poc) => poc.vendor === selectedVendorId);
-  //     const payload = {
-  //       ...newPOC,
-  //       vendor: selectedVendorId,
-  //       default_poc: isFirstPoc, // Set default_poc to true if it's the first POC
-  //     };
-
-  //     const response = await fetch("${config.apiBaseURL}/vendor_sub_list/", {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify({ ...newPOC, vendor: selectedVendorId }),
-  //     });
-  //     if (response.ok) {
-  //       const addedPOC = await response.json();
-  //       setPocData([...pocData, addedPOC]);
-  //       setNewPOC({
-  //         point_of_contact: "",
-  //         email: "",
-  //         phone_number: "",
-  //         location: "",
-  //         default_poc: true,
-  //         // category: "",
-  //       });
-  //       setIsAdding(false);
-  //     } else {
-  //       console.error("Error adding POC:", response.statusText);
-  //     }
-  //   } catch (error) {
-  //     console.error("Error adding POC:", error);
-  //   }
-  // };
 
   const handleAddPOC = async () => {
     try {
@@ -410,7 +366,7 @@ const Vendors = () => {
       if (response.ok) {
         const addedVendor = await response.json();
 
-        // 🔥 update both lists so table updates immediately
+        // update both lists so table updates immediately
         setVendorData((prev) => [...prev, addedVendor]);
         setFilteredVendorData((prev) => [...prev, addedVendor]);
 
@@ -659,21 +615,6 @@ const Vendors = () => {
         }}
       >
         <h2>Vendors</h2>
-
-        {/* <button
-          style={{
-            cursor: "pointer",
-            marginLeft: "auto",
-            marginRight: 20,
-            background: "transparent",
-            border: "none",
-          }}
-          title="Add Vendor"
-          onClick={() => setShowAddVendorPopup(true)}
-        >
-          <img src={Add} alt="" style={{ width: "20px", height: "20px" }} />
-        </button> */}
-
         {/* Modal for Adding New Vendor */}
         {showAddVendorPopup && (
           <div
@@ -776,19 +717,6 @@ const Vendors = () => {
                 handleSubVendorInputChange("location", e.target.value)
               }
             />
-            {/* <select
-          value={newSubVendor.category}
-          onChange={(e) =>
-            handleSubVendorInputChange("category", e.target.value)
-          }
-        >
-          <option value="">Select Category</option>
-          <option value="Airframe">Airframe</option>
-          <option value="Communication">Communication</option>
-          <option value="Electricals">Electricals</option>
-          <option value="Electronics">Electronics</option>
-          <option value="Payload">Payload</option>
-        </select> */}
             <div className="modal-buttons">
               <button
                 className="modal-button save-button"
@@ -1052,13 +980,6 @@ const Vendors = () => {
         )}
       </div>
 
-      {/* <button
-        onClick={() => setIsAddingVendor(true)}
-        style={{ marginTop: "10px" }}
-      >
-        Add Vendor
-      </button> */}
-
       {showPocPopup && (
         <div className="modal-overlay">
           <div className="popup-wrapper">
@@ -1069,25 +990,14 @@ const Vendors = () => {
               </span>
               <h3>Point of Contacts</h3>
               <div className="button-wrapper">
-                {/* <button
-              onClick={() => setShowAddPriceEntryForm(true)}
-              className="price-entry-button"
-            >
-              Add Price Entry
-            </button> */}
-                <button
+                             <button
                   className="action-button add-button"
                   onClick={() => setIsAdding(true)}
                   style={{ marginBottom: "10px" }}
                 >
                   Add POC
                 </button>
-                {/* <button
-              className="action-button close-button"
-              onClick={() => setShowPocPopup(false)}
-            >
-              Close
-            </button> */}
+              
               </div>
               <div className="table-container">
                 <table>
@@ -1353,22 +1263,8 @@ const Vendors = () => {
                             }
                           />
                         </td>
-                        {/* <td>
-                    <select
-                      value={newPOC.category}
-                      onChange={(e) =>
-                        handleInputChange("category", e.target.value)
-                      }
-                    >
-                      <option value="">Select Category</option>
-                      <option value="Airframe">Airframe</option>
-                      <option value="Communication">Communication</option>
-                      <option value="Electricals">Electricals</option>
-                      <option value="Electronics">Electronics</option>
-                      <option value="Payload">Payload</option>
-                    </select>
-                  </td> */}
-                        <td>
+                      
+                                              <td>
                           <button
                             className="edit-button"
                             onClick={handleAddPOC}
