@@ -652,11 +652,7 @@ const Component = () => {
                     className="category-dropdown"
                     onClick={() => setDropdownOpen(!dropdownOpen)}
                   >
-                    {selectedCategory.length === 0
-                      ? "Category"
-                      : selectedCategory.length === 1
-                      ? selectedCategory[0]
-                      : `Selected (${selectedCategory.length})`}
+                    {!selectedCategory ? "Category" : selectedCategory}
                   </div>
 
                   {dropdownOpen && (
@@ -704,11 +700,9 @@ const Component = () => {
                       setComponentTypeDropdownOpen(!componentTypeDropdownOpen)
                     }
                   >
-                    {selectedComponentType.length === 0
+                    {!selectedComponentType
                       ? "Component Type"
-                      : selectedComponentType.length === 1
-                      ? selectedComponentType[0]
-                      : `Selected (${selectedComponentType.length})`}
+                      : selectedComponentType}
                   </div>
 
                   {componentTypeDropdownOpen && (
