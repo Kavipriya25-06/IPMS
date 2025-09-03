@@ -826,7 +826,7 @@ const BOMDetails = () => {
                       </td>
                       <td>{component.component.category}</td>
                       <td>{component.component.component_type}</td>
-                      <td className="specification-cell">
+                      <td className="specification-cell" title={component.component.component_specification}>
                         {component.component.component_specification}
                       </td>
                       <td>{component.component.unit_of_measurement}</td>
