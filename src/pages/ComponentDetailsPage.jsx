@@ -335,8 +335,8 @@ const ComponentDetailsPage = () => {
         vendor: newRow.vendor_id,
         component_id: componentId,
         product_description: componentInfo.product_description || "N/A",
-        unit_of_measurement: componentInfo.uom || "", // 👈 use request_component.uom
-        category: componentInfo.category || "", // 👈 request_component.category
+        unit_of_measurement: componentInfo.uom || "", //  use request_component.uom
+        category: componentInfo.category || "", //  request_component.category
         component_type: componentInfo.component_type || "",
         component_specification: componentInfo.component_specification || "",
         vendor_name: newRow.vendor_name,
@@ -673,19 +673,19 @@ const ComponentDetailsPage = () => {
           <div className="highlights-container">
             <div className="highlights">
               <h3>Category:</h3>
-              <p>{componentInfo?.category || "-"}</p>
+              <p>{componentInfo?.category || firstVendor?.category|| "-"}</p>
             </div>
             <div className="highlights">
               <h3>Component Type:</h3>
-              <p>{componentInfo?.component_type || "-"}</p>
+              <p>{componentInfo?.component_type || firstVendor?.component_type||"-"}</p>
             </div>
             <div className="highlights">
               <h3>Specification:</h3>
-              <p>{componentInfo?.component_specification || "-"}</p>
+              <p>{componentInfo?.component_specification || firstVendor?.component_specification|| "-"}</p>
             </div>
             <div className="highlights">
               <h3>UOM:</h3>
-              <p>{componentInfo?.uom || "-"}</p>
+              <p>{firstVendor?.unit_of_measurement|| "-"}</p>
             </div>
           </div>
 
@@ -757,7 +757,7 @@ const ComponentDetailsPage = () => {
             <ul>
               <li>
                 <strong>Component ID:</strong>{" "}
-                {componentInfo?.component_id || "-"}
+                {componentInfo?.component_id || firstVendor?.component_id|| "-"}
               </li>
               <li>
                 <strong>Status:</strong>{" "}
