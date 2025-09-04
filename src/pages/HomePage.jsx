@@ -12,7 +12,7 @@ const HomePage = () => {
       <button
         className="home-button"
         onClick={() => {
-          window.location.href = "https://dms.aero360.co.in/";
+          window.location.href = "http://dms.aero360.co.in/";
         }}
       >
         <FaArrowLeft /> Back
