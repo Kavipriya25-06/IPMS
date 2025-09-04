@@ -737,25 +737,33 @@ const Inward = () => {
   }, [po_id, component_id]);
 
   useEffect(() => {
+    const container = document.getElementById("inward-table-wrapper");
+
     const handleScroll = () => {
-      if (window.scrollY > 300) {
+      if (container.scrollTop > 200) {
         setShowScrollTop(true);
       } else {
         setShowScrollTop(false);
       }
     };
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    if (container) {
+      container.addEventListener("scroll", handleScroll);
+    }
+
+    return () => {
+      if (container) {
+        container.removeEventListener("scroll", handleScroll);
+      }
+    };
   }, []);
 
   const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth", // Smooth scroll effect
-    });
+    const container = document.getElementById("inward-table-wrapper");
+    if (container) {
+      container.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
-
   return (
     <div>
       <div className="header">
@@ -780,7 +788,7 @@ const Inward = () => {
         />
       )}
 
-      <div className="table-container">
+      <div id="inward-table-wrapper" className="table-container">
         <table>
           <thead>
             <tr>

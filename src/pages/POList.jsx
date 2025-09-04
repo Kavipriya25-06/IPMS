@@ -45,29 +45,38 @@ const POOrderList = ({ user }) => {
     fetchOrderStatuses();
   }, []);
 
+  // The user object is now passed as a prop
+  const isAdmin = user?.role === "Admin";
+  const isProcurement = user?.role === "Procurement";
+  const isFinance = user?.role === "Finance";
+
   useEffect(() => {
+    const container = document.getElementById("po-table-wrapper");
+
     const handleScroll = () => {
-      if (window.scrollY > 300) {
+      if (container.scrollTop > 200) {
         setShowScrollTop(true);
       } else {
         setShowScrollTop(false);
       }
     };
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    if (container) {
+      container.addEventListener("scroll", handleScroll);
+    }
+
+    return () => {
+      if (container) {
+        container.removeEventListener("scroll", handleScroll);
+      }
+    };
   }, []);
 
-  // The user object is now passed as a prop
-  const isAdmin = user?.role === "Admin";
-  const isProcurement = user?.role === "Procurement";
-  const isFinance = user?.role === "Finance";
-
   const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth", // Smooth scroll effect
-    });
+    const container = document.getElementById("po-table-wrapper");
+    if (container) {
+      container.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   useEffect(() => {
@@ -361,7 +370,7 @@ const POOrderList = ({ user }) => {
         </div>
       </div>
 
-      <div className="table-container">
+      <div id="po-table-wrapper" className="table-container">
         {poOrders.length === 0 ? (
           <p style={{ color: "gray" }}>No Purchase Orders found.</p>
         ) : (

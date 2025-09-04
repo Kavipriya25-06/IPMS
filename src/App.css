@@ -7,10 +7,9 @@ body {
 }
 
 @font-face {
-  font-family: 'Roboto';
-  src: url('./src/fonts/Roboto-Regular.ttf') format('truetype');
+  font-family: "Roboto";
+  src: url("./src/fonts/Roboto-Regular.ttf") format("truetype");
 }
-
 
 .App {
   text-align: left;
@@ -213,6 +212,14 @@ table {
     100vh - 220px
   ); /* Adjust based on your footer and header height */
   margin-bottom: 50px; /* Add space before footer */
+}
+
+.table-vendor-container {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-width: 100%;
+  white-space: nowrap;
+  border-radius: 5px;
 }
 
 .table-container-request {
@@ -485,7 +492,6 @@ tbody tr:hover {
   align-self: start !important;
   margin-top: 4px;
 }
-
 
 .form-grid input,
 .form-grid select {
@@ -948,11 +954,10 @@ tbody tr:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  position: relative; 
+  position: relative;
   flex-wrap: wrap;
   margin-bottom: -10px;
 }
-
 
 .header-back {
   display: flex;
@@ -961,12 +966,11 @@ tbody tr:hover {
 }
 
 .header-center {
-  flex: 1; 
+  flex: 1;
   display: flex;
   justify-content: center;
   min-width: 200px;
-    transform: translateX(-10%); /*perfectly center */
-
+  transform: translateX(-10%); /*perfectly center */
 }
 
 .search-bar-container {
@@ -990,7 +994,6 @@ tbody tr:hover {
   color: #666;
   pointer-events: none;
 }
-
 
 .tag-dropdown-wrapper {
   position: relative;
@@ -2767,11 +2770,11 @@ main {
 
 .serial-modal {
   margin: 0;
-  max-height: 80vh;       /* Prevents modal from growing too tall */
-  overflow-y: auto;       /* Enables vertical scroll if content exceeds height */
+  max-height: 80vh; /* Prevents modal from growing too tall */
+  overflow-y: auto; /* Enables vertical scroll if content exceeds height */
   padding: 10px;
 }
- 
+
 .serial-list {
   list-style: none;
   padding: 0;
@@ -2779,8 +2782,8 @@ main {
   display: flex;
   flex-wrap: wrap;
   gap: 20px;
-  max-height: 50vh;       /* Restrict the list height */
-  overflow-y: auto;       /* Make list scrollable if too many items */
+  max-height: 50vh; /* Restrict the list height */
+  overflow-y: auto; /* Make list scrollable if too many items */
 }
 
 .serial-modal h3 {
@@ -3310,7 +3313,7 @@ main {
   padding: 20px;
   font-family: Arial, sans-serif;
   background-color: white;
-  padding-bottom: 50px; 
+  padding-bottom: 50px;
 }
 
 .product-row {
@@ -3892,7 +3895,6 @@ ul {
   outline: none;
   box-shadow: none;
 }
-
 
 .date-row {
   display: flex;
@@ -5054,10 +5056,10 @@ ul {
   background-color: #ffffff;
   border-radius: 12px;
   /* Remove fixed width or increase it */
-  width: auto;       /* allow width to grow */
-  min-width: 280px !important;  /* keep minimum width */
+  width: auto; /* allow width to grow */
+  min-width: 280px !important; /* keep minimum width */
   min-height: 140px !important; /* keep minimum height */
-  max-width: 400px;  /* optional max width to prevent too large */
+  max-width: 400px; /* optional max width to prevent too large */
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.08);
   padding: 20px; /* increase padding for more space */
   display: flex;
@@ -5069,7 +5071,6 @@ ul {
   border: 2px solid transparent;
   flex-direction: column;
 }
-
 
 .dashboard-tile-main:hover {
   border-color: #f1890d;
@@ -5084,7 +5085,6 @@ ul {
   flex-direction: column;
   gap: 10px;
   text-align: center;
-
 }
 
 /* Top heading label */
@@ -5123,7 +5123,6 @@ ul {
   font-size: 15px;
   color: #666;
 }
-
 
 .back-btn {
   background: none;
@@ -5228,6 +5227,11 @@ ul {
   border-radius: 6px;
   cursor: pointer;
   transition: background-color 0.2s ease-in-out;
+}
+
+.image-upload-controls button:hover {
+  opacity: 0.7;
+  color: whitesmoke;
 }
 
 .image-actions {
@@ -5355,7 +5359,6 @@ ul {
   font-weight: bold;
   margin-bottom: 50px;
   font-size: 23px;
-
 }
 
 .qc-input-group {
@@ -5363,7 +5366,7 @@ ul {
   align-items: flex-start; /* vertically center label and select */
   margin-bottom: 15px;
   gap: 10px; /* spacing between label and select */
-    margin-left: 100px;
+  margin-left: 100px;
 }
 
 .qc-input-groups {
@@ -5428,7 +5431,7 @@ ul {
   border-radius: 5px;
 }
 
-.qc-submit-button:hover{
+.qc-submit-button:hover {
   background-color: #f1ba86;
 }
 
@@ -5440,7 +5443,7 @@ ul {
   border-radius: 5px;
 }
 
-.qc-cancel-button:hover{
+.qc-cancel-button:hover {
   background-color: #bab6b6;
 }
 
@@ -5470,7 +5473,7 @@ ul {
   background-color: #fdd;
 }
 
-.invoicedate{
+.invoicedate {
   font-size: 12px !important;
 }
 
@@ -5500,15 +5503,20 @@ ul {
 
 /* Animation */
 @keyframes fadeIn {
-  from {opacity: 0; transform: translateY(-10px);}
-  to {opacity: 1; transform: translateY(0);}
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 textarea.input1 {
   text-align: left;
   vertical-align: top;
 }
-
 
 /* Inputs */
 .outward-sales-input {

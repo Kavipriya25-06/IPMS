@@ -54,23 +54,32 @@ const Requests = () => {
   }, [loggedInRole, loggedInName]);
 
   useEffect(() => {
+    const container = document.getElementById("request-table-wrapper");
+
     const handleScroll = () => {
-      if (window.scrollY > 300) {
+      if (container.scrollTop > 200) {
         setShowScrollTop(true);
       } else {
         setShowScrollTop(false);
       }
     };
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    if (container) {
+      container.addEventListener("scroll", handleScroll);
+    }
+
+    return () => {
+      if (container) {
+        container.removeEventListener("scroll", handleScroll);
+      }
+    };
   }, []);
 
   const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth", // Smooth scroll effect
-    });
+    const container = document.getElementById("request-table-wrapper");
+    if (container) {
+      container.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   const handleRequestClick = (requestId) => {
@@ -287,7 +296,11 @@ const Requests = () => {
         </button>
       </div>
 
-      <div className="table-container" style={{ marginTop: "-15px" }}>
+      <div
+        id="request-table-wrapper"
+        className="table-container"
+        style={{ marginTop: "-15px" }}
+      >
         <table>
           <thead>
             <tr>

@@ -14,6 +14,7 @@ import {
   ToastContainerComponent,
 } from "./Toastify.jsx";
 import emptyFile from "../assets/emptyfile.svg"; // adjust path as needed
+import { FaEdit } from "react-icons/fa";
 
 /** Fallback POST helper for price create — tries multiple likely endpoints */
 const postPriceRow = async (baseURL, payload) => {
@@ -70,16 +71,22 @@ const ComponentDetailsPage = () => {
     delivery_days: "",
   });
   const [savingNewRow, setSavingNewRow] = useState(false);
+  const firstVendor = vendorDetails[0]; // used to copy component fields
 
   // NEW: image upload state
   const [isEditingImage, setIsEditingImage] = useState(false);
   const [newImages, setNewImages] = useState([]);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [editedDescription, setEditedDescription] = useState(
+    firstVendor?.product_description || ""
+  );
 
   const { user } = useAuth();
 
   const allowedRoles = ["Admin", "Sub-Admin", "Inventory", "Procurement"];
   const canEdit = allowedRoles.includes(user?.role);
+  const [componentInfo, setComponentInfo] = useState(null);
 
   const allowedRolesPlus = ["Admin", "Sub-Admin", "Procurement"];
   const canEditPlus = allowedRolesPlus.includes(user?.role);
@@ -135,19 +142,18 @@ const ComponentDetailsPage = () => {
         setLoading(true);
         setNoData(false);
 
-        // Vendors for this component
+        // ✅ Vendors
         const res = await fetch(
           `${config.apiBaseURL}/vendor_master/?component_id=${componentId}`
         );
         if (!res.ok) throw new Error("Failed to fetch vendor detail");
-
         const data = await res.json();
         const matching = data.filter(
           (item) => item.component_id === componentId
         );
         setVendorDetails(matching);
 
-        // Prices for this component
+        // ✅ Prices
         const priceRes = await fetch(
           `${config.apiBaseURL}/price_tables/?component_id=${componentId}`
         );
@@ -165,7 +171,7 @@ const ComponentDetailsPage = () => {
         });
         setPriceDataMap(map);
 
-        // Images
+        // ✅ Images
         const imageRes = await fetch(
           `${config.apiBaseURL}/component_images/by-component/${componentId}/`
         );
@@ -178,9 +184,27 @@ const ComponentDetailsPage = () => {
                   : `${config.apiBaseURL}${img.image}`
               )
             : ["/placeholder.jpg"];
-
         setImageList(images);
         setMainImage(images[0]);
+
+        // ✅ Request component (for category, spec, uom, etc.)
+        const compRes = await fetch(`${config.apiBaseURL}/request_component/`);
+        if (compRes.ok) {
+          const compData = await compRes.json();
+          if (Array.isArray(compData)) {
+            const match = compData.find(
+              (item) => item.component_id === componentId
+            );
+            if (match) {
+              setComponentInfo(match); // this has "id", "category", "uom", etc.
+            } else {
+              console.warn("No request_component found for:", componentId);
+              setComponentInfo(null);
+            }
+          }
+        } else {
+          console.error("Failed to fetch request_component list");
+        }
       } catch (err) {
         console.error("Error fetching component detail:", err);
         showErrorToast("Failed to load component details");
@@ -262,8 +286,6 @@ const ComponentDetailsPage = () => {
 
   if (noData) return <p>No information available for this component</p>;
 
-  const firstVendor = vendorDetails[0]; // used to copy component fields
-
   // Inline-add handlers (vendors)
   const onChangeNewRow = (field, value) =>
     setNewRow((p) => ({ ...p, [field]: value }));
@@ -298,7 +320,7 @@ const ComponentDetailsPage = () => {
       showWarningToast("Please enter a price");
       return;
     }
-    if (!firstVendor) {
+    if (!componentInfo) {
       showErrorToast("Component details not available to create vendor");
       return;
     }
@@ -312,11 +334,11 @@ const ComponentDetailsPage = () => {
       const vendorPayload = {
         vendor: newRow.vendor_id,
         component_id: componentId,
-        product_description: firstVendor.product_description || "",
-        unit_of_measurement: firstVendor.unit_of_measurement || "",
-        category: firstVendor.category || "",
-        component_type: firstVendor.component_type || "",
-        component_specification: firstVendor.component_specification || "",
+        product_description: componentInfo.product_description || "N/A",
+        unit_of_measurement: componentInfo.uom || "", // 👈 use request_component.uom
+        category: componentInfo.category || "", // 👈 request_component.category
+        component_type: componentInfo.component_type || "",
+        component_specification: componentInfo.component_specification || "",
         vendor_name: newRow.vendor_name,
         product_link: null,
         delivery_days:
@@ -362,6 +384,51 @@ const ComponentDetailsPage = () => {
       );
     } finally {
       setSavingNewRow(false);
+    }
+  };
+
+  const saveDescription = async () => {
+    if (!firstVendor) {
+      showErrorToast("No vendor available to update");
+      return;
+    }
+
+    try {
+      // Decide which key to send
+      const payload = { product_description: editedDescription };
+
+      const vResp = await fetch(
+        `${config.apiBaseURL}/vendor_master/${
+          firstVendor.id || firstVendor.product_id
+        }/`,
+        {
+          method: "PATCH", // try PUT if PATCH fails
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!vResp.ok) {
+        const errorText = await vResp.text();
+        console.error("Failed to update vendor description:", errorText);
+        showErrorToast("Failed to update description in vendor_master");
+        return;
+      }
+
+      // ✅ Update local state for UI
+      setVendorDetails((prev) =>
+        prev.map((v) =>
+          v.product_id === firstVendor.product_id
+            ? { ...v, product_description: editedDescription }
+            : v
+        )
+      );
+
+      showSuccessToast("Description updated");
+      setIsEditingDescription(false);
+    } catch (err) {
+      console.error("Save error:", err);
+      showErrorToast("Failed to update description");
     }
   };
 
@@ -606,25 +673,83 @@ const ComponentDetailsPage = () => {
           <div className="highlights-container">
             <div className="highlights">
               <h3>Category:</h3>
-              <p>{firstVendor?.category || "-"}</p>
+              <p>{componentInfo?.category || "-"}</p>
             </div>
             <div className="highlights">
               <h3>Component Type:</h3>
-              <p>{firstVendor?.component_type || "-"}</p>
+              <p>{componentInfo?.component_type || "-"}</p>
             </div>
             <div className="highlights">
               <h3>Specification:</h3>
-              <p>{firstVendor?.component_specification || "-"}</p>
+              <p>{componentInfo?.component_specification || "-"}</p>
             </div>
             <div className="highlights">
               <h3>UOM:</h3>
-              <p>{firstVendor?.unit_of_measurement || "-"}</p>
+              <p>{componentInfo?.uom || "-"}</p>
             </div>
           </div>
 
           <div className="description">
             <h3>Description</h3>
-            <p>{firstVendor?.product_description || "-"}</p>
+            {isEditingDescription ? (
+              <div
+                style={{ display: "flex", gap: "8px", alignItems: "center" }}
+              >
+                <div style={{ flex: 1 }}>
+                  <input
+                    type="text"
+                    value={editedDescription}
+                    onChange={(e) => setEditedDescription(e.target.value)}
+                    className="form-input"
+                    style={{ width: "90%" }}
+                  />
+                </div>
+                <div style={{ display: "flex", gap: "6px" }}>
+                  <button
+                    className="edit-btn"
+                    onClick={saveDescription}
+                    disabled={!editedDescription.trim()}
+                    style={{ padding: "6px 10px" }}
+                  >
+                    Save
+                  </button>
+                  <button
+                    className="delete-button"
+                    onClick={() => setIsEditingDescription(false)}
+                    style={{ padding: "6px 10px" }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <p>{firstVendor?.product_description || "N/A"}</p>
+
+                {canEditPlus && (
+                  <FaEdit
+                    onClick={() => {
+                      setEditedDescription(
+                        firstVendor?.product_description || ""
+                      );
+                      setIsEditingDescription(true);
+                    }}
+                    style={{
+                      cursor: "pointer",
+                      fontSize: "18px",
+                      color: "#555",
+                    }}
+                    title="Edit Description"
+                  />
+                )}
+              </div>
+            )}
           </div>
 
           <div className="specifications">
@@ -632,11 +757,18 @@ const ComponentDetailsPage = () => {
             <ul>
               <li>
                 <strong>Component ID:</strong>{" "}
-                {firstVendor?.component_id || "-"}
+                {componentInfo?.component_id || "-"}
               </li>
               <li>
                 <strong>Status:</strong>{" "}
-                {firstVendor?.active ? "Active" : "Inactive"}
+                <span
+                  style={{
+                    color: firstVendor?.active ? "green" : "#d32f2f",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {firstVendor?.active ? "Active" : "Inactive"}
+                </span>
               </li>
             </ul>
           </div>
@@ -671,7 +803,7 @@ const ComponentDetailsPage = () => {
             </>
           </div>
 
-          <div className="table-container">
+          <div className="table-vendor-container">
             <table>
               <thead>
                 <tr>

@@ -222,11 +222,33 @@ const Vendors = () => {
     }
   };
 
+  useEffect(() => {
+    const container = document.getElementById("vendor-table-wrapper");
+
+    const handleScroll = () => {
+      if (container.scrollTop > 300) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+
+    if (container) {
+      container.addEventListener("scroll", handleScroll);
+    }
+
+    return () => {
+      if (container) {
+        container.removeEventListener("scroll", handleScroll);
+      }
+    };
+  }, []);
+
   const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth", // Smooth scroll effect
-    });
+    const container = document.getElementById("vendor-table-wrapper");
+    if (container) {
+      container.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   const [isAdding, setIsAdding] = useState(false);
@@ -990,14 +1012,13 @@ const Vendors = () => {
               </span>
               <h3>Point of Contacts</h3>
               <div className="button-wrapper">
-                             <button
+                <button
                   className="action-button add-button"
                   onClick={() => setIsAdding(true)}
                   style={{ marginBottom: "10px" }}
                 >
                   Add POC
                 </button>
-              
               </div>
               <div className="table-container">
                 <table>
@@ -1263,8 +1284,8 @@ const Vendors = () => {
                             }
                           />
                         </td>
-                      
-                                              <td>
+
+                        <td>
                           <button
                             className="edit-button"
                             onClick={handleAddPOC}

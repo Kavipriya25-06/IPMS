@@ -122,20 +122,32 @@ const Inwardlist = () => {
   }, []);
 
   useEffect(() => {
+    const container = document.getElementById("inward-table-wrapper");
+
     const handleScroll = () => {
-      if (window.scrollY > 300) {
+      if (container.scrollTop > 200) {
         setShowScrollTop(true);
       } else {
         setShowScrollTop(false);
       }
     };
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    if (container) {
+      container.addEventListener("scroll", handleScroll);
+    }
+
+    return () => {
+      if (container) {
+        container.removeEventListener("scroll", handleScroll);
+      }
+    };
   }, []);
 
   const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    const container = document.getElementById("inward-table-wrapper");
+    if (container) {
+      container.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   const calculateGrandTotal = (unitPrice, totalQuantity, gst) => {
@@ -452,7 +464,7 @@ const Inwardlist = () => {
         </div>
       </div>
 
-      <div className="table-container">
+      <div id="inward-table-wrapper" className="table-container">
         <table>
           <thead>
             <tr>

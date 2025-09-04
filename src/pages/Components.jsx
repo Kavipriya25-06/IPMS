@@ -1,66 +1,123 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import tagIcon from "../assets/Tag_icon.png";
-import config from "../Config"; // Import config for API endpoints
+import React, { useState, useEffect, useRef } from "react";
+import config from "../Config";
 import "../App.css";
 import { Link, useNavigate } from "react-router-dom";
-import Tags from "../assets/tags.png"; // Import the tags icon
+import Tags from "../assets/tags.png";
 
 import {
   showSuccessToast,
   showErrorToast,
   showInfoToast,
   showWarningToast,
-  showMessageToast,
   ToastContainerComponent,
-} from "./Toastify.jsx"; // Import Toastify utilities
-
-const debounce = (func, delay) => {
-  let timer;
-  return (...args) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => {
-      func(...args);
-    }, delay);
-  };
-};
+} from "./Toastify.jsx";
 
 const Component = () => {
   const [components, setComponents] = useState([]);
   const [tags, setTags] = useState([]);
-  const [availableTags, setAvailableTags] = useState([]); // List of attributes for tags
-  const [selectedComponent, setSelectedComponent] = useState(null); // Component being edited
-  const [newTag, setNewTag] = useState(""); // New tag to add
-  const [newTagName, setNewTagName] = useState(""); // Add this state for the pop-up input value
+  const [availableTags, setAvailableTags] = useState([]);
+  const [selectedComponent, setSelectedComponent] = useState(null);
+  const [newTag, setNewTag] = useState("");
+  const [newTagName, setNewTagName] = useState("");
   const [showPopup, setShowPopup] = useState(false);
   const [testTags, setTestTags] = useState([]);
+
+  // paging / loading
   const [currentPage, setCurrentPage] = useState(1);
-  const [nextPageUrl, setNextPageUrl] = useState(null); // Initial API URL
-  const [loading, setLoading] = useState(false); // Track loading state
-  const [hasMore, setHasMore] = useState(true); // Track if more data is available
-  const [visibleComponents, setVisibleComponents] = useState(10);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [loading, setLoading] = useState(false); // first page spinner
+  const [isLoadingMore, setIsLoadingMore] = useState(false); // bottom spinner
+  const [hasMore, setHasMore] = useState(true);
 
-  const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
+  // scroll UI
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
-  const [selectedComponentType, setSelectedComponentType] = useState(""); // For filtering by Component Type
-  const [selectedCategory, setSelectedCategory] = useState(""); // For filtering by Category
-  const [selectedTag, setSelectedTag] = useState(""); // Component specification selected for filtering
-  const [tagsDropdownOpen, setTagsDropdownOpen] = useState(false);
-
-  const [tagsChoices, setTagsChoices] = useState(""); // Tags filter
+  // filters
+  const [selectedComponentType, setSelectedComponentType] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [tagsChoices, setTagsChoices] = useState("");
   const [selectedSpecification, setSelectedSpecification] = useState("");
-  const isInitialMount = useRef(true); // Track if it's the first render
-  const [editTallyRefId, setEditTallyRefId] = useState(null); // which row is editing
-  const [editedTallyRef, setEditedTallyRef] = useState(""); // input value
 
+  // tally editor
+  const [editTallyRefId, setEditTallyRefId] = useState(null);
+  const [editedTallyRef, setEditedTallyRef] = useState("");
+
+  // sorting
   const [sortField, setSortField] = useState();
   const [sortOrder, setSortOrder] = useState("asc");
+
+  // dropdowns
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [componentTypeDropdownOpen, setComponentTypeDropdownOpen] =
-    React.useState(false);
-  const [tagTypeDropdownOpen, setTagTypeDropdownOpen] = React.useState(false);
+    useState(false);
+  const [tagTypeDropdownOpen, setTagTypeDropdownOpen] = useState(false);
 
-  // Function to get unique component types based on the selected component type
+  const dropdownRef = useRef(null);
+  const componentTypeDropdownRef = useRef(null);
+  const tagTypeDropdownRef = useRef(null);
+
+  const navigate = useNavigate();
+
+  // -------------------------------------------------
+  // initial auxiliary data
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const response = await fetch(`${config.apiBaseURL}/tags/`);
+        const data = await response.json();
+        setTags(data);
+      } catch (e) {
+        console.error("Error fetching tags:", e);
+      }
+    };
+    const fetchTestTags = async () => {
+      try {
+        const response = await fetch(`${config.apiBaseURL}/test_tags/`);
+        const data = await response.json();
+        setTestTags(data);
+      } catch (e) {
+        console.error("Error fetching test_tags:", e);
+      }
+    };
+    const fetchAvailableTags = async () => {
+      try {
+        const response = await fetch(`${config.apiBaseURL}/create_tag/`);
+        const data = await response.json();
+        setAvailableTags(data);
+      } catch (e) {
+        console.error("Error fetching available tags:", e);
+      }
+    };
+    fetchTags();
+    fetchTestTags();
+    fetchAvailableTags();
+  }, []);
+
+  // -------------------------------------------------
+  // dropdown click-outside close
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+      if (
+        componentTypeDropdownRef.current &&
+        !componentTypeDropdownRef.current.contains(event.target)
+      ) {
+        setComponentTypeDropdownOpen(false);
+      }
+      if (
+        tagTypeDropdownRef.current &&
+        !tagTypeDropdownRef.current.contains(event.target)
+      ) {
+        setTagTypeDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // -------------------------------------------------
+  // helpers for dropdown source lists
   const getFilteredComponentTypes = () => {
     const filtered = testTags.filter((tag) => {
       const matchesCategory =
@@ -69,16 +126,12 @@ const Component = () => {
       const matchesSpecification =
         !selectedSpecification ||
         tag.component_id.component_specification
-          .toLowerCase()
+          ?.toLowerCase()
           .includes(selectedSpecification.toLowerCase());
-
       return matchesCategory && matchesTags && matchesSpecification;
     });
-
-    return [...new Set(filtered.map((tag) => tag.component_id.component_type))];
+    return [...new Set(filtered.map((t) => t.component_id.component_type))];
   };
-
-  // Function to get unique categories based on the selected Category
 
   const getFilteredCategories = () => {
     const filtered = testTags.filter((tag) => {
@@ -89,16 +142,12 @@ const Component = () => {
       const matchesSpecification =
         !selectedSpecification ||
         tag.component_id.component_specification
-          .toLowerCase()
+          ?.toLowerCase()
           .includes(selectedSpecification.toLowerCase());
-      // console.log("Matches component type", matchesComponentType);
       return matchesComponentType && matchesTags && matchesSpecification;
     });
-    // console.log("Filtered", filtered);
-    return [...new Set(filtered.map((tag) => tag.component_id.category))];
+    return [...new Set(filtered.map((t) => t.component_id.category))];
   };
-
-  // Function to get unique component types based on the selected tags
 
   const getFilteredTags = () => {
     const filtered = testTags.filter((tag) => {
@@ -110,177 +159,82 @@ const Component = () => {
       const matchesSpecification =
         !selectedSpecification ||
         tag.component_id.component_specification
-          .toLowerCase()
+          ?.toLowerCase()
           .includes(selectedSpecification.toLowerCase());
-
       return matchesComponentType && matchesCategory && matchesSpecification;
     });
-
-    return [...new Set(filtered.flatMap((tag) => tag.tags))];
+    return [...new Set(filtered.flatMap((t) => t.tags))];
   };
 
-  useEffect(() => {
-    fetchTags();
-    fetchTestTags();
-    fetchAvailableTags();
-  }, []);
+  // -------------------------------------------------
+  // build URL with filters
+  const buildPageURL = (page) => {
+    const url = new URL(`${config.apiBaseURL}/tag_search/`);
+    url.searchParams.append("page", page);
+    if (selectedSpecification)
+      url.searchParams.append("search", selectedSpecification);
+    if (selectedCategory) url.searchParams.append("category", selectedCategory);
+    if (selectedComponentType)
+      url.searchParams.append("component_type", selectedComponentType);
+    if (tagsChoices) url.searchParams.append("tags_choices__tags", tagsChoices);
+    return url.toString();
+  };
 
-  const dropdownRef = useRef(null);
+  // avoid parallel fetches
+  const inFlightRef = useRef(false);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setDropdownOpen(false);
-      }
-    };
+  const fetchPage = async (page, isFirst = false) => {
+    if (inFlightRef.current) return;
+    if (!hasMore && !isFirst) return;
 
-    document.addEventListener("mousedown", handleClickOutside);
-
-    return () => {
-      document.removeEventListener("click", handleClickOutside);
-    };
-  }, []);
-
-  const componentTypeDropdownRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        componentTypeDropdownRef.current &&
-        !componentTypeDropdownRef.current.contains(event.target)
-      ) {
-        setComponentTypeDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-
-    return () => {
-      document.removeEventListener("click", handleClickOutside);
-    };
-  }, []);
-
-  const tagTypeDropdownRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        tagTypeDropdownRef.current &&
-        !tagTypeDropdownRef.current.contains(event.target)
-      ) {
-        setTagTypeDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-
-    return () => {
-      document.removeEventListener("click", handleClickOutside);
-    };
-  }, []);
-
-  const fetchComponents = async () => {
     try {
-      setLoading(true);
-      setVisibleComponents(0);
-      setHasMore(true);
-      setIsLoadingMore(false);
+      inFlightRef.current = true;
+      if (isFirst) setLoading(true);
+      else setIsLoadingMore(true);
 
-      let allComponents = [];
-      let page = 1;
-      let hasNext = true;
+      const res = await fetch(buildPageURL(page));
+      const data = await res.json();
+      const pageResults = Array.isArray(data?.results) ? data.results : [];
 
-      while (hasNext) {
-        const url = new URL(`${config.apiBaseURL}/tag_search/`);
-        url.searchParams.append("page", page);
+      // merge and dedupe by component id
+      setComponents((prev) => {
+        const merged = [...prev, ...pageResults];
+        const seen = new Set();
+        return merged.filter((item) => {
+          const cid =
+            item?.component_id?.component_id ??
+            item?.component_id ??
+            item?.id ??
+            JSON.stringify(item);
+          if (seen.has(cid)) return false;
+          seen.add(cid);
+          return true;
+        });
+      });
 
-        if (selectedSpecification)
-          url.searchParams.append("search", selectedSpecification);
-        if (selectedCategory)
-          url.searchParams.append("category", selectedCategory);
-        if (selectedComponentType)
-          url.searchParams.append("component_type", selectedComponentType);
-        if (tagsChoices)
-          url.searchParams.append("tags_choices__tags", tagsChoices);
-
-        const response = await fetch(url);
-        const data = await response.json();
-
-        allComponents = [...allComponents, ...data.results];
-        hasNext = !!data.next;
-        page += 1;
-      }
-
-      setComponents(allComponents);
-
-      // 👉 Determine if all should be shown at once
-      if (allComponents.length <= 20) {
-        setVisibleComponents(allComponents.length); // show all at once
-        setHasMore(false); // stop loading more
+      if (data?.next) {
+        setCurrentPage(page + 1);
+        setHasMore(true);
       } else {
-        setVisibleComponents(10); // show first 10
-        setHasMore(true); // allow scroll to load more
-      }
-    } catch (error) {
-      console.error("Error fetching components:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const checkAndLoadMore = () => {
-    const container = document.getElementById("component-table-wrapper");
-
-    if (
-      container &&
-      container.scrollHeight <= container.clientHeight &&
-      hasMore &&
-      !isLoadingMore
-    ) {
-      setIsLoadingMore(true);
-
-      const nextVisible = visibleComponents + 10;
-
-      if (nextVisible >= components.length) {
-        setVisibleComponents(components.length);
         setHasMore(false);
-        setIsLoadingMore(false);
-      } else {
-        setVisibleComponents(nextVisible);
-        setIsLoadingMore(false);
-        setTimeout(checkAndLoadMore, 300); // keep checking
       }
+    } catch (e) {
+      console.error("Failed to fetch page", e);
+      showErrorToast("Failed to load components.");
+    } finally {
+      inFlightRef.current = false;
+      if (isFirst) setLoading(false);
+      else setIsLoadingMore(false);
     }
   };
 
+  // reset & load first page when filters change
   useEffect(() => {
-    if (!loading && components.length > 0 && hasMore) {
-      setTimeout(checkAndLoadMore, 300);
-    }
-  }, [loading, components, hasMore]);
-
-  useEffect(() => {
-    if (components.length > 0) {
-      setVisibleComponents(10);
-      setHasMore(components.length > 10);
-    }
-  }, [components]);
-
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false; // Mark the first render as complete
-      setNextPageUrl(`${config.apiBaseURL}/tag_search/?page=1`);
-      // fetchComponents(false, true); // Reset and fetch initial data
-      fetchComponents(true);
-      // fetchComponents();
-      return;
-    }
-
-    // Fetch components whenever filters change
     setComponents([]);
     setCurrentPage(1);
-    setNextPageUrl(`${config.apiBaseURL}/tag_search/?page=1`);
-    fetchComponents(true);
+    setHasMore(true);
+    fetchPage(1, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     selectedSpecification,
     selectedCategory,
@@ -288,54 +242,71 @@ const Component = () => {
     tagsChoices,
   ]);
 
-  // Scroll to top handler
-  const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth", // Smooth scroll effect
+  // auto-fill: if the list isn't tall enough to scroll, fetch more pages
+  useEffect(() => {
+    const el = document.getElementById("component-table-wrapper");
+    if (!el) return;
+    const tryFill = async () => {
+      // give DOM a tick to layout
+      await new Promise((r) => setTimeout(r, 50));
+      while (
+        el.scrollHeight <= el.clientHeight &&
+        hasMore &&
+        !loading &&
+        !isLoadingMore &&
+        !inFlightRef.current
+      ) {
+        await fetchPage(currentPage);
+        await new Promise((r) => setTimeout(r, 50));
+      }
+    };
+    tryFill();
+    // rerun when list grows or paging state changes
+  }, [components.length, hasMore, loading, isLoadingMore, currentPage]);
+
+  // -------------------------------------------------
+  // sort
+  const handleSort = (field) => {
+    if (field === sortField) {
+      setSortOrder((p) => (p === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+  };
+
+  const sortedComponents = React.useMemo(() => {
+    const data = [...components];
+    if (!sortField) return data;
+
+    const getValue = (item, field) => {
+      const component = item.component_id || {};
+      if (field === "component_id") {
+        const match = component.component_id?.match?.(/(\d+)$/);
+        return match ? parseInt(match[1], 10) : 0;
+      }
+      return (component[field] || "").toString().toLowerCase();
+    };
+
+    data.sort((a, b) => {
+      const av = getValue(a, sortField);
+      const bv = getValue(b, sortField);
+      if (av < bv) return sortOrder === "asc" ? -1 : 1;
+      if (av > bv) return sortOrder === "asc" ? 1 : -1;
+      return 0;
     });
-  };
+    return data;
+  }, [components, sortField, sortOrder]);
 
-  const fetchTags = async () => {
-    try {
-      const response = await fetch(`${config.apiBaseURL}/tags/`);
-      const data = await response.json();
-      setTags(data);
-    } catch (error) {
-      console.error("Error fetching tags:", error);
-    }
-  };
-
-  const fetchTestTags = async () => {
-    try {
-      // const response = await fetch(`${config.apiBaseURL}/tags/`);
-      const response = await fetch(`${config.apiBaseURL}/test_tags/`);
-      const data = await response.json();
-      setTestTags(data);
-    } catch (error) {
-      console.error("Error fetching tags:", error);
-    }
-  };
-
-  const fetchAvailableTags = async () => {
-    try {
-      const response = await fetch(`${config.apiBaseURL}/create_tag/`);
-      const data = await response.json();
-      setAvailableTags(data); // Directly set the list of tags from the API
-    } catch (error) {
-      console.error("Error fetching available tags:", error);
-    }
-  };
-
-  // Helper function to get tags for a component
+  // -------------------------------------------------
+  // tags per row
   const getTagsForComponent = (componentId) => {
-    // return tags.filter((tag) => tag.component_id.component_id === componentId);
-    return tags.filter((tag) => tag.component_id === componentId); // check here Suriya
+    return tags.filter((t) => t.component_id === componentId);
   };
 
   const handleAddTagClick = (componentId) => {
-    setSelectedComponent(componentId); // Set the component ID for which tags will be added
-    setNewTag(""); // Clear the new tag input when opening the dropdown
+    setSelectedComponent(componentId);
+    setNewTag("");
   };
 
   const handleAddTag = async () => {
@@ -344,13 +315,12 @@ const Component = () => {
     const selectedCompTags = tags
       .filter((t) => t.component_id === selectedComponent)
       .map((t) => t.tags);
-
     if (selectedCompTags.includes(newTag)) {
       showWarningToast("Tag already added to this component.");
       return;
     }
 
-    const selectedTag = availableTags.find((tag) => tag.tags === newTag);
+    const selectedTag = availableTags.find((t) => t.tags === newTag);
     if (!selectedTag) {
       showErrorToast("Invalid tag selection.");
       return;
@@ -372,7 +342,6 @@ const Component = () => {
       if (response.ok) {
         const newTagEntry = await response.json();
 
-        // Update table tags
         setTags((prev) => [
           ...prev,
           {
@@ -382,22 +351,30 @@ const Component = () => {
           },
         ]);
 
-        // Update dropdown source (testTags) so getFilteredTags sees it immediately
         setTestTags((prev) => [
           ...prev,
           {
             id: newTagEntry.id,
-            tags: [selectedTag.tags], // must be array for flatMap
+            tags: [selectedTag.tags],
             component_id: {
               component_type:
-                components.find((c) => c.component_id === selectedComponent)
-                  ?.component_type || "",
+                components.find(
+                  (c) =>
+                    (c.component_id?.component_id || c.component_id) ===
+                    selectedComponent
+                )?.component_id?.component_type || "",
               category:
-                components.find((c) => c.component_id === selectedComponent)
-                  ?.category || "",
+                components.find(
+                  (c) =>
+                    (c.component_id?.component_id || c.component_id) ===
+                    selectedComponent
+                )?.component_id?.category || "",
               component_specification:
-                components.find((c) => c.component_id === selectedComponent)
-                  ?.component_specification || "",
+                components.find(
+                  (c) =>
+                    (c.component_id?.component_id || c.component_id) ===
+                    selectedComponent
+                )?.component_id?.component_specification || "",
             },
           },
         ]);
@@ -420,13 +397,9 @@ const Component = () => {
       });
 
       if (response.ok) {
-        // Get the tag name for this id
         const deletedTag = tags.find((t) => t.id === tagId)?.tags;
-
-        // Remove from table tags
         setTags((prevTags) => prevTags.filter((t) => t.id !== tagId));
 
-        //Remove from testTags based on tag name & component id
         setTestTags((prev) =>
           prev.filter(
             (t) =>
@@ -446,19 +419,10 @@ const Component = () => {
     }
   };
 
-  const handleTagIconClick = () => {
-    setShowPopup(true);
-  };
-
-  const handlePopupClose = () => {
-    setShowPopup(false); // Close the pop-up when clicking outside
-  };
-
   const handleSaveTallyReference = async (componentId) => {
     const target = components.find(
       (c) => (c.component_id?.component_id || c.component_id) === componentId
     );
-
     const payload = {
       ...target.component_id,
       tally_reference: editedTallyRef,
@@ -469,9 +433,7 @@ const Component = () => {
         `${config.apiBaseURL}/component/${componentId}/`,
         {
           method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         }
       );
@@ -480,7 +442,6 @@ const Component = () => {
         showSuccessToast("Tally Reference updated!");
         setEditTallyRefId(null);
 
-        // Update the components state locally
         setComponents((prev) =>
           prev.map((item) =>
             (item.component_id?.component_id || item.component_id) ===
@@ -504,43 +465,18 @@ const Component = () => {
     }
   };
 
-  const handleSort = (field) => {
-    if (field === sortField) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortOrder("asc");
-    }
-  };
-
-  // Corrected sorting logic
-  const sortedComponents = [...components].sort((a, b) => {
-    const getValue = (item, field) => {
-      const component = item.component_id || {};
-
-      if (field === "component_id") {
-        const match = component.component_id.match(/(\d+)$/);
-        return match ? parseInt(match[1], 10) : 0;
-      } else {
-        return (component[field] || "").toLowerCase();
-      }
-    };
-
-    const aValue = getValue(a, sortField);
-    const bValue = getValue(b, sortField);
-
-    if (aValue < bValue) return sortOrder === "asc" ? -1 : 1;
-    if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
-    return 0;
+  // -------------------------------------------------
+  // dropdown positions (kept from your code)
+  const [dropdownCoords, setDropdownCoords] = useState({ top: 0, left: 0 });
+  const [componentdropdownCoords, setCompoentDropdownCoords] = useState({
+    top: 0,
+    left: 0,
+  });
+  const [tagdropdownCoords, setTagDropdownCoords] = useState({
+    top: 0,
+    left: 0,
   });
 
-  const navigate = useNavigate();
-
-  const handleAddComponentClick = (id) => {
-    navigate(`addcomponents/`);
-  };
-
-  const [dropdownCoords, setDropdownCoords] = useState({ top: 0, left: 0 });
   useEffect(() => {
     if (dropdownOpen && dropdownRef.current) {
       const rect = dropdownRef.current.getBoundingClientRect();
@@ -551,10 +487,6 @@ const Component = () => {
     }
   }, [dropdownOpen]);
 
-  const [componentdropdownCoords, setCompoentDropdownCoords] = useState({
-    top: 0,
-    left: 0,
-  });
   useEffect(() => {
     if (componentTypeDropdownOpen && componentTypeDropdownRef.current) {
       const rect = componentTypeDropdownRef.current.getBoundingClientRect();
@@ -565,10 +497,6 @@ const Component = () => {
     }
   }, [componentTypeDropdownOpen]);
 
-  const [tagdropdownCoords, setTagDropdownCoords] = useState({
-    top: 0,
-    left: 0,
-  });
   useEffect(() => {
     if (tagTypeDropdownOpen && tagTypeDropdownRef.current) {
       const rect = tagTypeDropdownRef.current.getBoundingClientRect();
@@ -579,20 +507,76 @@ const Component = () => {
     }
   }, [tagTypeDropdownOpen]);
 
+  // -------------------------------------------------
+  // render
+  const onScroll = (e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    setShowScrollTop(scrollTop > 200);
+
+    const nearBottom = scrollTop + clientHeight >= scrollHeight - 10;
+    if (
+      nearBottom &&
+      hasMore &&
+      !loading &&
+      !isLoadingMore &&
+      !inFlightRef.current
+    ) {
+      fetchPage(currentPage);
+    }
+  };
+
+  // State for button visibility
+
+  useEffect(() => {
+    const container = document.getElementById("component-table-wrapper");
+
+    const handleScroll = () => {
+      if (container.scrollTop > 200) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+
+    if (container) {
+      container.addEventListener("scroll", handleScroll);
+    }
+
+    return () => {
+      if (container) {
+        container.removeEventListener("scroll", handleScroll);
+      }
+    };
+  }, []);
+
+  const scrollToTop = () => {
+    const container = document.getElementById("component-table-wrapper");
+    if (container) {
+      container.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
   return (
     <div>
       <div className="header">
         <h2>Component List</h2>
         <div className="button-group">
-          <button className="create-tag-button" onClick={handleTagIconClick}>
+          <button
+            className="create-tag-button"
+            onClick={() => setShowPopup(true)}
+          >
             <img src={Tags} alt="icon" />
           </button>
-          <button className="add-comp" onClick={handleAddComponentClick}>
+          <button
+            className="add-comp"
+            onClick={() => navigate(`addcomponents/`)}
+          >
             Add Component
           </button>
         </div>
       </div>
-      <div class="center-wrapper">
+
+      <div className="center-wrapper">
         <div className="search-bar-container" style={{ width: "300px" }}>
           <input
             type="text"
@@ -606,31 +590,13 @@ const Component = () => {
           </span>
         </div>
       </div>
+
       <div>
         <div
           id="component-table-wrapper"
           className="table-container"
           style={{ overflowY: loading ? "hidden" : "auto" }}
-          onScroll={(e) => {
-            const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-            if (
-              scrollTop + clientHeight >= scrollHeight - 10 &&
-              !isLoadingMore &&
-              hasMore
-            ) {
-              setIsLoadingMore(true);
-              setTimeout(() => {
-                const nextVisible = visibleComponents + 10;
-                if (nextVisible >= components.length) {
-                  setVisibleComponents(components.length); // show all
-                  setHasMore(false);
-                } else {
-                  setVisibleComponents(nextVisible);
-                }
-                setIsLoadingMore(false);
-              }, 300); // slight delay for smooth scroll
-            }
-          }}
+          onScroll={onScroll}
         >
           <table>
             <thead>
@@ -670,7 +636,7 @@ const Component = () => {
                     >
                       <div
                         className="category-dropdown-option"
-                        onClick={() => setSelectedCategory([])}
+                        onClick={() => setSelectedCategory("")}
                         style={{ padding: "6px 12px", cursor: "pointer" }}
                       >
                         All
@@ -680,7 +646,7 @@ const Component = () => {
                         <div
                           key={category}
                           className="category-dropdown-option"
-                          onClick={() => setSelectedCategory([category])}
+                          onClick={() => setSelectedCategory(category)}
                           style={{ padding: "6px 12px", cursor: "pointer" }}
                         >
                           {category}
@@ -719,7 +685,7 @@ const Component = () => {
                     >
                       <div
                         className="component-dropdown-option"
-                        onClick={() => setSelectedComponentType([])}
+                        onClick={() => setSelectedComponentType("")}
                         style={{ padding: "6px 12px", cursor: "pointer" }}
                       >
                         All
@@ -729,7 +695,7 @@ const Component = () => {
                         <div
                           key={type}
                           className="component-dropdown-option"
-                          onClick={() => setSelectedComponentType([type])}
+                          onClick={() => setSelectedComponentType(type)}
                           style={{ padding: "6px 12px", cursor: "pointer" }}
                         >
                           {type}
@@ -750,6 +716,7 @@ const Component = () => {
                       : "🔽"
                     : ""}
                 </th>
+
                 <th>Tally Reference</th>
                 <th>UOM</th>
 
@@ -803,6 +770,7 @@ const Component = () => {
                 </th>
               </tr>
             </thead>
+
             <tbody>
               {loading ? (
                 <tr>
@@ -815,153 +783,151 @@ const Component = () => {
                   </td>
                 </tr>
               ) : sortedComponents.length > 0 ? (
-                sortedComponents
-                  .slice(0, visibleComponents)
-                  .map((item, index) => {
-                    const component = item.component_id || {};
-                    return (
-                      <tr key={index}>
-                        <td>
-                          <Link
-                            to={`/components/${component.component_id}`}
-                            style={{ textDecoration: "line", color: "inherit" }}
-                            state={{ component }}
-                          >
-                            {component.component_id}
-                          </Link>
-                        </td>
-                        <td>{component.category}</td>
-                        <td>{component.component_type}</td>
-                        <td
-                          className="specification-cell"
-                          title={component.component_specification || ""}
+                sortedComponents.map((item, index) => {
+                  const component = item.component_id || {};
+                  // unique + stable key
+                  const rowKey =
+                    component.component_id || item.id || `row-${index}`;
+                  return (
+                    <tr key={rowKey}>
+                      <td>
+                        <Link
+                          to={`/components/${component.component_id}`}
+                          style={{ textDecoration: "line", color: "inherit" }}
+                          state={{ component }}
                         >
-                          {component.component_specification}
-                        </td>
-                        <td>
-                          {editTallyRefId === component.component_id ? (
-                            <div className="tally-edit-container">
-                              <input
-                                type="text"
-                                value={editedTallyRef}
-                                onChange={(e) =>
-                                  setEditedTallyRef(e.target.value)
-                                }
-                                className="tally-input"
-                              />
-                              <div className="tally-actions">
-                                <button
-                                  className="tally-button save-button"
-                                  onClick={() =>
-                                    handleSaveTallyReference(
-                                      component.component_id
-                                    )
-                                  }
-                                >
-                                  Save
-                                </button>
-                                <button
-                                  className="tally-button cancel-button"
-                                  onClick={() => setEditTallyRefId(null)}
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <span
-                              style={{ cursor: "pointer", color: "#007bff" }}
-                              title="Click to edit"
-                              onClick={() => {
-                                setEditTallyRefId(component.component_id);
-                                setEditedTallyRef(
-                                  component.tally_reference || ""
-                                );
-                              }}
-                            >
-                              {component.tally_reference || "Click to add"}
-                            </span>
-                          )}
-                        </td>
-                        <td>{component.unit_of_measurement}</td>
-                        <td>
-                          <div>
-                            {getTagsForComponent(component.component_id)
-                              .length > 0 ? (
-                              getTagsForComponent(component.component_id).map(
-                                (tag) => (
-                                  <span key={tag.id} className="tag">
-                                    {tag.tags}
-                                    <button
-                                      onClick={() =>
-                                        deleteTag(
-                                          tag.id,
-                                          component.component_id
-                                        )
-                                      }
-                                    >
-                                      ×
-                                    </button>
-                                  </span>
-                                )
-                              )
-                            ) : (
-                              <span></span>
-                            )}
-                            <button
-                              style={{
-                                marginLeft: "8px",
-                                background: "#e2dede",
-                                width: "24px",
-                                height: "24px",
-                                borderRadius: "50%",
-                                border: "none",
-                                cursor: "pointer",
-                                color: "blue",
-                                fontSize: "16px",
-                              }}
-                              onClick={() =>
-                                handleAddTagClick(component.component_id)
+                          {component.component_id}
+                        </Link>
+                      </td>
+                      <td>{component.category}</td>
+                      <td>{component.component_type}</td>
+                      <td
+                        className="specification-cell"
+                        title={component.component_specification || ""}
+                      >
+                        {component.component_specification}
+                      </td>
+                      <td>
+                        {editTallyRefId === component.component_id ? (
+                          <div className="tally-edit-container">
+                            <input
+                              type="text"
+                              value={editedTallyRef}
+                              onChange={(e) =>
+                                setEditedTallyRef(e.target.value)
                               }
-                            >
-                              +
-                            </button>
-                          </div>
-
-                          {selectedComponent === component.component_id && (
-                            <div className="add-tag-wrapper">
-                              <select
-                                value={newTag}
-                                onChange={(e) => setNewTag(e.target.value)}
-                                className="tag-select"
+                              className="tally-input"
+                            />
+                            <div className="tally-actions">
+                              <button
+                                className="tally-button save-button"
+                                onClick={() =>
+                                  handleSaveTallyReference(
+                                    component.component_id
+                                  )
+                                }
                               >
-                                <option value="">Select a tag</option>
-                                {availableTags.map((tag) => (
-                                  <option key={tag.id} value={tag.tags}>
-                                    {tag.tags}
-                                  </option>
-                                ))}
-                              </select>
-                              <div className="tag-buttons">
-                                <button
-                                  className="tag-button save-button"
-                                  onClick={handleAddTag}
-                                >
-                                  Add Tag
-                                </button>
-                                <button
-                                  className="tag-button cancel-button"
-                                  onClick={() => setSelectedComponent(null)}
-                                >
-                                  Cancel
-                                </button>
-                              </div>
+                                Save
+                              </button>
+                              <button
+                                className="tally-button cancel-button"
+                                onClick={() => setEditTallyRefId(null)}
+                              >
+                                Cancel
+                              </button>
                             </div>
+                          </div>
+                        ) : (
+                          <span
+                            style={{ cursor: "pointer", color: "#007bff" }}
+                            title="Click to edit"
+                            onClick={() => {
+                              setEditTallyRefId(component.component_id);
+                              setEditedTallyRef(
+                                component.tally_reference || ""
+                              );
+                            }}
+                          >
+                            {component.tally_reference || "Click to add"}
+                          </span>
+                        )}
+                      </td>
+                      <td>{component.unit_of_measurement}</td>
+                      <td>
+                        <div>
+                          {getTagsForComponent(component.component_id).length >
+                          0 ? (
+                            getTagsForComponent(component.component_id).map(
+                              (tag) => (
+                                <span key={tag.id} className="tag">
+                                  {tag.tags}
+                                  <button
+                                    onClick={() =>
+                                      deleteTag(tag.id, component.component_id)
+                                    }
+                                  >
+                                    ×
+                                  </button>
+                                </span>
+                              )
+                            )
+                          ) : (
+                            <span></span>
                           )}
-                        </td>
-                      </tr>
-                    );
-                  })
+                          <button
+                            style={{
+                              marginLeft: "8px",
+                              background: "#e2dede",
+                              width: "24px",
+                              height: "24px",
+                              borderRadius: "50%",
+                              border: "none",
+                              cursor: "pointer",
+                              color: "blue",
+                              fontSize: "16px",
+                            }}
+                            onClick={() =>
+                              handleAddTagClick(component.component_id)
+                            }
+                          >
+                            +
+                          </button>
+                        </div>
+
+                        {selectedComponent === component.component_id && (
+                          <div className="add-tag-wrapper">
+                            <select
+                              value={newTag}
+                              onChange={(e) => setNewTag(e.target.value)}
+                              className="tag-select"
+                            >
+                              <option value="">Select a tag</option>
+                              {availableTags.map((tag) => (
+                                <option key={tag.id} value={tag.tags}>
+                                  {tag.tags}
+                                </option>
+                              ))}
+                            </select>
+                            <div className="tag-buttons">
+                              <button
+                                className="tag-button save-button"
+                                onClick={handleAddTag}
+                              >
+                                Add Tag
+                              </button>
+                              <button
+                                className="tag-button cancel-button"
+                                onClick={() => setSelectedComponent(null)}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
                   <td
@@ -978,8 +944,8 @@ const Component = () => {
               )}
             </tbody>
           </table>
-          {isLoadingMore && <div className="loading-message">Loading...</div>}
 
+          {isLoadingMore && <div className="loading-message">Loading...</div>}
           {!hasMore && !loading && components.length > 0 && (
             <div className="no-message">No more data</div>
           )}
@@ -1007,14 +973,10 @@ const Component = () => {
         </button>
       )}
 
-      {/* Pop-up for entering a tag */}
       {showPopup && (
-        <div
-          className="modal-overlay"
-          onClick={() => setShowPopup(false)} // optional: close on background click
-        >
+        <div className="modal-overlay" onClick={() => setShowPopup(false)}>
           <div
-            onClick={(e) => e.stopPropagation()} // prevent closing when clicking inside modal
+            onClick={(e) => e.stopPropagation()}
             style={{
               position: "fixed",
               top: "50%",
@@ -1050,38 +1012,31 @@ const Component = () => {
                     showWarningToast("Please enter a valid tag name.");
                     return;
                   }
-
                   const existingTag = availableTags.find(
                     (tag) =>
                       tag.tags.toLowerCase() === newTagName.trim().toLowerCase()
                   );
-
                   if (existingTag) {
                     showInfoToast(`The tag "${newTagName}" already exists.`);
                     setNewTagName("");
                     return;
                   }
-
                   const payload = { tags: newTagName };
-
                   try {
                     const response = await fetch(
                       `${config.apiBaseURL}/create_tag/`,
                       {
                         method: "POST",
-                        headers: {
-                          "Content-Type": "application/json",
-                        },
+                        headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(payload),
                       }
                     );
-
                     if (response.ok) {
                       showSuccessToast("Tag created successfully!");
                       const newTag = await response.json();
                       setAvailableTags([...availableTags, newTag]);
                       setNewTagName("");
-                      setShowPopup(false); // close popup on success
+                      setShowPopup(false);
                     } else {
                       showErrorToast("Failed to create tag.");
                     }
@@ -1097,6 +1052,7 @@ const Component = () => {
           </div>
         </div>
       )}
+
       <ToastContainerComponent />
     </div>
   );

@@ -22,6 +22,7 @@ const Mrf = () => {
   const [statusFilter, setStatusFilter] = useState("");
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const statusDropdownRef = useRef(null);
+  const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
 
   useEffect(() => {
     fetchMRFs();
@@ -175,6 +176,35 @@ const Mrf = () => {
     setCurrentUserRole(role);
   }, []);
 
+  useEffect(() => {
+    const container = document.getElementById("mrf-table-wrapper");
+
+    const handleScroll = () => {
+      if (container.scrollTop > 300) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+
+    if (container) {
+      container.addEventListener("scroll", handleScroll);
+    }
+
+    return () => {
+      if (container) {
+        container.removeEventListener("scroll", handleScroll);
+      }
+    };
+  }, []);
+
+  const scrollToTop = () => {
+    const container = document.getElementById("mrf-table-wrapper");
+    if (container) {
+      container.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
   return (
     <div>
       <div
@@ -188,7 +218,10 @@ const Mrf = () => {
         <h2>Material Requests (MRF)</h2>
       </div>
 
-      <div className="search-wrapper-container" style={{marginBottom: '10px'}}>
+      <div
+        className="search-wrapper-container"
+        style={{ marginBottom: "10px" }}
+      >
         <div className="search-wrapper">
           <div className="search-bar-container">
             <input
@@ -240,7 +273,7 @@ const Mrf = () => {
           <img src={Add} alt="Create MRF" />
         </button>
       </div>
-      <div className="table-container">
+      <div id="mrf-table-wrapper" className="table-container">
         <table>
           <thead>
             <tr>
@@ -377,6 +410,26 @@ const Mrf = () => {
           </tbody>
         </table>
       </div>
+      {showScrollTop && (
+        <button
+          style={{
+            position: "fixed",
+            bottom: "20px",
+            right: "20px",
+            padding: "10px 15px",
+            fontSize: "18px",
+            backgroundColor: "#f57c00",
+            color: "white",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer",
+            zIndex: 1000,
+          }}
+          onClick={scrollToTop}
+        >
+          ↑
+        </button>
+      )}
     </div>
   );
 };

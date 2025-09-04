@@ -163,19 +163,6 @@ const Inventory = () => {
   }, [statusFilter]);
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 300) {
-        setShowScrollTop(true);
-      } else {
-        setShowScrollTop(false);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  useEffect(() => {
     filterInventory();
   }, [selectedTag, inventoryData, componentData, metaTags, selectedStatus]);
 
@@ -311,13 +298,6 @@ const Inventory = () => {
   useEffect(() => {
     fetchToolInventoryData();
   }, []);
-
-  const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth", // Smooth scroll effect
-    });
-  };
 
   const filterByDate = () => {
     if (fromDate && toDate && isAfter(fromDate, toDate)) {
@@ -858,6 +838,37 @@ const Inventory = () => {
   const handleCancelRemarks = () => {
     setEditingRemarks(null);
     setTempRemarks("");
+  };
+
+  // State for button visibility
+
+  useEffect(() => {
+    const container = document.getElementById("inventory-scroll-container");
+
+    const handleScroll = () => {
+      if (container.scrollTop > 200) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+
+    if (container) {
+      container.addEventListener("scroll", handleScroll);
+    }
+
+    return () => {
+      if (container) {
+        container.removeEventListener("scroll", handleScroll);
+      }
+    };
+  }, []);
+
+  const scrollToTop = () => {
+    const container = document.getElementById("inventory-scroll-container");
+    if (container) {
+      container.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   return (
