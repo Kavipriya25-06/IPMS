@@ -241,53 +241,50 @@ const POOrderList = ({ user }) => {
   const formatDate = (date) =>
     date ? new Date(date).toLocaleDateString("en-CA") : "";
 
-  const filteredPOOrders = poOrders
-    .filter((order) => {
-      const { status } = getAggregatedStatus(order.id);
+const filteredPOOrders = poOrders
+  .filter((order) => {
+    const q = (nameFilter || "").trim().toLowerCase();
+    const matchesQuery =
+      !q ||
+      (order?.cart_details?.vendor_name || "").toLowerCase().includes(q) ||
+      String(order?.id || "").toLowerCase().includes(q); // PO ID match
 
-      const q = (nameFilter || "").trim().toLowerCase();
-      const matchesQuery =
-        !q ||
-        (order?.cart_details?.vendor_name || "").toLowerCase().includes(q) ||
-        String(order?.id || "")
-          .toLowerCase()
-          .includes(q); // ← PO ID match
+    const matchesStatus = statusFilter ? order.status === statusFilter : true;
 
-      const matchesStatus = statusFilter ? status === statusFilter : true;
+    const matchesDate =
+      fromDate && toDate
+        ? (() => {
+            const orderDate = new Date(order.date);
+            orderDate.setHours(0, 0, 0, 0);
+            return (
+              orderDate >= new Date(fromDate.setHours(0, 0, 0, 0)) &&
+              orderDate <= new Date(toDate.setHours(23, 59, 59, 999))
+            );
+          })()
+        : true;
 
-      const matchesDate =
-        fromDate && toDate
-          ? (() => {
-              const orderDate = new Date(order.date);
-              orderDate.setHours(0, 0, 0, 0);
-              return (
-                orderDate >= new Date(fromDate.setHours(0, 0, 0, 0)) &&
-                orderDate <= new Date(toDate.setHours(23, 59, 59, 999))
-              );
-            })()
-          : true;
+    return matchesQuery && matchesStatus && matchesDate;
+  })
+  .sort((a, b) => {
+    if (!sortField) return 0;
 
-      return matchesQuery && matchesStatus && matchesDate;
-    })
-    .sort((a, b) => {
-      if (!sortField) return 0;
+    let aValue, bValue;
+    if (sortField === "id") {
+      aValue = a.id;
+      bValue = b.id;
+    } else if (sortField === "total_cost") {
+      aValue = finalCost(a.id);
+      bValue = finalCost(b.id);
+    } else if (sortField === "date") {
+      aValue = new Date(a.date);
+      bValue = new Date(b.date);
+    }
 
-      let aValue, bValue;
-      if (sortField === "id") {
-        aValue = a.id;
-        bValue = b.id;
-      } else if (sortField === "total_cost") {
-        aValue = finalCost(a.id);
-        bValue = finalCost(b.id);
-      } else if (sortField === "date") {
-        aValue = new Date(a.date);
-        bValue = new Date(b.date);
-      }
+    if (aValue < bValue) return sortOrder === "asc" ? -1 : 1;
+    if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
+    return 0;
+  });
 
-      if (aValue < bValue) return sortOrder === "asc" ? -1 : 1;
-      if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
-      return 0;
-    });
 
   // Close Status Popup
   const handleClosePopup = () => {
@@ -424,7 +421,7 @@ const POOrderList = ({ user }) => {
                         "Ordered",
                         "Shipped",
                         "Received",
-                        "In Progress",
+                        "Cancelled",
                       ].map((status) => (
                         <div
                           key={status}

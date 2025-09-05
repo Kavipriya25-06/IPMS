@@ -641,7 +641,12 @@ const RequestComponent = () => {
 
                     <td>{item.category}</td>
                     <td>{item.component_type}</td>
-                    <td>{item.component_specification}</td>
+                    <td
+                      className="specification-cell"
+                      title={item.component_specification}
+                    >
+                      {item.component_specification}
+                    </td>
                     <td>
                       {item.product_link ? (
                         <a
@@ -658,10 +663,24 @@ const RequestComponent = () => {
                     <td>{item.uom}</td>
                     <td>{format(parseISO(item.request_date), "dd-MM-yyyy")}</td>
                     <td>
-                      {item.status === "Added" || item.status === "Rejected"
-                        ? item.component_id
-                        : ""}
+                      {(item.status === "Added" ||
+                        item.status === "Rejected") &&
+                      item.component_id ? (
+                        user.role === "Procurement" ? (
+                          <Link
+                            to={`/components/${item.component_id}`}
+                            className="link-to-component"
+                          >
+                            {item.component_id}
+                          </Link>
+                        ) : (
+                          item.component_id
+                        )
+                      ) : (
+                        ""
+                      )}
                     </td>
+
                     {(user.role === "Inventory" ||
                       user.role === "Procurement" ||
                       user.role === "User") && (
@@ -697,25 +716,24 @@ const RequestComponent = () => {
                           </>
                         )}
                         {user.role === "Procurement" && (
-                          <>
-                            {item.vendor_added ? (
-                              <button className="btn-added" disabled>
-                                Added to Vendor
-                              </button>
-                            ) : (
-                              <button
-                                className="btn-reject"
-                                onClick={() =>
-                                  navigate("/vendor/", {
-                                    state: { component: item },
-                                  })
-                                }
-                              >
-                                Add to Vendor
-                              </button>
-                            )}
-                          </>
+                          <button
+                            className={
+                              item.vendor_added ? "btn-added" : "btn-reject"
+                            }
+                            disabled={item.vendor_added}
+                            onClick={() =>
+                              !item.vendor_added &&
+                              navigate("/vendor/", {
+                                state: { component: item },
+                              })
+                            }
+                          >
+                            {item.vendor_added
+                              ? "Added to Vendor"
+                              : "Add to Vendor"}
+                          </button>
                         )}
+
                         {user.role === "User" && <>Pending</>}
                       </td>
                     )}

@@ -11,10 +11,12 @@ import {
   showWarningToast,
   ToastContainerComponent,
 } from "./Toastify.jsx";
+import { useAuth } from "../AuthContext.jsx";
 
 const Component = () => {
   const [components, setComponents] = useState([]);
   const [tags, setTags] = useState([]);
+  const { user, logout } = useAuth();
   const [availableTags, setAvailableTags] = useState([]);
   const [selectedComponent, setSelectedComponent] = useState(null);
   const [newTag, setNewTag] = useState("");
@@ -717,7 +719,7 @@ const Component = () => {
                     : ""}
                 </th>
 
-                <th>Tally Reference</th>
+                {user?.role !== "User" && <th>Tally Reference</th>}
                 <th>UOM</th>
 
                 <th
@@ -807,6 +809,7 @@ const Component = () => {
                       >
                         {component.component_specification}
                       </td>
+                      {user?.role !== "User" && (
                       <td>
                         {editTallyRefId === component.component_id ? (
                           <div className="tally-edit-container">
@@ -852,6 +855,7 @@ const Component = () => {
                           </span>
                         )}
                       </td>
+                  )}
                       <td>{component.unit_of_measurement}</td>
                       <td>
                         <div>

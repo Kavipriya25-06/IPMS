@@ -9,6 +9,8 @@ const MainDashboard = () => {
   const [requestComponentCount, setRequestComponentCount] = useState(0);
   const [inventoryCount, setInventoryCount] = useState(0);
   const [vendorCount, setVendorCount] = useState(0);
+  const [activeVendorCount, setActiveVendorCount] = useState(0);
+  const [inactiveVendorCount, setInactiveVendorCount] = useState(0);
   const [bomCounts, setBomCounts] = useState({ wbom: 0, fbom: 0 });
   const [projectCount, setProjectCount] = useState(0);
   const [pendingInwardCount, setPendingInwardCount] = useState(0);
@@ -26,40 +28,38 @@ const MainDashboard = () => {
       .then((data) => setComponentCount(data.length))
       .catch((err) => console.error("Component fetch error:", err));
 
-   // Request Components
-fetch(`${config.apiBaseURL}/request_component/`)
-  .then((res) => res.json())
-  .then((data) => {
-    const role = localStorage.getItem("userRole");
-    const loggedInEmail = localStorage.getItem("email")?.toLowerCase();
-    const username = loggedInEmail?.split("@")[0];
+    // Request Components
+    fetch(`${config.apiBaseURL}/request_component/`)
+      .then((res) => res.json())
+      .then((data) => {
+        const role = localStorage.getItem("userRole");
+        const loggedInEmail = localStorage.getItem("email")?.toLowerCase();
+        const username = loggedInEmail?.split("@")[0];
 
-    if (role === "Admin" || role === "Sub-Admin") {
-      // Admin sees all requests
-      setRequestComponentCount(data.length);
-    } else if (role === "Inventory") {
-      // Inventory → count only Pending requests
-      const pending = data.filter((req) => req.status === "Pending");
-      setRequestComponentCount(pending.length);
-    } else if (role === "Procurement") {
-      // Procurement → vendor_added = false
-      const vendorActions = data.filter(
-        (req) => req.status === "Added" && req.vendor_added === false
-      );
-      setRequestComponentCount(vendorActions.length);
-    } else {
-      // Normal User → only their requests
-      const userRequests = data.filter(
-        (req) =>
-          req.name?.toLowerCase() === username ||
-          req.name?.toLowerCase() === loggedInEmail
-      );
-      setRequestComponentCount(userRequests.length);
-    }
-  })
-  .catch((err) => console.error("Request component fetch error:", err));
-
-
+        if (role === "Admin" || role === "Sub-Admin") {
+          // Admin sees all requests
+          setRequestComponentCount(data.length);
+        } else if (role === "Inventory") {
+          // Inventory → count only Pending requests
+          const pending = data.filter((req) => req.status === "Pending");
+          setRequestComponentCount(pending.length);
+        } else if (role === "Procurement") {
+          // Procurement → vendor_added = false
+          const vendorActions = data.filter(
+            (req) => req.status === "Added" && req.vendor_added === false
+          );
+          setRequestComponentCount(vendorActions.length);
+        } else {
+          // Normal User → only their requests
+          const userRequests = data.filter(
+            (req) =>
+              req.name?.toLowerCase() === username ||
+              req.name?.toLowerCase() === loggedInEmail
+          );
+          setRequestComponentCount(userRequests.length);
+        }
+      })
+      .catch((err) => console.error("Request component fetch error:", err));
 
     // Inventory
     fetch(`${config.apiBaseURL}/inventory/`)
@@ -68,9 +68,18 @@ fetch(`${config.apiBaseURL}/request_component/`)
       .catch((err) => console.error("Inventory fetch error:", err));
 
     // Vendors
+    // Vendors
     fetch(`${config.apiBaseURL}/vendor_list/`)
       .then((res) => res.json())
-      .then((data) => setVendorCount(data.length))
+      .then((data) => {
+        setVendorCount(data.length);
+
+        const active = data.filter((v) => v.active === true).length;
+        const inactive = data.filter((v) => v.active === false).length;
+
+        setActiveVendorCount(active);
+        setInactiveVendorCount(inactive);
+      })
       .catch((err) => console.error("Vendor fetch error:", err));
 
     // BOM
@@ -108,11 +117,30 @@ fetch(`${config.apiBaseURL}/request_component/`)
       })
       .catch((err) => console.error("Outward fetch error:", err));
 
-    //Requests
-    fetch(`${config.apiBaseURL}/request_list/`)
-      .then((res) => res.json())
-      .then((data) => setRequestListCount(data.length || 0))
-      .catch((err) => console.error("request_list error:", err));
+//Requests
+fetch(`${config.apiBaseURL}/request_list/`)
+  .then((res) => res.json())
+  .then((data) => {
+    const role = localStorage.getItem("userRole");
+    const loggedInEmail = localStorage.getItem("email")?.toLowerCase();
+    const username = loggedInEmail?.split("@")[0];
+
+    if (role === "User") {
+      // User → only their requests (match requester_name)
+      const userRequests = data.filter(
+        (req) =>
+          req.requester_name?.toLowerCase() === username ||
+          req.requester_name?.toLowerCase() === loggedInEmail
+      );
+      setRequestListCount(userRequests.length);
+    } else {
+      // Other roles → all requests
+      setRequestListCount(data.length || 0);
+    }
+  })
+  .catch((err) => console.error("request_list error:", err));
+
+
 
     //PO Master
     fetch(`${config.apiBaseURL}/po_master/`)
@@ -126,9 +154,8 @@ fetch(`${config.apiBaseURL}/request_component/`)
   };
 
   const handleActionComplete = () => {
-  setRequestComponentCount((prev) => Math.max(prev - 1, 0));
-};
-
+    setRequestComponentCount((prev) => Math.max(prev - 1, 0));
+  };
 
   const tiles = [
     {
@@ -161,6 +188,8 @@ fetch(`${config.apiBaseURL}/request_component/`)
       roles: ["Admin", "Sub-Admin", "Procurement"],
       counts: {
         vendor: vendorCount,
+        activeVendor: activeVendorCount,
+        inactiveVendor: inactiveVendorCount,
       },
     },
     {
@@ -257,20 +286,23 @@ fetch(`${config.apiBaseURL}/request_component/`)
                 {tile.counts.requests !== undefined && (
                   <div className="count-column">
                     <div className="count-number">{tile.counts.requests}</div>
-                   <div className="count-label"  onClick={(e) => {
+                    <div
+                      className="count-label"
+                      onClick={(e) => {
                         e.stopPropagation(); // prevent parent tile click
                         handleRequestComponentClick();
                       }}
-                      style={{ textDecoration: "underline", cursor: "pointer" }}>
-  {currentUserRole === "Admin" || currentUserRole === "Sub-Admin"
-    ? "Total Requests"
-    : currentUserRole === "Inventory"
-    ? "Pending Actions"
-    : currentUserRole === "Procurement"
-    ? "To Be Added to Vendor"
-    : "My Requests"}
-</div>
-
+                      style={{ textDecoration: "underline", cursor: "pointer" }}
+                    >
+                      {currentUserRole === "Admin" ||
+                      currentUserRole === "Sub-Admin"
+                        ? "Total Requests"
+                        : currentUserRole === "Inventory"
+                        ? "Pending Actions"
+                        : currentUserRole === "Procurement"
+                        ? "To Be Added to Vendor"
+                        : "My Requests"}
+                    </div>
                   </div>
                 )}
 
@@ -281,10 +313,28 @@ fetch(`${config.apiBaseURL}/request_component/`)
                   </div>
                 )}
 
-                {tile.counts.vendor !== undefined && (
+                {/* {tile.counts.vendor !== undefined && (
+  <div className="count-column">
+    <div className="count-number">{tile.counts.vendor}</div>
+    <div className="count-label">Total Vendors</div>
+  </div>
+)} */}
+
+                {tile.counts.activeVendor !== undefined && (
                   <div className="count-column">
-                    <div className="count-number">{tile.counts.vendor}</div>
-                    <div className="count-label">Total Vendor Stock</div>
+                    <div className="count-number">
+                      {tile.counts.activeVendor}
+                    </div>
+                    <div className="count-label">Active Vendors</div>
+                  </div>
+                )}
+
+                {tile.counts.inactiveVendor !== undefined && (
+                  <div className="count-column">
+                    <div className="count-number">
+                      {tile.counts.inactiveVendor}
+                    </div>
+                    <div className="count-label">Inactive Vendors</div>
                   </div>
                 )}
 
@@ -325,12 +375,17 @@ fetch(`${config.apiBaseURL}/request_component/`)
                   </div>
                 )}
 
-                {tile.counts.request !== undefined && (
-                  <div className="count-column">
-                    <div className="count-number">{tile.counts.request}</div>
-                    <div className="count-label">Request List Count</div>
-                  </div>
-                )}
+              {tile.counts.request !== undefined && (
+  <div className="count-column">
+    <div className="count-number">{tile.counts.request}</div>
+    <div className="count-label">
+      {currentUserRole === "User"
+        ? "My Requests"
+        : "Total Requests"}
+    </div>
+  </div>
+)}
+
 
                 {tile.counts.pomaster !== undefined && (
                   <div className="count-column">

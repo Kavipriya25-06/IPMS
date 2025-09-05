@@ -3467,11 +3467,14 @@ main {
   font-weight: bold;
 }
 
-.highlights-container {
-  display: flex;
-  gap: 10px; /* adjust spacing between highlights */
-
-  flex-direction: column;
+.highlights-container,.specifications  {
+  position: relative;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  background: #f3f3f3;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  
 }
 
 .highlights {
@@ -3480,15 +3483,32 @@ main {
   gap: 10px; /* space between h3 and p */
 }
 
-.highlights:not(:last-child) {
-  margin-bottom: -30px; /* if you prefer using margin */
+.highlights h3,
+.highlights p {
+  margin: 0;
+  padding: 20px 0 0 0;
 }
 
-.description,
-.specifications {
-  background: #f3f3f3;
+.highlights input {
+  margin-top: 15px;
+  font-size: 14px;
+  color: #333;
+  width: 100%;
+  max-width: 300px;
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+
+
+
+.description{
+  background: #fcfcfc;
   padding: 15px;
-  border-radius: 8px;
+    border: 1px solid #ddd;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .description h3,
@@ -5569,4 +5589,51 @@ textarea.input1 {
 
 .clear-date-button:hover {
   opacity: 0.6;
+}
+
+.nav-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.nav-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.3s ease;
+}
+
+.nav-btn i {
+  font-size: 14px;
+}
+
+.nav-btn.prev {
+  background: none;
+  color: black;
+}
+
+.nav-btn.next {
+  background: none;
+  color: black;
+}
+
+.nav-btn.prev:hover:not(.disabled) {
+  background-color: #f1ba86;
+}
+
+.nav-btn.next:hover:not(.disabled) {
+  background-color: #f1ba86;
+}
+
+.nav-btn.disabled {
+  background-color: #e0e0e0;
+  color: #888;
+  cursor: not-allowed;
 }

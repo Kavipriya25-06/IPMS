@@ -38,7 +38,8 @@ const Requests = () => {
         if (
           loggedInRole === "Admin" ||
           loggedInRole === "Sub-Admin" ||
-          loggedInRole === "Inventory"
+          loggedInRole === "Inventory" ||
+          loggedInRole === "Procurement"
         ) {
           setRequests(sortedData); // See all requests
         } else {

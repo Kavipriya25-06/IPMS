@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react"; // add useContext
 import { useNavigate } from "react-router-dom";
 import config from "../Config"; // API Configuration
 import AddIcon from "../assets/Add.png";
@@ -13,7 +13,10 @@ import {
   showWarningToast,
   ToastContainerComponent,
 } from "./Toastify.jsx"; // Import Toastify utilities
+import { useAuth } from "../AuthContext.jsx";
+
 const ProjectList = () => {
+  const { user, logout } = useAuth();
   const [projects, setProjects] = useState([]);
   const [newProject, setNewProject] = useState({
     project_name: "",
@@ -149,24 +152,26 @@ const ProjectList = () => {
             </span>
           </div>
         </div>
-        <button
-          style={{
-            cursor: "pointer",
-            background: "transparent",
-            border: "none",
-            padding: "4px",
-            marginBottom: "-20px",
-          }}
-          className="plus-button"
-          title={showAddForm ? "Cancel" : "Add Project"}
-          onClick={() => setShowAddForm(!showAddForm)}
-        >
-          <img
-            src={showAddForm ? CancelIcon : AddIcon}
-            alt={showAddForm ? "Cancel" : "Add Project"}
-            style={{ width: "20px", height: "20px", marginBottom: "5px" }}
-          />
-        </button>
+        {(user?.role === "Admin" || user?.role === "Sub-Admin") && (
+          <button
+            style={{
+              cursor: "pointer",
+              background: "transparent",
+              border: "none",
+              padding: "4px",
+              marginBottom: "-20px",
+            }}
+            className="plus-button"
+            title={showAddForm ? "Cancel" : "Add Project"}
+            onClick={() => setShowAddForm(!showAddForm)}
+          >
+            <img
+              src={showAddForm ? CancelIcon : AddIcon}
+              alt={showAddForm ? "Cancel" : "Add Project"}
+              style={{ width: "20px", height: "20px", marginBottom: "5px" }}
+            />
+          </button>
+        )}
       </div>
 
       {showAddForm && (

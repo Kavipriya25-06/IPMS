@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import config from "../Config";
 import "../App.css";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { format, parseISO } from "date-fns";
 import { useAuth } from "../AuthContext";
 import Add from "../assets/Add.png";
@@ -142,7 +142,7 @@ const ComponentDetailsPage = () => {
         setLoading(true);
         setNoData(false);
 
-        // ✅ Vendors
+        // Vendors
         const res = await fetch(
           `${config.apiBaseURL}/vendor_master/?component_id=${componentId}`
         );
@@ -153,7 +153,7 @@ const ComponentDetailsPage = () => {
         );
         setVendorDetails(matching);
 
-        // ✅ Prices
+        // Prices
         const priceRes = await fetch(
           `${config.apiBaseURL}/price_tables/?component_id=${componentId}`
         );
@@ -171,7 +171,7 @@ const ComponentDetailsPage = () => {
         });
         setPriceDataMap(map);
 
-        // ✅ Images
+        //Images
         const imageRes = await fetch(
           `${config.apiBaseURL}/component_images/by-component/${componentId}/`
         );
@@ -187,23 +187,16 @@ const ComponentDetailsPage = () => {
         setImageList(images);
         setMainImage(images[0]);
 
-        // ✅ Request component (for category, spec, uom, etc.)
-        const compRes = await fetch(`${config.apiBaseURL}/request_component/`);
+        //Request component (for category, spec, uom, etc.)
+        const compRes = await fetch(
+          `${config.apiBaseURL}/component/${componentId}/`
+        );
         if (compRes.ok) {
           const compData = await compRes.json();
-          if (Array.isArray(compData)) {
-            const match = compData.find(
-              (item) => item.component_id === componentId
-            );
-            if (match) {
-              setComponentInfo(match); // this has "id", "category", "uom", etc.
-            } else {
-              console.warn("No request_component found for:", componentId);
-              setComponentInfo(null);
-            }
-          }
+          setComponentInfo(compData); // always the latest values from backend
         } else {
-          console.error("Failed to fetch request_component list");
+          console.error("Failed to fetch component info");
+          setComponentInfo(null);
         }
       } catch (err) {
         console.error("Error fetching component detail:", err);
@@ -276,16 +269,6 @@ const ComponentDetailsPage = () => {
     setPriceDataMap(map);
   };
 
-  if (loading)
-    return (
-      <div style={{ textAlign: "center", marginTop: "50px" }}>
-        <div className="spinner"></div>
-        Loading Component Details...
-      </div>
-    );
-
-  if (noData) return <p>No information available for this component</p>;
-
   // Inline-add handlers (vendors)
   const onChangeNewRow = (field, value) =>
     setNewRow((p) => ({ ...p, [field]: value }));
@@ -335,7 +318,7 @@ const ComponentDetailsPage = () => {
         vendor: newRow.vendor_id,
         component_id: componentId,
         product_description: componentInfo.product_description || "N/A",
-        unit_of_measurement: componentInfo.uom || "", //  use request_component.uom
+        unit_of_measurement: componentInfo.unit_of_measurement || "", //  use request_component.uom
         category: componentInfo.category || "", //  request_component.category
         component_type: componentInfo.component_type || "",
         component_specification: componentInfo.component_specification || "",
@@ -415,7 +398,7 @@ const ComponentDetailsPage = () => {
         return;
       }
 
-      // ✅ Update local state for UI
+      // Update local state for UI
       setVendorDetails((prev) =>
         prev.map((v) =>
           v.product_id === firstVendor.product_id
@@ -551,6 +534,122 @@ const ComponentDetailsPage = () => {
     : [];
   const showThumbnails =
     validThumbnails.length > 0 && !isPlaceholder(mainImage);
+
+  const navigate = useNavigate();
+  const [isEditing, setIsEditing] = useState(false);
+
+  // form state
+  const [formData, setFormData] = useState({
+    category: "",
+    component_type: "",
+    component_specification: "",
+    unit_of_measurement: "",
+  });
+
+  // sync formData when componentInfo changes
+  useEffect(() => {
+    if (componentInfo) {
+      setFormData({
+        category: componentInfo.category || "",
+        component_type: componentInfo.component_type || "",
+        component_specification: componentInfo.component_specification || "",
+        unit_of_measurement: componentInfo.unit_of_measurement || "",
+      });
+    }
+  }, [componentInfo]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSave = async () => {
+    try {
+      const res = await fetch(
+        `${config.apiBaseURL}/component/${componentId}/`,
+        {
+          method: "PUT", // or PATCH
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        }
+      );
+
+      if (res.ok) {
+        const updated = await res.json();
+
+        // ✅ keep both formData and componentInfo in sync
+        setFormData({
+          category: updated.category,
+          component_type: updated.component_type,
+          component_specification: updated.component_specification,
+          unit_of_measurement: updated.unit_of_measurement,
+        });
+        setComponentInfo(updated); // important
+        setIsEditing(false);
+        showSuccessToast("Component details updated successfully");
+      } else {
+        console.error("Failed to update component");
+        showErrorToast("Failed to update component details");
+      }
+    } catch (err) {
+      console.error("Error saving component:", err);
+      showErrorToast("Error updating component details");
+    }
+  };
+
+  const [componentList, setComponentList] = useState([]);
+
+  // Fetch all components (only once)
+  useEffect(() => {
+    const fetchAllComponents = async () => {
+      try {
+        const res = await fetch(`${config.apiBaseURL}/component/`);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            setComponentList(data);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch component list:", err);
+      }
+    };
+    fetchAllComponents();
+  }, []);
+
+  const currentIndex = componentList.findIndex(
+    (c) => String(c.component_id) === String(componentId)
+  );
+
+  const prevComponentId =
+    currentIndex > 0 ? componentList[currentIndex - 1].component_id : null;
+  const nextComponentId =
+    currentIndex >= 0 && currentIndex < componentList.length - 1
+      ? componentList[currentIndex + 1].component_id
+      : null;
+
+  const goPrev = () => {
+    if (prevComponentId) {
+      navigate(`/components/${prevComponentId}`);
+    }
+  };
+
+  const goNext = () => {
+    if (nextComponentId) {
+      navigate(`/components/${nextComponentId}`);
+    }
+  };
+
+  if (loading)
+    return (
+      <div style={{ textAlign: "center", marginTop: "50px" }}>
+        <div className="spinner"></div>
+        Loading Component Details...
+      </div>
+    );
+
+  if (noData) return <p>No information available for this component</p>;
+
   // ================================================
 
   return (
@@ -660,36 +759,140 @@ const ComponentDetailsPage = () => {
         </div>
 
         <div className="product-right">
-          <div className="product-header">
+          <div
+            className="product-header"
+            style={{ display: "flex", justifyContent: "space-between" }}
+          >
             <a href="/app1/components" className="back-link">
-              ← Back
+              ← Back to List
             </a>
+            <div className="nav-buttons">
+              <button
+                className={`nav-btn prev ${!prevComponentId ? "disabled" : ""}`}
+                onClick={goPrev}
+                disabled={!prevComponentId}
+              >
+                <i className="fas fa-arrow-left"></i> Previous
+              </button>
+
+              <button
+                className={`nav-btn next ${!nextComponentId ? "disabled" : ""}`}
+                onClick={goNext}
+                disabled={!nextComponentId}
+              >
+                Next <i className="fas fa-arrow-right"></i>
+              </button>
+            </div>
           </div>
 
           <h2 className="product-title">
-            {firstVendor?.product_description || "No Description"}
+            {formData?.component_specification || "No Description"}
           </h2>
 
           <div className="highlights-container">
+            {/* Category */}
             <div className="highlights">
               <h3>Category:</h3>
-              <p>{componentInfo?.category || firstVendor?.category|| "-"}</p>
+              {isEditing ? (
+                <input
+                  type="text"
+                  name="category"
+                  value={formData?.category}
+                  onChange={handleChange}
+                />
+              ) : (
+                <p>{formData?.category || "-"}</p>
+              )}
             </div>
+
+            {/* Component Type */}
             <div className="highlights">
               <h3>Component Type:</h3>
-              <p>{componentInfo?.component_type || firstVendor?.component_type||"-"}</p>
+              {isEditing ? (
+                <input
+                  type="text"
+                  name="component_type"
+                  value={formData?.component_type}
+                  onChange={handleChange}
+                />
+              ) : (
+                <p>{formData?.component_type || "-"}</p>
+              )}
             </div>
+
+            {/* Specification */}
             <div className="highlights">
               <h3>Specification:</h3>
-              <p>{componentInfo?.component_specification || firstVendor?.component_specification|| "-"}</p>
+              {isEditing ? (
+                <input
+                  type="text"
+                  name="component_specification"
+                  value={formData?.component_specification}
+                  onChange={handleChange}
+                />
+              ) : (
+                <p>{formData?.component_specification || "-"}</p>
+              )}
             </div>
+
+            {/* UOM */}
             <div className="highlights">
               <h3>UOM:</h3>
-              <p>{firstVendor?.unit_of_measurement|| "-"}</p>
+              {isEditing ? (
+                <input
+                  type="text"
+                  name="unit_of_measurement"
+                  value={formData?.unit_of_measurement}
+                  onChange={handleChange}
+                />
+              ) : (
+                <p>{formData?.unit_of_measurement || "-"}</p>
+              )}
             </div>
+
+            {/* Floating Edit / Action Buttons */}
+           {canEditPlus && (
+  !isEditing ? (
+    <FaEdit
+      onClick={() => setIsEditing(true)}
+      style={{
+        position: "absolute",
+        top: "10px",
+        right: "10px",
+        cursor: "pointer",
+        fontSize: "18px",
+        color: "#555",
+      }}
+      title="Edit Highlights"
+    />
+  ) : (
+    <div
+      className="action-buttons"
+      style={{
+        position: "absolute",
+        bottom: "10px",
+        right: "10px",
+        display: "flex",
+        gap: "10px",
+      }}
+    >
+      <button onClick={handleSave} className="edit-btn">
+        Save
+      </button>
+      <button
+        onClick={() => setIsEditing(false)}
+        className="delete-button"
+        style={{ padding: "6px 10px" }}
+      >
+        Cancel
+      </button>
+    </div>
+  )
+)}
+
           </div>
 
-          <div className="description">
+          <div className="description" style={{ position: "relative"  }}>
             <h3>Description</h3>
             {isEditingDescription ? (
               <div
@@ -723,14 +926,10 @@ const ComponentDetailsPage = () => {
                 </div>
               </div>
             ) : (
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <p>{firstVendor?.product_description || "N/A"}</p>
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <p style={{ marginRight: "30px" }}>
+                  {firstVendor?.product_description || "N/A"}
+                </p>
 
                 {canEditPlus && (
                   <FaEdit
@@ -741,6 +940,9 @@ const ComponentDetailsPage = () => {
                       setIsEditingDescription(true);
                     }}
                     style={{
+                      position: "absolute",
+                      top: "10px",
+                      right: "10px",
                       cursor: "pointer",
                       fontSize: "18px",
                       color: "#555",
@@ -757,7 +959,9 @@ const ComponentDetailsPage = () => {
             <ul>
               <li>
                 <strong>Component ID:</strong>{" "}
-                {componentInfo?.component_id || firstVendor?.component_id|| "-"}
+                {componentInfo?.component_id ||
+                  firstVendor?.component_id ||
+                  "-"}
               </li>
               <li>
                 <strong>Status:</strong>{" "}

@@ -21,10 +21,12 @@ import {
 import { format } from "date-fns";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { useAuth } from "../AuthContext";
 
-const POOrderMaster = ({ user }) => {
+const POOrderMaster = () => {
   const { poId } = useParams(); // Extract PO ID from the route
   const [poDetails, setPODetails] = useState([]);
+  const { user } = useAuth();
   const [poData, setPOData] = useState(null); // State for storing PO data
   const [orderStatus, setOrderStatus] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1280,7 +1282,6 @@ const POOrderMaster = ({ user }) => {
     let payload = {};
 
     // SHIPMENT case
-    // SHIPMENT case
     const hasShippedDate = field === "shipping_date" || item.shipping_date;
     const hasShippedQty =
       field === "shipping_qty" || item.shipping_qty || item.shipped_quantity;
@@ -1306,12 +1307,14 @@ const POOrderMaster = ({ user }) => {
       payload = {
         shipped_quantity: shippedQty,
         shipped_date: shippedDate,
-        // pending from Ordered–Shipped
         pending_quantity: Math.max(item.quantity - shippedQty, 0),
       };
+
+      if (shippedQty > 0) {
+        payload.status = "Shipped";
+      }
     }
 
-    // RECEIVED case (if applicable)
     // RECEIVED case
     const hasReceivedDate = field === "received_date" || item.received_date;
     const hasReceivedQty =
@@ -1343,14 +1346,17 @@ const POOrderMaster = ({ user }) => {
         ...payload,
         received_quantity: receivedQty,
         received_date: receivedDate,
-        // pending from BOTH gaps: Ordered–Received
         pending_quantity: Math.max(item.quantity - receivedQty, 0),
       };
+
+      if (receivedQty > 0) {
+        payload.status = "Received";
+      }
     }
 
-    // Save if there’s something valid to send
     if (Object.keys(payload).length > 0) {
       try {
+        // Update delivery record
         const response = await fetch(
           `${config.apiBaseURL}/po_delivery/${item.id}/`,
           {
@@ -1366,6 +1372,18 @@ const POOrderMaster = ({ user }) => {
           newItems[index] = updatedData;
           setOrderedItems(newItems);
           showSuccessToast("Delivery data saved.");
+
+          // Update PO Master status using po_master.id
+          if (payload.status && item.po_master?.id) {
+            await fetch(
+              `${config.apiBaseURL}/po_master/${item.po_master.id}/`,
+              {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: payload.status }),
+              }
+            );
+          }
         } else {
           showErrorToast("Failed to save delivery data.");
         }
@@ -1940,7 +1958,7 @@ const POOrderMaster = ({ user }) => {
                   <th>Unit Price</th>
                   <th>GST</th>
                   <th>Total Cost</th>
-                  {(isAdmin || isProcurement || isSubAdmin) &&
+                  {(isAdmin || isSubAdmin) &&
                     poData?.status !== "Approved" &&
                     poData?.status !== "Ordered" && <th>Actions</th>}
                 </tr>
@@ -2069,7 +2087,62 @@ const POOrderMaster = ({ user }) => {
           </div>
         </>
       )}
-      <div style={{ marginTop: "30px" }}>
+      <div className="procurement-status">
+        {isAdmin || isSubAdmin ? (
+          // Admin/SubAdmin sees buttons
+          poData &&
+          poData.status !== "Approved" &&
+          poData.status !== "Rejected" &&
+          poData.status !== "Ordered" &&
+          poData.status !== "Cancelled" && (
+            <div className="po-actions">
+              <button
+                onClick={() => updatePOMasterStatuses(poId, "Approved")}
+                className="approve-button"
+              >
+                Approve
+              </button>
+              <button
+                onClick={() => updatePOMasterStatuses(poId, "Rejected")}
+                className="reject-button"
+              >
+                Reject
+              </button>
+            </div>
+          )
+        ) : (
+          <div
+            style={{
+              textAlign: "right",
+              fontWeight: "bold",
+              fontSize: "18px",
+              padding: "5px 10px",
+              color: "#4b4a4aff",
+              cursor: "not-allowed",
+              marginTop: "10px",
+            }}
+          >
+            Status:{" "}
+            <span
+              style={{
+                color:
+                  poData?.status === "Approved"
+                    ? "green"
+                    : poData?.status === "Rejected"
+                    ? "red"
+                    : "#f3926eff",
+              }}
+            >
+              {poData?.status === "Approved"
+                ? "Approved"
+                : poData?.status === "Rejected"
+                ? "Manager has Rejected this PO Order"
+                : "Not Approved"}
+            </span>
+          </div>
+        )}
+      </div>
+      <div style={{ marginTop: "20px" }}>
         {/* Approved → Show 3 main buttons */}
         <div className="po-actions">
           {poData?.status === "Approved" && (
@@ -2111,27 +2184,6 @@ const POOrderMaster = ({ user }) => {
             <span className="rejected-label">Order Has Rejected...</span>
           )}
         </div>
-
-        {/* Pending → Show Approve/Reject */}
-        {poData?.status !== "Approved" &&
-          poData?.status !== "Rejected" &&
-          poData?.status !== "Ordered" &&
-          poData?.status !== "Cancelled" && (
-            <div className="po-actions">
-              <button
-                onClick={() => updatePOMasterStatuses(poId, "Approved")}
-                className="approve-button"
-              >
-                Approve
-              </button>
-              <button
-                onClick={() => updatePOMasterStatuses(poId, "Rejected")}
-                className="reject-button"
-              >
-                Reject
-              </button>
-            </div>
-          )}
       </div>
       {showModal && (
         <div className="modal-overlay">

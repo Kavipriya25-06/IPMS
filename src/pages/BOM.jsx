@@ -13,8 +13,10 @@ import {
   ToastContainerComponent,
 } from "./Toastify.jsx";
 import { format, parseISO } from "date-fns";
+import { useAuth } from "../AuthContext.jsx";
 
 const BOM = () => {
+  const { user, logout } = useAuth();
   const [boms, setBoms] = useState([]); // List of all BOMs
   const [bomQuantities, setBomQuantities] = useState({});
   const navigate = useNavigate(); // Initialize useNavigate
@@ -267,23 +269,25 @@ const BOM = () => {
         }}
       >
         <h2>BOM List</h2>
-        <button
-          style={{
-            cursor: "pointer",
-            marginLeft: "auto",
-            marginRight: 20,
-            background: "transparent",
-            border: "none",
-          }}
-          title="Add BOM"
-          onClick={() => setShowForm(!showForm)}
-        >
-          <img
-            src={AddIcon}
-            alt=""
-            style={{ width: "20px", height: "20px", marginBottom: "5px" }}
-          />
-        </button>
+        {(user?.role === "Admin" || user?.role === "Sub-Admin") && (
+          <button
+            style={{
+              cursor: "pointer",
+              marginLeft: "auto",
+              marginRight: 20,
+              background: "transparent",
+              border: "none",
+            }}
+            title="Add BOM"
+            onClick={() => setShowForm(!showForm)}
+          >
+            <img
+              src={AddIcon}
+              alt=""
+              style={{ width: "20px", height: "20px", marginBottom: "5px" }}
+            />
+          </button>
+        )}
       </div>
 
       {showForm && (
@@ -414,32 +418,57 @@ const BOM = () => {
                       ? format(parseISO(bom.last_modified_date), "dd-MM-yyyy")
                       : "-"}
                   </td>
-                  <td>
-                    <div className="action-buttons">
-                      <button
-                        onClick={() => handleToggleWbom(bom)}
-                        style={{
-                          backgroundColor: bom.wbom ? "#4CAF50" : "#f58720",
-                          color: "white",
-                          borderRadius: "5px",
-                          border: "none",
-                          cursor: "pointer",
-                        }}
-                        title={
-                          bom.wbom ? "Maeked as Final BOM" : "Mark as Final BOM"
-                        }
-                      >
-                        {bom.wbom ? "FBOM" : "WBOM"}
-                      </button>
-                      <button
-                        onClick={() => handleDelete(bom.bom_id)}
-                        className="delete-button"
-                        title="Delete"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
+                  {(user?.role === "Admin" ||
+                    user?.role === "Sub-Admin" ||
+                    user?.role === "Inventory") && (
+                    <td>
+                      <div className="action-buttons">
+                        <button
+                          onClick={() => handleToggleWbom(bom)}
+                          style={{
+                            backgroundColor: bom.wbom ? "#4CAF50" : "#f58720",
+                            color: "white",
+                            borderRadius: "5px",
+                            border: "none",
+                            cursor: "pointer",
+                          }}
+                          title={
+                            bom.wbom
+                              ? "Maeked as Final BOM"
+                              : "Mark as Final BOM"
+                          }
+                        >
+                          {bom.wbom ? "FBOM" : "WBOM"}
+                        </button>
+                        <button
+                          onClick={() => handleDelete(bom.bom_id)}
+                          className="delete-button"
+                          title="Delete"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  )}
+                  {(user?.role === "User" || user?.role === "Procurement") && (
+                    <td>
+                      <div className="action-buttons">
+                        <button
+                          // onClick={() => handleToggleWbom(bom)}
+                          style={{
+                            color: bom.wbom ? "#4CAF50" : "#f58720",
+                            borderRadius: "5px",
+                            border: "none",
+                            cursor: "not-allowed",
+                            padding: "5px 10px",
+                          }}
+                          title={"Not Allowed"}
+                        >
+                          {bom.wbom ? "FBOM" : "WBOM"}
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))
             )}

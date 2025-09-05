@@ -1072,7 +1072,7 @@ const RequestDetails = ({ user }) => {
                 Project name: {project.project_name} | BOM name: {bomName}
               </h4>
             </div>
-            {(isAdmin || isProcurement || isSubAdmin) && (
+            {(isAdmin || isSubAdmin) && (
               <button
                 onClick={() => handleApproval()}
                 disabled={details.every((detail) => detail.approve)}
