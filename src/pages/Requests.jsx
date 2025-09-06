@@ -22,6 +22,10 @@ const Requests = () => {
   const loggedInEmail = user?.email || "";
   const loggedInName = loggedInEmail.split("@")[0] || "";
   const loggedInRole = user?.role || "";
+  const [statusFilter, setStatusFilter] = useState("");
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
+  const statusDropdownRef = useRef(null);
+  const [dropdownCoords, setDropdownCoords] = useState({ top: 0, left: 0 });
 
   useEffect(() => {
     fetch(`${config.apiBaseURL}/request_list/`)
@@ -239,14 +243,20 @@ const Requests = () => {
 
   const filteredRequests = React.useMemo(() => {
     const q = (searchQuery || "").trim().toLowerCase();
-    if (!q) return sortedRequests;
-
     return sortedRequests.filter((request) => {
-      const name = (request.requester_name || "").toLowerCase();
-      const idStr = String(request.request_id || "").toLowerCase(); // supports REQ_00012
-      return name.includes(q) || idStr.includes(q);
+      const matchesSearch =
+        !q ||
+        (request.requester_name || "").toLowerCase().includes(q) ||
+        String(request.request_id || "")
+          .toLowerCase()
+          .includes(q);
+
+      const { status } = getAggregatedStatus(request.request_id);
+      const matchesStatus = !statusFilter || status === statusFilter;
+
+      return matchesSearch && matchesStatus;
     });
-  }, [sortedRequests, searchQuery]);
+  }, [sortedRequests, searchQuery, statusFilter, requestStatus]);
 
   return (
     <div>
@@ -329,7 +339,67 @@ const Requests = () => {
                     : " 🔽"
                   : ""}
               </th>
-              <th>Status</th>
+              <th className="status-dropdown-wrapper" ref={statusDropdownRef}>
+                <div
+                  className="status-dropdown"
+                  onClick={() => {
+                    if (statusDropdownRef.current) {
+                      const rect =
+                        statusDropdownRef.current.getBoundingClientRect();
+                      setDropdownCoords({
+                        top: rect.bottom + 2,
+                        left: rect.left,
+                      });
+                    }
+                    setStatusDropdownOpen(!statusDropdownOpen);
+                  }}
+                >
+                  {statusFilter || "Status"}
+                  <span className="status-dropdown-icon">▼</span>
+                </div>
+
+                {statusDropdownOpen && (
+                  <div
+                    className="status-dropdown-options"
+                    style={{
+                      position: "fixed",
+                      top: dropdownCoords.top,
+                      left: dropdownCoords.left,
+                      zIndex: 9999,
+                      width: "150px",
+                    }}
+                  >
+                    <div
+                      className="status-dropdown-option"
+                      onClick={() => {
+                        setStatusFilter("");
+                        setStatusDropdownOpen(false);
+                      }}
+                    >
+                      All
+                    </div>
+                    {[
+                      "Pending",
+                      "Ordered",
+                      "Shipped",
+                      "Received",
+                      "Cancelled",
+                    ].map((status) => (
+                      <div
+                        key={status}
+                        className="status-dropdown-option"
+                        onClick={() => {
+                          setStatusFilter(status);
+                          setStatusDropdownOpen(false);
+                        }}
+                      >
+                        {status}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </th>
+
               <th>Last Modified By</th>
             </tr>
           </thead>

@@ -32,6 +32,8 @@ const Inwardlist = () => {
   const [invoiceDateInput, setInvoiceDateInput] = useState("");
   const [filterDate, setFilterDate] = useState(null);
   const [showDateFilter, setShowDateFilter] = useState(false);
+  const [fromDate, setFromDate] = useState(null);
+  const [toDate, setToDate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [nameFilter, setNameFilter] = useState("");
 
@@ -169,11 +171,12 @@ const Inwardlist = () => {
         borderRadius: "4px",
         cursor: "pointer",
         width: "100%",
-        maxWidth: "120px", // prevent overflow
+        maxWidth: "120px", // keeps inside cell
         overflow: "hidden",
         whiteSpace: "nowrap",
         textOverflow: "ellipsis",
         backgroundColor: "#fff",
+        boxSizing: "border-box", // prevent overflow from padding
       }}
     >
       <span
@@ -182,11 +185,14 @@ const Inwardlist = () => {
           overflow: "hidden",
           textOverflow: "ellipsis",
           fontSize: "12px",
+          whiteSpace: "nowrap",
         }}
       >
         {value || "dd-mm-yyyy"}
       </span>
-      <FaCalendarAlt style={{ color: "#333", marginLeft: "6px" }} />
+      <FaCalendarAlt
+        style={{ color: "#333", marginLeft: "6px", flexShrink: 0 }}
+      />
     </div>
   ));
 
@@ -204,47 +210,41 @@ const Inwardlist = () => {
       return;
     }
 
-    try {
-      const res = await fetch(`${config.apiBaseURL}/inward/`);
-      const inwardList = await res.json();
+    // 🔹 Optimistically update state immediately
+    const updatedData = inwardData.map((item) => {
+      if (item.po_master?.PO_id === poId) {
+        return {
+          ...item,
+          invoice_number: invoiceNumber,
+          invoice_date: invoiceDate,
+        };
+      }
+      return item;
+    });
+    setInwardData(updatedData);
+    setFilteredData(updatedData);
 
-      const matchingInwards = inwardList.filter(
+    try {
+      // 🔹 Get only matching inward IDs from existing state
+      const matchingInwards = inwardData.filter(
         (item) => item.po_master?.PO_id === poId
       );
 
-      const updatePromises = matchingInwards.map((item) =>
-        fetch(`${config.apiBaseURL}/inward/${item.inward_id}/`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            invoice_number: invoiceNumber,
-            invoice_date: invoiceDate,
-          }),
-        })
+      // 🔹 Send PATCH requests in parallel, but don’t block UI
+      await Promise.allSettled(
+        matchingInwards.map((item) =>
+          fetch(`${config.apiBaseURL}/inward/${item.inward_id}/`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              invoice_number: invoiceNumber,
+              invoice_date: invoiceDate,
+            }),
+          })
+        )
       );
 
-      const responses = await Promise.all(updatePromises);
-      const failed = responses.filter((r) => !r.ok);
-      if (failed.length > 0) {
-        throw new Error(`${failed.length} updates failed`);
-      }
-
-      // Update state locally
-      const updatedData = inwardData.map((item) => {
-        if (item.po_master?.PO_id === poId) {
-          return {
-            ...item,
-            invoice_number: invoiceNumber,
-            invoice_date: invoiceDate,
-          };
-        }
-        return item;
-      });
-
-      setInwardData(updatedData);
-      setFilteredData(updatedData);
-
-      showSuccessToast("Invoice details updated for selected inward items.");
+      showSuccessToast("Invoice details updated.");
     } catch (err) {
       console.error("Update error:", err);
       showErrorToast("Failed to update invoice details");
@@ -281,6 +281,7 @@ const Inwardlist = () => {
     const formattedData = filteredData.map((item, index) => {
       const price = item.price || 0;
       const quantity = item.quantity || 0;
+      const totalQuantity = item.totalQuantity || 0;
       const gst = item.gst || 0;
 
       return {
@@ -296,10 +297,11 @@ const Inwardlist = () => {
         "Invoice No": item.invoice_number || "-",
         "Invoice Date": formatDate(item.invoice_date),
         Quantity: quantity,
+        TotalQuantity: totalQuantity,
         "Unit Price": formatCurrency(price),
         GST: formatGST(gst),
         "Grand Total": formatCurrency(
-          calculateGrandTotal(price, quantity, gst)
+          calculateGrandTotal(price, totalQuantity, gst)
         ),
       };
     });
@@ -331,13 +333,18 @@ const Inwardlist = () => {
     link.remove();
   };
 
-  const filteredByDate = filterDate
-    ? filteredData.filter(
-        (item) =>
-          item.date &&
-          new Date(item.date).toDateString() === filterDate.toDateString()
-      )
-    : filteredData;
+  const filteredByDate =
+    fromDate && toDate
+      ? filteredData.filter((item) => {
+          if (!item.date) return false;
+          const itemDate = new Date(item.date);
+          return itemDate >= fromDate && itemDate <= toDate;
+        })
+      : filteredData;
+
+  useEffect(() => {
+    if (fromDate && toDate) window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [fromDate, toDate]);
 
   useEffect(() => {
     if (filterDate) window.scrollTo({ top: 0, behavior: "smooth" });
@@ -384,20 +391,16 @@ const Inwardlist = () => {
       <div className="header">
         <h2>Inward</h2>
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-          {filterDate && (
-            <div
-              style={{
-                fontSize: "14px",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-              }}
-            >
-              🗓️ <span>{format(filterDate, "dd-MM-yyyy")}</span>
+          {(fromDate || toDate) && (
+            <div style={{ fontSize: "14px", margin: "10px 0", color: "#555" }}>
+              🗓️ {fromDate && `From: ${format(fromDate, "dd-MM-yyyy")}`}
+              {fromDate && toDate && " | "}
+              {toDate && `To: ${format(toDate, "dd-MM-yyyy")}`}
               <button
                 className="clear-date-button"
                 onClick={() => {
-                  setFilterDate(null);
+                  setFromDate(null);
+                  setToDate(null);
                 }}
                 title="Clear Date Filter"
               >
@@ -405,6 +408,7 @@ const Inwardlist = () => {
               </button>
             </div>
           )}
+
           <div style={{ position: "relative", display: "inline-block" }}>
             <button
               style={{
@@ -422,23 +426,6 @@ const Inwardlist = () => {
                 style={{ width: "25px", height: "30px" }}
               />
             </button>
-
-            <DatePicker
-              selected={filterDate}
-              onChange={(date) => {
-                setFilterDate(date);
-                setShowDateFilter(false); // Close calendar on select
-              }}
-              open={showDateFilter}
-              onClickOutside={() => setShowDateFilter(false)} // Close when clicked outside
-              dateFormat="dd-MM-yyyy"
-              showMonthDropdown
-              showYearDropdown
-              dropdownMode="select"
-              popperPlacement="bottom-start"
-              wrapperClassName="date-filter-datepicker"
-              customInput={<></>} // prevent showing an input at all
-            />
           </div>
 
           <button
@@ -494,7 +481,7 @@ const Inwardlist = () => {
                   Loading Inward Data...
                 </td>
               </tr>
-            ) : filteredByDate.length === 0 && filterDate ? (
+            ) : filteredByDate.length === 0 && fromDate && toDate ? (
               <tr>
                 <td
                   colSpan="13"
@@ -504,7 +491,9 @@ const Inwardlist = () => {
                     padding: "10px",
                   }}
                 >
-                  No data for selected date: {format(filterDate, "dd-MM-yyyy")}
+                  No data for selected date range:{" "}
+                  {format(fromDate, "dd-MM-yyyy")} to{" "}
+                  {format(toDate, "dd-MM-yyyy")}{" "}
                 </td>
               </tr>
             ) : displayedData.length === 0 && nameFilter ? (
@@ -579,7 +568,8 @@ const Inwardlist = () => {
                           width: "100%",
                           border: "1px solid #ccc",
                           borderRadius: "3px",
-                          padding: "3px",
+                          padding: "4px",
+                          marginLeft: "-5px",
                         }}
                       />
                     ) : (
@@ -613,16 +603,20 @@ const Inwardlist = () => {
                     )}
                   </td>
 
-                  <td style={{ minWidth: "120px" }}>
+                  <td
+                    style={{
+                      minWidth: "130px",
+                      maxWidth: "130px",
+                      overflow: "hidden",
+                    }}
+                  >
                     {editingIndex === index ? (
                       <DatePicker
                         selected={
                           invoiceDateInput ? new Date(invoiceDateInput) : null
                         }
                         onChange={(date) => {
-                          const formattedDate = date
-                            .toISOString()
-                            .split("T")[0]; // Format to yyyy-MM-dd
+                          const formattedDate = format(date, "yyyy-MM-dd"); // stays in local timezone
                           setInvoiceDateInput(formattedDate);
                           updateInvoiceForPO(
                             item.po_master.PO_id,
@@ -645,6 +639,10 @@ const Inwardlist = () => {
                           justifyContent: "space-between",
                           alignItems: "center",
                           width: "100%",
+                          maxWidth: "120px",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
                         }}
                       >
                         <span>
@@ -662,11 +660,12 @@ const Inwardlist = () => {
                                 : ""
                             );
                           }}
-                          style={{ cursor: "pointer" }}
+                          style={{ cursor: "pointer", flexShrink: 0 }}
                         />
                       </div>
                     )}
                   </td>
+
                   <td style={{ textAlign: "right" }}>{item.totalQuantity}</td>
                   <td style={{ textAlign: "right" }}>{item.quantity}</td>
                   <td style={{ textAlign: "right" }}>
@@ -710,6 +709,197 @@ const Inwardlist = () => {
           </tbody>
         </table>
       </div>
+      {showDateFilter && (
+        <div className="modal-overlay" onClick={() => setShowDateFilter(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <span
+              className="x-button"
+              style={{ fontWeight: "lighter" }}
+              onClick={() => setShowDateFilter(false)}
+            >
+              &times;
+            </span>
+
+            <h4 style={{ marginTop: "20px", marginBottom: "10px" }}>
+              Filter Date
+            </h4>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+              }}
+              className=""
+            >
+              <label style={{ whiteSpace: "nowrap" }}>From Date:</label>
+              <div className="date-input-container">
+                <DatePicker
+                  selected={fromDate}
+                  onChange={(date) => setFromDate(date)} // required to update the value
+                  dateFormat="dd-MM-yyyy"
+                  placeholderText="dd-mm-yyyy"
+                  className="input1"
+                  showMonthDropdown
+                  showYearDropdown
+                  dropdownMode="select"
+                  popperPlacement="bottom"
+                  portalId="datepicker-portal-target"
+                  style={{ marginTop: "20px" }}
+                />
+
+                <i
+                  className="fas fa-calendar-alt calendar-icon"
+                  style={{ marginTop: "-4px" }}
+                ></i>
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+              }}
+            >
+              <label style={{ whiteSpace: "nowrap" }}>To Date:</label>
+              <div className="date-input-container">
+                <DatePicker
+                  selected={toDate}
+                  onChange={(date) => setToDate(date)}
+                  dateFormat="dd-MM-yyyy"
+                  placeholderText="dd-mm-yyyy"
+                  className="input1"
+                  showMonthDropdown
+                  showYearDropdown
+                  dropdownMode="select"
+                  popperPlacement="bottom-start"
+                  portalId="datepicker-portal-target"
+                />
+
+                <i
+                  className="fas fa-calendar-alt calendar-icon"
+                  style={{ marginTop: "-4px" }}
+                ></i>
+              </div>
+            </div>
+
+            <div
+              className="modal-actions"
+              style={{
+                marginTop: "10px",
+                display: "flex",
+                gap: "10px",
+                justifyContent: "flex-end",
+              }}
+            >
+              <button
+                onClick={() => {
+                  setShowDateFilter(false); // just close the popup
+                }}
+              >
+                Apply
+              </button>
+
+              <button
+                onClick={() => {
+                  setFromDate(null);
+                  setToDate(null);
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+          <div id="datepicker-portal-target"></div>
+        </div>
+      )}
+      <style>{`
+              .disabled-row {
+                background-color: #e0e0e0;
+                color: #a0a0a0;
+                pointer-events: none;
+              }
+              .disabled-row button {
+                cursor: not-allowed;
+              }
+      
+              .react-datepicker__day,
+              .react-datepicker__day-name {
+                width: 2em;
+                line-height: 2em;
+              }
+      
+              .react-datepicker__current-month,
+              .react-datepicker__header {
+                font-size: 14px;
+              }
+      
+              .return-button {
+                background-color: red;
+                color: white;
+                border: none;
+                padding: 5px 10px;
+                cursor: pointer;
+                border-radius: 4px;
+                font-size: 12px;
+                margin-left: 10px;
+              }
+              .return-button:hover {
+                background-color: darkred;
+              }
+              .modal {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                transform: translate(-50%, -50%);
+              }
+              .modal-content {
+                background: white;
+                padding: 15px; 
+                width: 350px;
+                text-align: center;
+                position:absolute;
+              }
+              .modal-content input {
+                width: 100%;
+                padding: 8px;
+                margin-top: 5px;
+                margin-bottom: 10px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+              }
+              .modal-buttons {
+                display: flex;
+                justify-content: space-between;
+              }
+              .confirm-button {
+                background-color: green;
+                color: white;
+                padding: 8px 12px;
+                border: none;
+                cursor: pointer;
+                border-radius: 5px;
+              }
+              .confirm-button:hover {
+                background-color: darkgreen;
+              }
+              .cancel-button {
+                background-color: gray;
+                color: white;
+                padding: 8px 12px;
+                border: none;
+                cursor: pointer;
+                border-radius: 5px;
+              }
+              .cancel-button:hover {
+                background-color: darkgray;
+              }
+      
+      
+            `}</style>
 
       <ToastContainerComponent />
       {showScrollTop && (

@@ -20,6 +20,7 @@ import {
   showWarningToast,
   ToastContainerComponent,
 } from "./Toastify.jsx";
+import { FaCalendarAlt } from "react-icons/fa";
 
 const Outward = () => {
   const location = useLocation();
@@ -722,6 +723,78 @@ const Outward = () => {
     }
   };
 
+  const [editingField, setEditingField] = useState(null); // {id, field}
+  const [tempRemarks, setTempRemarks] = useState("");
+
+  const handleUpdate = async (id, updatedField) => {
+    try {
+      // find current row data
+      const rowData = tableData.find((row) => row.id === id);
+
+      // merge old data with new field
+      const updatedData = { ...rowData, ...updatedField };
+
+      await fetch(`${config.apiBaseURL}/outward/event/${id}/`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedData),
+      });
+
+      // refresh state so UI updates
+      setTableData((prev) =>
+        prev.map((row) => (row.id === id ? updatedData : row))
+      );
+
+      if (updatedField.return_date) {
+        showSuccessToast(
+          <span>
+            Return Date updated to <strong>{updatedField.return_date}</strong>
+          </span>
+        );
+      }
+      if (updatedField.remarks) {
+        showSuccessToast(<span>Remarks updated successfully</span>);
+      }
+    } catch (err) {
+      console.error("Update failed:", err);
+      showMessageToast(<span style={{ color: "red" }}>❌ Update failed</span>);
+    }
+  };
+
+  const CustomDateInput = React.forwardRef(({ value, onClick }, ref) => (
+    <div
+      onClick={onClick}
+      ref={ref}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        border: "1px solid #ccc",
+        padding: "4px 6px",
+        borderRadius: "4px",
+        cursor: "pointer",
+        width: "100%",
+        maxWidth: "120px",
+        overflow: "hidden",
+        whiteSpace: "nowrap",
+        textOverflow: "ellipsis",
+        backgroundColor: "#fff",
+      }}
+    >
+      <span
+        style={{
+          flex: 1,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          fontSize: "12px",
+        }}
+      >
+        {value || "dd-mm-yyyy"}
+      </span>
+      <FaCalendarAlt style={{ color: "#333", marginLeft: "6px" }} />
+    </div>
+  ));
+
   return (
     <div>
       <div
@@ -1029,13 +1102,108 @@ const Outward = () => {
                       </td>
                       <td>{row.num_components || "-"}</td>
                       <td>{row.type_of_outward || "-"}</td>
-                      <td>
-                        {row.return_date
-                          ? format(new Date(row.return_date), "dd-MM-yyyy")
-                          : "-"}
-                      </td>{" "}
+
+                      <td style={{ minWidth: "130px" }}>
+                        {editingField?.id === row.id &&
+                        editingField?.field === "return_date" ? (
+                          <DatePicker
+                            selected={
+                              row.return_date ? new Date(row.return_date) : null
+                            }
+                            onChange={(date) => {
+                              const formattedDate = format(date, "yyyy-MM-dd");
+                              handleUpdate(row.id, {
+                                return_date: formattedDate,
+                              });
+                              setEditingField(null);
+                            }}
+                            dateFormat="dd-MM-yyyy"
+                            showMonthDropdown
+                            showYearDropdown
+                            dropdownMode="select"
+                            customInput={<CustomDateInput />}
+                            wrapperClassName="date-picker-wrapper"
+                            disabled={row.type_of_outward === "Non-Return"} //disable picker
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                            }}
+                            onClick={() => {
+                              if (row.type_of_outward !== "Non-Return") {
+                                setEditingField({
+                                  id: row.id,
+                                  field: "return_date",
+                                });
+                              }
+                            }}
+                          >
+                            <span>
+                              {row.return_date
+                                ? format(
+                                    new Date(row.return_date),
+                                    "dd-MM-yyyy"
+                                  )
+                                : "-"}
+                            </span>
+                            <FaEdit
+                              style={{
+                                cursor:
+                                  row.type_of_outward === "Non-Return"
+                                    ? "not-allowed"
+                                    : "pointer",
+                                color:
+                                  row.type_of_outward === "Non-Return"
+                                    ? "#aaa"
+                                    : "black",
+                              }}
+                              title={
+                                row.type_of_outward === "Non-Return"
+                                  ? "Return date not required"
+                                  : "Edit return date"
+                              }
+                            />
+                          </div>
+                        )}
+                      </td>
+
                       <td className="specification-cell" title={row.remarks}>
-                        {row.remarks || "-"}
+                        {editingField?.id === row.id &&
+                        editingField?.field === "remarks" ? (
+                          <input
+                            type="text"
+                            value={tempRemarks}
+                            onChange={(e) => setTempRemarks(e.target.value)}
+                            onBlur={() => {
+                              handleUpdate(row.id, { remarks: tempRemarks });
+                              setEditingField(null);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                handleUpdate(row.id, { remarks: tempRemarks });
+                                setEditingField(null);
+                              }
+                            }}
+                            autoFocus
+                            style={{ width: "100%" }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                            }}
+                            onClick={() => {
+                              setTempRemarks(row.remarks || "");
+                              setEditingField({ id: row.id, field: "remarks" });
+                            }}
+                          >
+                            <span>{row.remarks || "-"}</span>
+                            <FaEdit style={{ cursor: "pointer" }} />
+                          </div>
+                        )}
                       </td>
                     </>
                   )}

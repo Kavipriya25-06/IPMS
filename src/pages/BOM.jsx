@@ -418,9 +418,7 @@ const BOM = () => {
                       ? format(parseISO(bom.last_modified_date), "dd-MM-yyyy")
                       : "-"}
                   </td>
-                  {(user?.role === "Admin" ||
-                    user?.role === "Sub-Admin" ||
-                    user?.role === "Inventory") && (
+                  {(user?.role === "Admin" || user?.role === "Sub-Admin") && (
                     <td>
                       <div className="action-buttons">
                         <button
@@ -450,7 +448,10 @@ const BOM = () => {
                       </div>
                     </td>
                   )}
-                  {(user?.role === "User" || user?.role === "Procurement") && (
+                  {(user?.role === "User" ||
+                    user?.role === "Procurement" ||
+                    user?.role === "Inventory" ||
+                    user?.role === "Finance") && (
                     <td>
                       <div className="action-buttons">
                         <button

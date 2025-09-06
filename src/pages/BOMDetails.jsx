@@ -14,9 +14,11 @@ import {
   ToastContainerComponent,
 } from "./Toastify.jsx"; // Import Toastify utilities
 import { FaArrowLeft } from "react-icons/fa";
+import { useAuth } from "../AuthContext.jsx";
 
 //
 const BOMDetails = () => {
+  const { user, logout } = useAuth();
   const { bomId } = useParams(); // Retrieve bomId from URL
   const navigate = useNavigate(); // Initialize useNavigate
   const [selectedBom, setSelectedBom] = useState(null);
@@ -525,30 +527,32 @@ const BOMDetails = () => {
             </p>
           )}
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
-            <button
-              onClick={() => {
-                if (!selectedBom.wbom) setShowAddComponentForm(true);
-              }}
-              style={{
-                background: "transparent",
-                border: "none",
-                cursor: selectedBom.wbom ? "not-allowed" : "pointer",
-                padding: "4px",
-                opacity: selectedBom.wbom ? 0.5 : 1,
-              }}
-              title={
-                selectedBom.wbom
-                  ? "Cannot add component in Final BOM"
-                  : "Add New Component"
-              }
-              disabled={selectedBom.wbom}
-            >
-              <img
-                src={AddIcon}
-                alt="Add"
-                style={{ width: "20px", height: "20px" }}
-              />
-            </button>
+            {user?.role !== "Finance" && (
+              <button
+                onClick={() => {
+                  if (!selectedBom.wbom) setShowAddComponentForm(true);
+                }}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  cursor: selectedBom.wbom ? "not-allowed" : "pointer",
+                  padding: "4px",
+                  opacity: selectedBom.wbom ? 0.5 : 1,
+                }}
+                title={
+                  selectedBom.wbom
+                    ? "Cannot add component in Final BOM"
+                    : "Add New Component"
+                }
+                disabled={selectedBom.wbom}
+              >
+                <img
+                  src={AddIcon}
+                  alt="Add"
+                  style={{ width: "20px", height: "20px" }}
+                />
+              </button>
+            )}
           </div>
           {!selectedBom.wbom && showAddComponentForm && (
             <div className="modal-overlay">
@@ -826,7 +830,10 @@ const BOMDetails = () => {
                       </td>
                       <td>{component.component.category}</td>
                       <td>{component.component.component_type}</td>
-                      <td className="specification-cell" title={component.component.component_specification}>
+                      <td
+                        className="specification-cell"
+                        title={component.component.component_specification}
+                      >
                         {component.component.component_specification}
                       </td>
                       <td>{component.component.unit_of_measurement}</td>

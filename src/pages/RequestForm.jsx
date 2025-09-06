@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import CustomMessagebox from "./CustomMessageBox.jsx";
 import config from "../Config"; // Import config for API endpoints
@@ -86,28 +86,32 @@ const RequestForm = () => {
     fetch(`${config.apiBaseURL}/bom_master/`)
       .then((response) => response.json())
       .then((data) => {
+        // Filter components for the selected BOM
         const bomComponents = data.filter((b) => b.bom === selectedBomId);
 
-        // If vendor_name is already provided, use it; otherwise, look up by vendor_id
+        // Add vendor info and mark as fixed
         const componentsWithVendors = bomComponents.map((component) => {
+          let vendorName = "N/A";
           if (component.vendor.vendor_name) {
-            return component; // Use the vendor_name from BOM data
+            vendorName = component.vendor.vendor_name;
           } else {
-            // If vendor_name isn't in the BOM data, use vendor_id lookup
             const vendorData = vendorList.find(
               (v) => v.vendor_id === component.vendor.vendor_id
             );
-            return {
-              ...component,
-              vendor: {
-                ...component.vendor,
-                vendor_name: vendorData ? vendorData.vendor_name : "N/A",
-              },
-            };
+            if (vendorData) vendorName = vendorData.vendor_name;
           }
+
+          return {
+            ...component,
+            vendor: {
+              ...component.vendor,
+              vendor_name: vendorName,
+            },
+            fixed: true, // mark as pre-existing/fixed
+          };
         });
+
         setSelectedComponents(componentsWithVendors);
-        // setSelectedComponents(bomComponents);
       })
       .catch((error) => console.error("Error fetching BOM components:", error));
   };
@@ -436,6 +440,53 @@ const RequestForm = () => {
     navigate(-1);
   };
 
+  const [componentOpenIndex, setComponentOpenIndex] = useState(null); // which row's dropdown is open
+  const [componentSearches, setComponentSearches] = useState({}); // per-row search
+  const [componentTypeCoords, setComponentTypeCoords] = useState({
+    top: 0,
+    left: 0,
+  });
+  const [dropdownHeight, setDropdownHeight] = useState(0);
+
+  const dropdownRef = useRef(null);
+  const componentDropdownRefs = useRef([]); // array of refs for each row
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        componentDropdownRefs.current.every(
+          (ref) => ref && !ref.contains(e.target)
+        )
+      ) {
+        setComponentOpenIndex(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const getDropdownTop = (index) => {
+    const rect = componentDropdownRefs.current[index]?.getBoundingClientRect();
+    if (!rect) return 0;
+
+    const viewportHeight = window.innerHeight;
+    const spaceBelow = viewportHeight - rect.bottom;
+    const spaceAbove = rect.top;
+
+    if (spaceBelow >= dropdownHeight || spaceBelow >= spaceAbove) {
+      return rect.bottom; // open downward
+    } else {
+      return rect.top - dropdownHeight; // open upward
+    }
+  };
+
+  useEffect(() => {
+    if (dropdownRef.current) {
+      const rect = dropdownRef.current.getBoundingClientRect();
+      setDropdownHeight(rect.height);
+    }
+  }, [componentOpenIndex]);
+
   return (
     <div>
       {/* Render Popup when showPopup is true */}
@@ -668,43 +719,146 @@ const RequestForm = () => {
               <tbody>
                 {selectedComponents.map((component, index) => (
                   <tr key={index}>
-                    <td className="specification-cells">
-                      {component.component ? (
-                        component.component.component_type
+                    <td
+                      className="specification-cells"
+                      ref={(el) => (componentDropdownRefs.current[index] = el)}
+                    >
+                      {component.fixed ? (
+                        // Pre-existing/fixed component → show as text only
+                        <span>{component.component.component_type}</span>
                       ) : (
-                        <select
-                          onChange={(e) =>
-                            handleComponentSelect(index, e.target.value)
-                          }
-                        >
-                          <option value="">Select Component</option>
-                          {availableComponents.map((comp) => (
-                            <option
-                              key={comp.component_id}
-                              value={comp.component_id}
+                        // Newly added component → show dropdown with search
+                        <div className="multi-select">
+                          <div
+                            className="multi-select-box"
+                            onClick={() =>
+                              setComponentOpenIndex(
+                                componentOpenIndex === index ? null : index
+                              )
+                            }
+                          >
+                            <span className="selected-names">
+                              {component.component
+                                ? component.component.component_type
+                                : "Select Component"}
+                            </span>
+                            <span className="dropdown-caret">▾</span>
+                          </div>
+
+                          {componentOpenIndex === index && (
+                            <div
+                              ref={dropdownRef}
+                              className="multi-select-dropdown"
+                              style={{
+                                position: "fixed",
+                                top: getDropdownTop(index),
+                                left:
+                                  componentTypeCoords.left ||
+                                  componentDropdownRefs.current[
+                                    index
+                                  ]?.getBoundingClientRect().left,
+                                minWidth:
+                                  componentDropdownRefs.current[index]
+                                    ?.offsetWidth,
+                                zIndex: 9999,
+                              }}
                             >
-                              {`${comp.component_type} - ${comp.component_specification}`}
-                            </option>
-                          ))}
-                        </select>
+                              <input
+                                type="text"
+                                placeholder="Search components..."
+                                value={componentSearches[index] || ""}
+                                onChange={(e) =>
+                                  setComponentSearches({
+                                    ...componentSearches,
+                                    [index]: e.target.value,
+                                  })
+                                }
+                                className="multi-select-input"
+                              />
+                              {(() => {
+                                const filteredComponents =
+                                  availableComponents.filter(
+                                    (comp) =>
+                                      comp.component_type
+                                        .toLowerCase()
+                                        .includes(
+                                          (
+                                            componentSearches[index] || ""
+                                          ).toLowerCase()
+                                        ) ||
+                                      comp.component_specification
+                                        .toLowerCase()
+                                        .includes(
+                                          (
+                                            componentSearches[index] || ""
+                                          ).toLowerCase()
+                                        ) ||
+                                      (comp.component_code || "")
+                                        .toLowerCase()
+                                        .includes(
+                                          (
+                                            componentSearches[index] || ""
+                                          ).toLowerCase()
+                                        ) ||
+                                      (comp.ref || "")
+                                        .toLowerCase()
+                                        .includes(
+                                          (
+                                            componentSearches[index] || ""
+                                          ).toLowerCase()
+                                        )
+                                  );
+
+                                if (filteredComponents.length === 0) {
+                                  return (
+                                    <div className="multi-select-no-results">
+                                      No results found for "
+                                      {componentSearches[index]}"
+                                    </div>
+                                  );
+                                }
+
+                                return filteredComponents.map((comp) => (
+                                  <div
+                                    key={comp.component_id}
+                                    className="multi-select-item"
+                                    onClick={() => {
+                                      handleComponentSelect(
+                                        index,
+                                        comp.component_id
+                                      );
+                                      setComponentOpenIndex(null);
+                                      setComponentSearches({
+                                        ...componentSearches,
+                                        [index]: "",
+                                      });
+                                    }}
+                                  >
+                                    {comp.component_type} -{" "}
+                                    {comp.component_specification}{" "}
+                                    {comp.component_code
+                                      ? `(${comp.component_code})`
+                                      : ""}{" "}
+                                    {comp.ref ? `[${comp.ref}]` : ""}
+                                  </div>
+                                ));
+                              })()}
+                            </div>
+                          )}
+                        </div>
                       )}
                     </td>
+
+                    {/* Other cells remain the same */}
                     <td
                       className="specification-cell"
                       title={
                         component.component?.component_specification || "-"
                       }
                     >
-                      {component.component
-                        ? component.component.component_specification
-                        : "-"}
+                      {component.component?.component_specification || "-"}
                     </td>
-                    <td>
-                      {component.component
-                        ? component.component.unit_of_measurement
-                        : "-"}
-                    </td>
-
+                    <td>{component.component?.unit_of_measurement || "-"}</td>
                     <td className="quantity-cell">
                       <input
                         type="number"
@@ -716,8 +870,7 @@ const RequestForm = () => {
                       />
                     </td>
                     <td className="specification-cells">
-                      {component.vendorOptions &&
-                      component.vendorOptions.length > 0 ? (
+                      {component.vendorOptions?.length > 0 ? (
                         <select
                           value={component.vendor?.vendor_id || ""}
                           onChange={(e) => {

@@ -563,18 +563,23 @@ const Component = () => {
       <div className="header">
         <h2>Component List</h2>
         <div className="button-group">
-          <button
-            className="create-tag-button"
-            onClick={() => setShowPopup(true)}
-          >
-            <img src={Tags} alt="icon" />
-          </button>
-          <button
-            className="add-comp"
-            onClick={() => navigate(`addcomponents/`)}
-          >
-            Add Component
-          </button>
+          {user?.role !== "User" ||
+            (user?.role !== "Finance" && (
+              <button
+                className="create-tag-button"
+                onClick={() => setShowPopup(true)}
+              >
+                <img src={Tags} alt="icon" />
+              </button>
+            ))}
+          {user?.role !== "Finance" && (
+            <button
+              className="add-comp"
+              onClick={() => navigate(`addcomponents/`)}
+            >
+              Add Component
+            </button>
+          )}
         </div>
       </div>
 
@@ -719,7 +724,8 @@ const Component = () => {
                     : ""}
                 </th>
 
-                {user?.role !== "User" && <th>Tally Reference</th>}
+                {user?.role !== "User" ||
+                  (user?.role !== "Finance" && <th>Tally Reference</th>)}
                 <th>UOM</th>
 
                 <th
@@ -809,53 +815,54 @@ const Component = () => {
                       >
                         {component.component_specification}
                       </td>
-                      {user?.role !== "User" && (
-                      <td>
-                        {editTallyRefId === component.component_id ? (
-                          <div className="tally-edit-container">
-                            <input
-                              type="text"
-                              value={editedTallyRef}
-                              onChange={(e) =>
-                                setEditedTallyRef(e.target.value)
-                              }
-                              className="tally-input"
-                            />
-                            <div className="tally-actions">
-                              <button
-                                className="tally-button save-button"
-                                onClick={() =>
-                                  handleSaveTallyReference(
-                                    component.component_id
-                                  )
-                                }
+                      {user?.role !== "User" ||
+                        (user?.role !== "Finance" && (
+                          <td>
+                            {editTallyRefId === component.component_id ? (
+                              <div className="tally-edit-container">
+                                <input
+                                  type="text"
+                                  value={editedTallyRef}
+                                  onChange={(e) =>
+                                    setEditedTallyRef(e.target.value)
+                                  }
+                                  className="tally-input"
+                                />
+                                <div className="tally-actions">
+                                  <button
+                                    className="tally-button save-button"
+                                    onClick={() =>
+                                      handleSaveTallyReference(
+                                        component.component_id
+                                      )
+                                    }
+                                  >
+                                    Save
+                                  </button>
+                                  <button
+                                    className="tally-button cancel-button"
+                                    onClick={() => setEditTallyRefId(null)}
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <span
+                                style={{ cursor: "pointer", color: "#007bff" }}
+                                title="Click to edit"
+                                onClick={() => {
+                                  setEditTallyRefId(component.component_id);
+                                  setEditedTallyRef(
+                                    component.tally_reference || ""
+                                  );
+                                }}
                               >
-                                Save
-                              </button>
-                              <button
-                                className="tally-button cancel-button"
-                                onClick={() => setEditTallyRefId(null)}
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <span
-                            style={{ cursor: "pointer", color: "#007bff" }}
-                            title="Click to edit"
-                            onClick={() => {
-                              setEditTallyRefId(component.component_id);
-                              setEditedTallyRef(
-                                component.tally_reference || ""
-                              );
-                            }}
-                          >
-                            {component.tally_reference || "Click to add"}
-                          </span>
-                        )}
-                      </td>
-                  )}
+                                {component.tally_reference || "Click to add"}
+                              </span>
+                            )}
+                          </td>
+                        ))}
                       <td>{component.unit_of_measurement}</td>
                       <td>
                         <div>

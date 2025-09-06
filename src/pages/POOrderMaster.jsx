@@ -2087,87 +2087,132 @@ const POOrderMaster = () => {
           </div>
         </>
       )}
+      {/* Status display for all roles */}
+
       <div className="procurement-status">
         {isAdmin || isSubAdmin ? (
-          // Admin/SubAdmin sees buttons
+          // Admin/SubAdmin View
           poData &&
           poData.status !== "Approved" &&
           poData.status !== "Rejected" &&
           poData.status !== "Ordered" &&
-          poData.status !== "Cancelled" && (
+          poData.status !== "Cancelled" ? (
             <div className="po-actions">
               <button
-                onClick={() => updatePOMasterStatuses(poId, "Approved")}
+                onClick={async () => {
+                  await updatePOMasterStatuses(poId, "Approved");
+                  setPOData((prev) => ({ ...prev, status: "Approved" }));
+                }}
                 className="approve-button"
               >
                 Approve
               </button>
               <button
-                onClick={() => updatePOMasterStatuses(poId, "Rejected")}
+                onClick={async () => {
+                  await updatePOMasterStatuses(poId, "Rejected");
+                  setPOData((prev) => ({ ...prev, status: "Rejected" }));
+                }}
                 className="reject-button"
               >
                 Reject
               </button>
             </div>
-          )
-        ) : (
-          <div
-            style={{
-              textAlign: "right",
-              fontWeight: "bold",
-              fontSize: "18px",
-              padding: "5px 10px",
-              color: "#4b4a4aff",
-              cursor: "not-allowed",
-              marginTop: "10px",
-            }}
-          >
-            Status:{" "}
-            <span
-              style={{
-                color:
-                  poData?.status === "Approved"
-                    ? "green"
-                    : poData?.status === "Rejected"
-                    ? "red"
-                    : "#f3926eff",
-              }}
-            >
-              {poData?.status === "Approved"
-                ? "Approved"
-                : poData?.status === "Rejected"
-                ? "Manager has Rejected this PO Order"
-                : "Not Approved"}
-            </span>
-          </div>
-        )}
-      </div>
-      <div style={{ marginTop: "20px" }}>
-        {/* Approved → Show 3 main buttons */}
-        <div className="po-actions">
-          {poData?.status === "Approved" && (
-            <>
-              {/* <button className="email-button" onClick={handleOpenModal}>
-                Send Email
-              </button> */}
-              <button
-                className="place-order-button"
-                onClick={() => {
-                  setPlaceOrderDateTime(new Date());
-                  setShowPlaceOrderPopup(true);
+          ) : (
+            poData?.status !== "Cancelled" ||
+            (poData?.status !== "Rejected" && ( // 👈 hide Cancelled
+              <div
+                style={{
+                  marginTop: "10px",
+                  textAlign: "right",
+                  fontWeight: "bold",
+                  fontSize: "18px",
+                  padding: "5px 10px",
                 }}
               >
-                Place Order
-              </button>
-            </>
+                Status:{" "}
+                <span
+                  style={{
+                    color:
+                      poData?.status === "Approved" ||
+                      poData?.status === "Ordered"
+                        ? "green"
+                        : poData?.status === "Rejected"
+                        ? "red"
+                        : "gray",
+                  }}
+                >
+                  {poData?.status}
+                </span>
+              </div>
+            ))
+          )
+        ) : (
+          // Procurement View
+          poData?.status !== "Rejected" &&
+          poData?.status !== "Cancelled" && (
+            <div
+              style={{
+                marginTop: "10px",
+                textAlign: "right",
+                fontWeight: "bold",
+                fontSize: "18px",
+                padding: "5px 10px",
+              }}
+            >
+              Status:{" "}
+              <span
+                style={{
+                  color:
+                    poData?.status === "Approved" ||
+                    poData?.status === "Ordered"
+                      ? "green"
+                      : "gray",
+                }}
+              >
+                {poData?.status === "Approved"
+                  ? "Approved"
+                  : poData?.status === "Ordered"
+                  ? "Approved" // Procurement sees "Approved" when Ordered
+                  : "Not Approved"}
+              </span>
+            </div>
+          )
+        )}
+      </div>
+
+      {/* Place Order / Cancel / Rejected Buttons */}
+      <div style={{ marginTop: "20px" }}>
+        <div className="po-actions">
+          {poData?.status === "Approved" && (
+            <button
+              className="place-order-button"
+              onClick={async () => {
+                setPlaceOrderDateTime(new Date());
+                setShowPlaceOrderPopup(true);
+
+                try {
+                  await updatePOMasterStatuses(poId, "Ordered");
+                  setPOData((prev) => ({ ...prev, status: "Ordered" }));
+                  fetchRequestDetails(); // Or fetchRequestMaster() depending on your naming
+                } catch (err) {
+                  console.error("Error updating status to Ordered:", err);
+                }
+              }}
+            >
+              Place Order
+            </button>
           )}
 
+          {/* Cancel button available for Approved or Ordered */}
           {(poData?.status === "Approved" || poData?.status === "Ordered") &&
             (pendingItems.length > 0 ||
               orderedItems.some((item) => !item.inward)) && (
               <button
                 className="cancel-button"
-                onClick={() => updatePOMasterStatuses(poId, "Cancelled")}
+                onClick={async () => {
+                  await updatePOMasterStatuses(poId, "Cancelled");
+                  setPOData((prev) => ({ ...prev, status: "Cancelled" }));
+                }}
               >
                 Cancel Order
               </button>
@@ -2181,10 +2226,13 @@ const POOrderMaster = () => {
           )}
 
           {poData?.status === "Rejected" && (
-            <span className="rejected-label">Order Has Rejected...</span>
+            <div className="order-cancelled-banner">
+              <strong>Order has been rejected:</strong> contact admin.
+            </div>
           )}
         </div>
       </div>
+
       {showModal && (
         <div className="modal-overlay">
           <div className="popup">
