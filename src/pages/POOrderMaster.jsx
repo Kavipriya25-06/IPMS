@@ -1696,6 +1696,20 @@ const POOrderMaster = () => {
     });
   };
 
+  const handlePOStatusUpdate = async (status) => {
+    try {
+      await updatePOMasterStatuses(poId, status);
+
+      // Refetch the latest PO data to prevent stale UI
+      const resp = await fetch(`${config.apiBaseURL}/po_master/${poId}/`);
+      const updatedPO = await resp.json();
+      setPOData(updatedPO);
+    } catch (err) {
+      console.error("Error updating PO status:", err);
+      showErrorToast("Failed to update PO status");
+    }
+  };
+
   return (
     <div>
       <h2>PO Details</h2>
@@ -2090,36 +2104,59 @@ const POOrderMaster = () => {
       {/* Status display for all roles */}
 
       <div className="procurement-status">
-        {isAdmin || isSubAdmin ? (
-          // Admin/SubAdmin View
-          poData &&
-          poData.status !== "Approved" &&
-          poData.status !== "Rejected" &&
-          poData.status !== "Ordered" &&
-          poData.status !== "Cancelled" ? (
-            <div className="po-actions">
-              <button
-                onClick={async () => {
-                  await updatePOMasterStatuses(poId, "Approved");
-                  setPOData((prev) => ({ ...prev, status: "Approved" }));
-                }}
-                className="approve-button"
-              >
-                Approve
-              </button>
-              <button
-                onClick={async () => {
-                  await updatePOMasterStatuses(poId, "Rejected");
-                  setPOData((prev) => ({ ...prev, status: "Rejected" }));
-                }}
-                className="reject-button"
-              >
-                Reject
-              </button>
-            </div>
-          ) : (
-            poData?.status !== "Cancelled" ||
-            (poData?.status !== "Rejected" && ( // 👈 hide Cancelled
+        {isAdmin || isSubAdmin
+          ? poData && (
+              <>
+                {poData.status === "Pending" ? (
+                  <div className="po-actions">
+                    <button
+                      className="approve-button"
+                      onClick={async () => {
+                        await handlePOStatusUpdate("Approved");
+                      }}
+                    >
+                      Approve
+                    </button>
+                    <button
+                      className="reject-button"
+                      onClick={async () => {
+                        await handlePOStatusUpdate("Rejected");
+                      }}
+                    >
+                      Reject
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      marginTop: "10px",
+                      textAlign: "right",
+                      fontWeight: "bold",
+                      fontSize: "18px",
+                      padding: "5px 10px",
+                    }}
+                  >
+                    Status:{" "}
+                    <span
+                      style={{
+                        color:
+                          poData.status === "Approved" ||
+                          poData.status === "Ordered"
+                            ? "green"
+                            : poData.status === "Rejected" ||
+                              poData.status === "Cancelled"
+                            ? "red"
+                            : "gray",
+                      }}
+                    >
+                      {poData.status}
+                    </span>
+                  </div>
+                )}
+              </>
+            )
+          : // Procurement view
+            poData && (
               <div
                 style={{
                   marginTop: "10px",
@@ -2133,51 +2170,25 @@ const POOrderMaster = () => {
                 <span
                   style={{
                     color:
-                      poData?.status === "Approved" ||
-                      poData?.status === "Ordered"
+                      poData.status === "Cancelled"
+                        ? "red"
+                        : poData.status === "Approved" ||
+                          poData.status === "Ordered"
                         ? "green"
-                        : poData?.status === "Rejected"
+                        : poData.status === "Rejected"
                         ? "red"
                         : "gray",
                   }}
                 >
-                  {poData?.status}
+                  {poData.status === "Cancelled"
+                    ? "Cancelled"
+                    : poData.status === "Rejected"
+                    ? "Rejected"
+                    : poData.status}{" "}
+                  {/* Just show PO master status */}
                 </span>
               </div>
-            ))
-          )
-        ) : (
-          // Procurement View
-          poData?.status !== "Rejected" &&
-          poData?.status !== "Cancelled" && (
-            <div
-              style={{
-                marginTop: "10px",
-                textAlign: "right",
-                fontWeight: "bold",
-                fontSize: "18px",
-                padding: "5px 10px",
-              }}
-            >
-              Status:{" "}
-              <span
-                style={{
-                  color:
-                    poData?.status === "Approved" ||
-                    poData?.status === "Ordered"
-                      ? "green"
-                      : "gray",
-                }}
-              >
-                {poData?.status === "Approved"
-                  ? "Approved"
-                  : poData?.status === "Ordered"
-                  ? "Approved" // Procurement sees "Approved" when Ordered
-                  : "Not Approved"}
-              </span>
-            </div>
-          )
-        )}
+            )}
       </div>
 
       {/* Place Order / Cancel / Rejected Buttons */}

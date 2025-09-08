@@ -4,6 +4,7 @@ import config from "../Config.js";
 import AddIcon from "../assets/Add.png";
 import CancelIcon from "../assets/cancel.png";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../AuthContext";
 
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -27,6 +28,8 @@ const Outward = () => {
   const [reportType, setReportType] = useState(
     location.state?.reportType || "Defects"
   );
+  const { user } = useAuth();
+
   const [tableData, setTableData] = useState([]);
   const [showEventForm, setShowEventForm] = useState(false);
   const [showServiceForm, setShowServiceForm] = useState(false);
@@ -868,17 +871,21 @@ const Outward = () => {
           justifyContent: "space-between",
         }}
       >
-        <h2>Outward List</h2>
-        <select
-          className="report-select"
-          value={reportType}
-          onChange={(e) => setReportType(e.target.value)}
-        >
-          <option value="Defects">Defects</option>
-          <option value="Sales">Sales</option>
-          <option value="Manufacture">Manufacture</option>
-          <option value="Event">Event</option>
-        </select>
+        <h2>
+          {user?.role === "Procurement" ? "Defects List" : "Outward List"}
+        </h2>
+        {user?.role !== "Procurement" && (
+          <select
+            className="report-select"
+            value={reportType}
+            onChange={(e) => setReportType(e.target.value)}
+          >
+            <option value="Defects">Defects</option>
+            <option value="Sales">Sales</option>
+            <option value="Manufacture">Manufacture</option>
+            <option value="Event">Event</option>
+          </select>
+        )}
 
         <div className="table-action-buttons">
           <button className="generate-report-btn" onClick={generateReport}>

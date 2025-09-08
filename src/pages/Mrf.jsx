@@ -7,6 +7,8 @@ import "react-datepicker/dist/react-datepicker.css";
 import { FaCalendarAlt } from "react-icons/fa";
 import { format } from "date-fns";
 import { showWarningToast } from "./Toastify";
+import { useAuth } from "../AuthContext"; // <-- use your auth hook
+
 
 const Mrf = () => {
   const navigate = useNavigate();
@@ -22,12 +24,9 @@ const Mrf = () => {
   const [statusFilter, setStatusFilter] = useState("");
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const statusDropdownRef = useRef(null);
-  const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
+  const [showScrollTop, setShowScrollTop] = useState(false); 
+  const { user } = useAuth();
 
-  useEffect(() => {
-    fetchMRFs();
-    fetchProjectDetails();
-  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -45,17 +44,36 @@ const Mrf = () => {
     };
   }, []);
 
+ useEffect(() => {
+    if (user?.role) {
+      setCurrentUserRole(user.role);
+    }
+  }, [user]);
+
   const fetchMRFs = async () => {
     try {
       const response = await fetch(`${config.apiBaseURL}/create_MRF/`);
       const data = await response.json();
-      setOriginalMRFData(data); // ← full dataset
 
-      setMrfData(data);
+      let filteredData = data;
+
+      // ✅ If role is User, show only their own MRFs
+      if (user?.role === "User") {
+        const requesterName = user.email.split("@")[0]; // name without domain
+        filteredData = data.filter((item) => item.name === requesterName);
+      }
+
+      setOriginalMRFData(filteredData);
+      setMrfData(filteredData);
     } catch (err) {
       console.error("Error fetching MRFs:", err);
     }
   };
+
+  useEffect(() => {
+    fetchMRFs();
+    fetchProjectDetails();
+  }, [user]);
 
   const fetchProjectDetails = async () => {
     try {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import config from "../Config"; // Import config for API endpoints
 import {
@@ -28,6 +28,30 @@ const MRFCreate = () => {
   const [selectedItems, setSelectedItems] = useState({}); // Stores selected rows
   const [newRows, setNewRows] = useState([]); // Store added rows
   const navigate = useNavigate();
+  const [requesterName, setRequesterName] = useState("");
+
+  const [mrfOpenIndex, setMrfOpenIndex] = useState(null);
+  const [mrfSearches, setMrfSearches] = useState({});
+  const [dropdownHeight, setDropdownHeight] = useState(0);
+
+  const mrfDropdownRefs = useRef([]); // array of refs for each row
+  const dropdownRef = useRef(null);
+  const [mrfTypeCoords, setMrfTypeCoords] = useState({
+    top: 0,
+    left: 0,
+  });
+
+  useEffect(() => {
+    if (user?.email) {
+      setRequesterName(user.email.split("@")[0]);
+    }
+  }, [user]);
+  useEffect(() => {
+    if (dropdownRef.current) {
+      const rect = dropdownRef.current.getBoundingClientRect();
+      setDropdownHeight(rect.height);
+    }
+  }, [mrfOpenIndex]);
 
   useEffect(() => {
     fetchRequestList();
@@ -195,7 +219,7 @@ const MRFCreate = () => {
       return;
     }
 
-    if (!name) {
+    if (!requesterName) {
       showWarningToast("Please enter a name.");
       return;
     }
@@ -206,7 +230,7 @@ const MRFCreate = () => {
 
     // Step 1: Create MRF Entry
     const mrfPayload = {
-      name: name,
+      name: requesterName, // use the state here
       date: formattedDate,
       Request_id_assign: selectedRequest ? selectedRequest : "",
     };
@@ -307,9 +331,18 @@ const MRFCreate = () => {
             <label className="custom-form-label">Name:</label>
             <input
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={requesterName}
+              readOnly
               className="custom-form-input"
+              style={{
+                width: "100%",
+                padding: "8px",
+                borderRadius: "4px",
+                border: "1px solid #ccc",
+                backgroundColor: "#f5f5f5", // light gray background
+                cursor: "not-allowed", // show "disabled" cursor
+                color: "#555", // softer text color
+              }}
             />
           </div>
           <div className="custom-form-field">
@@ -349,7 +382,7 @@ const MRFCreate = () => {
           <tbody>
             {requestDetails.map((row) => (
               <tr key={row.serial_number}>
-                <td >{row.component_type}</td>
+                <td>{row.component_type}</td>
                 <td>{row.specification}</td>
                 <td>{row.UOM}</td>
                 <td>{row.category}</td>
@@ -385,43 +418,133 @@ const MRFCreate = () => {
 
               return (
                 <tr key={`new-${index}`}>
-                  <td  className="specification-cells">
-                    <select
-                      value={
-                        row.component_type && row.specification
-                          ? `${row.component_type}||${row.specification}`
-                          : ""
-                      }
-                      onChange={(e) =>
-                        handleNewRowChange(index, e.target.value)
-                      }
-                      style={{
-                        padding: "5px",
-                        borderRadius: "5px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      <option value="">Select</option>
-                      {[
-                        ...new Map(
-                          availableRequests
-                            .filter((item) => item.status === "Available")
-                            .map((item) => [
-                              `${item.component_type}||${item.specification}`,
-                              item,
-                            ])
-                        ).values(),
-                      ].map((item) => (
-                        <option
-                          key={`${item.component_type}-${item.specification}`}
-                          value={`${item.component_type}||${item.specification}`}
+                  <td
+                    className="specification-cells"
+                    style={{ position: "relative" }}
+                    ref={(el) => (mrfDropdownRefs.current[index] = el)}
+                  >
+                    <div className="multi-select">
+                      <div
+                        className="multi-select-box"
+                        onClick={() =>
+                          setMrfOpenIndex(mrfOpenIndex === index ? null : index)
+                        }
+                      >
+                        <span className="selected-names">
+                          {row.component_type
+                            ? `${row.component_type} - ${row.specification}`
+                            : "Select Component"}
+                        </span>
+                        <span className="dropdown-caret">▾</span>
+                      </div>
+
+                      {mrfOpenIndex === index && (
+                        <div
+                          ref={dropdownRef}
+                          className="multi-select-dropdown"
+                          style={{
+                            position: "fixed",
+                            top: (() => {
+                              const rect =
+                                mrfDropdownRefs.current[
+                                  index
+                                ]?.getBoundingClientRect();
+                              if (!rect) return 0;
+                              const viewportHeight = window.innerHeight;
+                              const dropdownHeight =
+                                dropdownRef.current?.offsetHeight || 200;
+                              const spaceBelow = viewportHeight - rect.bottom;
+                              const spaceAbove = rect.top;
+
+                              return spaceBelow >= dropdownHeight ||
+                                spaceBelow >= spaceAbove
+                                ? rect.bottom + window.scrollY
+                                : rect.top + window.scrollY - dropdownHeight;
+                            })(),
+                            left:
+                              mrfDropdownRefs.current[
+                                index
+                              ]?.getBoundingClientRect().left + "px",
+                            minWidth:
+                              mrfDropdownRefs.current[
+                                index
+                              ]?.getBoundingClientRect().width + "px",
+                            zIndex: 9999,
+                            maxHeight: "200px",
+                            overflowY: "auto",
+                            background: "#fff",
+                            border: "1px solid #ccc",
+                          }}
                         >
-                          {item.component_type} - {item.specification}
-                        </option>
-                      ))}
-                    </select>
+                          <input
+                            type="text"
+                            placeholder="Search components..."
+                            value={mrfSearches[index] || ""}
+                            onChange={(e) =>
+                              setMrfSearches({
+                                ...mrfSearches,
+                                [index]: e.target.value,
+                              })
+                            }
+                            className="multi-select-input"
+                            style={{
+                              padding: "5px",
+                              width: "100%",
+                              boxSizing: "border-box",
+                            }}
+                          />
+
+                          {(() => {
+                            const filteredComponents = availableRequests
+                              .filter((item) => item.status === "Available")
+                              .filter((item) =>
+                                `${item.component_type} - ${item.specification}`
+                                  .toLowerCase()
+                                  .includes(
+                                    (mrfSearches[index] || "").toLowerCase()
+                                  )
+                              );
+
+                            if (filteredComponents.length === 0) {
+                              return (
+                                <div
+                                  className="multi-select-no-results"
+                                  style={{ padding: "5px" }}
+                                >
+                                  No components found for "{mrfSearches[index]}"
+                                </div>
+                              );
+                            }
+
+                            return filteredComponents.map((item) => (
+                              <div
+                                key={item.serial_number}
+                                className="multi-select-item"
+                                onClick={() => {
+                                  handleNewRowChange(
+                                    index,
+                                    `${item.component_type}||${item.specification}`
+                                  );
+                                  setMrfOpenIndex(null);
+                                  setMrfSearches({
+                                    ...mrfSearches,
+                                    [index]: "",
+                                  });
+                                }}
+                                style={{ padding: "5px", cursor: "pointer" }}
+                              >
+                                {item.component_type} - {item.specification}
+                              </div>
+                            ));
+                          })()}
+                        </div>
+                      )}
+                    </div>
                   </td>
-                  <td  className="specification-cell">{selectedItem?.specification || "-"}</td>
+
+                  <td className="specification-cell">
+                    {selectedItem?.specification || "-"}
+                  </td>
                   <td>{selectedItem?.UOM || "-"}</td>
                   <td>{selectedItem?.category || "-"}</td>
                   <td>{selectedItem?.vendor_name || "-"}</td>

@@ -100,6 +100,8 @@ const Vendors = () => {
       const response = await fetch(`${config.apiBaseURL}/vendor_list/`);
       const data = await response.json();
 
+      setVendorData(data); // full list for search
+
       setFilteredVendorData(data);
 
       if (data.length <= 20) {
@@ -601,28 +603,42 @@ const Vendors = () => {
     setSearchQuery(query);
 
     if (query.trim() === "") {
-      fetchVendorData(); // Reset if query is empty
+      setFilteredVendorData(vendorData); // reset display
+      setVisibleVendors(vendorData.length <= 20 ? vendorData.length : 10);
+      setHasMoreVendors(vendorData.length > 10);
       return;
     }
 
+    const lowerQuery = query.toLowerCase();
+    const localFiltered = vendorData.filter(
+      (vendor) =>
+        vendor.vendor_name?.toLowerCase().includes(lowerQuery) ||
+        vendor.gstn?.toLowerCase().includes(lowerQuery)
+    );
+
+    if (localFiltered.length > 0) {
+      setFilteredVendorData(localFiltered);
+      setVisibleVendors(localFiltered.length <= 10 ? localFiltered.length : 10);
+      setHasMoreVendors(localFiltered.length > 10);
+      return;
+    }
+
+    // Fallback backend search
     try {
-      setLoadingVendors(true); // Show loader while searching
+      setLoadingVendors(true);
       const response = await fetch(
         `${config.apiBaseURL}/vendor_search/?search=${query}`
       );
       if (response.ok) {
-        const filteredVendors = await response.json();
-        setVendorData(filteredVendors); // Update base vendor list
-        setFilteredVendorData(filteredVendors); // Also update filtered list
-        setVisibleVendors(10); // Reset visible count
-        setHasMoreVendors(filteredVendors.length > 10);
-      } else {
-        console.error("Search failed:", response.statusText);
+        const vendors = await response.json();
+        setFilteredVendorData(vendors);
+        setVisibleVendors(vendors.length <= 10 ? vendors.length : 10);
+        setHasMoreVendors(vendors.length > 10);
       }
     } catch (error) {
       console.error("Error fetching search results:", error);
     } finally {
-      setLoadingVendors(false); // Done loading
+      setLoadingVendors(false);
     }
   };
 
@@ -763,7 +779,7 @@ const Vendors = () => {
             <input
               type="text"
               className="search-bar"
-              placeholder="Search by Component Type or Spec"
+              placeholder="Search by Vendor name, Component Type or Spec"
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
             />
@@ -977,7 +993,20 @@ const Vendors = () => {
                   </tr>
                 );
               })
-            ) : vendorData.length === 0 ? (
+            ) : searchQuery.trim() !== "" ? (
+              <tr>
+                <td
+                  colSpan="8"
+                  style={{
+                    textAlign: "center",
+                    color: "gray",
+                    padding: "20px",
+                  }}
+                >
+                  No data available for "{searchQuery}"
+                </td>
+              </tr>
+            ) : (
               <tr>
                 <td
                   colSpan="8"
@@ -990,7 +1019,7 @@ const Vendors = () => {
                   No vendor data found.
                 </td>
               </tr>
-            ) : null}
+            )}
           </tbody>
         </table>
 

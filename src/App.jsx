@@ -351,7 +351,7 @@ function App() {
                 path="inwardlist"
                 element={
                   <ProtectedRoute
-                    allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
+                    allowedRoles={["Admin", "Sub-Admin", "Inventory", "Procurement"]}
                   >
                     <InwardList />
                   </ProtectedRoute>
@@ -361,7 +361,7 @@ function App() {
                 path="outward"
                 element={
                   <ProtectedRoute
-                    allowedRoles={["Admin", "Sub-Admin", "Inventory"]}
+                    allowedRoles={["Admin", "Sub-Admin", "Inventory" ,"Procurement"]}
                   >
                     <Outward />
                   </ProtectedRoute>

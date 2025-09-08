@@ -8,6 +8,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { FaCalendarAlt } from "react-icons/fa";
 import Filter from "../assets/Filter_icon.svg";
+import { useAuth } from "../AuthContext";
 
 import {
   showSuccessToast,
@@ -36,6 +37,7 @@ const Inwardlist = () => {
   const [toDate, setToDate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [nameFilter, setNameFilter] = useState("");
+  const { user } = useAuth();
 
   const navigate = useNavigate();
 
@@ -467,7 +469,7 @@ const Inwardlist = () => {
               <th style={{ textAlign: "right" }}>Unit Price</th>
               <th style={{ textAlign: "right" }}>GST</th>
               <th style={{ textAlign: "right" }}>Grand Total</th>
-              <th>Actions</th>
+              {user?.role !== "Procurement" && <th>Actions</th>}
             </tr>
           </thead>
           <tbody>
@@ -587,25 +589,27 @@ const Inwardlist = () => {
                         >
                           {item.invoice_number || "-"}
                         </span>
-                        <FaEdit
-                          onClick={() => {
-                            setEditingIndex(index);
-                            setInvoiceNumberInput(item.invoice_number || "");
-                            setInvoiceDateInput(
-                              item.invoice_date
-                                ? item.invoice_date.slice(0, 10)
-                                : ""
-                            );
-                          }}
-                          style={{ marginLeft: "8px", cursor: "pointer" }}
-                        />
+                        {user?.role !== "Procurement" && (
+                          <FaEdit
+                            onClick={() => {
+                              setEditingIndex(index);
+                              setInvoiceNumberInput(item.invoice_number || "");
+                              setInvoiceDateInput(
+                                item.invoice_date
+                                  ? item.invoice_date.slice(0, 10)
+                                  : ""
+                              );
+                            }}
+                            style={{ marginLeft: "8px", cursor: "pointer" }}
+                          />
+                        )}
                       </div>
                     )}
                   </td>
 
                   <td
                     style={{
-                      minWidth: "130px",
+                      minWidth: "110px",
                       maxWidth: "130px",
                       overflow: "hidden",
                     }}
@@ -639,7 +643,7 @@ const Inwardlist = () => {
                           justifyContent: "space-between",
                           alignItems: "center",
                           width: "100%",
-                          maxWidth: "120px",
+                          maxWidth: "130px",
                           whiteSpace: "nowrap",
                           overflow: "hidden",
                           textOverflow: "ellipsis",
@@ -650,18 +654,20 @@ const Inwardlist = () => {
                             ? format(new Date(item.invoice_date), "dd-MM-yyyy")
                             : "-"}
                         </span>
-                        <FaEdit
-                          onClick={() => {
-                            setEditingIndex(index);
-                            setInvoiceNumberInput(item.invoice_number || "");
-                            setInvoiceDateInput(
-                              item.invoice_date
-                                ? item.invoice_date.slice(0, 10)
-                                : ""
-                            );
-                          }}
-                          style={{ cursor: "pointer", flexShrink: 0 }}
-                        />
+                        {user?.role !== "Procurement" && (
+                          <FaEdit
+                            onClick={() => {
+                              setEditingIndex(index);
+                              setInvoiceNumberInput(item.invoice_number || "");
+                              setInvoiceDateInput(
+                                item.invoice_date
+                                  ? item.invoice_date.slice(0, 10)
+                                  : ""
+                              );
+                            }}
+                            style={{ cursor: "pointer", flexShrink: 0 }}
+                          />
+                        )}
                       </div>
                     )}
                   </td>
@@ -685,24 +691,26 @@ const Inwardlist = () => {
                       item.gst
                     ).toFixed(2)}
                   </td>
-                  <td className="action-buttons-cell">
-                    <button
-                      className="qc-button"
-                      onClick={() =>
-                        navigate(
-                          `/inward?po_id=${getNestedValue(
-                            item,
-                            "po_master.PO_id"
-                          )}&component_id=${getNestedValue(
-                            item,
-                            "po_master.cart.component_id"
-                          )}`
-                        )
-                      }
-                    >
-                      QC
-                    </button>
-                  </td>
+                  {user?.role !== "Procurement" && (
+                    <td className="action-buttons-cell">
+                      <button
+                        className="qc-button"
+                        onClick={() =>
+                          navigate(
+                            `/inward?po_id=${getNestedValue(
+                              item,
+                              "po_master.PO_id"
+                            )}&component_id=${getNestedValue(
+                              item,
+                              "po_master.cart.component_id"
+                            )}`
+                          )
+                        }
+                      >
+                        QC
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))
             )}

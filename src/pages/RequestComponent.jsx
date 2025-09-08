@@ -599,7 +599,7 @@ const RequestComponent = () => {
                 //  Show spinner or loading text while data is loading
                 <tr>
                   <td
-                    colSpan="8"
+                    colSpan="9"
                     style={{ textAlign: "center", padding: "20px" }}
                   >
                     <div className="spinner"></div>

@@ -563,7 +563,7 @@ const Component = () => {
       <div className="header">
         <h2>Component List</h2>
         <div className="button-group">
-          {user?.role !== "User" ||
+          {user?.role !== "User" &&
             (user?.role !== "Finance" && (
               <button
                 className="create-tag-button"
@@ -724,8 +724,8 @@ const Component = () => {
                     : ""}
                 </th>
 
-                {user?.role !== "User" ||
-                  (user?.role !== "Finance" && <th>Tally Reference</th>)}
+                {user?.role !== "User" &&
+                  user?.role !== "Finance" && <th>Tally Reference</th>}
                 <th>UOM</th>
 
                 <th
@@ -815,7 +815,7 @@ const Component = () => {
                       >
                         {component.component_specification}
                       </td>
-                      {user?.role !== "User" ||
+                      {user?.role !== "User" &&
                         (user?.role !== "Finance" && (
                           <td>
                             {editTallyRefId === component.component_id ? (

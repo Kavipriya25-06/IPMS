@@ -73,6 +73,23 @@ const ComponentDetailsPage = () => {
   const [savingNewRow, setSavingNewRow] = useState(false);
   const firstVendor = vendorDetails[0]; // used to copy component fields
 
+  // Instead of an array
+  const [selectedComponents, setSelectedComponents] = useState({
+    vendor: null,
+  });
+
+  // Vendor dropdown state
+  const [vendorOpenIndex, setVendorOpenIndex] = useState(null);
+  const [vendorSearches, setVendorSearches] = useState({});
+  const [dropdownHeight, setDropdownHeight] = useState(0);
+
+  const vendorDropdownRefs = useRef([]); // array of refs for each row
+  const dropdownRef = useRef(null);
+  const [vendorTypeCoords, setVendorTypeCoords] = useState({
+    top: 0,
+    left: 0,
+  });
+
   // NEW: image upload state
   const [isEditingImage, setIsEditingImage] = useState(false);
   const [newImages, setNewImages] = useState([]);
@@ -577,7 +594,6 @@ const ComponentDetailsPage = () => {
       if (res.ok) {
         const updated = await res.json();
 
-        // ✅ keep both formData and componentInfo in sync
         setFormData({
           category: updated.category,
           component_type: updated.component_type,
@@ -639,6 +655,42 @@ const ComponentDetailsPage = () => {
       navigate(`/components/${nextComponentId}`);
     }
   };
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        vendorDropdownRefs.current.every(
+          (ref) => ref && !ref.contains(e.target)
+        )
+      ) {
+        setVendorOpenIndex(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const getDropdownTop = (index) => {
+    const rect = vendorDropdownRefs.current[index]?.getBoundingClientRect();
+    if (!rect) return 0;
+
+    const viewportHeight = window.innerHeight;
+    const spaceBelow = viewportHeight - rect.bottom;
+    const spaceAbove = rect.top;
+
+    if (spaceBelow >= dropdownHeight || spaceBelow >= spaceAbove) {
+      return rect.bottom; // open downward
+    } else {
+      return rect.top - dropdownHeight; // open upward
+    }
+  };
+
+  useEffect(() => {
+    if (dropdownRef.current) {
+      const rect = dropdownRef.current.getBoundingClientRect();
+      setDropdownHeight(rect.height);
+    }
+  }, [vendorOpenIndex]);
 
   if (loading)
     return (
@@ -851,48 +903,46 @@ const ComponentDetailsPage = () => {
             </div>
 
             {/* Floating Edit / Action Buttons */}
-           {canEditPlus && (
-  !isEditing ? (
-    <FaEdit
-      onClick={() => setIsEditing(true)}
-      style={{
-        position: "absolute",
-        top: "10px",
-        right: "10px",
-        cursor: "pointer",
-        fontSize: "18px",
-        color: "#555",
-      }}
-      title="Edit Highlights"
-    />
-  ) : (
-    <div
-      className="action-buttons"
-      style={{
-        position: "absolute",
-        bottom: "10px",
-        right: "10px",
-        display: "flex",
-        gap: "10px",
-      }}
-    >
-      <button onClick={handleSave} className="edit-btn">
-        Save
-      </button>
-      <button
-        onClick={() => setIsEditing(false)}
-        className="delete-button"
-        style={{ padding: "6px 10px" }}
-      >
-        Cancel
-      </button>
-    </div>
-  )
-)}
-
+            {canEditPlus &&
+              (!isEditing ? (
+                <FaEdit
+                  onClick={() => setIsEditing(true)}
+                  style={{
+                    position: "absolute",
+                    top: "10px",
+                    right: "10px",
+                    cursor: "pointer",
+                    fontSize: "18px",
+                    color: "#555",
+                  }}
+                  title="Edit Highlights"
+                />
+              ) : (
+                <div
+                  className="action-buttons"
+                  style={{
+                    position: "absolute",
+                    bottom: "10px",
+                    right: "10px",
+                    display: "flex",
+                    gap: "10px",
+                  }}
+                >
+                  <button onClick={handleSave} className="edit-btn">
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setIsEditing(false)}
+                    className="delete-button"
+                    style={{ padding: "6px 10px" }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ))}
           </div>
 
-          <div className="description" style={{ position: "relative"  }}>
+          <div className="description" style={{ position: "relative" }}>
             <h3>Description</h3>
             {isEditingDescription ? (
               <div
@@ -1023,20 +1073,117 @@ const ComponentDetailsPage = () => {
                 {/* Inline add row */}
                 {showAddRow && (
                   <tr className="new-row">
-                    <td>
-                      <select
-                        className="form-select"
-                        value={newRow.vendor_id}
-                        onChange={(e) => onChangeVendorSelect(e.target.value)}
-                      >
-                        <option value="">Select vendor</option>
-                        {vendorOptions.map((opt) => (
-                          <option key={opt.id} value={opt.id}>
-                            {opt.name}
-                          </option>
-                        ))}
-                      </select>
+                    <td
+                      className="specification-cells"
+                      style={{ position: "relative" }}
+                      ref={(el) => (vendorDropdownRefs.current[0] = el)}
+                    >
+                      <div className="multi-select">
+                        <div
+                          className="multi-select-box"
+                          onClick={() =>
+                            setVendorOpenIndex(vendorOpenIndex === 0 ? null : 0)
+                          }
+                        >
+                          <span className="selected-names">
+                            {selectedComponents.vendor?.vendor_name ||
+                              "Select Vendor"}
+                          </span>
+                          <span className="dropdown-caret">▾</span>
+                        </div>
+
+                        {vendorOpenIndex === 0 && (
+                          <div
+                            ref={dropdownRef}
+                            className="multi-select-dropdown"
+                            style={{
+                              position: "fixed",
+                              top: (() => {
+                                const rect =
+                                  vendorDropdownRefs.current[0]?.getBoundingClientRect();
+                                if (!rect) return 0;
+                                const viewportHeight = window.innerHeight;
+                                const dropdownHeight =
+                                  dropdownRef.current?.offsetHeight || 200;
+                                const spaceBelow = viewportHeight - rect.bottom;
+                                const spaceAbove = rect.top;
+
+                                return spaceBelow >= dropdownHeight ||
+                                  spaceBelow >= spaceAbove
+                                  ? rect.bottom
+                                  : rect.top - dropdownHeight;
+                              })(),
+                              left:
+                                vendorDropdownRefs.current[0]?.getBoundingClientRect()
+                                  .left + "px",
+                              minWidth:
+                                vendorDropdownRefs.current[0]?.getBoundingClientRect()
+                                  .width + "px",
+                              zIndex: 9999,
+                              maxHeight: "200px",
+                              overflowY: "auto",
+                              background: "#fff",
+                              border: "1px solid #ccc",
+                            }}
+                          >
+                            <input
+                              type="text"
+                              placeholder="Search vendors..."
+                              value={vendorSearches[0] || ""}
+                              onChange={(e) =>
+                                setVendorSearches({
+                                  ...vendorSearches,
+                                  0: e.target.value,
+                                })
+                              }
+                              className="multi-select-input"
+                            />
+
+                            {(() => {
+                              const filteredVendors = vendorOptions.filter(
+                                (v) =>
+                                  (v.name?.toLowerCase() || "").includes(
+                                    (vendorSearches[0] || "").toLowerCase()
+                                  )
+                              );
+
+                              if (filteredVendors.length === 0) {
+                                return (
+                                  <div className="multi-select-no-results">
+                                    No vendor found for "{vendorSearches[0]}"
+                                  </div>
+                                );
+                              }
+
+                              return filteredVendors.map((v) => (
+                                <div
+                                  key={v.id}
+                                  className="multi-select-item"
+                                  onClick={() => {
+                                    setSelectedComponents({
+                                      vendor: {
+                                        vendor_name: v.name,
+                                        vendor_id: v.id,
+                                      },
+                                    });
+                                    setNewRow((prev) => ({
+                                      ...prev,
+                                      vendor_id: v.id,
+                                      vendor_name: v.name,
+                                    }));
+                                    setVendorOpenIndex(null);
+                                    setVendorSearches({ 0: "" });
+                                  }}
+                                >
+                                  {v.name}
+                                </div>
+                              ));
+                            })()}
+                          </div>
+                        )}
+                      </div>
                     </td>
+
                     <td>
                       <input
                         type="number"
@@ -1095,6 +1242,7 @@ const ComponentDetailsPage = () => {
                   </tr>
                 )}
 
+                {/* Existing vendor rows */}
                 {vendorDetails.map((vendor) => (
                   <tr key={vendor.product_id}>
                     <td className="truncate-cell" title={vendor.vendor_name}>
@@ -1110,26 +1258,16 @@ const ComponentDetailsPage = () => {
                         if (rawPrice === "-") return "-";
 
                         const str = String(rawPrice);
-
                         if (str.includes(".")) {
                           const [intPart, decPart] = str.split(".");
-                          // If all decimals are zeros → show 2 decimals (.00)
-                          if (/^0+$/.test(decPart)) {
-                            return `${intPart}.00`;
-                          }
-                          // If decimals > 2 → keep full decimal part
-                          if (decPart.length > 2) {
+                          if (/^0+$/.test(decPart)) return `${intPart}.00`;
+                          if (decPart.length > 2)
                             return `${intPart}.${decPart}`;
-                          }
-                          // If decimals ≤ 2 → normalize to 2 decimals
                           return Number(str).toFixed(2);
                         }
-
-                        // No decimals → force .00
                         return Number(str).toFixed(2);
                       })()}
                     </td>
-
                     <td style={{ textAlign: "right" }}>
                       {priceDataMap[vendor.product_id]?.tax ??
                         vendor.tax ??

@@ -71,12 +71,12 @@ export default function Sidebar() {
     {
       label: "Inward",
       path: "/inwardlist",
-      roles: ["Admin", "Sub-Admin", "Inventory"],
+      roles: ["Admin", "Sub-Admin", "Inventory", "Procurement"],
     },
      {
       label: "Outward",
       path: "/outward",
-      roles: ["Admin", "Sub-Admin", "Inventory"],
+      roles: ["Admin", "Sub-Admin", "Inventory", "Procurement"],
     },
 
   ];
