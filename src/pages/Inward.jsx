@@ -474,12 +474,12 @@ const Inward = () => {
       const gst = parseFloat(item?.gst || 0);
       const totalPrice = +(price + (price * gst) / 100).toFixed(2);
 
-      if (!price || price === "0") {
-        showErrorToast(
-          "Price not found in PO Master details. Cannot move to inventory."
-        );
-        return;
-      }
+      // if (!price || price === "0") {
+      //   showErrorToast(
+      //     "Price not found in PO Master details. Cannot move to inventory."
+      //   );
+      //   return;
+      // }
 
       // Filter the components based on the component_id
       const selectedComponent = components.find(

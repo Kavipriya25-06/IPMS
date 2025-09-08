@@ -211,8 +211,8 @@ const Outward = () => {
       "Vendor",
       "Quantity",
       "Project",
-      "Return Date",
       "Type of Outward",
+      "Return Date",
       "Remarks",
     ],
     Event: [
@@ -299,7 +299,9 @@ const Outward = () => {
     }
     const payload = {
       category: "Manufacture",
-      date: serviceForm.outDate?.toISOString().split("T")[0],
+      date: serviceForm.outDate
+        ? format(serviceForm.outDate, "yyyy-MM-dd")
+        : null,
       time: serviceForm.time,
       gatepass: serviceForm.gatepass,
       specification: serviceForm.specification,
@@ -310,7 +312,9 @@ const Outward = () => {
       project: serviceForm.project,
       type_of_outward: serviceForm.typeOfOutward,
       remarks: serviceForm.remarks,
-      return_date: serviceForm.returnDate?.toISOString().split("T")[0] || null,
+      return_date: serviceForm.returnDate
+        ? format(serviceForm.returnDate, "yyyy-MM-dd")
+        : null,
     };
 
     try {
@@ -372,13 +376,14 @@ const Outward = () => {
     }
     const payload = {
       category: "Sales",
-      date: salesForm.outDate?.toISOString().split("T")[0],
+      date: salesForm.outDate ? format(salesForm.outDate, "yyyy-MM-dd") : null,
       time: salesForm.time,
       invoice_no: salesForm.invoice,
       product_name: salesForm.productName,
       bom: salesForm.bom,
       client: salesForm.client,
       type_of_outward: salesForm.typeOfOutward,
+
       remarks: salesForm.remarks,
       list_of_deliverables: salesForm.listOfDeliverables,
     };
@@ -424,13 +429,15 @@ const Outward = () => {
     }
     const payload = {
       category: "Event",
-      date: eventForm.outDate?.toISOString().split("T")[0],
+      date: eventForm.outDate ? format(eventForm.outDate, "yyyy-MM-dd") : null,
       time: eventForm.time,
       gatepass: eventForm.gatepass,
       event_name: eventForm.eventName,
-      num_components: eventForm.num_components || 0, // consistent
+      num_components: eventForm.num_components || 0,
       type_of_outward: eventForm.typeOfOutward,
-      return_date: eventForm.returnDate?.toISOString().split("T")[0] || null,
+      return_date: eventForm.returnDate
+        ? format(eventForm.returnDate, "yyyy-MM-dd")
+        : null,
       remarks: eventForm.remarks,
     };
 
@@ -679,54 +686,10 @@ const Outward = () => {
     setShowEventForm(true);
   };
 
-  const [editingReturnDateId, setEditingReturnDateId] = useState(null);
-  const [editedReturnDate, setEditedReturnDate] = useState(null);
+  const [editingDefectsField, setEditingDefectsField] = useState(null); // {id, field}
+  const [tempDefectsRemarks, setTempDefectsRemarks] = useState("");
 
-  const handleSaveReturnDate = async (rowId) => {
-    if (!editedReturnDate) {
-      showWarningToast("Please select a date before saving.");
-      return;
-    }
-
-    const payload = {
-      id: rowId, // specify which row to save
-      return_date: editedReturnDate.toISOString().split("T")[0], // yyyy-MM-dd
-    };
-
-    try {
-      const res = await fetch(`${config.apiBaseURL}/outward/manufacture/`, {
-        method: "POST", // POST for new return_date
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (res.ok) {
-        // update frontend state for only this row
-        setData((prev) =>
-          prev.map((row) =>
-            row.id === rowId
-              ? { ...row, return_date: payload.return_date }
-              : row
-          )
-        );
-        showSuccessToast("Return date saved successfully!");
-        setEditingReturnDateId(null);
-        setEditedReturnDate(null);
-      } else {
-        const err = await res.json();
-        console.error("Error saving return date:", err);
-        showErrorToast("Failed to save return date");
-      }
-    } catch (err) {
-      console.error("Network error:", err);
-      showErrorToast("Network error while saving return date");
-    }
-  };
-
-  const [editingField, setEditingField] = useState(null); // {id, field}
-  const [tempRemarks, setTempRemarks] = useState("");
-
-  const handleUpdate = async (id, updatedField) => {
+  const handleDefectsUpdate = async (id, updatedField) => {
     try {
       // find current row data
       const rowData = tableData.find((row) => row.id === id);
@@ -734,8 +697,70 @@ const Outward = () => {
       // merge old data with new field
       const updatedData = { ...rowData, ...updatedField };
 
-      await fetch(`${config.apiBaseURL}/outward/event/${id}/`, {
-        method: "PUT",
+      await fetch(`${config.apiBaseURL}/outward/defects/${id}/`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedData),
+      });
+
+      // refresh state so UI updates
+      setTableData((prev) =>
+        prev.map((row) => (row.id === id ? updatedData : row))
+      );
+
+      if (updatedField.remarks) {
+        showSuccessToast(<span>Remarks updated successfully</span>);
+      }
+    } catch (err) {
+      console.error("Update failed:", err);
+      showMessageToast(<span style={{ color: "red" }}> Update failed</span>);
+    }
+  };
+
+  const [editingSalesField, setEditingSalesField] = useState(null); // {id, field}
+  const [tempSalesRemarks, setTempSalesRemarks] = useState("");
+
+  const handleSalesUpdate = async (id, updatedField) => {
+    try {
+      // find current row data
+      const rowData = tableData.find((row) => row.id === id);
+
+      // merge old data with new field
+      const updatedData = { ...rowData, ...updatedField };
+
+      await fetch(`${config.apiBaseURL}/outward/sales/${id}/`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedData),
+      });
+
+      // refresh state so UI updates
+      setTableData((prev) =>
+        prev.map((row) => (row.id === id ? updatedData : row))
+      );
+
+      if (updatedField.remarks) {
+        showSuccessToast(<span>Remarks updated successfully</span>);
+      }
+    } catch (err) {
+      console.error("Update failed:", err);
+      showMessageToast(<span style={{ color: "red" }}> Update failed</span>);
+    }
+  };
+
+  const [editingServiceField, setEditingServiceField] = useState(null); // {id, field}
+  const [tempServiceRemarks, setTempServiceRemarks] = useState("");
+
+  const handleServiceUpdate = async (id, updatedField) => {
+    try {
+      // find current row data
+      const rowData = tableData.find((row) => row.id === id);
+
+      // merge old data with new field
+      const updatedData = { ...rowData, ...updatedField };
+
+      await fetch(`${config.apiBaseURL}/outward/manufacture/${id}/`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedData),
       });
@@ -757,7 +782,45 @@ const Outward = () => {
       }
     } catch (err) {
       console.error("Update failed:", err);
-      showMessageToast(<span style={{ color: "red" }}>❌ Update failed</span>);
+      showMessageToast(<span style={{ color: "red" }}> Update failed</span>);
+    }
+  };
+
+  const [editingField, setEditingField] = useState(null); // {id, field}
+  const [tempRemarks, setTempRemarks] = useState("");
+
+  const handleUpdate = async (id, updatedField) => {
+    try {
+      // find current row data
+      const rowData = tableData.find((row) => row.id === id);
+
+      // merge old data with new field
+      const updatedData = { ...rowData, ...updatedField };
+
+      await fetch(`${config.apiBaseURL}/outward/event/${id}/`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedData),
+      });
+
+      // refresh state so UI updates
+      setTableData((prev) =>
+        prev.map((row) => (row.id === id ? updatedData : row))
+      );
+
+      if (updatedField.return_date) {
+        showSuccessToast(
+          <span>
+            Return Date updated to <strong>{updatedField.return_date}</strong>
+          </span>
+        );
+      }
+      if (updatedField.remarks) {
+        showSuccessToast(<span>Remarks updated successfully</span>);
+      }
+    } catch (err) {
+      console.error("Update failed:", err);
+      showMessageToast(<span style={{ color: "red" }}> Update failed</span>);
     }
   };
 
@@ -886,7 +949,10 @@ const Outward = () => {
         </div>
       </div>
 
-      <div className="table-container" style={{ marginTop: "-10px" }}>
+      <div
+        className="table-container"
+        style={{ marginTop: "-10px", overflowY: "auto" }}
+      >
         <table>
           <thead>
             <tr>
@@ -924,7 +990,49 @@ const Outward = () => {
                       {/* <td>{getProjectName(row.project?.project_id) || "-"}</td> */}
                       <td>{row.type_of_outward || "-"}</td>
                       <td className="specification-cell" title={row.remarks}>
-                        {row.remarks || "-"}
+                        {editingDefectsField?.id === row.id &&
+                        editingDefectsField?.field === "remarks" ? (
+                          <input
+                            type="text"
+                            value={tempDefectsRemarks}
+                            onChange={(e) =>
+                              setTempDefectsRemarks(e.target.value)
+                            }
+                            onBlur={() => {
+                              handleDefectsUpdate(row.id, {
+                                remarks: tempDefectsRemarks,
+                              });
+                              setEditingDefectsField(null);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                handleDefectsUpdate(row.id, {
+                                  remarks: tempDefectsRemarks,
+                                });
+                                setEditingDefectsField(null);
+                              }
+                            }}
+                            autoFocus
+                            style={{ width: "100%" }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                            }}
+                            onClick={() => {
+                              setTempDefectsRemarks(row.remarks || "");
+                              setEditingDefectsField({
+                                id: row.id,
+                                field: "remarks",
+                              });
+                            }}
+                          >
+                            <span>{row.remarks || "-"}</span>
+                            <FaEdit style={{ cursor: "pointer" }} />
+                          </div>
+                        )}
                       </td>
                     </>
                   )}
@@ -975,7 +1083,49 @@ const Outward = () => {
                       </td>
                       <td>{row.type_of_outward || "-"}</td>
                       <td className="specification-cell" title={row.remarks}>
-                        {row.remarks || "-"}
+                        {editingSalesField?.id === row.id &&
+                        editingSalesField?.field === "remarks" ? (
+                          <input
+                            type="text"
+                            value={tempSalesRemarks}
+                            onChange={(e) =>
+                              setTempSalesRemarks(e.target.value)
+                            }
+                            onBlur={() => {
+                              handleSalesUpdate(row.id, {
+                                remarks: tempSalesRemarks,
+                              });
+                              setEditingSalesField(null);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                handleSalesUpdate(row.id, {
+                                  remarks: tempSalesRemarks,
+                                });
+                                setEditingSalesField(null);
+                              }
+                            }}
+                            autoFocus
+                            style={{ width: "100%" }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                            }}
+                            onClick={() => {
+                              setTempSalesRemarks(row.remarks || "");
+                              setEditingSalesField({
+                                id: row.id,
+                                field: "remarks",
+                              });
+                            }}
+                          >
+                            <span>{row.remarks || "-"}</span>
+                            <FaEdit style={{ cursor: "pointer" }} />
+                          </div>
+                        )}
                       </td>
                     </>
                   )}
@@ -1009,61 +1159,117 @@ const Outward = () => {
                       <td>{row.quantity || "-"}</td>
                       <td>{getProjectName(row.project) || "-"}</td>
 
-                      <td>
-                        {row.return_date ? (
-                          // Already has a return date → display only
-                          <span>
-                            {format(new Date(row.return_date), "dd-MM-yyyy")}
-                          </span>
-                        ) : editingReturnDateId === row.id ? (
-                          // Null return date & currently editing → show DatePicker + Save
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "5px",
+                      <td>{row.type_of_outward || "-"}</td>
+                      <td style={{ minWidth: "130px" }}>
+                        {editingServiceField?.id === row.id &&
+                        editingServiceField?.field === "return_date" ? (
+                          <DatePicker
+                            selected={
+                              row.return_date ? new Date(row.return_date) : null
+                            }
+                            onChange={(date) => {
+                              const formattedDate = format(date, "yyyy-MM-dd");
+                              handleServiceUpdate(row.id, {
+                                return_date: formattedDate,
+                              });
+                              setEditingServiceField(null);
                             }}
-                          >
-                            <DatePicker
-                              selected={editedReturnDate}
-                              onChange={(date) => setEditedReturnDate(date)}
-                              dateFormat="dd-MM-yyyy"
-                              showMonthDropdown
-                              showYearDropdown
-                              dropdownMode="select"
-                              autoFocus
-                            />
-                            <FaSave
-                              style={{ cursor: "pointer", color: "green" }}
-                              title="Save Date"
-                              onClick={() => handleSaveReturnDate(row.id)}
-                            />
-                          </div>
+                            dateFormat="dd-MM-yyyy"
+                            showMonthDropdown
+                            showYearDropdown
+                            dropdownMode="select"
+                            customInput={<CustomDateInput />}
+                            wrapperClassName="date-picker-wrapper"
+                            disabled={row.type_of_outward === "Non-Return"} //disable picker
+                          />
                         ) : (
-                          // Null return date → show edit/add icon
                           <div
                             style={{
                               display: "flex",
-                              alignItems: "center",
-                              gap: "5px",
+                              justifyContent: "space-between",
+                            }}
+                            onClick={() => {
+                              if (row.type_of_outward !== "Non-Return") {
+                                setEditingServiceField({
+                                  id: row.id,
+                                  field: "return_date",
+                                });
+                              }
                             }}
                           >
-                            <span>-</span>
+                            <span>
+                              {row.return_date
+                                ? format(
+                                    new Date(row.return_date),
+                                    "dd-MM-yyyy"
+                                  )
+                                : "-"}
+                            </span>
                             <FaEdit
-                              style={{ cursor: "pointer" }}
-                              title="Add Return Date"
-                              onClick={() => {
-                                setEditingReturnDateId(row.id);
-                                setEditedReturnDate(null);
+                              style={{
+                                cursor:
+                                  row.type_of_outward === "Non-Return"
+                                    ? "not-allowed"
+                                    : "pointer",
+                                color:
+                                  row.type_of_outward === "Non-Return"
+                                    ? "#aaa"
+                                    : "black",
                               }}
+                              title={
+                                row.type_of_outward === "Non-Return"
+                                  ? "Return date not required"
+                                  : "Edit return date"
+                              }
                             />
                           </div>
                         )}
                       </td>
 
-                      <td>{row.type_of_outward || "-"}</td>
                       <td className="specification-cell" title={row.remarks}>
-                        {row.remarks || "-"}
+                        {editingServiceField?.id === row.id &&
+                        editingServiceField?.field === "remarks" ? (
+                          <input
+                            type="text"
+                            value={tempServiceRemarks}
+                            onChange={(e) =>
+                              setTempServiceRemarks(e.target.value)
+                            }
+                            onBlur={() => {
+                              handleServiceUpdate(row.id, {
+                                remarks: tempServiceRemarks,
+                              });
+                              setEditingServiceField(null);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                handleServiceUpdate(row.id, {
+                                  remarks: tempServiceRemarks,
+                                });
+                                setEditingServiceField(null);
+                              }
+                            }}
+                            autoFocus
+                            style={{ width: "100%" }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                            }}
+                            onClick={() => {
+                              setTempServiceRemarks(row.remarks || "");
+                              setEditingServiceField({
+                                id: row.id,
+                                field: "remarks",
+                              });
+                            }}
+                          >
+                            <span>{row.remarks || "-"}</span>
+                            <FaEdit style={{ cursor: "pointer" }} />
+                          </div>
+                        )}
                       </td>
                     </>
                   )}
@@ -1651,6 +1857,34 @@ const Outward = () => {
                 readOnly
                 placeholder="Quantity"
               />
+              <label>Return Date</label>
+              <div className="date-input-container">
+                <DatePicker
+                  selected={serviceForm.returnDate}
+                  onChange={(date) =>
+                    setServiceForm((prev) => ({ ...prev, returnDate: date }))
+                  }
+                  dateFormat="dd-MM-yyyy"
+                  placeholderText="dd-mm-yyyy"
+                  className={`input1 ${
+                    serviceForm.typeOfOutward === "Non-Return"
+                      ? "disabled-date"
+                      : ""
+                  }`}
+                  showMonthDropdown
+                  showYearDropdown
+                  dropdownMode="select"
+                  disabled={serviceForm.typeOfOutward === "Non-Return"}
+                  required={serviceForm.typeOfOutward === "Return"}
+                />
+                <i
+                  className={`fas fa-calendar-alt calendar-icon ${
+                    serviceForm.typeOfOutward === "Non-Return"
+                      ? "disabled-icon"
+                      : ""
+                  }`}
+                ></i>
+              </div>
               <label>Remarks</label>
               <input
                 type="text"
