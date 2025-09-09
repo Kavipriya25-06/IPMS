@@ -43,6 +43,7 @@ const RequestDetails = ({ user }) => {
   const [bomName, setBomName] = useState([]);
   const [selectedRequestDetailId, setSelectedRequestDetailId] = useState(null);
   const [selectedVendorId, setSelectedVendorId] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   // When opening the popup
 
@@ -73,6 +74,7 @@ const RequestDetails = ({ user }) => {
 
   const fetchRequestDetails = async () => {
     try {
+      setLoading(true);
       const response = await fetch(`${config.apiBaseURL}/price_view_new/`);
       const data = await response.json();
       const filteredDetails = data.filter(
@@ -82,6 +84,8 @@ const RequestDetails = ({ user }) => {
       console.log("Request details", filteredDetails);
     } catch (error) {
       console.error("Error fetching request details:", error);
+    } finally {
+      setLoading(false); // Stop loading after both calls
     }
   };
 
@@ -1055,8 +1059,33 @@ const RequestDetails = ({ user }) => {
           onClose={() => setShowMessageBox(false)}
         />
       )}
-      {details.length === 0 ? (
-        <p>No request details found for this ID.</p>
+      {loading ? (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "100%", // take parent container height
+            textAlign: "center",
+          }}
+        >
+          <div className="spinner"></div>
+          <div style={{ marginTop: "10px", fontSize: "16px", color: "#555" }}>
+            Loading Request details...
+          </div>
+        </div>
+      ) : details.length === 0 ? (
+        <div
+          style={{
+            textAlign: "center",
+            padding: "20px",
+            color: "#888",
+            fontSize: "16px",
+          }}
+        >
+          No request details found for this ID.
+        </div>
       ) : (
         <div>
           {/* Single Approve Button Above the Table */}

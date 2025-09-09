@@ -1696,19 +1696,23 @@ const POOrderMaster = () => {
     });
   };
 
-  const handlePOStatusUpdate = async (status) => {
-    try {
-      await updatePOMasterStatuses(poId, status);
+const handlePOStatusUpdate = async (status) => {
+  try {
+    // Prevent further changes once Ordered
+    if (poData.status === "Ordered") return;
 
-      // Refetch the latest PO data to prevent stale UI
-      const resp = await fetch(`${config.apiBaseURL}/po_master/${poId}/`);
-      const updatedPO = await resp.json();
-      setPOData(updatedPO);
-    } catch (err) {
-      console.error("Error updating PO status:", err);
-      showErrorToast("Failed to update PO status");
-    }
-  };
+    await updatePOMasterStatuses(poId, status);
+
+    // Refetch latest PO data
+    const resp = await fetch(`${config.apiBaseURL}/po_master/${poId}/`);
+    const updatedPO = await resp.json();
+    setPOData(updatedPO);
+  } catch (err) {
+    console.error("Error updating PO status:", err);
+    showErrorToast("Failed to update PO status");
+  }
+};
+
 
   return (
     <div>
@@ -2141,7 +2145,8 @@ const POOrderMaster = () => {
                       style={{
                         color:
                           poData.status === "Approved" ||
-                          poData.status === "Ordered"
+                          poData.status === "Ordered" ||
+                          poData.status === "Shipped"
                             ? "green"
                             : poData.status === "Rejected" ||
                               poData.status === "Cancelled"
@@ -2149,8 +2154,15 @@ const POOrderMaster = () => {
                             : "gray",
                       }}
                     >
-                      {poData.status}
-                    </span>
+{poData?.status === "Approved"
+  ? "Approved"
+  : poData?.status === "Ordered"
+  ? "Ordered"
+  : poData?.status === "Shipped"
+  ? "Ordered"
+   : poData?.status === "Received"
+  ? "Ordered"
+  : ""}                    </span>
                   </div>
                 )}
               </>
@@ -2173,18 +2185,25 @@ const POOrderMaster = () => {
                       poData.status === "Cancelled"
                         ? "red"
                         : poData.status === "Approved" ||
-                          poData.status === "Ordered"
+                          poData.status === "Ordered" ||
+                          poData.status === "Shipped" ||
+                          poData.status === "Received"
                         ? "green"
                         : poData.status === "Rejected"
                         ? "red"
                         : "gray",
                   }}
                 >
-                  {poData.status === "Cancelled"
-                    ? "Cancelled"
-                    : poData.status === "Rejected"
-                    ? "Rejected"
-                    : poData.status}{" "}
+                 {poData?.status === "Approved"
+  ? "Approved"
+  : poData?.status === "Ordered"
+  ? "Ordered"
+  : poData?.status === "Shipped"
+  ? "Ordered"
+   : poData?.status === "Received"
+  ? "Ordered"
+  : ""}
+
                   {/* Just show PO master status */}
                 </span>
               </div>
@@ -2215,7 +2234,7 @@ const POOrderMaster = () => {
           )}
 
           {/* Cancel button available for Approved or Ordered */}
-          {(poData?.status === "Approved" || poData?.status === "Ordered") &&
+          {(poData?.status === "Approved" || poData?.status === "Ordered" || poData?.status === "Shipped" || poData?.status === "Received") &&
             (pendingItems.length > 0 ||
               orderedItems.some((item) => !item.inward)) && (
               <button
