@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import CustomMessagebox from "./CustomMessageBox.jsx";
-import config from "../Config"; // Import config for API endpoints
+import config from "../Config";
 import Add from "../assets/Add.png";
 import Cancel from "../assets/cancel.png";
 import Back from "../assets/Back.png";
@@ -14,19 +14,22 @@ import {
   showInfoToast,
   showWarningToast,
   ToastContainerComponent,
-} from "./Toastify.jsx"; // Import Toastify utilities
+} from "./Toastify.jsx";
 
 const VendorDetails = () => {
   const { vendorId } = useParams();
   const navigate = useNavigate();
+
+  // ---------- UI/state ----------
   const [priceHistory, setPriceHistory] = useState([]);
-  const [showPriceHistory, setShowPriceHistory] = useState(false); // State to control the Price modal
-  const [showEditProductForm, setShowEditProductForm] = useState(false); // State for showing edit modal
-  const [editProduct, setEditProduct] = useState({}); // State to hold product data for editing
-  const [showAddPriceEntryForm, setShowAddPriceEntryForm] = useState(false); // State to control Add Price Entry modal
-  const [currentProductId, setCurrentProductId] = useState(""); // State to store the product ID for adding price entries
+  const [showPriceHistory, setShowPriceHistory] = useState(false);
+  const [showEditProductForm, setShowEditProductForm] = useState(false);
+  const [editProduct, setEditProduct] = useState({});
+  const [showAddPriceEntryForm, setShowAddPriceEntryForm] = useState(false);
+  const [currentProductId, setCurrentProductId] = useState("");
   const [showMessageBox, setShowMessageBox] = useState(false);
   const [messageBoxContent, setMessageBoxContent] = useState("");
+
   const [newPriceEntry, setNewPriceEntry] = useState({
     date: "",
     price: "",
@@ -40,6 +43,7 @@ const VendorDetails = () => {
     delivery_days: "",
   });
   const [isEditingPriceEntry, setIsEditingPriceEntry] = useState(null);
+
   const [showAddProductForm, setShowAddProductForm] = useState(false);
   const [selectedVendorData, setSelectedVendorData] = useState([]);
   const [vendorData, setVendorData] = useState([]);
@@ -48,33 +52,25 @@ const VendorDetails = () => {
     component_type_list: [],
     category_choices: [],
   });
-  const [newProduct, setNewProduct] = useState({
-    product_id: "",
-    product_description: "",
-    unit_of_measurement: "",
-    component_id: "",
-    last_price: "",
-    tax: "",
-    img: null,
-    attachments: null,
-    category: "", // Initialize as an empty string
-    component_type: "", // Initialize as an empty string
-    component_specification: "", // Initialize as an empty string
-    vendor: vendorId,
-    active: "",
-  });
   const [componentList, setComponentList] = useState([]);
+
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarPosition, setCalendarPosition] = useState({ top: 0, left: 0 });
   const dateInputRef = useRef(null);
+
   const [showEditCalendar, setShowEditCalendar] = useState(false);
   const [editCalendarPosition, setEditCalendarPosition] = useState({
     top: 0,
     left: 0,
   });
   const editDateInputRef = useRef(null);
+
   const [loadingVendors, setLoadingVendors] = useState(true);
 
+  // Cache to avoid re-fetching all price tables repeatedly
+  const [priceTablesCache, setPriceTablesCache] = useState(null);
+
+  // ---------- helpers ----------
   const formatDateToYYYYMMDD = (date) => {
     const year = date.getFullYear();
     const month = `${date.getMonth() + 1}`.padStart(2, "0");
@@ -100,148 +96,140 @@ const VendorDetails = () => {
     return [];
   };
 
+  // ---------- initial load (optimized & parallelized) ----------
   useEffect(() => {
-    fetch(`${config.apiBaseURL}/component/`)
-      .then((res) => res.json())
-      .then((data) => setComponentList(data))
-      .catch((err) => console.error("Error fetching component list:", err));
-  }, []);
-
-  useEffect(() => {
-    const fetchVendorDetails = async () => {
+    const loadAll = async () => {
       setLoadingVendors(true);
-
       try {
-        const response = await fetch(`${config.apiBaseURL}/vendor_master/`);
-        const data = await response.json();
-        const matchedProducts = data.filter(
+        // Fetch everything we need in parallel
+        const [
+          vendorMasterResp,
+          vendorListResp,
+          componentResp,
+          choicesResp,
+          priceTablesResp,
+        ] = await Promise.all([
+          fetch(`${config.apiBaseURL}/vendor_master/`),
+          fetch(`${config.apiBaseURL}/vendor_list/`),
+          fetch(`${config.apiBaseURL}/component/`),
+          fetch(`${config.apiBaseURL}/get_choices/`),
+          fetch(`${config.apiBaseURL}/price_tables/`), // <-- single fetch for all price rows
+        ]);
+
+        const [vendorMaster, vendorList, components, choicesData, priceTables] =
+          await Promise.all([
+            vendorMasterResp.json(),
+            vendorListResp.json(),
+            componentResp.json(),
+            choicesResp.ok ? choicesResp.json() : Promise.resolve({}),
+            priceTablesResp.json(),
+          ]);
+
+        setVendorData(vendorList);
+        setChoices((prev) => ({ ...prev, ...(choicesData || {}) }));
+        setComponentList(components);
+
+        // Map: product_id -> latest price row
+        // We pick the latest by current_time
+        const latestPriceByProduct = new Map();
+        for (const row of priceTables) {
+          const pid = row.product;
+          const prev = latestPriceByProduct.get(pid);
+          if (!prev) {
+            latestPriceByProduct.set(pid, row);
+          } else {
+            const prevTime = new Date(prev.current_time).getTime();
+            const curTime = new Date(row.current_time).getTime();
+            if (curTime > prevTime) latestPriceByProduct.set(pid, row);
+          }
+        }
+        setPriceTablesCache(priceTables); // keep for history caching
+
+        // Filter vendor_master for selected vendor **once**
+        const matchedProducts = vendorMaster.filter(
           (product) => product.vendor === vendorId
         );
 
-        // Fetch and add the latest price for each product
-        const updatedProducts = await Promise.all(
-          matchedProducts.map(async (product) => {
-            const priceResponse = await fetch(
-              `${config.apiBaseURL}/price_tables/`
-            );
-            const priceData = await priceResponse.json();
-
-            // Filter prices for the current product and sort to get the latest price
-            const productPrices = priceData
-              .filter((entry) => entry.product === product.product_id)
-              .sort(
-                (a, b) => new Date(b.current_time) - new Date(a.current_time)
-              );
-
-            const images = await fetchImagesForComponent(product.component_id);
-
-            // Set the latest price in the product data
-            return {
-              ...product,
-              last_price: productPrices[0]?.price || product.last_price,
-              tax: productPrices[0]?.tax || product.tax,
-              delivery_days: productPrices[0]?.delivery_days || 0,
-              images,
-              newImages: [],
-              isEditingImage: false,
-            };
-          })
-        );
-
-        setSelectedVendorData(updatedProducts);
-      } catch (error) {
-        console.error("Error fetching vendor products:", error);
-      } finally {
-        setLoadingVendors(false); // hide loader
-      }
-    };
-
-    const fetchVendorData = async () => {
-      try {
-        const response = await fetch(`${config.apiBaseURL}/vendor_list/`);
-        const data = await response.json();
-        setVendorData(data);
-      } catch (error) {
-        console.error("Error fetching vendor data:", error);
-      }
-    };
-
-    const fetchComponentMasterData = async () => {
-      try {
-        const response = await fetch(`${config.apiBaseURL}/component/`);
-        const data = await response.json();
-        const componentMap = data.reduce((acc, component) => {
-          acc[component.product_id] = component.component_id || "null";
+        // Component master map: product_id -> component_id (as in your original logic)
+        const componentMap = components.reduce((acc, comp) => {
+          acc[comp.product_id] = comp.component_id || "null";
           return acc;
         }, {});
         setComponentMasterData(componentMap);
+
+        // Merge latest price & do NOT fetch images yet (lazy later)
+        const merged = matchedProducts.map((product) => {
+          const latest = latestPriceByProduct.get(product.product_id);
+          return {
+            ...product,
+            last_price: latest?.price ?? product.last_price ?? 0,
+            tax: latest?.tax ?? product.tax ?? 0,
+            delivery_days: latest?.delivery_days ?? product.delivery_days ?? 0,
+            images: [], // lazy
+            newImages: [],
+            isEditingImage: false,
+            isEditingAttachment: false,
+            isEditingRemarks: false,
+            editableRemarks: "",
+            imagesLoaded: false, // mark as not loaded
+          };
+        });
+
+        setSelectedVendorData(merged);
       } catch (error) {
-        console.error("Error fetching component master data:", error);
+        console.error("Initial load error:", error);
+        showErrorToast("Failed to load vendor details");
+      } finally {
+        setLoadingVendors(false);
       }
     };
 
-    const fetchChoices = async () => {
-      try {
-        const response = await fetch(`${config.apiBaseURL}/get_choices/`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch choices");
-        }
-        const data = await response.json();
-        setChoices(data);
-      } catch (error) {
-        console.error("Error fetching choices:", error);
-      }
-    };
-
-    fetchVendorDetails();
-    fetchVendorData();
-    fetchComponentMasterData();
-    fetchChoices();
+    loadAll();
   }, [vendorId]);
 
-  const getComponentId = (product_id) => {
-    return componentMasterData[product_id] || "-";
-  };
+  const getComponentId = (product_id) => componentMasterData[product_id] || "-";
 
-  // Fetch price history for a product
+  // ---------- price history (uses cache if available) ----------
   const fetchPriceHistory = async (productId) => {
     try {
-      const response = await fetch(`${config.apiBaseURL}/price_tables/`);
-      const data = await response.json();
+      let allRows = priceTablesCache;
+      if (!allRows) {
+        const resp = await fetch(`${config.apiBaseURL}/price_tables/`);
+        allRows = await resp.json();
+        setPriceTablesCache(allRows);
+      }
 
-      // Filter data to include only entries with the specified productId
-      const filteredData = data.filter((entry) => entry.product === productId);
+      const filtered = allRows
+        .filter((entry) => entry.product === productId)
+        .sort(
+          (a, b) =>
+            new Date(b.current_time).getTime() -
+            new Date(a.current_time).getTime()
+        );
 
-      // Sort filtered data by date, if necessary
-      const sortedData = filteredData.sort(
-        (a, b) => new Date(b.current_time) - new Date(a.current_time)
+      setPriceHistory(filtered);
+      setCurrentProductId(productId);
+
+      // Reflect latest price immediately in main table (from filtered[0])
+      setSelectedVendorData((prev) =>
+        prev.map((p) =>
+          p.product_id === productId
+            ? { ...p, last_price: filtered[0]?.price ?? p.last_price }
+            : p
+        )
       );
 
-      setPriceHistory(sortedData);
-      console.log("Fetched price history", sortedData);
-      setCurrentProductId(productId); // Set the productId for adding price entry
-
-      // Set the latest price in the selectedVendorData for display
-      const updatedVendorData = selectedVendorData.map((product) =>
-        product.product_id === productId
-          ? {
-              ...product,
-              last_price: sortedData[0]?.price || product.last_price,
-            }
-          : product
-      );
-      setSelectedVendorData(updatedVendorData);
-
-      setShowPriceHistory(true); // Open the modal
+      setShowPriceHistory(true);
     } catch (error) {
       console.error("Error fetching price history:", error);
+      showErrorToast("Failed to load price history");
     }
   };
 
   const handleAddPriceEntry = async () => {
-    const { date, price, tax, delivery_days } = newPriceEntry; // Add this
+    const { date, price, tax, delivery_days } = newPriceEntry;
 
-    if (!date || !price || !tax || !delivery_days) {
+    if (!date || price === "" || tax === "" || delivery_days === "") {
       showInfoToast("Please fill all the fields");
       return;
     }
@@ -251,7 +239,7 @@ const VendorDetails = () => {
       price: newPriceEntry.price,
       tax: newPriceEntry.tax,
       delivery_days: newPriceEntry.delivery_days,
-      product: currentProductId, // Replace with the actual product ID if needed
+      product: currentProductId,
     };
 
     try {
@@ -262,8 +250,16 @@ const VendorDetails = () => {
       });
       if (response.ok) {
         const addedEntry = await response.json();
+
+        // Update cache
+        setPriceTablesCache((prev) =>
+          prev ? [...prev, addedEntry] : [addedEntry]
+        );
+
+        // Refresh visible history (in-memory)
         await fetchPriceHistory(currentProductId);
 
+        // Update main table last_price/tax/delivery_days
         setSelectedVendorData((prevData) =>
           prevData.map((product) =>
             product.product_id === currentProductId
@@ -276,7 +272,7 @@ const VendorDetails = () => {
               : product
           )
         );
-        setPriceHistory([...priceHistory, addedEntry]);
+
         setNewPriceEntry({ date: "", price: "", tax: "", delivery_days: "" });
         setShowAddPriceEntryForm(false);
         showSuccessToast("Price entry saved successfully");
@@ -285,6 +281,7 @@ const VendorDetails = () => {
       }
     } catch (error) {
       console.error("Error adding price entry:", error);
+      showErrorToast("Error adding price entry");
     }
   };
 
@@ -295,7 +292,7 @@ const VendorDetails = () => {
       price: entry.price,
       tax: entry.tax,
       delivery_days: entry.delivery_days,
-      product: currentProductId, // Replace with the actual product ID if needed
+      product: currentProductId,
     });
   };
 
@@ -305,11 +302,10 @@ const VendorDetails = () => {
       price: editPriceEntry.price,
       tax: editPriceEntry.tax,
       delivery_days: editPriceEntry.delivery_days,
-      product: currentProductId, // Replace with the actual product ID if needed
+      product: currentProductId,
     };
 
     const entryId = priceHistory[index].id;
-    console.log("Updating entry with ID:", entryId); // Log the ID
 
     try {
       const response = await fetch(
@@ -320,16 +316,20 @@ const VendorDetails = () => {
           body: JSON.stringify(payload),
         }
       );
-      console.log("the response ", response);
       if (response.ok) {
         const updatedEntry = await response.json();
 
-        //  1. Update priceHistory table
+        // Update local history
         const updatedHistory = [...priceHistory];
         updatedHistory[index] = updatedEntry;
         setPriceHistory(updatedHistory);
 
-        //2. Update main product table
+        // Update cache (replace same id)
+        setPriceTablesCache((prev) =>
+          (prev || []).map((e) => (e.id === updatedEntry.id ? updatedEntry : e))
+        );
+
+        // Update main table latest
         setSelectedVendorData((prevData) =>
           prevData.map((product) =>
             product.product_id === currentProductId
@@ -342,13 +342,16 @@ const VendorDetails = () => {
               : product
           )
         );
+
         setIsEditingPriceEntry(null);
         showSuccessToast("Price Details Updated Successfully");
       } else {
         console.error("Failed to update price entry:", response.statusText);
+        showErrorToast("Failed to update price entry");
       }
     } catch (error) {
       console.error("Error updating price entry:", error);
+      showErrorToast("Error updating price entry");
     }
   };
 
@@ -364,13 +367,17 @@ const VendorDetails = () => {
       );
 
       if (response.ok) {
-        // 1. Remove from priceHistory
         showSuccessToast("Deleted successfully");
+
+        // Update cache
+        setPriceTablesCache((prev) =>
+          (prev || []).filter((e) => e.id !== entryToDelete.id)
+        );
 
         const updatedHistory = priceHistory.filter((_, i) => i !== index);
         setPriceHistory(updatedHistory);
 
-        // 2. Find latest remaining price entry
+        // Latest remaining
         const latest =
           updatedHistory.length > 0
             ? updatedHistory.reduce((a, b) =>
@@ -378,7 +385,7 @@ const VendorDetails = () => {
               )
             : null;
 
-        // 3. Update selectedVendorData (main table)
+        // Update main table
         setSelectedVendorData((prevData) =>
           prevData.map((product) =>
             product.product_id === currentProductId
@@ -402,50 +409,65 @@ const VendorDetails = () => {
     }
   };
 
-  const handleClosePriceHistory = () => {
-    setShowPriceHistory(false);
-  };
+  const handleClosePriceHistory = () => setShowPriceHistory(false);
 
-  const handlePriceClick = (productId) => {
-    fetchPriceHistory(productId);
-  };
+  const handlePriceClick = (productId) => fetchPriceHistory(productId);
 
   const handleInputChange = (field, value, isEditing = false) => {
     if (isEditing) {
       setEditProduct({ ...editProduct, [field]: value });
     } else {
-      setNewProduct({ ...newProduct, [field]: value });
+      setNewProduct((prev) => ({ ...prev, [field]: value }));
     }
   };
 
   const handleEditClickVendorMaster = (index) => {
     const productToEdit = selectedVendorData[index];
-    // Exclude `img` and `attachments` from the product data
-    const {
-      img, // Destructure to exclude
-      attachments, // Destructure to exclude
-      ...editableFields
-    } = productToEdit;
+    // Keep as-is, just open modal
     setEditProduct({ ...productToEdit });
     setShowEditProductForm(true);
   };
 
+  // ---------- Lazy load images per row ----------
+  const loadImagesForRow = async (index) => {
+    setSelectedVendorData((prev) => {
+      const copy = [...prev];
+      if (copy[index].imagesLoaded) return copy;
+      copy[index].imagesLoaded = true; // optimistic flag to prevent double-click spam
+      return copy;
+    });
+
+    const product = selectedVendorData[index];
+    const componentId = product.component_id;
+    const imgs = await fetchImagesForComponent(componentId);
+
+    setSelectedVendorData((prev) => {
+      const updated = [...prev];
+      updated[index] = {
+        ...updated[index],
+        images: imgs,
+        imagesLoaded: true,
+      };
+      return updated;
+    });
+  };
+
   const saveImages = async (index) => {
     const product = selectedVendorData[index];
-    const componentId = product.component_id; // Ensure this exists in your data
+    const componentId = product.component_id;
+
+    if (!product.newImages || product.newImages.length === 0) {
+      showInfoToast("No new images selected.");
+      return;
+    }
 
     const formData = new FormData();
-    product.newImages.forEach((file) => {
-      formData.append("images", file); // Django expects key: 'images'
-    });
+    product.newImages.forEach((file) => formData.append("images", file));
 
     try {
       const response = await fetch(
         `${config.apiBaseURL}/component_images/by-component/${componentId}/`,
-        {
-          method: "POST",
-          body: formData,
-        }
+        { method: "POST", body: formData }
       );
 
       if (response.ok) {
@@ -459,9 +481,10 @@ const VendorDetails = () => {
           const updated = [...prevState];
           updated[index] = {
             ...updated[index],
-            images: [...(updated[index].images || []), ...uploadedImages], // append to existing
+            images: [...(updated[index].images || []), ...uploadedImages],
             newImages: [],
             isEditingImage: false,
+            imagesLoaded: true,
           };
           return updated;
         });
@@ -477,17 +500,57 @@ const VendorDetails = () => {
     }
   };
 
+  const handleImageChange = (index, files) => {
+    setSelectedVendorData((prevState) => {
+      const updatedProducts = [...prevState];
+      const product = updatedProducts[index];
+
+      const existingImages = (product.images || []).map((imgObj) =>
+        String(imgObj.image).toLowerCase()
+      );
+
+      const alreadySelected = (product.newImages || []).map(
+        (f) => `${f.name.toLowerCase()}-${f.size}`
+      );
+
+      const added = [];
+      files.forEach((file) => {
+        const uniqueKey = `${file.name.toLowerCase()}-${file.size}`;
+
+        if (alreadySelected.includes(uniqueKey)) {
+          showInfoToast(`"${file.name}" is already selected — skipping.`);
+          return;
+        }
+
+        const baseName = file.name.toLowerCase().split(".")[0];
+        const isSaved = existingImages.some((saved) =>
+          saved.includes(baseName)
+        );
+        if (isSaved) {
+          showInfoToast(`"${file.name}" already exists in saved images.`);
+          return;
+        }
+
+        added.push(file);
+      });
+
+      updatedProducts[index] = {
+        ...product,
+        newImages: [...(product.newImages || []), ...added],
+      };
+
+      return updatedProducts;
+    });
+  };
+
   const saveAttachment = async (index) => {
     const formData = new FormData();
     formData.append("attachments", selectedVendorData[index].attachments);
 
     try {
       const response = await fetch(
-        `${config.apiBaseURL}/vendor_master/${selectedVendorData[index].product_id}/`, // Use a specific endpoint for updating the attachment
-        {
-          method: "PATCH",
-          body: formData,
-        }
+        `${config.apiBaseURL}/vendor_master/${selectedVendorData[index].product_id}/`,
+        { method: "PATCH", body: formData }
       );
 
       if (response.ok) {
@@ -503,14 +566,31 @@ const VendorDetails = () => {
         showSuccessToast("Attachment updated successfully!");
       } else {
         console.error("Failed to update attachment:", response.statusText);
+        showErrorToast("Failed to update attachment.");
       }
     } catch (error) {
       console.error("Error updating attachment:", error);
+      showErrorToast("Error updating attachment.");
     }
   };
 
+  const [newProduct, setNewProduct] = useState({
+    product_id: "",
+    product_description: "",
+    unit_of_measurement: "",
+    component_id: "",
+    last_price: "",
+    tax: "",
+    img: null,
+    attachments: null,
+    category: "",
+    component_type: "",
+    component_specification: "",
+    vendor: vendorId,
+    active: "",
+  });
+
   const handleSaveEditProduct = async () => {
-    // Prepare the payload by excluding `img` and `attachments`
     const payload = {
       product_id: editProduct.product_id,
       product_description: editProduct.product_description,
@@ -522,95 +602,35 @@ const VendorDetails = () => {
       tax: editProduct.tax,
       vendor: editProduct.vendor,
     };
-    const formData = new FormData();
-    Object.entries(editProduct).forEach(([key, value]) => {
-      if (value !== null && value !== undefined) {
-        formData.append(key, value);
-      }
-    });
 
     try {
       const response = await fetch(
         `${config.apiBaseURL}/vendor_master/${editProduct.product_id}/`,
         {
-          // method: "PUT",
-          // body: formData,
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         }
       );
 
       if (response.ok) {
         const savedProduct = await response.json();
-        const updatedProducts = selectedVendorData.map((product) =>
-          product.product_id === savedProduct.product_id
-            ? savedProduct
-            : product
+        setSelectedVendorData((prev) =>
+          prev.map((p) =>
+            p.product_id === savedProduct.product_id ? savedProduct : p
+          )
         );
-        setSelectedVendorData(updatedProducts);
         setShowEditProductForm(false);
       } else {
         console.error("Error updating product:", response.statusText);
+        showErrorToast("Failed to update product");
       }
     } catch (error) {
       console.error("Error updating product:", error);
+      showErrorToast("Error updating product");
     }
   };
 
-  // Handler for updating the image
-  const handleImageChange = (index, files) => {
-    setSelectedVendorData((prevState) => {
-      const updatedProducts = [...prevState];
-      const product = updatedProducts[index];
-
-      // Existing saved images (backend)
-      const existingImages = (product.images || []).map((imgObj) =>
-        String(imgObj.image).toLowerCase()
-      );
-
-      // Already staged (not yet uploaded)
-      const alreadySelected = (product.newImages || []).map(
-        (f) => `${f.name.toLowerCase()}-${f.size}`
-      );
-
-      const added = [];
-      files.forEach((file) => {
-        const uniqueKey = `${file.name.toLowerCase()}-${file.size}`;
-
-        // Check if already in staged list
-        if (alreadySelected.includes(uniqueKey)) {
-          showInfoToast(`"${file.name}" is already selected — skipping.`);
-          return;
-        }
-
-        // Check if already saved in backend
-        const baseName = file.name.toLowerCase().split(".")[0];
-        const isSaved = existingImages.some((saved) =>
-          saved.includes(baseName)
-        );
-        if (isSaved) {
-          showInfoToast(`"${file.name}" already exists in saved images.`);
-          return;
-        }
-
-        // If unique, add it
-        added.push(file);
-      });
-
-      // Always merge new files with previous ones
-      updatedProducts[index] = {
-        ...product,
-        newImages: [...(product.newImages || []), ...added],
-      };
-
-      return updatedProducts;
-    });
-  };
-
-  // Handler for updating the attachment
   const handleAttachmentChange = (index, file) => {
     setSelectedVendorData((prevState) => {
       const updatedProducts = [...prevState];
@@ -619,7 +639,6 @@ const VendorDetails = () => {
     });
   };
 
-  // Enable edit field
   const enableEditField = (index, field) => {
     setSelectedVendorData((prevState) => {
       const updatedProducts = [...prevState];
@@ -628,7 +647,6 @@ const VendorDetails = () => {
     });
   };
 
-  // Cancelling field
   const cancelEditField = (index, field) => {
     setSelectedVendorData((prevState) => {
       const updatedProducts = [...prevState];
@@ -638,11 +656,8 @@ const VendorDetails = () => {
   };
 
   const handleAddNewProduct = async () => {
-    // Validation: Check if required fields are filled
     const requiredFields = [
       "product_description",
-      // "last_price",
-      // "tax",
       "category",
       "component_type",
       "component_specification",
@@ -651,9 +666,8 @@ const VendorDetails = () => {
     ];
 
     const emptyFields = requiredFields.filter(
-      (field) => !newProduct[field] || newProduct[field].trim() === ""
+      (field) => !newProduct[field] || String(newProduct[field]).trim() === ""
     );
-    console.log("Empty fields", emptyFields);
 
     if (emptyFields.length > 0) {
       setMessageBoxContent(
@@ -663,26 +677,19 @@ const VendorDetails = () => {
       );
       setShowMessageBox(true);
       showWarningToast("Please fill all the required fields");
-      console.log("please fill details");
-      return; // Stop execution if validation fails
+      return;
     }
 
     const formData = new FormData();
-
-    // Append each property of newProduct to formData
     Object.entries(newProduct).forEach(([key, value]) => {
-      if (value !== null) {
-        formData.append(key, value);
-      }
+      if (value !== null) formData.append(key, value);
     });
-
-    // Set the vendor ID explicitly
     formData.append("vendor", vendorId);
 
     try {
       const response = await fetch(`${config.apiBaseURL}/vendor_master/`, {
         method: "POST",
-        body: formData, // Send formData instead of JSON
+        body: formData,
       });
 
       if (response.ok) {
@@ -696,18 +703,15 @@ const VendorDetails = () => {
             `${config.apiBaseURL}/request_component/status/Added/${componentId}/`,
             {
               method: "PATCH",
-              headers: {
-                "Content-Type": "application/json",
-              },
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ vendor_added: true }),
             }
           );
-          console.log("vendor_added patched in request_component");
         } catch (patchError) {
           console.error("Failed to patch request_component:", patchError);
         }
 
-        setSelectedVendorData([...selectedVendorData, addedProduct]);
+        setSelectedVendorData((prev) => [...prev, addedProduct]);
         setNewProduct({
           product_description: "",
           img: null,
@@ -724,12 +728,9 @@ const VendorDetails = () => {
         });
         setShowAddProductForm(false);
 
-        // Extract price and tax from the added product
         const { last_price, tax, product_id, delivery_days } = addedProduct;
-
-        // Second API call to update the price_tables with tax and price
         const priceTablePayload = {
-          current_time: new Date().toISOString(), // Set the current date and time
+          current_time: new Date().toISOString(),
           tax: tax,
           price: last_price,
           delivery_days: delivery_days,
@@ -740,14 +741,16 @@ const VendorDetails = () => {
           `${config.apiBaseURL}/price_tables/`,
           {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(priceTablePayload),
           }
         );
 
-        if (!priceResponse.ok) {
+        if (priceResponse.ok) {
+          const newRow = await priceResponse.json();
+          // Update cache
+          setPriceTablesCache((prev) => (prev ? [...prev, newRow] : [newRow]));
+        } else {
           console.error(
             "Error updating price table:",
             priceResponse.statusText
@@ -755,19 +758,14 @@ const VendorDetails = () => {
         }
       } else {
         showErrorToast("Failed to save product");
-
-        console.error("Error adding product:", response.statusText);
       }
     } catch (error) {
       showErrorToast("Something went wrong. Please try again");
-
       console.error("Error adding product:", error);
     }
   };
 
-  const handleBackClick = () => {
-    navigate("/vendor");
-  };
+  const handleBackClick = () => navigate("/vendor");
 
   const getVendorName = (vendor_id) => {
     const VendorName =
@@ -779,35 +777,22 @@ const VendorDetails = () => {
   const toggleVendorStatus = async (
     productId,
     currentStatus,
-    vendorId,
+    vendorIdArg,
     componentId
   ) => {
     try {
-      const updatedStatus = !currentStatus; // Toggle the status
+      const updatedStatus = !currentStatus;
 
-      // Step 1: Fetch the vendor's status from `vendor_list/`
       const vendorResponse = await fetch(`${config.apiBaseURL}/vendor_list/`);
+      if (!vendorResponse.ok) throw new Error("Failed to fetch vendor list");
 
-      if (!vendorResponse.ok) {
-        throw new Error("Failed to fetch vendor list");
-      }
-
-      const vendorData = await vendorResponse.json();
-
-      console.log("Vendor List API Response:", vendorData); // Debugging
-
-      // Step 2: Find the matching vendor entry
-      const matchedVendor = vendorData.find(
-        (vendor) => vendor.vendor_id === vendorId
-      );
-
+      const vendorList = await vendorResponse.json();
+      const matchedVendor = vendorList.find((v) => v.vendor_id === vendorIdArg);
       if (!matchedVendor) {
-        console.error("Vendor not found in vendor_list.");
         showErrorToast("Vendor not found.");
         return;
       }
 
-      // Step 3: Prevent activation if vendor is inactive
       if (matchedVendor.active === false && updatedStatus === true) {
         showInfoToast(
           "Cannot activate product because the vendor is inactive."
@@ -815,14 +800,11 @@ const VendorDetails = () => {
         return;
       }
 
-      // Step 4: Update product status in `vendor_master/`
       const response = await fetch(
         `${config.apiBaseURL}/vendor_master/${productId}/`,
         {
           method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ active: updatedStatus }),
         }
       );
@@ -850,18 +832,14 @@ const VendorDetails = () => {
 
   const saveRemarks = async (index) => {
     const product = selectedVendorData[index];
-    const payload = {
-      remarks: product.editableRemarks || "",
-    };
+    const payload = { remarks: product.editableRemarks || "" };
 
     try {
       const response = await fetch(
         `${config.apiBaseURL}/vendor_master/${product.product_id}/`,
         {
           method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         }
       );
@@ -911,11 +889,13 @@ const VendorDetails = () => {
     }
   };
 
+  // ---------- render ----------
   return (
     <div>
       <h4>
         Vendor Data for {getVendorName(vendorId)} - {vendorId}
       </h4>
+
       <div
         style={{
           display: "flex",
@@ -949,7 +929,8 @@ const VendorDetails = () => {
           onClick={() => setShowAddProductForm(!showAddProductForm)}
         />
       </div>
-      {/* // Inside your JSX return block */}
+
+      {/* Add Product Modal */}
       {showAddProductForm && (
         <div className="modal-overlay">
           <div className="popup">
@@ -992,30 +973,25 @@ const VendorDetails = () => {
                 handleInputChange("product_description", e.target.value)
               }
             />
-            {/* Auto-filled category (readonly) */}
+
             <input
               type="text"
               placeholder="Category"
               value={newProduct.category}
               readOnly
             />
-
-            {/* Auto-filled component type (readonly) */}
             <input
               type="text"
               placeholder="Component Type"
               value={newProduct.component_type}
               readOnly
             />
-
-            {/* Auto-filled component specification (readonly) */}
             <input
               type="text"
               placeholder="Component Specification"
               value={newProduct.component_specification}
               readOnly
             />
-
             <input
               type="text"
               placeholder="Unit of Measurement"
@@ -1042,7 +1018,6 @@ const VendorDetails = () => {
                 showAddPriceEntryForm ? "popup-expanded" : ""
               }`}
             >
-              {" "}
               <span className="x-button" onClick={handleClosePriceHistory}>
                 &times;
               </span>
@@ -1064,6 +1039,7 @@ const VendorDetails = () => {
                   Add Price Entry
                 </button>
               </div>
+
               <div className="table-container">
                 <table>
                   <thead>
@@ -1103,8 +1079,6 @@ const VendorDetails = () => {
                                   : "dd-mm-yyyy"}
                                 <i className="fas fa-calendar-alt calendar-icon"></i>
                               </div>
-
-                              {/* Floating calendar rendered outside table */}
                             </>
                           ) : (
                             new Date(entry.current_time).toLocaleDateString(
@@ -1113,7 +1087,7 @@ const VendorDetails = () => {
                           )}
                         </td>
 
-                        <td style={{ textAlign: "right" }}>
+                        <td style={{ textAlign: "right" }} title={entry.price} >
                           {isEditingPriceEntry === index ? (
                             <input
                               type="number"
@@ -1136,6 +1110,7 @@ const VendorDetails = () => {
                             )}`
                           )}
                         </td>
+
                         <td style={{ textAlign: "right" }}>
                           {isEditingPriceEntry === index ? (
                             <input
@@ -1150,12 +1125,10 @@ const VendorDetails = () => {
                               style={{ width: "100px" }}
                             />
                           ) : (
-                            `${parseFloat(entry.tax).toLocaleString("en-IN", {
-                              // minimumFractionDigits: 2,
-                              // maximumFractionDigits: 2
-                            })}%`
+                            `${parseFloat(entry.tax).toLocaleString("en-IN")}%`
                           )}
                         </td>
+
                         <td style={{ textAlign: "right" }}>
                           {isEditingPriceEntry === index ? (
                             <input
@@ -1175,6 +1148,7 @@ const VendorDetails = () => {
                             )}`
                           )}
                         </td>
+
                         <td>
                           {isEditingPriceEntry === index ? (
                             <div className="actions-button">
@@ -1187,9 +1161,8 @@ const VendorDetails = () => {
                               <button
                                 className="cancel-btn"
                                 onClick={() => {
-                                  setIsEditingPriceEntry(null); // Exit editing mode
+                                  setIsEditingPriceEntry(null);
                                   setEditPriceEntry({
-                                    // Clear edit form values
                                     date: null,
                                     price: "",
                                     tax: "",
@@ -1221,6 +1194,7 @@ const VendorDetails = () => {
                         </td>
                       </tr>
                     ))}
+
                     {showAddPriceEntryForm && (
                       <tr>
                         <td>
@@ -1257,11 +1231,11 @@ const VendorDetails = () => {
                               padding: "8px",
                               fontSize: "14px",
                             }}
-                            value={newPriceEntry.price} //  Fix here
+                            value={newPriceEntry.price}
                             onChange={(e) =>
                               setNewPriceEntry({
                                 ...newPriceEntry,
-                                price: e.target.value, //  Fix here
+                                price: e.target.value,
                               })
                             }
                           />
@@ -1327,6 +1301,7 @@ const VendorDetails = () => {
           </div>
         </div>
       )}
+
       {showCalendar && (
         <div
           className="floating-datepicker"
@@ -1344,13 +1319,14 @@ const VendorDetails = () => {
                 ...newPriceEntry,
                 date: formatDateToYYYYMMDD(date),
               });
-              setShowCalendar(false); // hide after selection
+              setShowCalendar(false);
             }}
             onClickOutside={() => setShowCalendar(false)}
             inline
           />
         </div>
       )}
+
       {showEditCalendar && (
         <div
           className="floating-datepicker"
@@ -1382,7 +1358,6 @@ const VendorDetails = () => {
         <table>
           <thead>
             <tr>
-              {/* <th>Product ID</th> */}
               <th>Component ID</th>
               <th>Component Type</th>
               <th>Specification</th>
@@ -1391,14 +1366,12 @@ const VendorDetails = () => {
               <th>Tax %</th>
               <th>Image</th>
               <th>Attachments</th>
-              {/* <th>Actions</th> */}
               <th>Status</th>
               <th>Remarks</th>
             </tr>
           </thead>
           <tbody>
             {loadingVendors ? (
-              //  Show spinner or loading text while data is loading
               <tr>
                 <td
                   colSpan="10"
@@ -1423,11 +1396,8 @@ const VendorDetails = () => {
               </tr>
             ) : (
               selectedVendorData.map((product, index) => {
-                const isAddedToComp = !!componentMasterData[product.product_id]; // Check if the product is in component master
-
                 return (
                   <tr key={product.product_id || index}>
-                    {/* <td>{product.product_id}</td> */}
                     <td>
                       <Link
                         to={`/components/${product.component_id}`}
@@ -1436,7 +1406,7 @@ const VendorDetails = () => {
                         {product.component_id}
                       </Link>
                     </td>
-                    {/* <td>{product.component_id}</td> */}
+
                     <td>{product.component_type}</td>
                     <td
                       className="specification-cell"
@@ -1445,6 +1415,7 @@ const VendorDetails = () => {
                       {product.component_specification}
                     </td>
                     <td>{product.unit_of_measurement}</td>
+
                     <td
                       onClick={() => handlePriceClick(product.product_id)}
                       style={{
@@ -1454,229 +1425,248 @@ const VendorDetails = () => {
                       }}
                     >
                       ₹
-                      {parseFloat(product.last_price).toLocaleString("en-IN", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
+                      {parseFloat(product.last_price || 0).toLocaleString(
+                        "en-IN",
+                        {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        }
+                      )}
                     </td>
+
                     <td style={{ textAlign: "right" }}>{product.tax}%</td>
-                    {/* Image editing section */}
+
+                    {/* Image cell (lazy loaded) */}
                     <td>
                       <div className="image-cell">
-                        {/* SAVED IMAGES */}
-                        <div
-                          className="image-preview"
-                          style={{
-                            display: "flex",
-                            flexWrap: "wrap",
-                            gap: "6px",
-                            marginBottom: "6px",
-                          }}
-                        >
-                          {product.images && product.images.length > 0 ? (
-                            product.images.map((imgObj, i) => (
-                              <div
-                                key={i}
-                                style={{
-                                  position: "relative",
-                                  width: "45px",
-                                  height: "45px",
-                                }}
-                              >
-                                <img
-                                  src={`${config.apiBaseURL}${imgObj.image}`}
-                                  alt={`Product-${i}`}
-                                  style={{
-                                    width: "100%",
-                                    height: "100%",
-                                    objectFit: "cover",
-                                    border: "1px solid #ccc",
-                                    borderRadius: "4px",
-                                  }}
-                                />
-                                <span
-                                  onClick={() =>
-                                    handleDeleteImage(index, imgObj.id)
-                                  }
-                                  style={{
-                                    position: "absolute",
-                                    top: "-5px",
-                                    right: "-5px",
-                                    backgroundColor: "#e68a00",
-                                    color: "white",
-                                    borderRadius: "50%",
-                                    width: "16px",
-                                    height: "16px",
-                                    fontSize: "11px",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    cursor: "pointer",
-                                  }}
-                                  title="Delete Image"
-                                >
-                                  ×
-                                </span>
-                              </div>
-                            ))
-                          ) : (
-                            <span style={{ fontSize: "15px", color: "#888" }}>
-                              No Images
-                            </span>
-                          )}
-                        </div>
-
-                        {/* NEWLY SELECTED PREVIEW (not uploaded yet) */}
-                        {product.newImages && product.newImages.length > 0 && (
-                          <div
-                            className="new-image-preview"
-                            style={{
-                              display: "flex",
-                              flexWrap: "wrap",
-                              gap: "6px",
-                              marginBottom: "6px",
-                            }}
+                        {/* show button to load images first time */}
+                        {!product.imagesLoaded ? (
+                          <button
+                            onClick={() => loadImagesForRow(index)}
+                            style={{ width: "100%" }}
+                            className="load-images-btn"
                           >
-                            {product.newImages.map((file, i) => (
-                              <div
-                                key={i}
-                                style={{
-                                  position: "relative",
-                                  width: "45px",
-                                  height: "45px",
-                                }}
-                              >
-                                <img
-                                  src={URL.createObjectURL(file)}
-                                  alt={file.name}
-                                  style={{
-                                    width: "100%",
-                                    height: "100%",
-                                    objectFit: "cover",
-                                    border: "1px solid #999",
-                                    borderRadius: "4px",
-                                  }}
-                                />
-                                <span
-                                  onClick={() => {
-                                    // remove previewed file
-                                    setSelectedVendorData((prev) => {
-                                      const updated = [...prev];
-                                      updated[index] = {
-                                        ...updated[index],
-                                        newImages: updated[
-                                          index
-                                        ].newImages.filter((_, j) => j !== i),
-                                      };
-                                      return updated;
-                                    });
-                                  }}
-                                  style={{
-                                    position: "absolute",
-                                    top: "-5px",
-                                    right: "-5px",
-                                    backgroundColor: "#cc0000",
-                                    color: "white",
-                                    borderRadius: "50%",
-                                    width: "16px",
-                                    height: "16px",
-                                    fontSize: "11px",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    cursor: "pointer",
-                                  }}
-                                  title="Remove File"
-                                >
-                                  ×
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* EDIT MODE BUTTONS */}
-                        {/* EDIT MODE BUTTONS */}
-                        <div className="image-edit">
-                          {product.isEditingImage ? (
+                            Preview Images
+                          </button>
+                        ) : (
+                          <>
+                            {/* SAVED IMAGES */}
                             <div
+                              className="image-preview"
                               style={{
                                 display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                                border: "1px solid #ccc",
-                                borderRadius: "6px",
-                                padding: "5px",
-
-                                backgroundColor: "#fff",
+                                flexWrap: "wrap",
+                                gap: "6px",
+                                marginBottom: "6px",
                               }}
                             >
-                              {/* LEFT: File input styled like native */}
-                              <div
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "8px",
-                                  flex: 1,
-                                }}
-                              >
-                                <input
-                                  type="file"
-                                  id={`file-input-${index}`}
-                                  accept="image/*"
-                                  multiple
-                                  style={{ flex: 1 }}
-                                  onChange={(e) =>
-                                    handleImageChange(
-                                      index,
-                                      Array.from(e.target.files)
-                                    )
-                                  }
-                                />
-                              </div>
-
-                              {/* RIGHT: Upload + Cancel */}
-                              <div
-                                style={{
-                                  display: "flex",
-                                  gap: "8px",
-                                  flexShrink: 0,
-                                }}
-                              >
-                                <button
-                                  className="save-btn"
-                                  onClick={() => saveImages(index)}
+                              {product.images && product.images.length > 0 ? (
+                                product.images.map((imgObj, i) => (
+                                  <div
+                                    key={i}
+                                    style={{
+                                      position: "relative",
+                                      width: "45px",
+                                      height: "45px",
+                                    }}
+                                  >
+                                    <img
+                                      src={`${config.apiBaseURL}${imgObj.image}`}
+                                      alt={`Product-${i}`}
+                                      style={{
+                                        width: "100%",
+                                        height: "100%",
+                                        objectFit: "cover",
+                                        border: "1px solid #ccc",
+                                        borderRadius: "4px",
+                                      }}
+                                    />
+                                    <span
+                                      onClick={() =>
+                                        handleDeleteImage(index, imgObj.id)
+                                      }
+                                      style={{
+                                        position: "absolute",
+                                        top: "-5px",
+                                        right: "-5px",
+                                        backgroundColor: "#e68a00",
+                                        color: "white",
+                                        borderRadius: "50%",
+                                        width: "16px",
+                                        height: "16px",
+                                        fontSize: "11px",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        cursor: "pointer",
+                                      }}
+                                      title="Delete Image"
+                                    >
+                                      ×
+                                    </span>
+                                  </div>
+                                ))
+                              ) : (
+                                <span
+                                  style={{ fontSize: "15px", color: "#888" }}
                                 >
-                                  Save
-                                </button>
-                                <button
-                                  className="cancel-btn"
-                                  onClick={() =>
-                                    cancelEditField(index, "isEditingImage")
-                                  }
-                                >
-                                  Cancel
-                                </button>
-                              </div>
+                                  No Images
+                                </span>
+                              )}
                             </div>
-                          ) : (
-                            <button
-                              onClick={() =>
-                                enableEditField(index, "isEditingImage")
-                              }
-                              style={{ width: "100%" }}
-                            >
-                              Upload Images
-                            </button>
-                          )}
-                        </div>
+
+                            {/* NEWLY SELECTED PREVIEW (not uploaded yet) */}
+                            {product.newImages &&
+                              product.newImages.length > 0 && (
+                                <div
+                                  className="new-image-preview"
+                                  style={{
+                                    display: "flex",
+                                    flexWrap: "wrap",
+                                    gap: "6px",
+                                    marginBottom: "6px",
+                                  }}
+                                >
+                                  {product.newImages.map((file, i) => (
+                                    <div
+                                      key={i}
+                                      style={{
+                                        position: "relative",
+                                        width: "45px",
+                                        height: "45px",
+                                      }}
+                                    >
+                                      <img
+                                        src={URL.createObjectURL(file)}
+                                        alt={file.name}
+                                        style={{
+                                          width: "100%",
+                                          height: "100%",
+                                          objectFit: "cover",
+                                          border: "1px solid #999",
+                                          borderRadius: "4px",
+                                        }}
+                                      />
+                                      <span
+                                        onClick={() => {
+                                          setSelectedVendorData((prev) => {
+                                            const updated = [...prev];
+                                            updated[index] = {
+                                              ...updated[index],
+                                              newImages: updated[
+                                                index
+                                              ].newImages.filter(
+                                                (_, j) => j !== i
+                                              ),
+                                            };
+                                            return updated;
+                                          });
+                                        }}
+                                        style={{
+                                          position: "absolute",
+                                          top: "-5px",
+                                          right: "-5px",
+                                          backgroundColor: "#cc0000",
+                                          color: "white",
+                                          borderRadius: "50%",
+                                          width: "16px",
+                                          height: "16px",
+                                          fontSize: "11px",
+                                          display: "flex",
+                                          alignItems: "center",
+                                          justifyContent: "center",
+                                          cursor: "pointer",
+                                        }}
+                                        title="Remove File"
+                                      >
+                                        ×
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                            {/* EDIT MODE BUTTONS */}
+                            <div className="image-edit">
+                              {product.isEditingImage ? (
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    border: "1px solid #ccc",
+                                    borderRadius: "6px",
+                                    padding: "5px",
+                                    backgroundColor: "#fff",
+                                  }}
+                                >
+                                  {/* file input */}
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "8px",
+                                      flex: 1,
+                                    }}
+                                  >
+                                    <input
+                                      type="file"
+                                      id={`file-input-${index}`}
+                                      accept="image/*"
+                                      multiple
+                                      style={{ flex: 1 }}
+                                      onChange={(e) =>
+                                        handleImageChange(
+                                          index,
+                                          Array.from(e.target.files)
+                                        )
+                                      }
+                                    />
+                                  </div>
+
+                                  {/* upload + cancel */}
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      gap: "8px",
+                                      flexShrink: 0,
+                                    }}
+                                  >
+                                    <button
+                                      className="save-btn"
+                                      onClick={() => saveImages(index)}
+                                    >
+                                      Save
+                                    </button>
+                                    <button
+                                      className="cancel-btn"
+                                      onClick={() =>
+                                        cancelEditField(index, "isEditingImage")
+                                      }
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() =>
+                                    enableEditField(index, "isEditingImage")
+                                  }
+                                  style={{ width: "100%" }}
+                                >
+                                  Upload Images
+                                </button>
+                              )}
+                            </div>
+                          </>
+                        )}
                       </div>
                     </td>
 
                     {/* Attachment Editing Section */}
                     <td>
                       <div className="attachment-cell">
-                        {/* Top: View Attachment or No Attachments */}
                         <div className="attachment-view">
                           {product.attachments ? (
                             <a
@@ -1693,7 +1683,6 @@ const VendorDetails = () => {
                           )}
                         </div>
 
-                        {/* Bottom: Edit or Save/Cancel Buttons */}
                         <div className="attachment-edit">
                           {product.isEditingAttachment ? (
                             <>
@@ -1729,6 +1718,7 @@ const VendorDetails = () => {
                         </div>
                       </div>
                     </td>
+
                     <td>
                       <button
                         className={`vendor-status-button ${
@@ -1746,6 +1736,7 @@ const VendorDetails = () => {
                         {product.active ? "Active" : "Inactive"}
                       </button>
                     </td>
+
                     <td>
                       {product.isEditingRemarks ? (
                         <div className="remarks-edit-container">
@@ -1793,6 +1784,7 @@ const VendorDetails = () => {
           </tbody>
         </table>
       </div>
+
       <ToastContainerComponent />
     </div>
   );

@@ -692,6 +692,20 @@ const ComponentDetailsPage = () => {
     }
   }, [vendorOpenIndex]);
 
+  // Utility function
+  const formatUnitPrice = (value) => {
+    if (value == null) return "-";
+    const num = parseFloat(value);
+
+    // If it has more than 2 decimals
+    if (Number.isInteger(num * 100)) {
+      return num.toFixed(2); // exactly 2 decimals
+    }
+
+    // Else, keep up to 3 decimals (remove trailing zeros automatically)
+    return parseFloat(num.toFixed(2));
+  };
+
   if (loading)
     return (
       <div style={{ textAlign: "center", marginTop: "50px" }}>
@@ -1248,26 +1262,26 @@ const ComponentDetailsPage = () => {
                     <td className="truncate-cell" title={vendor.vendor_name}>
                       {vendor.vendor_name}
                     </td>
-                    <td style={{ textAlign: "right" }}>
+                    <td
+                      style={{ textAlign: "right" }}
+                      title={
+                        priceDataMap[vendor.product_id]?.price ??
+                        vendor.last_price ??
+                        "-"
+                      }
+                    >
                       ₹
                       {(() => {
                         const rawPrice =
                           priceDataMap[vendor.product_id]?.price ??
                           vendor.last_price ??
                           "-";
-                        if (rawPrice === "-") return "-";
 
-                        const str = String(rawPrice);
-                        if (str.includes(".")) {
-                          const [intPart, decPart] = str.split(".");
-                          if (/^0+$/.test(decPart)) return `${intPart}.00`;
-                          if (decPart.length > 2)
-                            return `${intPart}.${decPart}`;
-                          return Number(str).toFixed(2);
-                        }
-                        return Number(str).toFixed(2);
+                        if (rawPrice === "-") return "-";
+                        return formatUnitPrice(rawPrice);
                       })()}
                     </td>
+
                     <td style={{ textAlign: "right" }}>
                       {priceDataMap[vendor.product_id]?.tax ??
                         vendor.tax ??

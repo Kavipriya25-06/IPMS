@@ -388,6 +388,20 @@ const Inwardlist = () => {
     );
   });
 
+  // Utility function
+  const formatUnitPrice = (value) => {
+    if (value == null) return "-";
+    const num = parseFloat(value);
+
+    // If it has more than 2 decimals
+    if (Number.isInteger(num * 100)) {
+      return num.toFixed(2); // exactly 2 decimals
+    }
+
+    // Else, keep up to 3 decimals (remove trailing zeros automatically)
+    return parseFloat(num.toFixed(2));
+  };
+
   return (
     <div>
       <div className="header">
@@ -674,9 +688,10 @@ const Inwardlist = () => {
 
                   <td style={{ textAlign: "right" }}>{item.totalQuantity}</td>
                   <td style={{ textAlign: "right" }}>{item.quantity}</td>
-                  <td style={{ textAlign: "right" }}>
-                    ₹{formatPrice(item.price)}
+                  <td style={{ textAlign: "right" }} title={`₹${item.price}`}>
+                    ₹{formatUnitPrice(item.price)}
                   </td>
+
                   <td style={{ textAlign: "right" }}>
                     {item.gst % 1 === 0
                       ? parseInt(item.gst)

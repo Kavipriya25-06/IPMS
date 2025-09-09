@@ -2526,8 +2526,7 @@ main {
   display: flex;
   justify-content: flex-end;
   gap: 10px; /* space between buttons */
-  margin-top: 20px; /* optional spacing from content above */
-  margin-bottom: 10px;
+  margin-top: 3px; /* optional spacing from content above */
   padding: 0%;
 }
 
@@ -2538,6 +2537,7 @@ main {
   padding: 7px 15px;
   font-size: 14px;
   cursor: pointer;
+  
 }
 
 .add-comp:hover {
@@ -5697,4 +5697,20 @@ textarea.input1 {
   text-align: center;
   white-space: normal;
   font-size: 14px;
+}
+
+.load-images-btn{
+  background-color: #f39a47;
+  color: #fff;
+  border: none;
+  padding: 6px 2px;
+  font-size: 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.load-images-btn:hover {
+  opacity: 0.7;
+  color: whitesmoke;
 }

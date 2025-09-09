@@ -1052,7 +1052,6 @@ const RequestDetails = ({ user }) => {
         </button>
         <h2>Request Details for {requestId}</h2>
       </div>{" "}
-      {/* Render CustomMessagebox when showMessageBox is true */}
       {showMessageBox && (
         <CustomMessagebox
           message={messageBoxContent}
@@ -1082,6 +1081,7 @@ const RequestDetails = ({ user }) => {
             padding: "20px",
             color: "#888",
             fontSize: "16px",
+            justifyContent: "center",
           }}
         >
           No request details found for this ID.
@@ -1183,7 +1183,9 @@ const RequestDetails = ({ user }) => {
                           <td
                             style={{ color: "#030303ff", fontWeight: "bold" }}
                           >
-                            {detail.status}
+                            {detail.status?.toLowerCase() === "pending"
+                              ? "Pending"
+                              : detail.status}
                             {/* {requestStatus.find(
                             (status) => status.request_id === detail.id
                           )?.po_status || ""} */}
