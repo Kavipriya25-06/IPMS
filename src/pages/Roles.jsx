@@ -86,8 +86,20 @@ const Roles = () => {
   };
 
   // Handle add user
+  // Handle add user
   const handleAddUser = async () => {
     try {
+      // Check for duplicate email in current state
+      const emailExists = users.some(
+        (user) => user.email.toLowerCase() === newUser.email.toLowerCase()
+      );
+      if (emailExists) {
+        showWarningToast(
+          "This email is already registered. Please add another one."
+        );
+        return;
+      }
+
       const response = await fetch(`${config.apiBaseURL}/register/`, {
         method: "POST",
         headers: {
@@ -97,31 +109,52 @@ const Roles = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`Error adding user: ${response.statusText}`);
+        const error = await response.json();
+        // Backend might also send duplicate error
+        showErrorToast(
+          error?.email
+            ? `Error: ${error.email}`
+            : "Error adding user. Please try again."
+        );
+        return;
       }
 
       const addedUser = await response.json();
       setUsers((prevUsers) => [...prevUsers, addedUser]);
       setShowPopup(false);
       setNewUser({ email: "", password: "", role: "User" });
+      showSuccessToast("User added successfully");
       console.log("User added successfully");
     } catch (error) {
       console.error("Error adding user:", error);
+      showErrorToast("Something went wrong. Please try again.");
     }
   };
 
   const toggleUserStatus = async (userId, currentStatus) => {
     try {
-      await fetch(`${config.apiBaseURL}/register/${userId}/`, {
+      const response = await fetch(`${config.apiBaseURL}/register/${userId}/`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ status: !currentStatus }),
       });
-      fetchUsers();
+
+      if (response.ok) {
+        fetchUsers();
+        if (!currentStatus) {
+          showSuccessToast("User activated successfully");
+        } else {
+          showSuccessToast("User Inactivated successfully");
+        }
+      } else {
+        const error = await response.json();
+        showErrorToast("Failed to update status: " + JSON.stringify(error));
+      }
     } catch (err) {
       console.error("Error toggling user status:", err);
+      showErrorToast("Something went wrong while updating status.");
     }
   };
 
@@ -228,7 +261,7 @@ const Roles = () => {
                   required
                 />
               </div>
-            
+
               <div className="form-group">
                 <label className="form-label">Role:</label>
                 <select
@@ -261,8 +294,6 @@ const Roles = () => {
           </div>
         </div>
       )}
-
-  
 
       <ToastContainerComponent />
     </div>
