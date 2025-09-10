@@ -3,21 +3,20 @@ import config from "../Config"; // Import config for API endpoints
 import {
   showSuccessToast,
   showErrorToast,
-  showInfoToast,
   showWarningToast,
   showMessageToast,
-  ToastContainerComponent,
-} from "./Toastify.jsx";
+} from "./Toastify.jsx"; // ✅ Removed ToastContainerComponent import here
 
 const Roles = () => {
   const [users, setUsers] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
-  const [showPassword, setShowPassword] = useState(false); // State to toggle password visibility
+  const [showPassword, setShowPassword] = useState(false);
   const [newUser, setNewUser] = useState({
     email: "",
     password: "",
     role: "User",
   });
+
   const roles = [
     "Admin",
     "Sub-Admin",
@@ -52,13 +51,11 @@ const Roles = () => {
       ),
       onConfirm: async () => {
         try {
-          // Update local state immediately (optimistic update)
           const updatedUsers = users.map((user) =>
             user.id === userId ? { ...user, role: newRole } : user
           );
           setUsers(updatedUsers);
 
-          // Make API request to update role
           const response = await fetch(
             `${config.apiBaseURL}/register/${userId}/`,
             {
@@ -86,10 +83,8 @@ const Roles = () => {
   };
 
   // Handle add user
-  // Handle add user
   const handleAddUser = async () => {
     try {
-      // Check for duplicate email in current state
       const emailExists = users.some(
         (user) => user.email.toLowerCase() === newUser.email.toLowerCase()
       );
@@ -102,15 +97,12 @@ const Roles = () => {
 
       const response = await fetch(`${config.apiBaseURL}/register/`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newUser),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        // Backend might also send duplicate error
         showErrorToast(
           error?.email
             ? `Error: ${error.email}`
@@ -124,30 +116,32 @@ const Roles = () => {
       setShowPopup(false);
       setNewUser({ email: "", password: "", role: "User" });
       showSuccessToast("User added successfully");
-      console.log("User added successfully");
     } catch (error) {
       console.error("Error adding user:", error);
       showErrorToast("Something went wrong. Please try again.");
     }
   };
 
+  // Prevent double toasts
+  let isToggling = false;
   const toggleUserStatus = async (userId, currentStatus) => {
+    if (isToggling) return;
+    isToggling = true;
+
     try {
       const response = await fetch(`${config.apiBaseURL}/register/${userId}/`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: !currentStatus }),
       });
 
       if (response.ok) {
+        showSuccessToast(
+          !currentStatus
+            ? "User activated successfully"
+            : "User inactivated successfully"
+        );
         fetchUsers();
-        if (!currentStatus) {
-          showSuccessToast("User activated successfully");
-        } else {
-          showSuccessToast("User Inactivated successfully");
-        }
       } else {
         const error = await response.json();
         showErrorToast("Failed to update status: " + JSON.stringify(error));
@@ -155,6 +149,8 @@ const Roles = () => {
     } catch (err) {
       console.error("Error toggling user status:", err);
       showErrorToast("Something went wrong while updating status.");
+    } finally {
+      isToggling = false;
     }
   };
 
@@ -170,6 +166,7 @@ const Roles = () => {
           Add User
         </button>
       </div>
+
       <div className="table-container">
         <table>
           <thead>
@@ -193,19 +190,18 @@ const Roles = () => {
                       name={`role-${user.id}`}
                       value={role}
                       checked={user.role === role}
-                      onChange={() => {
+                      onChange={() =>
                         setTimeout(() => {
                           handleRoleChangeConfirmation(
                             user.id,
                             role,
                             user.email
                           );
-                        }, 0); // Defer execution until after input change
-                      }}
+                        }, 0)
+                      }
                     />
                   </td>
                 ))}
-
                 <td>
                   <button
                     onClick={() => toggleUserStatus(user.id, user.status)}
@@ -226,6 +222,7 @@ const Roles = () => {
           </tbody>
         </table>
       </div>
+
       {showPopup && (
         <div className="modal-overlay" onClick={() => setShowPopup(false)}>
           <div className="popup" onClick={(e) => e.stopPropagation()}>
@@ -261,7 +258,6 @@ const Roles = () => {
                   required
                 />
               </div>
-
               <div className="form-group">
                 <label className="form-label">Role:</label>
                 <select
@@ -294,8 +290,6 @@ const Roles = () => {
           </div>
         </div>
       )}
-
-      <ToastContainerComponent />
     </div>
   );
 };
