@@ -13,6 +13,8 @@ import {
   showErrorToast,
   showInfoToast,
   showWarningToast,
+  showMessageToast,
+  showTextToast,
   ToastContainerComponent,
 } from "./Toastify.jsx";
 
@@ -1087,7 +1089,7 @@ const VendorDetails = () => {
                           )}
                         </td>
 
-                        <td style={{ textAlign: "right" }} title={entry.price} >
+                        <td style={{ textAlign: "right" }} title={entry.price}>
                           {isEditingPriceEntry === index ? (
                             <input
                               type="number"
@@ -1482,9 +1484,23 @@ const VendorDetails = () => {
                                       }}
                                     />
                                     <span
-                                      onClick={() =>
-                                        handleDeleteImage(index, imgObj.id)
-                                      }
+                                      onClick={() => {
+                                        showTextToast({
+                                          message:
+                                            "Are you sure you want to delete this image?",
+                                          onConfirm: async () => {
+                                            await handleDeleteImage(
+                                              index,
+                                              imgObj.id
+                                            );
+                                          },
+                                          onCancel: () => {
+                                            // Do nothing if cancelled
+                                          },
+                                          confirmText: "Yes",
+                                          cancelText: "No",
+                                        });
+                                      }}
                                       style={{
                                         position: "absolute",
                                         top: "-5px",

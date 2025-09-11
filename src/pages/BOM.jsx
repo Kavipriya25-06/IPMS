@@ -360,7 +360,12 @@ const BOM = () => {
                 Last Modified Date{" "}
                 {renderSortArrow(sortConfig, "last_modified_date")}
               </th>
-              <th>Actions</th>
+              {(user?.role === "Admin" || user?.role === "Sub-Admin") && (
+                <th>Actions</th>
+              )}
+              {(user?.role === "User" ||
+                user?.role === "Procurement" ||
+                user?.role === "Inventory") && <th>Status</th>}
             </tr>
           </thead>
           <tbody>
