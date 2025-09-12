@@ -245,4 +245,7 @@ export const showWarningToast = (message) => {
 };
 
 // Toast container (to be added in your main App component)
-export const ToastContainerComponent = () => <ToastContainer />;
+// Toast container (to be added in your main App component)
+export const ToastContainerComponent = (props) => (
+  <ToastContainer {...props} />
+);

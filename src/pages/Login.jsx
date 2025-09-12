@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+         import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import CustomMessagebox from "./CustomMessageBox.jsx";
@@ -194,6 +194,16 @@ const Login = () => {
         </form>
       </div>
       <ToastContainerComponent
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
       />{" "}
     </div>
   );

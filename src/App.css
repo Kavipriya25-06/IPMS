@@ -81,16 +81,14 @@ nav ul li.disabled a:hover {
 
 /* Container for the entire login box */
 .login-container {
-  position: fixed; /* Make it fixed to the viewport */
-  top: 30px;
-  left: 0;
-  width: 100vw; /* Full viewport width */
-  height: 100vh; /* Full viewport height */
+  left: -20px;
+  width: 100vw; /* fill entire viewport width */
+  height: calc(100vh - 70px); /* fill space minus header */
   display: flex;
   justify-content: center;
   align-items: center;
   background-color: #f4f4f4;
-  z-index: 999; /* Ensure it's on top */
+  position: relative;
 }
 
 /* Logo container on the left */
@@ -2537,7 +2535,6 @@ main {
   padding: 7px 15px;
   font-size: 14px;
   cursor: pointer;
-  
 }
 
 .add-comp:hover {
@@ -3468,14 +3465,14 @@ main {
   font-weight: bold;
 }
 
-.highlights-container,.specifications  {
+.highlights-container,
+.specifications {
   position: relative;
   padding: 20px;
   border: 1px solid #ddd;
   border-radius: 12px;
   background: #f3f3f3;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-  
 }
 
 .highlights {
@@ -3501,13 +3498,10 @@ main {
   border: 1px solid #ccc;
 }
 
-
-
-
-.description{
+.description {
   background: #fcfcfc;
   padding: 15px;
-    border: 1px solid #ddd;
+  border: 1px solid #ddd;
   border-radius: 12px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
@@ -5668,7 +5662,7 @@ textarea.input1 {
   min-height: 250px;
   overflow-y: auto;
   padding: 10px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .multi-select-item {
@@ -5699,7 +5693,7 @@ textarea.input1 {
   font-size: 14px;
 }
 
-.load-images-btn{
+.load-images-btn {
   background-color: #f39a47;
   color: #fff;
   border: none;
