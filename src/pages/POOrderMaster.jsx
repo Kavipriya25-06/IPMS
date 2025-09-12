@@ -1271,6 +1271,9 @@ const POOrderMaster = () => {
     }
   };
 
+  const getPoMasterId = (poMaster) =>
+    typeof poMaster === "object" && poMaster !== null ? poMaster.id : poMaster;
+
   const saveDeliveryUpdate = async (index, field, value) => {
     const item = orderedItems[index];
     const updatedItem = { ...item, [field]: value };
@@ -1373,16 +1376,13 @@ const POOrderMaster = () => {
           setOrderedItems(newItems);
           showSuccessToast("Delivery data saved.");
 
-          // Update PO Master status using po_master.id
-          if (payload.status && item.po_master?.id) {
-            await fetch(
-              `${config.apiBaseURL}/po_master/${item.po_master.id}/`,
-              {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ status: payload.status }),
-              }
-            );
+          const poMasterId = getPoMasterId(item.po_master); // Update PO Master status using po_master.id
+          if (payload.status && poMasterId) {
+            await fetch(`${config.apiBaseURL}/po_master/${poMasterId}/`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ status: payload.status }),
+            });
           }
         } else {
           showErrorToast("Failed to save delivery data.");
@@ -1696,23 +1696,18 @@ const POOrderMaster = () => {
     });
   };
 
-const handlePOStatusUpdate = async (status) => {
-  try {
-    // Prevent further changes once Ordered
-    if (poData.status === "Ordered") return;
+  const handlePOStatusUpdate = async (status) => {
+    try {
+      if (poData.status === "Ordered") return;
 
-    await updatePOMasterStatuses(poId, status);
-
-    // Refetch latest PO data
-    const resp = await fetch(`${config.apiBaseURL}/po_master/${poId}/`);
-    const updatedPO = await resp.json();
-    setPOData(updatedPO);
-  } catch (err) {
-    console.error("Error updating PO status:", err);
-    showErrorToast("Failed to update PO status");
-  }
-};
-
+      await updatePOMasterStatuses(poId, status);
+      setPOData({ ...poData, status });
+      showSuccessToast(`PO ${status} successfully`);
+    } catch (err) {
+      console.error("Error updating PO status:", err);
+      showErrorToast("Failed to update PO status");
+    }
+  };
 
   return (
     <div>
@@ -2146,7 +2141,8 @@ const handlePOStatusUpdate = async (status) => {
                         color:
                           poData.status === "Approved" ||
                           poData.status === "Ordered" ||
-                          poData.status === "Shipped"
+                          poData.status === "Shipped" ||
+                          poData.status === "Received"
                             ? "green"
                             : poData.status === "Rejected" ||
                               poData.status === "Cancelled"
@@ -2154,15 +2150,16 @@ const handlePOStatusUpdate = async (status) => {
                             : "gray",
                       }}
                     >
-{poData?.status === "Approved"
-  ? "Approved"
-  : poData?.status === "Ordered"
-  ? "Ordered"
-  : poData?.status === "Shipped"
-  ? "Ordered"
-   : poData?.status === "Received"
-  ? "Ordered"
-  : ""}                    </span>
+                      {poData?.status === "Approved"
+                        ? "Approved"
+                        : poData?.status === "Ordered"
+                        ? "Ordered"
+                        : poData?.status === "Shipped"
+                        ? "Ordered"
+                        : poData?.status === "Received"
+                        ? "Ordered"
+                        : ""}{" "}
+                    </span>
                   </div>
                 )}
               </>
@@ -2194,15 +2191,15 @@ const handlePOStatusUpdate = async (status) => {
                         : "gray",
                   }}
                 >
-                 {poData?.status === "Approved"
-  ? "Approved"
-  : poData?.status === "Ordered"
-  ? "Ordered"
-  : poData?.status === "Shipped"
-  ? "Ordered"
-   : poData?.status === "Received"
-  ? "Ordered"
-  : ""}
+                  {poData?.status === "Approved"
+                    ? "Approved"
+                    : poData?.status === "Ordered"
+                    ? "Ordered"
+                    : poData?.status === "Shipped"
+                    ? "Ordered"
+                    : poData?.status === "Received"
+                    ? "Ordered"
+                    : ""}
 
                   {/* Just show PO master status */}
                 </span>
@@ -2216,17 +2213,9 @@ const handlePOStatusUpdate = async (status) => {
           {poData?.status === "Approved" && (
             <button
               className="place-order-button"
-              onClick={async () => {
-                setPlaceOrderDateTime(new Date());
-                setShowPlaceOrderPopup(true);
-
-                try {
-                  await updatePOMasterStatuses(poId, "Ordered");
-                  setPOData((prev) => ({ ...prev, status: "Ordered" }));
-                  fetchRequestDetails(); // Or fetchRequestMaster() depending on your naming
-                } catch (err) {
-                  console.error("Error updating status to Ordered:", err);
-                }
+              onClick={() => {
+                setPlaceOrderDateTime(new Date()); // default date
+                setShowPlaceOrderPopup(true); // show modal
               }}
             >
               Place Order
@@ -2234,7 +2223,10 @@ const handlePOStatusUpdate = async (status) => {
           )}
 
           {/* Cancel button available for Approved or Ordered */}
-          {(poData?.status === "Approved" || poData?.status === "Ordered" || poData?.status === "Shipped" || poData?.status === "Received") &&
+          {(poData?.status === "Approved" ||
+            poData?.status === "Ordered" ||
+            poData?.status === "Shipped" ||
+            poData?.status === "Received") &&
             (pendingItems.length > 0 ||
               orderedItems.some((item) => !item.inward)) && (
               <button
