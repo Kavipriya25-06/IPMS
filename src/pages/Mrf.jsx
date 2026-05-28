@@ -1,0 +1,1008 @@
+// import React, { useEffect, useState, useRef } from "react";
+// import { useNavigate } from "react-router-dom";
+// import config from "../Config";
+// import Add from "../assets/Add.png";
+// import DatePicker from "react-datepicker";
+// import "react-datepicker/dist/react-datepicker.css";
+// import { FaCalendarAlt } from "react-icons/fa";
+// import { format } from "date-fns";
+// import { showWarningToast } from "./Toastify";
+// import { useAuth } from "../AuthContext"; // <-- use your auth hook
+
+// const Mrf = () => {
+//   const navigate = useNavigate();
+//   const [mrfData, setMrfData] = useState([]);
+//   const [projectDetails, setProjectDetails] = useState([]);
+//   const [projectName, setProjectName] = useState("");
+//   const [searchQuery, setSearchQuery] = useState("");
+//   const datePickerRef = React.useRef(null);
+//   const [originalMRFData, setOriginalMRFData] = useState([]);
+
+//   // Filter states
+//   const [dateFilter, setDateFilter] = useState("");
+//   const [statusFilter, setStatusFilter] = useState("");
+//   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
+//   const statusDropdownRef = useRef(null);
+//   const [showScrollTop, setShowScrollTop] = useState(false);
+//   const { user } = useAuth();
+
+//   useEffect(() => {
+//     const handleClickOutside = (event) => {
+//       if (
+//         statusDropdownRef.current &&
+//         !statusDropdownRef.current.contains(event.target)
+//       ) {
+//         setStatusDropdownOpen(false);
+//       }
+//     };
+
+//     document.addEventListener("mousedown", handleClickOutside);
+//     return () => {
+//       document.removeEventListener("mousedown", handleClickOutside);
+//     };
+//   }, []);
+
+//  useEffect(() => {
+//     if (user?.role) {
+//       setCurrentUserRole(user.role);
+//     }
+//   }, [user]);
+
+//   const fetchMRFs = async () => {
+//     try {
+//       const response = await fetch(`${config.apiBaseURL}/create_MRF/`);
+//       const data = await response.json();
+
+//       let filteredData = data;
+
+//       // ✅ If role is User, show only their own MRFs
+//       if (user?.role === "User") {
+//         const requesterName = user.email.split("@")[0]; // name without domain
+//         filteredData = data.filter((item) => item.name === requesterName);
+//       }
+
+//       setOriginalMRFData(filteredData);
+//       setMrfData(filteredData);
+//     } catch (err) {
+//       console.error("Error fetching MRFs:", err);
+//     }
+//   };
+
+//   useEffect(() => {
+//     fetchMRFs();
+//     fetchProjectDetails();
+//   }, [user]);
+
+//   const fetchProjectDetails = async () => {
+//     try {
+//       const response = await fetch(`${config.apiBaseURL}/request_inventory/`);
+//       const data = await response.json();
+//       setProjectDetails(data);
+//     } catch (err) {
+//       console.error("Error fetching project details: ", err);
+//     }
+//   };
+
+//   // Helper function to get Project Name by Request ID
+//   const getProjectName = (requestId) => {
+//     const project = projectDetails.find(
+//       (proj) => proj.request_id === requestId
+//     );
+//     return project ? project.project_details.project_name : "N/A";
+//   };
+
+//   const handleSearch = (query) => {
+//     setSearchQuery(query);
+
+//     if (query.trim() === "") {
+//       setMrfData(originalMRFData); // Reset if empty search
+//       return;
+//     }
+
+//     const filtered = originalMRFData.filter((item) => {
+//       const mrfId = item.MRF_id?.toLowerCase() || "";
+//       const projectName = item.project?.project_name?.toLowerCase() || "";
+//       return (
+//         mrfId.includes(query.toLowerCase()) ||
+//         projectName.includes(query.toLowerCase())
+//       );
+//     });
+
+//     setMrfData(filtered);
+//   };
+
+//   const filteredData = mrfData.filter((item) => {
+//     const dateMatch = dateFilter
+//       ? format(new Date(item.create_date), "yyyy-MM-dd") ===
+//         format(dateFilter, "yyyy-MM-dd")
+//       : true;
+//     const statusMatch = statusFilter
+//       ? statusFilter === "Approved"
+//         ? item.approval === true
+//         : item.approval === false
+//       : true;
+//     return dateMatch && statusMatch;
+//   });
+
+//   const [dropdownCoords, setDropdownCoords] = useState({ top: 0, left: 0 });
+//   useEffect(() => {
+//     if (statusDropdownOpen && statusDropdownRef.current) {
+//       const rect = statusDropdownRef.current.getBoundingClientRect();
+//       setDropdownCoords({
+//         top: rect.bottom + window.scrollY,
+//         left: rect.left + window.scrollX,
+//       });
+//     }
+//   }, [statusDropdownOpen]);
+
+//   // Add this helper at the top (if not already present)
+//   const formatDate = (value) =>
+//     value ? format(new Date(value), "dd-MM-yyyy") : "N/A";
+
+//   const handleGenerateReport = () => {
+//     if (filteredData.length === 0) {
+//       showWarningToast("No data available to generate the report.");
+//       return;
+//     }
+
+//     const formattedData = filteredData.map((item, index) => ({
+//       "S.No": index + 1,
+//       "MRF ID": item.MRF_id || "N/A",
+//       Name: item.name || "N/A",
+//       "Create Date": formatDate(item.create_date),
+//       "Request ID": item.Request_id_assign || "N/A",
+//       "Project Name": getProjectName(item.Request_id_assign),
+//       Status: item.approval ? "Approved" : "Pending",
+//     }));
+
+//     generateCSV(formattedData, "MRF_Report");
+//   };
+
+//   const generateCSV = (data, filename) => {
+//     const headers = Object.keys(data[0]);
+//     const csvRows = [
+//       headers.join(","), // header row
+//       ...data.map((row) =>
+//         headers
+//           .map(
+//             (field) => `"${(row[field] || "").toString().replace(/"/g, '""')}"`
+//           )
+//           .join(",")
+//       ),
+//     ];
+
+//     const blob = new Blob([csvRows.join("\n")], {
+//       type: "text/csv;charset=utf-8;",
+//     });
+//     const url = URL.createObjectURL(blob);
+//     const link = document.createElement("a");
+//     link.href = url;
+//     link.setAttribute("download", `${filename}.csv`);
+//     document.body.appendChild(link);
+//     link.click();
+//     document.body.removeChild(link);
+//   };
+
+//   const [currentUserRole, setCurrentUserRole] = useState("");
+
+//   // Load role from localStorage (or replace with your actual role-fetching logic)
+//   useEffect(() => {
+//     const role = localStorage.getItem("userRole"); // Default to 'User'
+//     console.log("Normalized role:", role);
+//     setCurrentUserRole(role);
+//   }, []);
+
+//   useEffect(() => {
+//     const container = document.getElementById("mrf-table-wrapper");
+
+//     const handleScroll = () => {
+//       if (container.scrollTop > 300) {
+//         setShowScrollTop(true);
+//       } else {
+//         setShowScrollTop(false);
+//       }
+//     };
+
+//     if (container) {
+//       container.addEventListener("scroll", handleScroll);
+//     }
+
+//     return () => {
+//       if (container) {
+//         container.removeEventListener("scroll", handleScroll);
+//       }
+//     };
+//   }, []);
+
+//   const scrollToTop = () => {
+//     const container = document.getElementById("mrf-table-wrapper");
+//     if (container) {
+//       container.scrollTo({ top: 0, behavior: "smooth" });
+//     }
+//   };
+
+//   return (
+//     <div>
+//       <div
+//         className="header"
+//         style={{
+//           display: "flex",
+//           alignItems: "center",
+//           justifyContent: "space-between",
+//         }}
+//       >
+//         <h2>Material Requests (MRF)</h2>
+//       </div>
+
+//       <div
+//         className="search-wrapper-container"
+//         style={{ marginBottom: "10px" }}
+//       >
+//         <div className="search-wrapper">
+//           <div className="search-bar-container">
+//             <input
+//               type="text"
+//               className="search-bar"
+//               placeholder="Search by MRF ID"
+//               value={searchQuery}
+//               onChange={(e) => handleSearch(e.target.value)}
+//             />
+//             <span className="search-icon">
+//               <i className="fa fa-search" aria-hidden="true"></i>
+//             </span>
+//           </div>
+//         </div>
+
+//         {searchQuery.trim() !== "" && mrfData.length === 0 && (
+//           <div
+//             style={{ textAlign: "center", marginTop: "20px", color: "gray" }}
+//           >
+//             No data available
+//           </div>
+//         )}
+//       </div>
+
+//       <div
+//         style={{
+//           display: "flex",
+//           justifyContent: "flex-end",
+//           gap: "10px",
+//           marginBottom: "10px",
+//           marginTop: "-45px",
+//         }}
+//       >
+//         {currentUserRole === "Inventory" ||
+//           (currentUserRole === "Admin" && (
+//             <button
+//               className="generate-report-btn"
+//               onClick={handleGenerateReport}
+//             >
+//               Generate Report
+//             </button>
+//           ))}
+
+//         <button
+//           className="plus-button"
+//           title="Create MRF"
+//           onClick={() => navigate("/MRFCreate")}
+//         >
+//           <img src={Add} alt="Create MRF" />
+//         </button>
+//       </div>
+//       <div id="mrf-table-wrapper" className="table-container">
+//         <table>
+//           <thead>
+//             <tr>
+//               <th>MRF ID</th>
+//               <th>Name</th>
+//               <th style={{ cursor: "pointer" }}>
+//                 <div
+//                   style={{
+//                     display: "flex",
+//                     alignItems: "center",
+//                     gap: "6px",
+//                   }}
+//                 >
+//                   {!dateFilter && <span>Create Date</span>}
+
+//                   <DatePicker
+//                     selected={dateFilter}
+//                     onChange={(date) => setDateFilter(date)}
+//                     ref={datePickerRef}
+//                     dateFormat="yyyy-MM-dd"
+//                     customInput={<div />} // Hides input field
+//                     popperPlacement="bottom-end"
+//                     showMonthDropdown
+//                     showYearDropdown
+//                     dropdownMode="select"
+//                   />
+
+//                   {dateFilter && (
+//                     <span
+//                       style={{
+//                         marginLeft: "10px",
+//                         fontSize: "16px",
+//                         color: "white",
+//                       }}
+//                     >
+//                       {format(dateFilter, "dd-MM-yyyy")}
+//                     </span>
+//                   )}
+
+//                   <FaCalendarAlt
+//                     style={{
+//                       fontSize: "14px",
+//                       cursor: "pointer",
+//                       color: "#333",
+//                     }}
+//                     onClick={() => datePickerRef.current.setOpen(true)}
+//                   />
+//                 </div>
+//               </th>
+
+//               <th>Request ID</th>
+//               <th>Project name</th>
+//               <th className="status-dropdown-wrapper" ref={statusDropdownRef}>
+//                 <div
+//                   className="status-dropdown"
+//                   onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
+//                 >
+//                   {statusFilter || "Status"}
+//                   <span className="status-dropdown-icon">▼</span>
+//                 </div>
+
+//                 {statusDropdownOpen && (
+//                   <div
+//                     className="status-dropdown-options"
+//                     style={{
+//                       position: "fixed",
+//                       top: dropdownCoords.top,
+//                       left: dropdownCoords.left,
+//                       zIndex: 9999,
+//                       width: "150px",
+//                     }}
+//                   >
+//                     <div
+//                       className="status-dropdown-option"
+//                       onClick={() => {
+//                         setStatusFilter("");
+//                         setStatusDropdownOpen(false);
+//                       }}
+//                     >
+//                       All
+//                     </div>
+//                     {["Approved", "Pending"].map((status) => (
+//                       <div
+//                         key={status}
+//                         className="status-dropdown-option"
+//                         onClick={() => {
+//                           setStatusFilter(status);
+//                           setStatusDropdownOpen(false);
+//                         }}
+//                       >
+//                         {status}
+//                       </div>
+//                     ))}
+//                   </div>
+//                 )}
+//               </th>
+//             </tr>
+//           </thead>
+//           <tbody>
+//             {filteredData.length === 0 ? (
+//               <tr>
+//                 <td
+//                   colSpan="6"
+//                   style={{
+//                     textAlign: "center",
+//                     color: "gray",
+//                     fontStyle: "italic",
+//                   }}
+//                 >
+//                   No data available for this search
+//                 </td>
+//               </tr>
+//             ) : (
+//               filteredData.map((item) => (
+//                 <tr key={item.MRF_id}>
+//                   <td
+//                     onClick={() => navigate(`/MrfRequest/${item.MRF_id}`)}
+//                     style={{ cursor: "pointer", textDecoration: "underline" }}
+//                   >
+//                     {item.MRF_id}
+//                   </td>
+//                   <td>{item.name}</td>
+//                   <td>
+//                     {item.create_date && !isNaN(new Date(item.create_date))
+//                       ? format(new Date(item.create_date), "dd-MM-yyyy")
+//                       : "No Data Available"}
+//                   </td>
+//                   <td>{item.Request_id_assign}</td>
+//                   <td>{getProjectName(item.Request_id_assign)}</td>
+//                   <td>{item.approval ? "Approved" : "Pending"}</td>
+//                 </tr>
+//               ))
+//             )}
+//           </tbody>
+//         </table>
+//       </div>
+//       {showScrollTop && (
+//         <button
+//           style={{
+//             position: "fixed",
+//             bottom: "20px",
+//             right: "20px",
+//             padding: "10px 15px",
+//             fontSize: "18px",
+//             backgroundColor: "#f57c00",
+//             color: "white",
+//             border: "none",
+//             borderRadius: "5px",
+//             cursor: "pointer",
+//             zIndex: 1000,
+//           }}
+//           onClick={scrollToTop}
+//         >
+//           ↑
+//         </button>
+//       )}
+//     </div>
+//   );
+// };
+
+// export default Mrf;
+
+import React, { useEffect, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import config from "../Config";
+import Add from "../assets/Add.png";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { FaCalendarAlt } from "react-icons/fa";
+import { format } from "date-fns";
+import { showWarningToast } from "./Toastify";
+import { useAuth } from "../AuthContext"; // <-- use your auth hook
+
+const Mrf = () => {
+  const navigate = useNavigate();
+  const [mrfData, setMrfData] = useState([]);
+  const [projectDetails, setProjectDetails] = useState([]);
+  const [projectName, setProjectName] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const datePickerRef = React.useRef(null);
+  const [originalMRFData, setOriginalMRFData] = useState([]);
+
+  // Filter states
+  const [dateFilter, setDateFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
+  const statusDropdownRef = useRef(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        statusDropdownRef.current &&
+        !statusDropdownRef.current.contains(event.target)
+      ) {
+        setStatusDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (user?.role) {
+      setCurrentUserRole(user.role);
+    }
+  }, [user]);
+
+  const fetchMRFs = async () => {
+    try {
+      const response = await fetch(`${config.apiBaseURL}/create_MRF/`);
+      const data = await response.json();
+
+      let filteredData = data;
+
+      //  If role is User, show only their own MRFs
+      if (user?.role === "User") {
+        const requesterName = user.email.split("@")[0]; // name without domain
+        filteredData = data.filter((item) => item.name === requesterName);
+      }
+
+      setOriginalMRFData(filteredData);
+      setMrfData(filteredData);
+    } catch (err) {
+      console.error("Error fetching MRFs:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchMRFs();
+    fetchProjectDetails();
+  }, [user]);
+
+  const fetchProjectDetails = async () => {
+    try {
+      const response = await fetch(`${config.apiBaseURL}/request_inventory/`);
+      const data = await response.json();
+      setProjectDetails(data);
+    } catch (err) {
+      console.error("Error fetching project details: ", err);
+    }
+  };
+
+  // Helper function to get Project Name by Request ID
+  const getProjectName = (item) => {
+    // ✅ If project_name exists (DUMMY case)
+    if (item.project_name) {
+      return item.project_name;
+    }
+
+    //  fallback for normal request
+    const project = projectDetails.find(
+      (proj) => proj.request_id === item.Request_id_assign,
+    );
+
+    return project ? project.project_details.project_name : "N/A";
+  };
+
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+
+    if (query.trim() === "") {
+      setMrfData(originalMRFData);
+      return;
+    }
+
+    const search = query.toLowerCase();
+
+    const filtered = originalMRFData.filter((item) => {
+      const mrfId = item.MRF_id?.toLowerCase() || "";
+      const name = item.name?.toLowerCase() || "";
+      const requestId = item.Request_id_assign?.toLowerCase() || "";
+      const projectName = getProjectName(item)?.toLowerCase() || "";
+
+      return (
+        mrfId.includes(search) ||
+        name.includes(search) ||
+        requestId.includes(search) ||
+        projectName.includes(search)
+      );
+    });
+
+    setMrfData(filtered);
+  };
+
+  const filteredData = mrfData.filter((item) => {
+    const dateMatch = dateFilter
+      ? format(new Date(item.create_date), "yyyy-MM-dd") ===
+        format(dateFilter, "yyyy-MM-dd")
+      : true;
+    const statusMatch = statusFilter
+      ? statusFilter === "Approved"
+        ? item.approval === true
+        : item.approval === false
+      : true;
+    return dateMatch && statusMatch;
+  });
+
+  const [dropdownCoords, setDropdownCoords] = useState({ top: 0, left: 0 });
+  useEffect(() => {
+    if (statusDropdownOpen && statusDropdownRef.current) {
+      const rect = statusDropdownRef.current.getBoundingClientRect();
+      setDropdownCoords({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+      });
+    }
+  }, [statusDropdownOpen]);
+
+  // Add this helper at the top (if not already present)
+  const formatDate = (value) =>
+    value ? format(new Date(value), "dd-MM-yyyy") : "N/A";
+
+  const handleGenerateReport = () => {
+    if (filteredData.length === 0) {
+      showWarningToast("No data available to generate the report.");
+      return;
+    }
+
+    const formattedData = filteredData.map((item, index) => ({
+      "S.No": index + 1,
+      "MRF ID": item.MRF_id || "N/A",
+      Name: item.name || "N/A",
+      "Create Date": formatDate(item.create_date),
+      "Request ID": item.Request_id_assign || "N/A",
+      "Project Name": getProjectName(item.Request_id_assign),
+      Status: item.approval ? "Approved" : "Pending",
+    }));
+
+    generateCSV(formattedData, "MRF_Report");
+  };
+
+  const generateCSV = (data, filename) => {
+    const headers = Object.keys(data[0]);
+    const csvRows = [
+      headers.join(","), // header row
+      ...data.map((row) =>
+        headers
+          .map(
+            (field) => `"${(row[field] || "").toString().replace(/"/g, '""')}"`,
+          )
+          .join(","),
+      ),
+    ];
+
+    const blob = new Blob([csvRows.join("\n")], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `${filename}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const [currentUserRole, setCurrentUserRole] = useState("");
+
+  // Load role from localStorage (or replace with your actual role-fetching logic)
+  useEffect(() => {
+    const role = localStorage.getItem("userRole"); // Default to 'User'
+    console.log("Normalized role:", role);
+    setCurrentUserRole(role);
+  }, []);
+
+  useEffect(() => {
+    const container = document.getElementById("mrf-table-wrapper");
+
+    const handleScroll = () => {
+      if (container.scrollTop > 300) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+
+    if (container) {
+      container.addEventListener("scroll", handleScroll);
+    }
+
+    return () => {
+      if (container) {
+        container.removeEventListener("scroll", handleScroll);
+      }
+    };
+  }, []);
+
+  const scrollToTop = () => {
+    const container = document.getElementById("mrf-table-wrapper");
+    if (container) {
+      container.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  const [sortConfig, setSortConfig] = useState({
+    key: null,
+    direction: "asc",
+  });
+
+  const handleSort = (key) => {
+    let direction = "asc";
+
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+
+    setSortConfig({ key, direction });
+  };
+
+  const sortedData = [...filteredData].sort((a, b) => {
+    if (!sortConfig.key) return 0;
+
+    let aValue = a[sortConfig.key];
+    let bValue = b[sortConfig.key];
+
+    // Special case for Project Name
+    if (sortConfig.key === "project_name") {
+      aValue = getProjectName(a);
+      bValue = getProjectName(b);
+    }
+
+    // Special case for date
+    if (sortConfig.key === "create_date") {
+      return sortConfig.direction === "asc"
+        ? new Date(aValue) - new Date(bValue)
+        : new Date(bValue) - new Date(aValue);
+    }
+
+    // Number sorting
+    if (!isNaN(aValue) && !isNaN(bValue)) {
+      return sortConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
+    }
+
+    // String sorting
+    return sortConfig.direction === "asc"
+      ? String(aValue).localeCompare(String(bValue))
+      : String(bValue).localeCompare(String(aValue));
+  });
+
+  return (
+    <div>
+      <div
+        className="header"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <h2>Material Requests (MRF)</h2>
+      </div>
+
+      <div
+        className="search-wrapper-container"
+        style={{ marginBottom: "10px" }}
+      >
+        <div className="search-wrapper">
+          <div className="search-bar-container">
+            <input
+              type="text"
+              className="search-bar"
+              placeholder="Search by MRF ID, Name, Request ID, or Project Name"
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+            />
+            <span className="search-icon">
+              <i className="fa fa-search" aria-hidden="true"></i>
+            </span>
+          </div>
+        </div>
+
+        {searchQuery.trim() !== "" && mrfData.length === 0 && (
+          <div
+            style={{ textAlign: "center", marginTop: "20px", color: "gray" }}
+          >
+            No data available
+          </div>
+        )}
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: "10px",
+          marginBottom: "10px",
+          marginTop: "-45px",
+        }}
+      >
+        {currentUserRole === "Inventory" ||
+          (currentUserRole === "Admin" && (
+            <button
+              className="generate-report-btn"
+              onClick={handleGenerateReport}
+            >
+              Generate Report
+            </button>
+          ))}
+
+        <button
+          className="plus-button"
+          title="Create MRF"
+          onClick={() => navigate("/MRFCreate")}
+        >
+          <img src={Add} alt="Create MRF" />
+        </button>
+      </div>
+      <div id="mrf-table-wrapper" className="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th
+                onClick={() => handleSort("MRF_id")}
+                style={{ cursor: "pointer" }}
+              >
+                MRF ID{" "}
+                {sortConfig.key === "MRF_id"
+                  ? sortConfig.direction === "asc"
+                    ? "🔼"
+                    : "🔽"
+                  : ""}
+              </th>
+
+              <th
+                onClick={() => handleSort("name")}
+                style={{ cursor: "pointer" }}
+              >
+                Name{" "}
+                {sortConfig.key === "name"
+                  ? sortConfig.direction === "asc"
+                    ? "🔼"
+                    : "🔽"
+                  : ""}
+              </th>
+              <th style={{ cursor: "pointer" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}
+                >
+                  {!dateFilter && <span>Create Date</span>}
+
+                  <DatePicker
+                    selected={dateFilter}
+                    onChange={(date) => setDateFilter(date)}
+                    ref={datePickerRef}
+                    dateFormat="yyyy-MM-dd"
+                    customInput={<div />} // Hides input field
+                    popperPlacement="bottom-end"
+                    showMonthDropdown
+                    showYearDropdown
+                    dropdownMode="select"
+                  />
+
+                  {dateFilter && (
+                    <span
+                      style={{
+                        marginLeft: "10px",
+                        fontSize: "16px",
+                        color: "white",
+                      }}
+                    >
+                      {format(dateFilter, "dd-MM-yyyy")}
+                    </span>
+                  )}
+
+                  <FaCalendarAlt
+                    style={{
+                      fontSize: "14px",
+                      cursor: "pointer",
+                      color: "#333",
+                    }}
+                    onClick={() => datePickerRef.current.setOpen(true)}
+                  />
+                </div>
+              </th>
+
+              <th
+                onClick={() => handleSort("Request_id_assign")}
+                style={{ cursor: "pointer" }}
+              >
+                Request ID{" "}
+                {sortConfig.key === "Request_id_assign"
+                  ? sortConfig.direction === "asc"
+                    ? "🔼"
+                    : "🔽"
+                  : ""}
+              </th>
+
+              <th
+                onClick={() => handleSort("project_name")}
+                style={{ cursor: "pointer" }}
+              >
+                Project Name{" "}
+                {sortConfig.key === "project_name"
+                  ? sortConfig.direction === "asc"
+                    ? "🔼"
+                    : "🔽"
+                  : ""}
+              </th>
+              <th className="status-dropdown-wrapper" ref={statusDropdownRef}>
+                <div
+                  className="status-dropdown"
+                  onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
+                >
+                  {statusFilter || "Status"}
+                  <span className="status-dropdown-icon">▼</span>
+                </div>
+
+                {statusDropdownOpen && (
+                  <div
+                    className="status-dropdown-options"
+                    style={{
+                      position: "fixed",
+                      top: dropdownCoords.top,
+                      left: dropdownCoords.left,
+                      zIndex: 9999,
+                      width: "150px",
+                    }}
+                  >
+                    <div
+                      className="status-dropdown-option"
+                      onClick={() => {
+                        setStatusFilter("");
+                        setStatusDropdownOpen(false);
+                      }}
+                    >
+                      All
+                    </div>
+                    {["Approved", "Pending"].map((status) => (
+                      <div
+                        key={status}
+                        className="status-dropdown-option"
+                        onClick={() => {
+                          setStatusFilter(status);
+                          setStatusDropdownOpen(false);
+                        }}
+                      >
+                        {status}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredData.length === 0 ? (
+              <tr>
+                <td
+                  colSpan="6"
+                  style={{
+                    textAlign: "center",
+                    color: "gray",
+                    fontStyle: "italic",
+                  }}
+                >
+                  No data available for this search
+                </td>
+              </tr>
+            ) : (
+              sortedData.map((item) => (
+                <tr key={item.MRF_id}>
+                  <td
+                    onClick={() => navigate(`/MrfRequest/${item.MRF_id}`)}
+                    style={{ cursor: "pointer", textDecoration: "underline" }}
+                  >
+                    {item.MRF_id}
+                  </td>
+                  <td>{item.name}</td>
+                  <td>
+                    {item.create_date && !isNaN(new Date(item.create_date))
+                      ? format(new Date(item.create_date), "dd-MM-yyyy")
+                      : "No Data Available"}
+                  </td>
+                  <td>{item.Request_id_assign}</td>
+                  <td>{getProjectName(item)}</td>{" "}
+                  <td>{item.approval ? "Approved" : "Pending"}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+      {showScrollTop && (
+        <button
+          style={{
+            position: "fixed",
+            bottom: "20px",
+            right: "20px",
+            padding: "10px 15px",
+            fontSize: "18px",
+            backgroundColor: "#f57c00",
+            color: "white",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer",
+            zIndex: 1000,
+          }}
+          onClick={scrollToTop}
+        >
+          ↑
+        </button>
+      )}
+    </div>
+  );
+};
+
+export default Mrf;

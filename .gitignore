@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Django/Python specific ignores
 __pycache__/
 *.py[cod]
@@ -29,3 +30,29 @@ media/
 # OS-generated files
 .DS_Store
 Thumbs.db
+=======
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+>>>>>>> 8f6f54306244140727f4fdc83c027a8d4e8f9e43
