@@ -37,7 +37,7 @@ const Inventory = () => {
   const [sortOrder, setSortOrder] = useState("asc"); // "asc" or "desc"
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false); // Track visibility of scroll-to-top button
-  const [statusFilter, setStatusFilter] = useState("Available");
+  const [statusFilter, setStatusFilter] = useState("Overall");
   const [newToolRow, setNewToolRow] = useState(null);
   const [toolInventory, setToolInventory] = useState([]);
   const [showDateFilter, setShowDateFilter] = useState(false);
@@ -68,6 +68,206 @@ const Inventory = () => {
   const [vendorCoords, setVendorCoords] = useState({ top: 0, left: 0 });
   const [selectedVendors, setSelectedVendors] = useState([]);
   const vendorRef = useRef(null);
+  const [allInventoryData, setAllInventoryData] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Overall Inventory should show only Instore, Outstore, and Repair data.
+  // Excluded from Overall: Scrap/Damaged and Tool Inventory.
+  const OVERALL_INVENTORY_STATUSES = [
+    "Available",
+    "Reserved",
+    "In_drone",
+    "Repair",
+  ];
+
+  //////////////////////////////////////////
+  // Tool Inventory expand like component expand
+  const [expandedTools, setExpandedTools] = useState({}); // key: tool.id -> boolean
+
+  // Add entry row inside a tool
+  const [newEntryToolId, setNewEntryToolId] = useState(null); // tool_id string (ex: "T_00001")
+  const [newEntryRow, setNewEntryRow] = useState({
+    status: true,
+    vendor: "",
+    unit_price: "",
+    gst: "",
+    remarks: "",
+  });
+
+  const toggleToolExpand = (toolPk) => {
+    setExpandedTools((prev) => ({
+      ...prev,
+      [toolPk]: !prev[toolPk],
+    }));
+  };
+
+  const getToolQty = (tool) => (tool?.entries ? tool.entries.length : 0);
+
+  const getToolInInventory = (tool) =>
+    (tool?.entries || []).filter((e) => e.status === true).length;
+
+  // POST: create entry inside tool_id
+  const handleAddEntry = async (tool_id) => {
+    try {
+      const payload = {
+        tool_id, // IMPORTANT: backend create serializer expects tool_id
+        status: newEntryRow.status ?? true,
+        vendor: newEntryRow.vendor || "",
+        unit_price:
+          newEntryRow.unit_price === ""
+            ? "0.00"
+            : String(newEntryRow.unit_price),
+        gst: newEntryRow.gst === "" ? "0.00" : String(newEntryRow.gst),
+        remarks: newEntryRow.remarks || "",
+      };
+
+      const res = await fetch(`${config.apiBaseURL}/tool_inventory_entries/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        showErrorToast("Failed to add tool entry.");
+        return;
+      }
+
+      showSuccessToast("Entry added successfully.");
+      setNewEntryToolId(null);
+      setNewEntryRow({
+        status: true,
+        vendor: "",
+        unit_price: "",
+        gst: "",
+        remarks: "",
+      });
+      await fetchToolInventoryData();
+    } catch (err) {
+      console.error(err);
+      showErrorToast("Something went wrong while adding entry.");
+    }
+  };
+
+  // PATCH: toggle status / update fields
+  const handlePatchEntry = async (entryId, patch) => {
+    try {
+      const res = await fetch(
+        `${config.apiBaseURL}/tool_inventory_entries/${entryId}/`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(patch),
+        },
+      );
+
+      if (!res.ok) {
+        showErrorToast("Failed to update entry.");
+        return;
+      }
+
+      showSuccessToast("Entry updated.");
+      await fetchToolInventoryData();
+    } catch (err) {
+      console.error(err);
+      showErrorToast("Network error while updating entry.");
+    }
+  };
+
+  // DELETE: delete entry
+  const handleDeleteEntry = async (entryId) => {
+    try {
+      const res = await fetch(
+        `${config.apiBaseURL}/tool_inventory_entries/${entryId}/`,
+        {
+          method: "DELETE",
+        },
+      );
+
+      if (!res.ok) {
+        showErrorToast("Failed to delete entry.");
+        return;
+      }
+
+      showSuccessToast("Entry deleted.");
+      await fetchToolInventoryData();
+    } catch (err) {
+      console.error(err);
+      showErrorToast("Network error while deleting entry.");
+    }
+  };
+
+  // ---------- TOOL TOTAL PRICE (sum of entries) ----------
+  const toNum = (v) => {
+    const n = Number(v);
+    return isNaN(n) ? 0 : n;
+  };
+
+  const formatINRTool = (amount) =>
+    `₹${Number(amount).toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+
+  const getToolTotalPrice = (tool) => {
+    return (tool?.entries || []).reduce(
+      (sum, e) => sum + toNum(e.total_price),
+      0,
+    );
+  };
+
+  const computeTotalToolInventoryCost = () =>
+    (toolInventory || []).reduce(
+      (sum, tool) => sum + getToolTotalPrice(tool),
+      0,
+    );
+
+  const [editingEntryId, setEditingEntryId] = useState(null);
+  const [entryDraft, setEntryDraft] = useState({
+    status: true,
+    vendor: "",
+    unit_price: "",
+    gst: "",
+    remarks: "",
+  });
+
+  const startEditEntry = (entry) => {
+    setEditingEntryId(entry.id);
+    setEntryDraft({
+      status: !!entry.status,
+      vendor: entry.vendor ?? "",
+      unit_price: entry.unit_price ?? "",
+      gst: entry.gst ?? "",
+      remarks: entry.remarks ?? "",
+    });
+  };
+
+  const cancelEditEntry = () => {
+    setEditingEntryId(null);
+    setEntryDraft({
+      status: true,
+      vendor: "",
+      unit_price: "",
+      gst: "",
+      remarks: "",
+    });
+  };
+
+  const saveEditEntry = async (entryId) => {
+    // PATCH only these fields
+    const patch = {
+      status: !!entryDraft.status,
+      vendor: entryDraft.vendor?.trim() || "",
+      unit_price:
+        entryDraft.unit_price === "" ? "0.00" : String(entryDraft.unit_price),
+      gst: entryDraft.gst === "" ? "0.00" : String(entryDraft.gst),
+      remarks: entryDraft.remarks || "",
+    };
+
+    await handlePatchEntry(entryId, patch);
+    cancelEditEntry();
+  };
+
+  ///////////////////////////
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -133,7 +333,20 @@ const Inventory = () => {
       selectedVendors.length === 0 ||
       selectedVendors.includes(item.vendor_name);
 
-    return categoryMatch && typeMatch && vendorMatch;
+    const search = searchTerm.toLowerCase();
+
+    const searchMatch =
+      !search ||
+      item.component_id?.toLowerCase().includes(search) ||
+      item.serial_number?.toLowerCase().includes(search) ||
+      item.sku_number_inventory?.toLowerCase().includes(search) ||
+      item.category?.toLowerCase().includes(search) ||
+      item.component_type?.toLowerCase().includes(search) ||
+      item.specification?.toLowerCase().includes(search) ||
+      item.UOM?.toLowerCase().includes(search) ||
+      item.vendor_name?.toLowerCase().includes(search);
+
+    return categoryMatch && typeMatch && vendorMatch && searchMatch;
   });
 
   // Step: Group by component_id after filtering
@@ -168,23 +381,37 @@ const Inventory = () => {
 
   // Fetch inventory data from API (filtered by status)
 
-  const fetchInventoryData = async (status = "Available") => {
+  const fetchInventoryData = async (status = "Overall") => {
     try {
       setLoading(true);
-      setVisibleInventory(0); // Reset visible count
-      setHasMore(true); // Enable infinite scroll
-      setIsLoadingMore(false); // Reset loading state
+      setVisibleInventory(0);
+      setHasMore(true);
+      setIsLoadingMore(false);
 
       let allData = [];
 
-      if (status === "Available") {
+      if (status === "Overall") {
+        const responses = await Promise.all(
+          OVERALL_INVENTORY_STATUSES.map((s) =>
+            fetch(`${config.apiBaseURL}/inventory/?status=${s}`),
+          ),
+        );
+
+        if (responses.some((res) => !res.ok)) {
+          throw new Error("Failed to fetch Overall Inventory");
+        }
+
+        const results = await Promise.all(responses.map((res) => res.json()));
+        allData = results.flat();
+      } else if (status === "Available") {
         const [availableRes, reservedRes] = await Promise.all([
           fetch(`${config.apiBaseURL}/inventory/?status=Available`),
           fetch(`${config.apiBaseURL}/inventory/?status=Reserved`),
         ]);
 
-        if (!availableRes.ok || !reservedRes.ok)
+        if (!availableRes.ok || !reservedRes.ok) {
           throw new Error("Failed to fetch Available or Reserved");
+        }
 
         const available = await availableRes.json();
         const reserved = await reservedRes.json();
@@ -192,23 +419,23 @@ const Inventory = () => {
         allData = [...available, ...reserved];
       } else {
         const response = await fetch(
-          `${config.apiBaseURL}/inventory/?status=${status}`
+          `${config.apiBaseURL}/inventory/?status=${status}`,
         );
+
         if (!response.ok) throw new Error("Failed to fetch inventory");
+
         allData = await response.json();
       }
 
-      // Set the data
       setInventoryData(allData);
       setFilteredInventory(allData);
 
-      // Show first 10, or all if less than or equal to 10
       if (allData.length <= 10) {
         setVisibleInventory(allData.length);
-        setHasMore(false); // Nothing left to load
+        setHasMore(false);
       } else {
         setVisibleInventory(10);
-        setHasMore(true); // More to scroll
+        setHasMore(true);
       }
     } catch (error) {
       console.error("Error fetching inventory data:", error);
@@ -271,21 +498,24 @@ const Inventory = () => {
 
   const handleUpdateToolRow = async () => {
     try {
+      const payload = {
+        tool_name: editToolRowData.tool_name?.trim(),
+        remarks: editToolRowData.remarks?.trim() || null,
+      };
+
       const response = await fetch(
         `${config.apiBaseURL}/tool_inventory/${editingToolRow}/`,
         {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(editToolRowData),
-        }
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
       );
 
       if (response.ok) {
         showSuccessToast("Tool updated successfully.");
-        setEditingToolRow(null); // exit edit mode
-        await fetchToolInventoryData(); // Refresh data
+        setEditingToolRow(null);
+        await fetchToolInventoryData();
       } else {
         showErrorToast("Failed to update tool.");
       }
@@ -407,7 +637,7 @@ const Inventory = () => {
         return metaTags.some(
           (tag) =>
             tag.component_id === component?.component_id &&
-            tag.tags.toLowerCase().includes(lowerCaseSearchTerm)
+            tag.tags.toLowerCase().includes(lowerCaseSearchTerm),
         );
       });
     }
@@ -428,7 +658,7 @@ const Inventory = () => {
   // Save
   const handleSaveSKU = async (serialNumber) => {
     const item = filteredInventory.find(
-      (row) => row.serial_number === serialNumber
+      (row) => row.serial_number === serialNumber,
     );
     if (!item) return;
 
@@ -439,7 +669,7 @@ const Inventory = () => {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ sku_number_inventory: tempSKU }),
-        }
+        },
       );
 
       if (!response.ok) {
@@ -449,8 +679,8 @@ const Inventory = () => {
           prev.map((row) =>
             row.serial_number === serialNumber
               ? { ...row, sku_number_inventory: tempSKU }
-              : row
-          )
+              : row,
+          ),
         );
         showSuccessToast("SKU number updated successfully!");
       }
@@ -474,7 +704,11 @@ const Inventory = () => {
     let status = statusFilter;
 
     if (status === "Tool") {
-      reportData = toolInventory; //  from state
+      reportData = toolInventory;
+    } else if (status === "Overall") {
+      reportData = filteredInventory.filter((item) =>
+        OVERALL_INVENTORY_STATUSES.includes(item.status),
+      );
     } else {
       reportData = filteredInventory.filter((item) => item.status === status);
     }
@@ -578,7 +812,7 @@ const Inventory = () => {
     }
 
     const rows = data.map((row) =>
-      headers.map((header) => `"${row[header] || ""}"`).join(",")
+      headers.map((header) => `"${row[header] || ""}"`).join(","),
     );
 
     const csvContent = [headers.join(","), ...rows].join("\n");
@@ -618,17 +852,29 @@ const Inventory = () => {
     setToDate(null);
 
     if (statusFilter === "Tool") {
-      fetchToolInventoryData(); // reset to full list
+      fetchToolInventoryData();
+    } else if (statusFilter === "Overall") {
+      setFilteredInventory(
+        inventoryData.filter((item) =>
+          OVERALL_INVENTORY_STATUSES.includes(item.status),
+        ),
+      );
+    } else if (statusFilter === "Available") {
+      setFilteredInventory(
+        inventoryData.filter(
+          (item) => item.status === "Available" || item.status === "Reserved",
+        ),
+      );
     } else {
       setFilteredInventory(
-        inventoryData.filter((item) => item.status === statusFilter)
+        inventoryData.filter((item) => item.status === statusFilter),
       );
     }
   };
 
   const handleSaveSpecification = async (componentId) => {
     const rowsToUpdate = inventoryData.filter(
-      (item) => item.component_id === componentId
+      (item) => item.component_id === componentId,
     );
 
     try {
@@ -639,7 +885,7 @@ const Inventory = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ specification: tempSpecification }),
-        })
+        }),
       );
 
       await Promise.all(updatePromises);
@@ -651,8 +897,8 @@ const Inventory = () => {
         prev.map((row) =>
           row.component_id === componentId
             ? { ...row, specification: tempSpecification }
-            : row
-        )
+            : row,
+        ),
       );
 
       setEditingComponentSpec(null);
@@ -704,29 +950,34 @@ const Inventory = () => {
   }, [loading, filteredInventory, hasMore]);
 
   const handleSaveToolRow = async () => {
-    const toolToSave = {
-      ...newToolRow,
-      create_date: new Date().toISOString(), // Auto-set current timestamp
+    if (!newToolRow?.tool_name?.trim()) {
+      showWarningToast("Tool name is required");
+      return;
+    }
+
+    const payload = {
+      tool_name: newToolRow.tool_name.trim(),
+      remarks: newToolRow.remarks?.trim() || null,
     };
 
     try {
       const response = await fetch(`${config.apiBaseURL}/tool_inventory/`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(toolToSave),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
-        showSuccessToast("Tool saved successfully.");
-        setNewToolRow(null); // clear input
-        await fetchToolInventoryData(); // Refresh data
+        showSuccessToast("Tool created successfully.");
+        setNewToolRow(null);
+        await fetchToolInventoryData();
       } else {
-        showErrorToast("Failed to save tool.");
+        const err = await response.json().catch(() => ({}));
+        console.error("Create tool error:", err);
+        showErrorToast("Failed to create tool.");
       }
     } catch (error) {
-      console.error("Error saving tool:", error);
+      console.error("Error creating tool:", error);
       showErrorToast("Something went wrong.");
     }
   };
@@ -734,17 +985,16 @@ const Inventory = () => {
   const handleChangeStatusToAvailable = async (serialNumber) => {
     try {
       const response = await fetch(
-        `
-        ${config.apiBaseURL}/inventory/${serialNumber}/`,
+        `${config.apiBaseURL}/inventory/${serialNumber}/`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ status: "Available" }),
-        }
+        },
       );
 
       if (response.ok) {
-        showSuccessToast("Serial ${serialNumber} moved to Available");
+        showSuccessToast(`Serial ${serialNumber} moved to Available`);
         // Refresh inventory after update
         fetchInventoryData("Repair");
       } else {
@@ -758,12 +1008,17 @@ const Inventory = () => {
 
   // ---- Add below your other functions, above `return` ----
   const getStatusScopedItems = () => {
-    if (statusFilter === "Tool") return []; // tools don't have price in your table
+    if (statusFilter === "Tool") return [];
+
+    if (statusFilter === "Overall") {
+      return filteredInventory.filter((item) =>
+        OVERALL_INVENTORY_STATUSES.includes(item.status),
+      );
+    }
 
     if (statusFilter === "Available") {
-      // Available includes Reserved in your UI
       return filteredInventory.filter(
-        (item) => item.status === "Available" || item.status === "Reserved"
+        (item) => item.status === "Available" || item.status === "Reserved",
       );
     }
 
@@ -799,7 +1054,7 @@ const Inventory = () => {
   // Save
   const handleSaveRemarks = async (serialNumber) => {
     const item = filteredInventory.find(
-      (row) => row.serial_number === serialNumber
+      (row) => row.serial_number === serialNumber,
     );
     if (!item) return;
 
@@ -810,7 +1065,7 @@ const Inventory = () => {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ remarks: tempRemarks }),
-        }
+        },
       );
 
       if (!response.ok) {
@@ -820,8 +1075,8 @@ const Inventory = () => {
           prev.map((row) =>
             row.serial_number === serialNumber
               ? { ...row, remarks: tempRemarks }
-              : row
-          )
+              : row,
+          ),
         );
         showSuccessToast("Remarks updated successfully!");
       }
@@ -871,18 +1126,82 @@ const Inventory = () => {
     }
   };
 
+  const fetchAllInventoryData = async () => {
+    try {
+      const responses = await Promise.all(
+        OVERALL_INVENTORY_STATUSES.map((status) =>
+          fetch(`${config.apiBaseURL}/inventory/?status=${status}`),
+        ),
+      );
+
+      if (responses.some((res) => !res.ok)) {
+        throw new Error("Failed to fetch overall inventory total data");
+      }
+
+      const results = await Promise.all(responses.map((res) => res.json()));
+      const combined = results.flat();
+
+      setAllInventoryData(combined);
+    } catch (error) {
+      console.error("Error fetching all inventory:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllInventoryData();
+  }, []);
+
+  const computeGrandTotal = () => {
+    return allInventoryData.reduce((sum, item) => {
+      const n = Number(item?.total_price ?? item?.price ?? 0);
+      return sum + (isNaN(n) ? 0 : n);
+    }, 0);
+  };
+
+  const filteredToolInventory =
+    statusFilter === "Tool" && searchTerm.trim()
+      ? toolInventory.filter((tool) =>
+          [tool.tool_id, tool.tool_name, tool.vendor, tool.remarks]
+            .join(" ")
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()),
+        )
+      : toolInventory;
+
   return (
     <div className="inventory-container">
-      <div className="header">
-        <h2>Inventory Data</h2>
+      <div
+        className="header"
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        {/* LEFT SIDE */}
+        <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+          <h2 style={{ margin: 0 }}>Inventory Data</h2>
+
+          <span
+            style={{ fontWeight: "bold", color: "green", fontSize: "23px" }}
+          >
+            Grand Total: {formatINR(computeGrandTotal())}
+          </span>
+        </div>
+
+        {/* RIGHT SIDE */}
         <div className="right-wrapper">
           <div className="search-bar-container" style={{ width: "300px" }}>
             <input
               type="text"
               className="search-bar"
-              placeholder="Search by tag..."
-              value={selectedTag}
-              onChange={(e) => setSelectedTag(e.target.value)}
+              placeholder={
+                statusFilter === "Tool"
+                  ? "Search Tool ID, Name, Vendor..."
+                  : "Search by Component ID, Serial No, SKU, Vendor..."
+              }
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
             <span className="search-icon">
               <i className="fa fa-search" aria-hidden="true"></i>
@@ -892,13 +1211,23 @@ const Inventory = () => {
       </div>
       <div className="tab-selector">
         <button
+          className={`tab-btn ${statusFilter === "Overall" ? "active" : ""}`}
+          onClick={() => {
+            resetDateFilter();
+            setStatusFilter("Overall");
+          }}
+        >
+          Overall Inventory
+        </button>
+
+        <button
           className={`tab-btn ${statusFilter === "Available" ? "active" : ""}`}
           onClick={() => {
-            resetDateFilter(); // <-- clear date
+            resetDateFilter();
             setStatusFilter("Available");
           }}
         >
-          Available
+          Instore
         </button>
         <button
           className={`tab-btn ${statusFilter === "In_drone" ? "active" : ""}`}
@@ -907,7 +1236,7 @@ const Inventory = () => {
             setStatusFilter("In_drone");
           }}
         >
-          In Drone
+          Outstore
         </button>
         <button
           className={`tab-btn ${statusFilter === "Repair" ? "active" : ""}`}
@@ -960,38 +1289,49 @@ const Inventory = () => {
           <span style={{ fontWeight: "bold", fontSize: "20px" }}>
             Total Inventory Count:
           </span>
+
           <span style={{ fontWeight: "bold", fontSize: "20px" }}>
             {(() => {
               if (statusFilter === "Tool") return toolInventory.length || 0;
+
+              if (statusFilter === "Overall") {
+                return filteredInventory.filter((item) =>
+                  OVERALL_INVENTORY_STATUSES.includes(item.status),
+                ).length;
+              }
+
               if (statusFilter === "Available") {
                 return filteredInventory.filter(
                   (item) =>
-                    item.status === "Available" || item.status === "Reserved"
+                    item.status === "Available" || item.status === "Reserved",
                 ).length;
               }
+
               return filteredInventory.filter(
-                (item) => item.status === statusFilter
+                (item) => item.status === statusFilter,
               ).length;
             })()}
           </span>
 
-          {statusFilter !== "Tool" && (
-            <>
-              <span
-                style={{
-                  marginLeft: "20px",
-                  fontWeight: "bold",
-                  fontSize: "20px",
-                  color: "#333",
-                }}
-              >
-                Total Cost:
-              </span>
-              <span style={{ fontWeight: "bold", fontSize: "20px" }}>
-                {statusFilter === "Tool" ? "—" : formatINR(computeTotalCost())}
-              </span>
-            </>
-          )}
+          {/*  Total Cost for BOTH Inventory and Tool */}
+          <>
+            <span
+              style={{
+                marginLeft: "20px",
+                fontWeight: "bold",
+                fontSize: "20px",
+                color: "#333",
+              }}
+            >
+              Total Cost:
+            </span>
+
+            <span style={{ fontWeight: "bold", fontSize: "20px" }}>
+              {statusFilter === "Tool"
+                ? formatINRTool(computeTotalToolInventoryCost())
+                : formatINR(computeTotalCost())}
+            </span>
+          </>
         </div>
         {(fromDate || toDate) && (
           <div style={{ fontSize: "14px", color: "#555" }}>
@@ -1035,12 +1375,8 @@ const Inventory = () => {
               title="Add Tool Inventory"
               onClick={() =>
                 setNewToolRow({
-                  component_id: "",
                   tool_name: "",
-                  quantity: 0,
-                  in_inventory: 0,
-                  team: "",
-                  remark: "",
+                  remarks: "",
                 })
               }
             >
@@ -1073,7 +1409,7 @@ const Inventory = () => {
               const isMore = nextVisible < filteredInventory.length;
 
               setVisibleInventory(
-                isMore ? nextVisible : filteredInventory.length
+                isMore ? nextVisible : filteredInventory.length,
               );
               setHasMore(isMore);
               setIsLoadingMore(false);
@@ -1155,7 +1491,7 @@ const Inventory = () => {
                               setSelectedCategory((prev) =>
                                 isChecked
                                   ? [...prev, category]
-                                  : prev.filter((c) => c !== category)
+                                  : prev.filter((c) => c !== category),
                               );
                             }}
                           />
@@ -1214,7 +1550,7 @@ const Inventory = () => {
                               setSelectedComponentTypes((prev) =>
                                 isChecked
                                   ? [...prev, type]
-                                  : prev.filter((t) => t !== type)
+                                  : prev.filter((t) => t !== type),
                               );
                             }}
                           />
@@ -1288,7 +1624,7 @@ const Inventory = () => {
                               setSelectedVendors((prev) =>
                                 isChecked
                                   ? [...prev, vendor]
-                                  : prev.filter((v) => v !== vendor)
+                                  : prev.filter((v) => v !== vendor),
                               );
                             }}
                           />
@@ -1347,8 +1683,7 @@ const Inventory = () => {
                           row.status === "Available" ||
                           row.status === "Reserved" ||
                           row.status === "Repair" ||
-                          row.status === "Damaged" ||
-                          row.status === "In_drone"
+                          row.status === "In_drone",
                       ).length || 0;
                     const firstRow = componentRows[0];
                     const component = componentData[componentId] || {};
@@ -1362,7 +1697,7 @@ const Inventory = () => {
                           style={{
                             cursor: "pointer",
                             backgroundColor: componentRows.some(
-                              (row) => row.status !== "Available"
+                              (row) => row.status !== "Available",
                             )
                               ? "white"
                               : "", // Highlight disabled rows
@@ -1386,7 +1721,7 @@ const Inventory = () => {
                             onDoubleClick={() => {
                               setEditingComponentSpec(componentId);
                               setTempSpecification(
-                                firstRow.specification || ""
+                                firstRow.specification || "",
                               );
                             }}
                             style={{ cursor: "pointer" }}
@@ -1431,7 +1766,7 @@ const Inventory = () => {
                             {firstRow.create_date
                               ? format(
                                   parseISO(firstRow.create_date),
-                                  "dd-MM-yyyy"
+                                  "dd-MM-yyyy",
                                 )
                               : format(new Date(), "dd-MM-yyyy")}
                           </td>
@@ -1442,7 +1777,7 @@ const Inventory = () => {
                               {
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
-                              }
+                              },
                             )}
                           </td>
                           <td></td>
@@ -1450,83 +1785,57 @@ const Inventory = () => {
                         </tr>
 
                         {isExpanded &&
-                          componentRows.map((row, index) => (
+                          componentRows.map((row) => (
                             <tr
-                              key={index}
+                              key={row.serial_number}
                               className="expanded-row"
-                              style={{
-                                backgroundColor: !row.status
-                                  ? "#e0e0e0"
-                                  : "#ededed", // Highlight disabled items
-                                color:
-                                  row.status !== "Available"
-                                    ? "#a0a0a0"
-                                    : "inherit",
-                              }}
                             >
-                              <td>{row.component_id}</td>
-                              <td>{row.serial_number} </td>
+                              <td>{row.component_id || ""}</td>
+
+                              <td>{row.serial_number || ""}</td>
+
                               <td
                                 onDoubleClick={() =>
                                   handleDoubleClick(
                                     row.serial_number,
-                                    row.sku_number_inventory
+                                    row.sku_number_inventory,
                                   )
                                 }
                                 style={{ cursor: "pointer" }}
                               >
-                                <div className="remarks-edit-container">
-                                  {editingSKU === row.serial_number ? (
-                                    <>
-                                      <input
-                                        type="text"
-                                        className="remarks-input"
-                                        value={tempSKU}
-                                        onChange={(e) =>
-                                          handleSKUChange(e.target.value)
-                                        }
-                                        autoFocus
-                                      />
-                                      <button
-                                        className="remarks-btn save-btn"
-                                        onClick={() =>
-                                          handleSaveSKU(row.serial_number)
-                                        }
-                                      >
-                                        Save
-                                      </button>
-                                      <button
-                                        className="remarks-btn cancel-btn"
-                                        onClick={handleCancelEdit}
-                                      >
-                                        Cancel
-                                      </button>
-                                    </>
-                                  ) : (
-                                    <span
-                                      style={{
-                                        color:
-                                          row.sku_number_inventory &&
-                                          row.sku_number_inventory.trim() !== ""
-                                            ? "black"
-                                            : "gray",
-                                      }}
+                                {editingSKU === row.serial_number ? (
+                                  <>
+                                    <input
+                                      type="text"
+                                      value={tempSKU}
+                                      onChange={(e) =>
+                                        handleSKUChange(e.target.value)
+                                      }
+                                      autoFocus
+                                    />
+                                    <button
+                                      onClick={() =>
+                                        handleSaveSKU(row.serial_number)
+                                      }
                                     >
-                                      {row.sku_number_inventory &&
-                                      row.sku_number_inventory.trim() !== ""
-                                        ? row.sku_number_inventory
-                                        : "Not Available"}
-                                    </span>
-                                  )}
-                                </div>
+                                      Save
+                                    </button>
+                                    <button onClick={handleCancelEdit}>
+                                      Cancel
+                                    </button>
+                                  </>
+                                ) : (
+                                  row.sku_number_inventory || "-"
+                                )}
                               </td>
-                              <td>{component.category || ""}</td>
-                              <td>{component.component_type || ""}</td>
+
+                              <td>{row.category || ""}</td>
+                              <td>{row.component_type || ""}</td>
                               <td
                                 className="specification-cell"
-                                title={row.specification}
+                                title={row.specification || ""}
                               >
-                                {row.specification || ""}
+                                {row.specification || "-"}
                               </td>
                               <td>{row.UOM || ""}</td>
                               <td>{row.vendor_name || ""}</td>
@@ -1534,88 +1843,59 @@ const Inventory = () => {
                                 {row.create_date
                                   ? format(
                                       parseISO(row.create_date),
-                                      "dd-MM-yyyy"
+                                      "dd-MM-yyyy",
                                     )
-                                  : format(new Date(), "dd-MM-yyyy")}
+                                  : ""}
                               </td>
+
                               <td style={{ textAlign: "right" }}>
-                                ₹
-                                {parseFloat(row.total_price).toLocaleString(
-                                  "en-IN",
-                                  {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                  }
-                                )}
+                                {row.total_price
+                                  ? `₹${parseFloat(
+                                      row.total_price,
+                                    ).toLocaleString("en-IN", {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                    })}`
+                                  : "-"}
                               </td>
-                              <td>
-                                {row.status}
-                                {statusFilter === "Repair" &&
-                                  row.status === "Repair" && (
-                                    <button
-                                      className="make-available-btn"
-                                      onClick={() =>
-                                        handleChangeStatusToAvailable(
-                                          row.serial_number
-                                        )
-                                      }
-                                    >
-                                      Make Available
-                                    </button>
-                                  )}
-                              </td>{" "}
+
+                              <td>{row.status || ""}</td>
+
                               <td
                                 onDoubleClick={() =>
                                   handleDoubleClickRemarks(
                                     row.serial_number,
-                                    row.remarks
+                                    row.remarks,
                                   )
                                 }
                                 style={{ cursor: "pointer" }}
+                                className="specification-cell"
+                                title={row.remarks || ""}
                               >
-                                <div className="remarks-edit-container">
-                                  {editingRemarks === row.serial_number ? (
-                                    <>
-                                      <input
-                                        type="text"
-                                        className="remarks-input"
-                                        value={tempRemarks}
-                                        onChange={(e) =>
-                                          handleRemarksChange(e.target.value)
-                                        }
-                                        autoFocus
-                                      />
-                                      <button
-                                        className="remarks-btn save-btn"
-                                        onClick={() =>
-                                          handleSaveRemarks(row.serial_number)
-                                        }
-                                      >
-                                        Save
-                                      </button>
-                                      <button
-                                        className="remarks-btn cancel-btn"
-                                        onClick={handleCancelRemarks}
-                                      >
-                                        Cancel
-                                      </button>
-                                    </>
-                                  ) : (
-                                    <span
-                                      style={{
-                                        color:
-                                          row.remarks &&
-                                          row.remarks.trim() !== ""
-                                            ? "black"
-                                            : "gray",
-                                      }}
+                                {editingRemarks === row.serial_number ? (
+                                  <>
+                                    <input
+                                      type="text"
+                                      value={tempRemarks}
+                                      onChange={(e) =>
+                                        handleRemarksChange(e.target.value)
+                                      }
+                                      autoFocus
+                                    />
+                                    <button
+                                      onClick={() =>
+                                        handleSaveRemarks(row.serial_number)
+                                      }
                                     >
-                                      {row.remarks && row.remarks.trim() !== ""
-                                        ? row.remarks
-                                        : "No data"}
-                                    </span>
-                                  )}
-                                </div>
+                                      Save
+                                    </button>
+                                    <button onClick={handleCancelRemarks}>
+                                      Cancel
+                                    </button>
+                                  </>
+                                ) : (
+                                  row.remarks || "-"
+                                )}
                               </td>
                             </tr>
                           ))}
@@ -1687,35 +1967,29 @@ const Inventory = () => {
             <table className="tool-inventory-table">
               <thead>
                 <tr>
-                  <th>Component ID</th>
+                  <th>Tool ID</th>
                   <th>Tool Name</th>
-                  <th>Quantity</th>
+                  <th>Qty</th>
                   <th>In Inventory</th>
-                  <th>Team</th>
+                  <th>Unit Price</th>
+                  <th>GST (%)</th>
+                  <th>Total Price</th>
+                  <th>Vendor</th>
                   <th>Remarks</th>
-                  <th>Create Date</th>
                   <th>Action</th>
                 </tr>
               </thead>
+
               <tbody>
                 {/* Adding new tool row */}
                 {newToolRow && (
                   <tr>
+                    <td style={{ textAlign: "center", color: "gray" }}></td>
+
                     <td>
                       <input
                         type="text"
-                        value={newToolRow.component_id}
-                        onChange={(e) =>
-                          setNewToolRow({
-                            ...newToolRow,
-                            component_id: e.target.value,
-                          })
-                        }
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
+                        placeholder="Tool Name"
                         value={newToolRow.tool_name}
                         onChange={(e) =>
                           setNewToolRow({
@@ -1725,43 +1999,31 @@ const Inventory = () => {
                         }
                       />
                     </td>
-                    <td>
-                      <input
-                        type="number"
-                        value={newToolRow.quantity}
-                        onChange={(e) =>
-                          setNewToolRow({
-                            ...newToolRow,
-                            quantity: parseInt(e.target.value) || 0,
-                          })
-                        }
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="number"
-                        value={newToolRow.in_inventory}
-                        onChange={(e) =>
-                          setNewToolRow({
-                            ...newToolRow,
-                            in_inventory: parseInt(e.target.value) || 0,
-                          })
-                        }
-                      />
-                    </td>
+
+                    {/* Qty */}
+                    <td style={{ textAlign: "center", color: "gray" }}>-</td>
+
+                    {/* In Inventory */}
+                    <td style={{ textAlign: "center", color: "gray" }}>-</td>
+
+                    {/* Unit Price */}
+                    <td style={{ textAlign: "center", color: "gray" }}>-</td>
+
+                    {/* GST */}
+                    <td style={{ textAlign: "center", color: "gray" }}>-</td>
+
+                    {/* Total */}
+                    <td style={{ textAlign: "center", color: "gray" }}>-</td>
+
+                    {/* Vendor */}
+                    <td style={{ textAlign: "center", color: "gray" }}>-</td>
+
+                    {/* Remarks */}
                     <td>
                       <input
                         type="text"
-                        value={newToolRow.team}
-                        onChange={(e) =>
-                          setNewToolRow({ ...newToolRow, team: e.target.value })
-                        }
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        value={newToolRow.remarks}
+                        placeholder="Remarks (optional)"
+                        value={newToolRow.remarks || ""}
                         onChange={(e) =>
                           setNewToolRow({
                             ...newToolRow,
@@ -1770,7 +2032,6 @@ const Inventory = () => {
                         }
                       />
                     </td>
-                    <td style={{ textAlign: "center", color: "gray" }}>Auto</td>
 
                     <td className="event-buttons">
                       <button onClick={handleSaveToolRow}>Save</button>
@@ -1782,156 +2043,388 @@ const Inventory = () => {
                 )}
 
                 {/* Existing tool rows with edit functionality */}
-                {toolInventory.length > 0 ? (
-                  toolInventory.map((tool, idx) =>
-                    editingToolRow === tool.id ? (
-                      <tr key={tool.id}>
-                        <td>
-                          <input
-                            type="text"
-                            value={editToolRowData.component_id}
-                            onChange={(e) =>
-                              setEditToolRowData({
-                                ...editToolRowData,
-                                component_id: e.target.value,
-                              })
-                            }
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="text"
-                            value={editToolRowData.tool_name}
-                            onChange={(e) =>
-                              setEditToolRowData({
-                                ...editToolRowData,
-                                tool_name: e.target.value,
-                              })
-                            }
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={editToolRowData.quantity}
-                            onChange={(e) =>
-                              setEditToolRowData({
-                                ...editToolRowData,
-                                quantity: parseInt(e.target.value) || 0,
-                              })
-                            }
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={editToolRowData.in_inventory}
-                            onChange={(e) =>
-                              setEditToolRowData({
-                                ...editToolRowData,
-                                in_inventory: parseInt(e.target.value) || 0,
-                              })
-                            }
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="text"
-                            value={editToolRowData.team}
-                            onChange={(e) =>
-                              setEditToolRowData({
-                                ...editToolRowData,
-                                team: e.target.value,
-                              })
-                            }
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="text"
-                            value={editToolRowData.remarks}
-                            onChange={(e) =>
-                              setEditToolRowData({
-                                ...editToolRowData,
-                                remarks: e.target.value,
-                              })
-                            }
-                          />
-                        </td>
-                        <td>
-                          {tool.created_at
-                            ? format(new Date(tool.created_at), "dd-MM-yyyy")
-                            : "N/A"}
-                        </td>
+                {filteredToolInventory.length > 0 ? (
+                  filteredToolInventory.map((tool) => {
+                    const isExpanded = expandedTools?.[tool.id];
+                    const qty = getToolQty(tool);
+                    const inInv = getToolInInventory(tool);
 
-                        <td className="event-buttons">
-                          <button
-                            onClick={handleUpdateToolRow}
-                            className="edit-btn"
-                          >
-                            Save
-                          </button>
-                          <button
-                            onClick={() => setEditingToolRow(null)}
-                            className="delete-btn"
-                          >
-                            Cancel
-                          </button>
-                        </td>
-                      </tr>
-                    ) : (
-                      <tr key={tool.id}>
-                        <td>{tool.component_id}</td>
-                        <td>{tool.tool_name || "N/A"}</td>
-                        <td>{tool.quantity || 0}</td>
-                        <td>{tool.in_inventory || 0}</td>
-                        <td>{tool.team || "0"}</td>
-                        <td
-                          className="specification-cell"
-                          title={tool.remarks || ""}
+                    return (
+                      <React.Fragment key={tool.id}>
+                        {/* PARENT ROW */}
+                        <tr
+                          onClick={() => toggleToolExpand(tool.id)}
+                          className="clickable-row"
+                          style={{ cursor: "pointer" }}
                         >
-                          {tool.remarks || "null"}
-                        </td>
-                        <td>
-                          {tool.created_at
-                            ? format(new Date(tool.created_at), "dd-MM-yyyy")
-                            : "N/A"}
-                        </td>
-
-                        <td>
-                          <button
-                            onClick={() => {
-                              setEditingToolRow(tool.id);
-                              setEditToolRowData(tool);
+                          <td
+                            style={{
+                              textDecoration: qty > 0 ? "underline" : "none",
                             }}
-                            className="edit-btn"
                           >
-                            Edit
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  )
+                            {tool?.tool_id || "N/A"}
+                          </td>
+                          <td>{tool?.tool_name || "N/A"}</td>
+
+                          <td style={{ color: "Grey", fontStyle: "italic" }}>
+                            {`Qty: ${qty}`}
+                          </td>
+                          <td style={{ color: "Grey", fontStyle: "italic" }}>
+                            {`In: ${inInv}`}
+                          </td>
+
+                          {/* parent row should be empty for these */}
+                          <td></td>
+                          <td></td>
+                          <td style={{ fontWeight: 600, textAlign: "right" }}>
+                            {getToolTotalPrice(tool) > 0
+                              ? formatINRTool(getToolTotalPrice(tool))
+                              : "-"}
+                          </td>
+                          <td></td>
+
+                          <td
+                            className="specification-cell"
+                            title={tool?.remarks || ""}
+                          >
+                            {tool?.remarks || "-"}
+                          </td>
+
+                          <td
+                            onClick={(e) => e.stopPropagation()}
+                            className="event-buttons"
+                            style={{ display: "flex", gap: "6px" }}
+                          >
+                            <button
+                              className="edit-btn"
+                              onClick={() => {
+                                setNewEntryToolId(tool.tool_id);
+                                setNewEntryRow({
+                                  status: true,
+                                  vendor: "",
+                                  unit_price: "",
+                                  gst: "",
+                                  remarks: "",
+                                });
+                                if (!expandedTools?.[tool.id]) {
+                                  toggleToolExpand(tool.id);
+                                }
+                              }}
+                            >
+                              + Add Qty
+                            </button>
+                          </td>
+                        </tr>
+
+                        {/* CHILD AREA */}
+                        {isExpanded && (
+                          <>
+                            {/* ADD ENTRY INLINE ROW */}
+                            {newEntryToolId === tool.tool_id && (
+                              <tr
+                                className="expanded-row"
+                                style={{ background: "#ededed" }}
+                              >
+                                <td
+                                  colSpan={2}
+                                  style={{ fontStyle: "italic", color: "#555" }}
+                                >
+                                  Add entry for {tool.tool_id}
+                                </td>
+
+                                <td colSpan={2}>
+                                  <label
+                                    style={{
+                                      display: "flex",
+                                      gap: 8,
+                                      alignItems: "center",
+                                    }}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={!!newEntryRow.status}
+                                      onChange={(e) =>
+                                        setNewEntryRow((p) => ({
+                                          ...p,
+                                          status: e.target.checked,
+                                        }))
+                                      }
+                                    />
+                                    In Inventory
+                                  </label>
+                                </td>
+
+                                <td>
+                                  <input
+                                    type="number"
+                                    placeholder="Unit Price"
+                                    value={newEntryRow.unit_price}
+                                    onChange={(e) =>
+                                      setNewEntryRow((p) => ({
+                                        ...p,
+                                        unit_price: e.target.value,
+                                      }))
+                                    }
+                                  />
+                                </td>
+
+                                <td>
+                                  <input
+                                    type="number"
+                                    placeholder="GST"
+                                    value={newEntryRow.gst}
+                                    onChange={(e) =>
+                                      setNewEntryRow((p) => ({
+                                        ...p,
+                                        gst: e.target.value,
+                                      }))
+                                    }
+                                  />
+                                </td>
+
+                                <td
+                                  style={{ color: "gray", textAlign: "center" }}
+                                >
+                                  Auto
+                                </td>
+
+                                <td>
+                                  <input
+                                    type="text"
+                                    placeholder="Vendor"
+                                    value={newEntryRow.vendor}
+                                    onChange={(e) =>
+                                      setNewEntryRow((p) => ({
+                                        ...p,
+                                        vendor: e.target.value,
+                                      }))
+                                    }
+                                  />
+                                </td>
+
+                                <td>
+                                  <input
+                                    type="text"
+                                    placeholder="Remarks"
+                                    value={newEntryRow.remarks}
+                                    onChange={(e) =>
+                                      setNewEntryRow((p) => ({
+                                        ...p,
+                                        remarks: e.target.value,
+                                      }))
+                                    }
+                                  />
+                                </td>
+
+                                <td className="event-buttons">
+                                  <button
+                                    onClick={() => handleAddEntry(tool.tool_id)}
+                                  >
+                                    Save
+                                  </button>
+                                  <button
+                                    onClick={() => setNewEntryToolId(null)}
+                                  >
+                                    Cancel
+                                  </button>
+                                </td>
+                              </tr>
+                            )}
+
+                            {/* EXISTING ENTRIES */}
+                            {(tool.entries || []).map((entry) => {
+                              const isEditing = editingEntryId === entry.id;
+
+                              return (
+                                <tr
+                                  key={entry.id}
+                                  className="expanded-row"
+                                  style={{
+                                    backgroundColor: entry.status
+                                      ? "#ededed"
+                                      : "#e0e0e0",
+                                    color: entry.status ? "inherit" : "#888",
+                                  }}
+                                  onClick={(e) => e.stopPropagation()} // important: don't collapse parent while editing
+                                >
+                                  {/* 1) Tool ID */}
+                                  <td>{tool.tool_id}</td>
+
+                                  {/* 2) Tool Name */}
+                                  <td>{tool.tool_name}</td>
+
+                                  {/* 3) Qty col (unused) */}
+                                  <td
+                                    style={{
+                                      color: "Grey",
+                                      fontStyle: "italic",
+                                    }}
+                                  ></td>
+
+                                  {/* 4) In Inventory */}
+                                  <td style={{ textAlign: "center" }}>
+                                    {isEditing ? (
+                                      <input
+                                        type="checkbox"
+                                        checked={!!entryDraft.status}
+                                        onChange={(e) =>
+                                          setEntryDraft((p) => ({
+                                            ...p,
+                                            status: e.target.checked,
+                                          }))
+                                        }
+                                      />
+                                    ) : (
+                                      <input
+                                        type="checkbox"
+                                        checked={!!entry.status}
+                                        onChange={(e) =>
+                                          handlePatchEntry(entry.id, {
+                                            status: e.target.checked,
+                                          })
+                                        }
+                                      />
+                                    )}
+                                  </td>
+
+                                  {/* 5) Unit Price */}
+                                  <td>
+                                    {isEditing ? (
+                                      <input
+                                        type="number"
+                                        value={entryDraft.unit_price}
+                                        onChange={(e) =>
+                                          setEntryDraft((p) => ({
+                                            ...p,
+                                            unit_price: e.target.value,
+                                          }))
+                                        }
+                                        style={{ width: "100%" }}
+                                      />
+                                    ) : (
+                                      (entry.unit_price ?? "-")
+                                    )}
+                                  </td>
+
+                                  {/* 6) GST */}
+                                  <td>
+                                    {isEditing ? (
+                                      <input
+                                        type="number"
+                                        value={entryDraft.gst}
+                                        onChange={(e) =>
+                                          setEntryDraft((p) => ({
+                                            ...p,
+                                            gst: e.target.value,
+                                          }))
+                                        }
+                                        style={{ width: "100%" }}
+                                      />
+                                    ) : (
+                                      (entry.gst ?? "-")
+                                    )}
+                                  </td>
+
+                                  {/* 7) Total */}
+                                  <td>{entry.total_price ?? "-"}</td>
+
+                                  {/* 8) Vendor */}
+                                  <td>
+                                    {isEditing ? (
+                                      <input
+                                        type="text"
+                                        value={entryDraft.vendor}
+                                        onChange={(e) =>
+                                          setEntryDraft((p) => ({
+                                            ...p,
+                                            vendor: e.target.value,
+                                          }))
+                                        }
+                                        style={{ width: "100%" }}
+                                      />
+                                    ) : (
+                                      entry.vendor || "-"
+                                    )}
+                                  </td>
+
+                                  {/* 9) Remarks */}
+                                  <td
+                                    className="specification-cell"
+                                    title={entry.remarks || ""}
+                                  >
+                                    {isEditing ? (
+                                      <input
+                                        type="text"
+                                        value={entryDraft.remarks}
+                                        onChange={(e) =>
+                                          setEntryDraft((p) => ({
+                                            ...p,
+                                            remarks: e.target.value,
+                                          }))
+                                        }
+                                        style={{ width: "100%" }}
+                                      />
+                                    ) : (
+                                      entry.remarks || "-"
+                                    )}
+                                  </td>
+
+                                  {/* 10) Action */}
+                                  <td
+                                    className="event-buttons"
+                                    style={{ display: "flex", gap: "6px" }}
+                                  >
+                                    {isEditing ? (
+                                      <>
+                                        <button
+                                          className="edit-btn"
+                                          onClick={() =>
+                                            saveEditEntry(entry.id)
+                                          }
+                                        >
+                                          Save
+                                        </button>
+                                        <button
+                                          className="delete-btn"
+                                          onClick={cancelEditEntry}
+                                        >
+                                          Cancel
+                                        </button>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <button
+                                          className="edit-btn"
+                                          onClick={() => startEditEntry(entry)}
+                                        >
+                                          Edit
+                                        </button>
+                                        <button
+                                          className="delete-btn"
+                                          onClick={() =>
+                                            handleDeleteEntry(entry.id)
+                                          }
+                                        >
+                                          Delete
+                                        </button>
+                                      </>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </>
+                        )}
+                      </React.Fragment>
+                    );
+                  })
                 ) : (
                   <tr>
                     <td
-                      colSpan="11"
+                      colSpan="10"
                       style={{ textAlign: "center", color: "gray" }}
                     >
-                      {selectedTag.trim() ? (
-                        <>
-                          No results found for tag "
-                          <strong>{selectedTag}</strong>"
-                        </>
-                      ) : fromDate && toDate ? (
-                        <>
-                          No tool data available from{" "}
-                          <strong>{formatDate(fromDate)}</strong> to{" "}
-                          <strong>{formatDate(toDate)}</strong>.
-                        </>
-                      ) : (
-                        "No Tool Inventory data available."
-                      )}
+                      No Tool Inventory data available.
                     </td>
                   </tr>
                 )}

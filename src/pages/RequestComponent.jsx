@@ -61,7 +61,7 @@ const RequestComponent = () => {
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ reason: reasonDraft?.trim() || null }),
+          body: JSON.stringify({ remarks: reasonDraft?.trim() || null }),
         }
       );
 
@@ -75,7 +75,7 @@ const RequestComponent = () => {
       setComponentList((prev) =>
         prev.map((rc) =>
           rc.id === item.id
-            ? { ...rc, reason: reasonDraft?.trim() || null }
+            ? { ...rc, remarks: reasonDraft?.trim() || null }
             : rc
         )
       );
@@ -100,6 +100,10 @@ const RequestComponent = () => {
     component_specification: "",
     product_link: "",
     uom: "",
+
+    hsn_number: "",
+    sku_number: "",
+    part_number: "",
   });
 
   const [dropdownOptions, setDropdownOptions] = useState({
@@ -183,11 +187,18 @@ const RequestComponent = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const payload = {
+      ...formData,
+      hsn_number: formData.hsn_number?.trim() || null,
+      sku_number: formData.sku_number?.trim() || null,
+      part_number: formData.part_number?.trim() || null,
+    };
+
     try {
       const response = await fetch(`${config.apiBaseURL}/request_component/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
@@ -204,6 +215,10 @@ const RequestComponent = () => {
           component_specification: "",
           product_link: "",
           uom: "",
+
+          hsn_number: "",
+          sku_number: "",
+          part_number: "",
         });
 
         // Add new item to top of list instantly
@@ -235,20 +250,28 @@ const RequestComponent = () => {
   };
 
   const handleAddToComponentMaster = async (item) => {
+    const toList = (v) => {
+      const t = (v || "").trim();
+      return t ? [t] : []; // first element list
+    };
+
     const payload = {
       component_type: item.component_type,
       component_specification: item.component_specification,
       unit_of_measurement: item.uom,
       category: item.category,
       tally_reference: "",
+
+      //  store as list in ComponentMaster
+      hsn_numbers: toList(item.hsn_number),
+      sku_numbers: toList(item.sku_number),
+      part_numbers: toList(item.part_number),
     };
 
     try {
       const response = await fetch(`${config.apiBaseURL}/component/`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
@@ -258,21 +281,20 @@ const RequestComponent = () => {
 
         showSuccessToast(`Added to Component Master: ${generatedComponentId}`);
 
-        //  Update request_component with component_id
+        //  update request_component status + component_id
         await fetch(`${config.apiBaseURL}/request_component/${item.id}/`, {
           method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             status: "Added",
-            component_id: generatedComponentId, //  Save to request_component
+            component_id: generatedComponentId,
           }),
         });
 
         const updatedList = await fetch(
           `${config.apiBaseURL}/request_component/`
         ).then((res) => res.json());
+
         setComponentList(updatedList);
       } else {
         const errorData = await response.json();
@@ -375,7 +397,7 @@ const RequestComponent = () => {
           };
           if (componentId) patchBody.component_id = componentId;
           if (reasonText && reasonText.trim())
-            patchBody.reason = reasonText.trim();
+            patchBody.remarks = reasonText.trim();
 
           await fetch(`${config.apiBaseURL}/request_component/${item.id}/`, {
             method: "PATCH",
@@ -526,6 +548,43 @@ const RequestComponent = () => {
                       required
                     />
                   </div>
+
+                  <div className="forms-group">
+                    <label htmlFor="">HSN Number</label>
+                    <input
+                      type="text"
+                      name="hsn_number"
+                      value={formData.hsn_number}
+                      onChange={handleChange}
+                      maxLength={50}
+                      placeholder="Enter HSN Number"
+                    />
+                  </div>
+
+                  <div className="forms-group">
+                    <label htmlFor="">SKU Number</label>
+                    <input
+                      type="text"
+                      name="sku_number"
+                      value={formData.sku_number}
+                      onChange={handleChange}
+                      maxLength={50}
+                      placeholder="Enter SKU Number"
+                    />
+                  </div>
+
+                  <div className="forms-group">
+                    <label htmlFor="">Part Number</label>
+                    <input
+                      type="text"
+                      name="part_number"
+                      value={formData.part_number}
+                      onChange={handleChange}
+                      maxLength={50}
+                      placeholder="Enter Part Number"
+                    />
+                  </div>
+
                   <div className="popup-actions">
                     <button type="submit">Submit</button>
                     <button type="button" onClick={() => setShowModal(false)}>
@@ -559,6 +618,9 @@ const RequestComponent = () => {
                 <th>Specification</th>
                 <th>Product Link</th>
                 <th>UOM</th>
+                <th>HSN.No</th>
+                <th>SKU.No</th>
+                <th>Part.No</th>
 
                 <th>Date</th>
 
@@ -661,6 +723,9 @@ const RequestComponent = () => {
                       )}
                     </td>
                     <td>{item.uom}</td>
+                    <td>{item.hsn_number}</td>
+                    <td>{item.sku_number}</td>
+                    <td>{item.part_number}</td>
                     <td>{format(parseISO(item.request_date), "dd-MM-yyyy")}</td>
                     <td>
                       {(item.status === "Added" ||

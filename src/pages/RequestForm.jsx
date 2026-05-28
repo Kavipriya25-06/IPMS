@@ -96,7 +96,7 @@ const RequestForm = () => {
             vendorName = component.vendor.vendor_name;
           } else {
             const vendorData = vendorList.find(
-              (v) => v.vendor_id === component.vendor.vendor_id
+              (v) => v.vendor_id === component.vendor.vendor_id,
             );
             if (vendorData) vendorName = vendorData.vendor_name;
           }
@@ -163,7 +163,7 @@ const RequestForm = () => {
 
   const handleComponentSelect = (index, componentId) => {
     const selectedComponent = availableComponents.find(
-      (comp) => comp.component_id === componentId
+      (comp) => comp.component_id === componentId,
     );
 
     console.log("Selected component:", selectedComponent);
@@ -178,7 +178,7 @@ const RequestForm = () => {
 
     // Match vendors from vendor_master
     const vendorMatches = vendorMaster.filter(
-      (vendorEntry) => vendorEntry.component_id === componentId
+      (vendorEntry) => vendorEntry.component_id === componentId,
     );
 
     console.log("Vendor matches found:", vendorMatches);
@@ -266,7 +266,7 @@ const RequestForm = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(entry),
-        })
+        }),
       );
 
       await Promise.all(bomMasterPromises);
@@ -291,7 +291,7 @@ const RequestForm = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(newRequest),
-        }
+        },
       );
 
       if (!requestListResponse.ok) {
@@ -322,8 +322,8 @@ const RequestForm = () => {
               "Content-Type": "application/json",
             },
             body: JSON.stringify(entry),
-          })
-        )
+          }),
+        ),
       );
 
       console.log("All request master entries successfully added.");
@@ -360,7 +360,7 @@ const RequestForm = () => {
             status: "In Progress",
             last_modified_by: requesterName,
           }),
-        }
+        },
       );
 
       if (!requestListResponse.ok) {
@@ -391,8 +391,8 @@ const RequestForm = () => {
               "Content-Type": "application/json",
             },
             body: JSON.stringify(entry),
-          })
-        )
+          }),
+        ),
       );
 
       // PATCH to the project endpoint using the generated request ID
@@ -413,7 +413,7 @@ const RequestForm = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(patchData),
-        }
+        },
       );
 
       if (!projectPatchResponse.ok) {
@@ -455,7 +455,7 @@ const RequestForm = () => {
     const handleClickOutside = (e) => {
       if (
         componentDropdownRefs.current.every(
-          (ref) => ref && !ref.contains(e.target)
+          (ref) => ref && !ref.contains(e.target),
         )
       ) {
         setComponentOpenIndex(null);
@@ -539,23 +539,36 @@ const RequestForm = () => {
         )}
 
         <h1
-          style={{ marginBottom: "20px", marginTop: "20px", fontSize: "24px" }}
+          style={{
+            marginBottom: "20px",
+            marginTop: "20px",
+            fontSize: "24px",
+          }}
         >
           Create a Request
         </h1>
         <div
           style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-start",
+            display: "grid",
+            gridTemplateColumns: "repeat(4, 1fr)",
+            gap: "16px 20px",
+            alignItems: "end",
             padding: "20px",
-            borderRadius: "5px",
+            borderRadius: "8px",
             boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
-            width: "300px",
+            width: "1200px",
+            maxWidth: "100%",
+            backgroundColor: "#fff",
           }}
         >
-          <div style={{ marginBottom: "15px", width: "95%" }}>
-            <label style={{ display: "block", marginBottom: "5px" }}>
+          <div style={{ width: "100%" }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "5px",
+                fontWeight: "500",
+              }}
+            >
               Requester Name:
             </label>
             <input
@@ -566,21 +579,26 @@ const RequestForm = () => {
               required
               style={{
                 width: "100%",
-                padding: "8px",
+                padding: "8px 10px",
                 borderRadius: "4px",
                 border: "1px solid #ccc",
-                backgroundColor: "#f5f5f5", // light gray background
-                cursor: "not-allowed", // show "disabled" cursor
-                color: "#555", // softer text color
+                backgroundColor: "#f5f5f5",
+                cursor: "not-allowed",
+                color: "#555",
+                boxSizing: "border-box",
+                height: "38px",
               }}
             />
           </div>
 
-          <div
-            className="date-input-container"
-            style={{ marginBottom: "15px", width: "100%" }}
-          >
-            <label style={{ display: "block", marginBottom: "5px" }}>
+          <div className="date-input-container" style={{ width: "100%" }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "5px",
+                fontWeight: "500",
+              }}
+            >
               Date:
             </label>
             <input
@@ -590,26 +608,38 @@ const RequestForm = () => {
               className="input1"
               style={{
                 width: "100%",
-                padding: "8px",
+                padding: "8px 10px",
                 borderRadius: "4px",
                 border: "1px solid #ccc",
-                backgroundColor: "#f5f5f5", // light gray background
-                cursor: "not-allowed", // show "disabled" cursor
-                color: "#555", // softer text color
+                backgroundColor: "#f5f5f5",
+                cursor: "not-allowed",
+                color: "#555",
+                boxSizing: "border-box",
+                height: "38px",
               }}
             />
           </div>
-          <div style={{ marginBottom: "15px", width: "100%" }}>
-            <label style={{ display: "block", marginBottom: "5px" }}>
+          <div style={{ width: "100%" }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "5px",
+                fontWeight: "500",
+              }}
+            >
               Select Project:
             </label>
             <select
               onChange={handleProjectChange}
+              value={selectedProject?.project_id || ""}
               style={{
                 width: "100%",
-                padding: "8px",
+                padding: "8px 10px",
                 borderRadius: "4px",
                 border: "1px solid #ccc",
+                boxSizing: "border-box",
+                height: "38px",
+                backgroundColor: "#fff",
               }}
             >
               <option value="">Select Project</option>
@@ -620,17 +650,27 @@ const RequestForm = () => {
               ))}
             </select>
           </div>
-          <div style={{ marginBottom: "15px", width: "100%" }}>
-            <label style={{ display: "block", marginBottom: "5px" }}>
+          <div style={{ width: "100%" }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "5px",
+                fontWeight: "500",
+              }}
+            >
               Select BOM:
             </label>
             <select
               onChange={handleBomChange}
+              value={selectedBom?.bom_id || ""}
               style={{
                 width: "100%",
-                padding: "8px",
+                padding: "8px 10px",
                 borderRadius: "4px",
                 border: "1px solid #ccc",
+                boxSizing: "border-box",
+                height: "38px",
+                backgroundColor: "#fff",
               }}
             >
               <option value="">Select BOM</option>
@@ -640,48 +680,53 @@ const RequestForm = () => {
                 </option>
               ))}
             </select>
-            <div
+          </div>
+          <div
+            style={{
+              gridColumn: "1 / -1",
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: "10px",
+              marginTop: "5px",
+            }}
+          >
+            <button
+              className="edit-btn"
               style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: "10px",
+                borderRadius: "5px",
+                cursor: "pointer",
+                padding: "8px 16px",
               }}
+              onClick={handleSubmit}
             >
-              <button
-                className="edit-btn"
-                style={{
-                  borderRadius: "5px",
-                  cursor: "pointer",
-                  marginTop: "20px",
-                }}
-                onClick={handleSubmit}
-              >
-                Submit Request
-              </button>
-              <button
-                className="cancel-btn"
-                style={{
-                  borderRadius: "5px",
-                  cursor: "pointer",
-                  marginTop: "20px",
-                }}
-                onClick={handleCancel}
-              >
-                Cancel
-              </button>
-            </div>
+              Submit Request
+            </button>
+
+            <button
+              className="cancel-btn"
+              style={{
+                borderRadius: "5px",
+                cursor: "pointer",
+                padding: "8px 16px",
+              }}
+              onClick={handleCancel}
+            >
+              Cancel
+            </button>
           </div>
         </div>
       </div>
 
       {selectedBom && (
-        <div>
+        <div style={{ marginTop: "20px" }}>
           <h3>Selected BOM: {selectedBom.bom_name}</h3>
+
           <div
             style={{
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
+              marginBottom: "10px",
             }}
           >
             <h4 style={{ margin: 0 }}>Components:</h4>
@@ -697,7 +742,7 @@ const RequestForm = () => {
               title="Add Component"
             >
               <img
-                src={AddIcon} // replace with your image path or import
+                src={AddIcon}
                 alt="Add Component"
                 style={{ width: "20px", height: "20px" }}
               />
@@ -733,7 +778,7 @@ const RequestForm = () => {
                             className="multi-select-box"
                             onClick={() =>
                               setComponentOpenIndex(
-                                componentOpenIndex === index ? null : index
+                                componentOpenIndex === index ? null : index,
                               )
                             }
                           >
@@ -784,29 +829,29 @@ const RequestForm = () => {
                                         .includes(
                                           (
                                             componentSearches[index] || ""
-                                          ).toLowerCase()
+                                          ).toLowerCase(),
                                         ) ||
                                       comp.component_specification
                                         .toLowerCase()
                                         .includes(
                                           (
                                             componentSearches[index] || ""
-                                          ).toLowerCase()
+                                          ).toLowerCase(),
                                         ) ||
                                       (comp.component_code || "")
                                         .toLowerCase()
                                         .includes(
                                           (
                                             componentSearches[index] || ""
-                                          ).toLowerCase()
+                                          ).toLowerCase(),
                                         ) ||
                                       (comp.ref || "")
                                         .toLowerCase()
                                         .includes(
                                           (
                                             componentSearches[index] || ""
-                                          ).toLowerCase()
-                                        )
+                                          ).toLowerCase(),
+                                        ),
                                   );
 
                                 if (filteredComponents.length === 0) {
@@ -825,7 +870,7 @@ const RequestForm = () => {
                                     onClick={() => {
                                       handleComponentSelect(
                                         index,
-                                        comp.component_id
+                                        comp.component_id,
                                       );
                                       setComponentOpenIndex(null);
                                       setComponentSearches({
@@ -876,7 +921,7 @@ const RequestForm = () => {
                           onChange={(e) => {
                             const updated = [...selectedComponents];
                             const vendor = component.vendorOptions.find(
-                              (v) => v.vendor_id === e.target.value
+                              (v) => v.vendor_id === e.target.value,
                             );
                             updated[index].vendor = {
                               vendor_name: vendor.vendor_name,

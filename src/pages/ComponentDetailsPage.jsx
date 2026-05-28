@@ -13,10 +13,12 @@ import {
   showInfoToast,
   ToastContainerComponent,
 } from "./Toastify.jsx";
-import emptyFile from "../assets/emptyfile.svg"; // adjust path as needed
+import emptyFile from "../assets/emptyfile.svg";
 import { FaEdit } from "react-icons/fa";
+import { FaPlus, FaTimes } from "react-icons/fa";
 
-/** Fallback POST helper for price create — tries multiple likely endpoints */
+const backendRoot = "http://127.0.0.1:8000/";
+
 const postPriceRow = async (baseURL, payload) => {
   const candidates = [
     `${baseURL}/price_tables/`,
@@ -36,6 +38,7 @@ const postPriceRow = async (baseURL, payload) => {
     });
 
     if (resp.ok) return await resp.json();
+
     if (resp.status !== 404) {
       const text = await resp.text();
       throw new Error(`POST ${url} failed: ${resp.status} ${text}`);
@@ -43,7 +46,7 @@ const postPriceRow = async (baseURL, payload) => {
   }
 
   throw new Error(
-    "No working price create endpoint found (404 on all tried URLs). Check Django urls.py/router."
+    "No working price create endpoint found (404 on all tried URLs). Check Django urls.py/router.",
   );
 };
 
@@ -60,9 +63,8 @@ const ComponentDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const [noData, setNoData] = useState(false);
 
-  // Add-row UI state (vendors)
   const [showAddRow, setShowAddRow] = useState(false);
-  const [vendorOptions, setVendorOptions] = useState([]); // [{id, name}]
+  const [vendorOptions, setVendorOptions] = useState([]);
   const [newRow, setNewRow] = useState({
     vendor_id: "",
     vendor_name: "",
@@ -71,42 +73,221 @@ const ComponentDetailsPage = () => {
     delivery_days: "",
   });
   const [savingNewRow, setSavingNewRow] = useState(false);
-  const firstVendor = vendorDetails[0]; // used to copy component fields
+  const firstVendor = vendorDetails[0];
 
-  // Instead of an array
   const [selectedComponents, setSelectedComponents] = useState({
     vendor: null,
   });
 
-  // Vendor dropdown state
   const [vendorOpenIndex, setVendorOpenIndex] = useState(null);
   const [vendorSearches, setVendorSearches] = useState({});
   const [dropdownHeight, setDropdownHeight] = useState(0);
 
-  const vendorDropdownRefs = useRef([]); // array of refs for each row
+  const vendorDropdownRefs = useRef([]);
   const dropdownRef = useRef(null);
-  const [vendorTypeCoords, setVendorTypeCoords] = useState({
-    top: 0,
-    left: 0,
-  });
 
-  // NEW: image upload state
   const [isEditingImage, setIsEditingImage] = useState(false);
   const [newImages, setNewImages] = useState([]);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [editedDescription, setEditedDescription] = useState(
-    firstVendor?.product_description || ""
+    firstVendor?.product_description || "",
   );
 
   const { user } = useAuth();
 
   const allowedRoles = ["Admin", "Sub-Admin", "Inventory", "Procurement"];
   const canEdit = allowedRoles.includes(user?.role);
-  const [componentInfo, setComponentInfo] = useState(null);
 
   const allowedRolesPlus = ["Admin", "Sub-Admin", "Procurement"];
   const canEditPlus = allowedRolesPlus.includes(user?.role);
+
+  const [componentInfo, setComponentInfo] = useState(null);
+  const [componentList, setComponentList] = useState([]);
+  const navigate = useNavigate();
+  const [isEditing, setIsEditing] = useState(false);
+
+  const [formData, setFormData] = useState({
+    category: "",
+    component_type: "",
+    component_specification: "",
+    unit_of_measurement: "",
+  });
+
+  // -------- NEW: Add Vendor Modal State --------
+  const [showVendorModal, setShowVendorModal] = useState(false);
+  const [savingVendorModal, setSavingVendorModal] = useState(false);
+  const [vendorModalData, setVendorModalData] = useState({
+    vendor_name: "",
+    gstn: "",
+    active: true,
+    point_of_contact: "",
+    email: "",
+    phone_number: "",
+    location: "",
+    default_poc: true,
+  });
+
+  const resetVendorModal = () => {
+    setVendorModalData({
+      vendor_name: "",
+      gstn: "",
+      active: true,
+      point_of_contact: "",
+      email: "",
+      phone_number: "",
+      location: "",
+      default_poc: true,
+    });
+  };
+
+  const openVendorModal = () => {
+    setShowVendorModal(true);
+  };
+
+  const closeVendorModal = () => {
+    setShowVendorModal(false);
+    resetVendorModal();
+  };
+
+  const onChangeVendorModal = (field, value) => {
+    setVendorModalData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const loadVendorOptions = async () => {
+    try {
+      const r = await fetch(`${config.apiBaseURL}/vendor_list/`);
+      if (!r.ok) throw new Error("Failed to fetch vendor_list");
+      const data = await r.json();
+
+      const options = (Array.isArray(data) ? data : []).map((v, idx) => {
+        if (typeof v === "string") return { id: v, name: v };
+
+        return {
+          id:
+            v.id ??
+            v.vendor_id ??
+            v.pk ??
+            v.uuid ??
+            (v.vendor_name || v.name || v.company_name || `row-${idx}`),
+          name: v.vendor_name ?? v.name ?? v.company_name ?? String(v.id ?? ""),
+        };
+      });
+
+      setVendorOptions(options.filter((o) => o.name));
+    } catch (e) {
+      const names = Array.from(
+        new Set(vendorDetails.map((v) => v.vendor_name).filter(Boolean)),
+      ).map((name) => ({ id: name, name }));
+      setVendorOptions(names);
+    }
+  };
+
+  const createVendorAndSublist = async () => {
+    if (!vendorModalData.vendor_name.trim()) {
+      showWarningToast("Vendor name is required");
+      return;
+    }
+    if (!vendorModalData.point_of_contact.trim()) {
+      showWarningToast("Point of contact is required");
+      return;
+    }
+    if (!vendorModalData.phone_number.trim()) {
+      showWarningToast("Phone number is required");
+      return;
+    }
+    if (!vendorModalData.location.trim()) {
+      showWarningToast("Location is required");
+      return;
+    }
+
+    try {
+      setSavingVendorModal(true);
+
+      const vendorPayload = {
+        vendor_name: vendorModalData.vendor_name.trim(),
+        gstn: vendorModalData.gstn.trim(),
+        active: !!vendorModalData.active,
+      };
+
+      const vendorResp = await fetch(`${config.apiBaseURL}/vendor_list/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(vendorPayload),
+      });
+
+      if (!vendorResp.ok) {
+        const txt = await vendorResp.text();
+        throw new Error(`vendor_list POST failed: ${vendorResp.status} ${txt}`);
+      }
+
+      const createdVendor = await vendorResp.json();
+      const createdVendorId =
+        createdVendor.vendor_id ||
+        createdVendor.id ||
+        createdVendor.pk ||
+        createdVendor.vendor;
+
+      if (!createdVendorId) {
+        throw new Error("Vendor created, but vendor_id was not returned");
+      }
+
+      const sublistPayload = {
+        point_of_contact: vendorModalData.point_of_contact.trim(),
+        email: vendorModalData.email.trim(),
+        phone_number: vendorModalData.phone_number.trim(),
+        location: vendorModalData.location.trim(),
+        default_poc: !!vendorModalData.default_poc,
+        vendor: createdVendorId,
+      };
+
+      const subResp = await fetch(`${config.apiBaseURL}/vendor_sub_list/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(sublistPayload),
+      });
+
+      if (!subResp.ok) {
+        const txt = await subResp.text();
+        throw new Error(`vendor_sublist POST failed: ${subResp.status} ${txt}`);
+      }
+
+      await loadVendorOptions();
+
+      setSelectedComponents({
+        vendor: {
+          vendor_name: createdVendor.vendor_name || vendorModalData.vendor_name,
+          vendor_id: createdVendorId,
+        },
+      });
+
+      setNewRow((prev) => ({
+        ...prev,
+        vendor_id: createdVendorId,
+        vendor_name: createdVendor.vendor_name || vendorModalData.vendor_name,
+      }));
+
+      showSuccessToast("Vendor added successfully");
+      closeVendorModal();
+      setVendorOpenIndex(null);
+      setVendorSearches((prev) => ({ ...prev, 0: "" }));
+    } catch (err) {
+      console.error(err);
+      showErrorToast(err.message || "Failed to create vendor");
+    } finally {
+      setSavingVendorModal(false);
+    }
+  };
+
   const isPlaceholder = (src) => {
     if (!src) return true;
     const s = String(src).toLowerCase();
@@ -121,6 +302,7 @@ const ComponentDetailsPage = () => {
   const handleMouseMove = (e) => {
     if (!imgRef.current) return;
     if (isPlaceholder(mainImage)) return;
+
     const rect = imgRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -139,8 +321,6 @@ const ComponentDetailsPage = () => {
       backgroundRepeat: "no-repeat",
       backgroundSize: `${rect.width * cx}px ${rect.height * cy}px`,
       backgroundPosition: `${backgroundX}% ${backgroundY}%`,
-      // border: "1px solid rgba(0, 0, 0, 0.2)`,
-      // boxShadow: "0 0 8px rgba(0, 0, 0, 0.3)`,
       pointerEvents: "none",
       zIndex: 9999,
     });
@@ -159,60 +339,55 @@ const ComponentDetailsPage = () => {
         setLoading(true);
         setNoData(false);
 
-        // Vendors
         const res = await fetch(
-          `${config.apiBaseURL}/vendor_master/?component_id=${componentId}`
+          `${config.apiBaseURL}/vendor_master/?component_id=${componentId}`,
         );
         if (!res.ok) throw new Error("Failed to fetch vendor detail");
         const data = await res.json();
         const matching = data.filter(
-          (item) => item.component_id === componentId
+          (item) => item.component_id === componentId,
         );
         setVendorDetails(matching);
 
-        // Prices
         const priceRes = await fetch(
-          `${config.apiBaseURL}/price_tables/?component_id=${componentId}`
+          `${config.apiBaseURL}/price_tables/?component_id=${componentId}`,
         );
         const priceJson = await priceRes.json();
         const map = {};
         matching.forEach((comp) => {
           const prices = priceJson.filter(
-            (entry) => entry.product === comp.product_id
+            (entry) => entry.product === comp.product_id,
           );
           if (prices.length > 0) {
             map[comp.product_id] = prices.sort(
-              (a, b) => new Date(b.current_time) - new Date(a.current_time)
+              (a, b) => new Date(b.current_time) - new Date(a.current_time),
             )[0];
           }
         });
         setPriceDataMap(map);
 
-        //Images
         const imageRes = await fetch(
-          `${config.apiBaseURL}/component_images/by-component/${componentId}/`
+          `${config.apiBaseURL}/component_images/by-component/${componentId}/`,
         );
         const imageData = await imageRes.json();
         const images =
           Array.isArray(imageData) && imageData.length > 0
             ? imageData.map((img) =>
-                String(img.image).startsWith("http")
+                String(img.image).startsWith("https")
                   ? img.image
-                  : `${config.apiBaseURL}${img.image}`
+                  : `${backendRoot}${img.image}`,
               )
             : ["/placeholder.jpg"];
         setImageList(images);
         setMainImage(images[0]);
 
-        //Request component (for category, spec, uom, etc.)
         const compRes = await fetch(
-          `${config.apiBaseURL}/component/${componentId}/`
+          `${config.apiBaseURL}/component/${componentId}/`,
         );
         if (compRes.ok) {
           const compData = await compRes.json();
-          setComponentInfo(compData); // always the latest values from backend
+          setComponentInfo(compData);
         } else {
-          console.error("Failed to fetch component info");
           setComponentInfo(null);
         }
       } catch (err) {
@@ -227,80 +402,42 @@ const ComponentDetailsPage = () => {
     fetchData();
   }, [componentId]);
 
-  // Vendor dropdown from vendor_list
   useEffect(() => {
-    const loadVendorOptions = async () => {
-      try {
-        const r = await fetch(`${config.apiBaseURL}/vendor_list/`);
-        if (!r.ok) throw new Error("Failed to fetch vendor_list");
-        const data = await r.json();
-
-        // Normalize to [{id, name}]
-        const options = (Array.isArray(data) ? data : []).map((v, idx) => {
-          if (typeof v === "string") return { id: v, name: v };
-          return {
-            id:
-              v.id ??
-              v.vendor_id ??
-              v.pk ??
-              v.uuid ??
-              (v.vendor_name || v.name || v.company_name || `row-${idx}`),
-            name:
-              v.vendor_name ?? v.name ?? v.company_name ?? String(v.id ?? ""),
-          };
-        });
-        setVendorOptions(options.filter((o) => o.name));
-      } catch (e) {
-        const names = Array.from(
-          new Set(vendorDetails.map((v) => v.vendor_name).filter(Boolean))
-        ).map((name) => ({ id: name, name }));
-        setVendorOptions(names);
-      }
-    };
     loadVendorOptions();
   }, [vendorDetails]);
 
   const refreshVendorsAndPrices = async () => {
     const res = await fetch(
-      `${config.apiBaseURL}/vendor_master/?component_id=${componentId}`
+      `${config.apiBaseURL}/vendor_master/?component_id=${componentId}`,
     );
     const data = await res.json();
     const matching = data.filter((item) => item.component_id === componentId);
     setVendorDetails(matching);
 
     const priceRes = await fetch(
-      `${config.apiBaseURL}/price_tables/?component_id=${componentId}`
+      `${config.apiBaseURL}/price_tables/?component_id=${componentId}`,
     );
     const priceJson = await priceRes.json();
     const map = {};
     matching.forEach((comp) => {
       const prices = priceJson.filter(
-        (entry) => entry.product === comp.product_id
+        (entry) => entry.product === comp.product_id,
       );
       if (prices.length > 0) {
         map[comp.product_id] = prices.sort(
-          (a, b) => new Date(b.current_time) - new Date(a.current_time)
+          (a, b) => new Date(b.current_time) - new Date(a.current_time),
         )[0];
       }
     });
     setPriceDataMap(map);
   };
 
-  // Inline-add handlers (vendors)
   const onChangeNewRow = (field, value) =>
     setNewRow((p) => ({ ...p, [field]: value }));
 
-  const onChangeVendorSelect = (value) => {
-    const opt = vendorOptions.find((o) => String(o.id) === String(value));
-    setNewRow((p) => ({
-      ...p,
-      vendor_id: opt?.id || "",
-      vendor_name: opt?.name || "",
-    }));
-  };
-
   const cancelNewRow = () => {
     setShowAddRow(false);
+    setSelectedComponents({ vendor: null });
     setNewRow({
       vendor_id: "",
       vendor_name: "",
@@ -310,7 +447,6 @@ const ComponentDetailsPage = () => {
     });
   };
 
-  // Save: vendor_master (with required fields) -> price create (with fallback)
   const saveNewRow = async () => {
     if (!newRow.vendor_id) {
       showWarningToast("Please select a vendor");
@@ -335,8 +471,8 @@ const ComponentDetailsPage = () => {
         vendor: newRow.vendor_id,
         component_id: componentId,
         product_description: componentInfo.product_description || "N/A",
-        unit_of_measurement: componentInfo.unit_of_measurement || "", //  use request_component.uom
-        category: componentInfo.category || "", //  request_component.category
+        unit_of_measurement: componentInfo.unit_of_measurement || "",
+        category: componentInfo.category || "",
         component_type: componentInfo.component_type || "",
         component_specification: componentInfo.component_specification || "",
         vendor_name: newRow.vendor_name,
@@ -350,13 +486,15 @@ const ComponentDetailsPage = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(vendorPayload),
       });
+
       if (!vResp.ok) {
         const errorText = await vResp.text();
         console.error("vendor_master POST failed:", errorText);
-        showErrorToast("Failed to add vendor (check required fields)");
+        showErrorToast("Failed to add vendor to component");
         setSavingNewRow(false);
         return;
       }
+
       const createdVendor = await vResp.json();
       const productId = createdVendor.product_id;
 
@@ -380,7 +518,7 @@ const ComponentDetailsPage = () => {
     } catch (e) {
       console.error(e);
       showErrorToast(
-        "Failed to create price row. " + (e?.message || "Check API route.")
+        "Failed to create price row. " + (e?.message || "Check API route."),
       );
     } finally {
       setSavingNewRow(false);
@@ -394,7 +532,6 @@ const ComponentDetailsPage = () => {
     }
 
     try {
-      // Decide which key to send
       const payload = { product_description: editedDescription };
 
       const vResp = await fetch(
@@ -402,10 +539,10 @@ const ComponentDetailsPage = () => {
           firstVendor.id || firstVendor.product_id
         }/`,
         {
-          method: "PATCH", // try PUT if PATCH fails
+          method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
-        }
+        },
       );
 
       if (!vResp.ok) {
@@ -415,13 +552,12 @@ const ComponentDetailsPage = () => {
         return;
       }
 
-      // Update local state for UI
       setVendorDetails((prev) =>
         prev.map((v) =>
           v.product_id === firstVendor.product_id
             ? { ...v, product_description: editedDescription }
-            : v
-        )
+            : v,
+        ),
       );
 
       showSuccessToast("Description updated");
@@ -432,32 +568,29 @@ const ComponentDetailsPage = () => {
     }
   };
 
-  // ========== NEW: Image Upload Handlers ==========
   const onPickImages = (e) => {
     const files = Array.from(e.target.files || []);
 
     const existingFiles = new Set(
-      imageList.map((url) => url.split("/").pop().toLowerCase()) // saved names
+      imageList.map((url) => url.split("/").pop().toLowerCase()),
     );
 
     const added = [];
     files.forEach((file) => {
-      const uniqueKey = `${file.name.toLowerCase()}-${file.size}`;
-      // check against newImages
       const alreadyInPreview = newImages.some(
         (img) =>
           img.file.name.toLowerCase() === file.name.toLowerCase() &&
-          img.file.size === file.size
+          img.file.size === file.size,
       );
-      // check against existing saved images (by ignoring random suffixes)
+
       const baseName = file.name.toLowerCase().split(".")[0];
-      const isAlreadySaved = Array.from(existingFiles).some(
-        (saved) => saved.startsWith(baseName) // "prppellar" matches "prppellar_<RANDOM>.avif"
+      const isAlreadySaved = Array.from(existingFiles).some((saved) =>
+        saved.startsWith(baseName),
       );
 
       if (alreadyInPreview || isAlreadySaved) {
         showInfoToast(
-          `"${file.name}" is already uploaded, please upload another one`
+          `"${file.name}" is already uploaded, please upload another one`,
         );
         return;
       }
@@ -469,19 +602,17 @@ const ComponentDetailsPage = () => {
     });
 
     setNewImages((prev) => [...prev, ...added]);
-    e.target.value = ""; // reset picker
+    e.target.value = "";
   };
 
   const removeNewImage = (index) => {
     setNewImages((prev) => {
-      // cleanup object URL to avoid memory leaks
       URL.revokeObjectURL(prev[index].preview);
       return prev.filter((_, i) => i !== index);
     });
   };
 
   const cancelImages = () => {
-    // cleanup previews
     newImages.forEach((img) => URL.revokeObjectURL(img.preview));
     setIsEditingImage(false);
     setNewImages([]);
@@ -506,7 +637,7 @@ const ComponentDetailsPage = () => {
     try {
       const response = await fetch(
         `${config.apiBaseURL}/component_images/by-component/${componentId}/`,
-        { method: "POST", body: formData }
+        { method: "POST", body: formData },
       );
 
       if (!response.ok) {
@@ -546,24 +677,7 @@ const ComponentDetailsPage = () => {
       setUploadingImages(false);
     }
   };
-  const validThumbnails = Array.isArray(imageList)
-    ? imageList.filter((s) => !isPlaceholder(s))
-    : [];
-  const showThumbnails =
-    validThumbnails.length > 0 && !isPlaceholder(mainImage);
 
-  const navigate = useNavigate();
-  const [isEditing, setIsEditing] = useState(false);
-
-  // form state
-  const [formData, setFormData] = useState({
-    category: "",
-    component_type: "",
-    component_specification: "",
-    unit_of_measurement: "",
-  });
-
-  // sync formData when componentInfo changes
   useEffect(() => {
     if (componentInfo) {
       setFormData({
@@ -585,10 +699,10 @@ const ComponentDetailsPage = () => {
       const res = await fetch(
         `${config.apiBaseURL}/component/${componentId}/`,
         {
-          method: "PUT", // or PATCH
+          method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(formData),
-        }
+        },
       );
 
       if (res.ok) {
@@ -600,11 +714,10 @@ const ComponentDetailsPage = () => {
           component_specification: updated.component_specification,
           unit_of_measurement: updated.unit_of_measurement,
         });
-        setComponentInfo(updated); // important
+        setComponentInfo(updated);
         setIsEditing(false);
         showSuccessToast("Component details updated successfully");
       } else {
-        console.error("Failed to update component");
         showErrorToast("Failed to update component details");
       }
     } catch (err) {
@@ -613,9 +726,6 @@ const ComponentDetailsPage = () => {
     }
   };
 
-  const [componentList, setComponentList] = useState([]);
-
-  // Fetch all components (only once)
   useEffect(() => {
     const fetchAllComponents = async () => {
       try {
@@ -634,7 +744,7 @@ const ComponentDetailsPage = () => {
   }, []);
 
   const currentIndex = componentList.findIndex(
-    (c) => String(c.component_id) === String(componentId)
+    (c) => String(c.component_id) === String(componentId),
   );
 
   const prevComponentId =
@@ -660,7 +770,7 @@ const ComponentDetailsPage = () => {
     const handleClickOutside = (e) => {
       if (
         vendorDropdownRefs.current.every(
-          (ref) => ref && !ref.contains(e.target)
+          (ref) => ref && !ref.contains(e.target),
         )
       ) {
         setVendorOpenIndex(null);
@@ -670,21 +780,6 @@ const ComponentDetailsPage = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const getDropdownTop = (index) => {
-    const rect = vendorDropdownRefs.current[index]?.getBoundingClientRect();
-    if (!rect) return 0;
-
-    const viewportHeight = window.innerHeight;
-    const spaceBelow = viewportHeight - rect.bottom;
-    const spaceAbove = rect.top;
-
-    if (spaceBelow >= dropdownHeight || spaceBelow >= spaceAbove) {
-      return rect.bottom; // open downward
-    } else {
-      return rect.top - dropdownHeight; // open upward
-    }
-  };
-
   useEffect(() => {
     if (dropdownRef.current) {
       const rect = dropdownRef.current.getBoundingClientRect();
@@ -692,19 +787,212 @@ const ComponentDetailsPage = () => {
     }
   }, [vendorOpenIndex]);
 
-  // Utility function
   const formatUnitPrice = (value) => {
     if (value == null) return "-";
     const num = parseFloat(value);
 
-    // If it has more than 2 decimals
     if (Number.isInteger(num * 100)) {
-      return num.toFixed(2); // exactly 2 decimals
+      return num.toFixed(2);
     }
 
-    // Else, keep up to 3 decimals (remove trailing zeros automatically)
     return parseFloat(num.toFixed(2));
   };
+
+  // ---------- FIX ADDED HERE ----------
+  const isMobile = window.innerWidth < 768;
+
+  const modalStyles = {
+    overlay: {
+      position: "fixed",
+      inset: 0,
+      background: "rgba(15, 23, 42, 0.38)",
+      backdropFilter: "blur(4px)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 10000,
+      padding: "20px",
+    },
+    modal: {
+      width: "760px",
+      maxWidth: "95vw",
+      maxHeight: "90vh",
+      overflowY: "auto",
+      background: "#ffffff",
+      borderRadius: "20px",
+      boxShadow: "0 20px 60px rgba(0,0,0,0.16)",
+      position: "relative",
+      border: "1px solid #f1d6b8",
+    },
+    header: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: "20px 24px 16px",
+      borderBottom: "1px solid #f3e2cf",
+      position: "sticky",
+      top: 0,
+      background: "#fffaf5",
+      zIndex: 2,
+      borderTopLeftRadius: "20px",
+      borderTopRightRadius: "20px",
+    },
+    headerLeft: {
+      display: "flex",
+      flexDirection: "column",
+      gap: "4px",
+    },
+    title: {
+      margin: 0,
+      fontSize: "22px",
+      fontWeight: 700,
+      color: "#9a3412",
+    },
+    subtitle: {
+      margin: 0,
+      fontSize: "13px",
+      color: "#7c5a3c",
+    },
+    closeBtn: {
+      width: "38px",
+      height: "38px",
+      borderRadius: "50%",
+      border: "1px solid #efc9a5",
+      background: "#fff7ed",
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontSize: "16px",
+      color: "#9a3412",
+    },
+    body: {
+      padding: "22px 24px",
+      background: "#fff",
+    },
+    sectionTitle: {
+      fontSize: "14px",
+      fontWeight: 700,
+      color: "#c2410c",
+      marginBottom: "14px",
+      marginTop: "4px",
+      letterSpacing: "0.2px",
+    },
+    grid: {
+      display: "grid",
+      gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+      gap: "18px 18px",
+    },
+    fullWidth: {
+      gridColumn: isMobile ? "auto" : "1 / span 2",
+    },
+    fieldGroup: {
+      display: "flex",
+      flexDirection: "column",
+      gap: "8px",
+    },
+    label: {
+      fontSize: "13px",
+      fontWeight: 600,
+      color: "#7c2d12",
+    },
+    input: {
+      width: "100%",
+      padding: "12px 14px",
+      border: "1px solid #f0c9a6",
+      borderRadius: "12px",
+      fontSize: "14px",
+      outline: "none",
+      boxSizing: "border-box",
+      background: "#fffdfb",
+      color: "#111827",
+    },
+    select: {
+      width: "100%",
+      padding: "12px 14px",
+      border: "1px solid #f0c9a6",
+      borderRadius: "12px",
+      fontSize: "14px",
+      outline: "none",
+      boxSizing: "border-box",
+      background: "#fffdfb",
+      color: "#111827",
+      cursor: "pointer",
+    },
+    textarea: {
+      width: "100%",
+      padding: "12px 14px",
+      border: "1px solid #f0c9a6",
+      borderRadius: "12px",
+      fontSize: "14px",
+      outline: "none",
+      resize: "vertical",
+      minHeight: "92px",
+      boxSizing: "border-box",
+      background: "#fffdfb",
+      color: "#111827",
+    },
+    helperText: {
+      fontSize: "12px",
+      color: "#8a6a4a",
+      marginTop: "-2px",
+    },
+    footer: {
+      display: "flex",
+      justifyContent: "flex-end",
+      gap: "12px",
+      padding: "18px 24px 22px",
+      borderTop: "1px solid #f3e2cf",
+      background: "#fffaf5",
+      borderBottomLeftRadius: "20px",
+      borderBottomRightRadius: "20px",
+      position: "sticky",
+      bottom: 0,
+    },
+    cancelBtn: {
+      padding: "11px 18px",
+      borderRadius: "12px",
+      border: "1px solid #efc9a5",
+      background: "#ffffff",
+      color: "#9a3412",
+      fontSize: "14px",
+      fontWeight: 600,
+      cursor: "pointer",
+      minWidth: "110px",
+    },
+    saveBtn: {
+      padding: "11px 18px",
+      borderRadius: "12px",
+      border: "none",
+      background: "linear-gradient(135deg, #f97316, #ea580c)",
+      color: "#fff",
+      fontSize: "14px",
+      fontWeight: 700,
+      cursor: "pointer",
+      minWidth: "140px",
+      boxShadow: "0 8px 20px rgba(234, 88, 12, 0.28)",
+    },
+    statusPill: {
+      display: "inline-flex",
+      alignItems: "center",
+      padding: "6px 10px",
+      borderRadius: "999px",
+      fontSize: "12px",
+      fontWeight: 600,
+      background: "#fff1e6",
+      color: "#c2410c",
+      width: "fit-content",
+      marginTop: "4px",
+      border: "1px solid #f5c9a5",
+    },
+  };
+  // ---------- FIX ENDS HERE ----------
+
+  const validThumbnails = Array.isArray(imageList)
+    ? imageList.filter((s) => !isPlaceholder(s))
+    : [];
+  const showThumbnails =
+    validThumbnails.length > 0 && !isPlaceholder(mainImage);
 
   if (loading)
     return (
@@ -715,8 +1003,6 @@ const ComponentDetailsPage = () => {
     );
 
   if (noData) return <p>No information available for this component</p>;
-
-  // ================================================
 
   return (
     <div className="product-detail-container">
@@ -761,11 +1047,9 @@ const ComponentDetailsPage = () => {
               </div>
             )}
 
-            {/* NEW: Image upload controls */}
             <div className="image-upload-controls">
               {!isEditingImage ? (
                 <>
-                  {/* Show Add Images button only if role allowed */}
                   {canEdit && (
                     <button onClick={() => setIsEditingImage(true)}>
                       Add Images
@@ -774,7 +1058,6 @@ const ComponentDetailsPage = () => {
                 </>
               ) : (
                 <>
-                  {/* File picker */}
                   <input
                     type="file"
                     accept="image/*"
@@ -782,7 +1065,6 @@ const ComponentDetailsPage = () => {
                     onChange={onPickImages}
                   />
 
-                  {/* Preview thumbnails BELOW input */}
                   {newImages.length > 0 && (
                     <div className="file-preview-list">
                       {newImages.map((img, index) => (
@@ -792,7 +1074,6 @@ const ComponentDetailsPage = () => {
                             alt="preview"
                             className="thumb"
                           />
-
                           <button
                             type="button"
                             className="remove-btn"
@@ -803,7 +1084,6 @@ const ComponentDetailsPage = () => {
                     </div>
                   )}
 
-                  {/* Action buttons */}
                   <div className="image-actions">
                     <button onClick={saveImages} disabled={uploadingImages}>
                       {uploadingImages ? "Uploading..." : "Save"}
@@ -856,7 +1136,6 @@ const ComponentDetailsPage = () => {
           </h2>
 
           <div className="highlights-container">
-            {/* Category */}
             <div className="highlights">
               <h3>Category:</h3>
               {isEditing ? (
@@ -871,7 +1150,6 @@ const ComponentDetailsPage = () => {
               )}
             </div>
 
-            {/* Component Type */}
             <div className="highlights">
               <h3>Component Type:</h3>
               {isEditing ? (
@@ -886,7 +1164,6 @@ const ComponentDetailsPage = () => {
               )}
             </div>
 
-            {/* Specification */}
             <div className="highlights">
               <h3>Specification:</h3>
               {isEditing ? (
@@ -901,7 +1178,6 @@ const ComponentDetailsPage = () => {
               )}
             </div>
 
-            {/* UOM */}
             <div className="highlights">
               <h3>UOM:</h3>
               {isEditing ? (
@@ -916,7 +1192,6 @@ const ComponentDetailsPage = () => {
               )}
             </div>
 
-            {/* Floating Edit / Action Buttons */}
             {canEditPlus &&
               (!isEditing ? (
                 <FaEdit
@@ -999,7 +1274,7 @@ const ComponentDetailsPage = () => {
                   <FaEdit
                     onClick={() => {
                       setEditedDescription(
-                        firstVendor?.product_description || ""
+                        firstVendor?.product_description || "",
                       );
                       setIsEditingDescription(true);
                     }}
@@ -1041,7 +1316,6 @@ const ComponentDetailsPage = () => {
             </ul>
           </div>
 
-          {/* + button above table */}
           <div
             style={{
               display: "flex",
@@ -1049,26 +1323,22 @@ const ComponentDetailsPage = () => {
               margin: "8px 0",
             }}
           >
-            <>
-              {/* Show Add Images button only if role allowed */}
-              {canEditPlus && (
-                <button
-                  className="plus-button"
-                  title="Add Vendor & price"
-                  onClick={() => setShowAddRow((s) => !s)}
-                  style={{
-                    cursor: "pointer",
-                    background: "transparent",
-                    border: "none",
-                    padding: "4px",
-                    marginBottom: "-25px",
-                  }}
-                >
-                  {" "}
-                  <img src={Add} alt="Add Vendor & price" />{" "}
-                </button>
-              )}
-            </>
+            {canEditPlus && (
+              <button
+                className="plus-button"
+                title="Add Vendor & price"
+                onClick={() => setShowAddRow((s) => !s)}
+                style={{
+                  cursor: "pointer",
+                  background: "transparent",
+                  border: "none",
+                  padding: "4px",
+                  marginBottom: "-25px",
+                }}
+              >
+                <img src={Add} alt="Add Vendor & price" />
+              </button>
+            )}
           </div>
 
           <div className="table-vendor-container">
@@ -1084,7 +1354,6 @@ const ComponentDetailsPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {/* Inline add row */}
                 {showAddRow && (
                   <tr className="new-row">
                     <td
@@ -1134,36 +1403,78 @@ const ComponentDetailsPage = () => {
                                 vendorDropdownRefs.current[0]?.getBoundingClientRect()
                                   .width + "px",
                               zIndex: 9999,
-                              maxHeight: "200px",
+                              maxHeight: "240px",
                               overflowY: "auto",
                               background: "#fff",
                               border: "1px solid #ccc",
+                              borderRadius: "8px",
+                              boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
                             }}
                           >
-                            <input
-                              type="text"
-                              placeholder="Search vendors..."
-                              value={vendorSearches[0] || ""}
-                              onChange={(e) =>
-                                setVendorSearches({
-                                  ...vendorSearches,
-                                  0: e.target.value,
-                                })
-                              }
-                              className="multi-select-input"
-                            />
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "8px",
+                                padding: "8px",
+                                borderBottom: "1px solid #eee",
+                              }}
+                            >
+                              <input
+                                type="text"
+                                placeholder="Search vendor"
+                                value={vendorSearches[0] || ""}
+                                onChange={(e) =>
+                                  setVendorSearches({
+                                    ...vendorSearches,
+                                    0: e.target.value,
+                                  })
+                                }
+                                className="multi-select-input"
+                                style={{
+                                  flex: 1,
+                                  minWidth: 0,
+                                }}
+                              />
+
+                              <button
+                                type="button"
+                                title="Add new vendor"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openVendorModal();
+                                }}
+                                style={{
+                                  width: "30px",
+                                  height: "30px",
+                                  borderRadius: "50%",
+                                  border: "1px solid #ccc",
+                                  background: "#fff",
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  flexShrink: 0,
+                                }}
+                              >
+                                <FaPlus size={12} />
+                              </button>
+                            </div>
 
                             {(() => {
                               const filteredVendors = vendorOptions.filter(
                                 (v) =>
                                   (v.name?.toLowerCase() || "").includes(
-                                    (vendorSearches[0] || "").toLowerCase()
-                                  )
+                                    (vendorSearches[0] || "").toLowerCase(),
+                                  ),
                               );
 
                               if (filteredVendors.length === 0) {
                                 return (
-                                  <div className="multi-select-no-results">
+                                  <div
+                                    className="multi-select-no-results"
+                                    style={{ padding: "10px" }}
+                                  >
                                     No vendor found for "{vendorSearches[0]}"
                                   </div>
                                 );
@@ -1173,6 +1484,11 @@ const ComponentDetailsPage = () => {
                                 <div
                                   key={v.id}
                                   className="multi-select-item"
+                                  style={{
+                                    padding: "10px",
+                                    cursor: "pointer",
+                                    borderBottom: "1px solid #f3f3f3",
+                                  }}
                                   onClick={() => {
                                     setSelectedComponents({
                                       vendor: {
@@ -1256,7 +1572,6 @@ const ComponentDetailsPage = () => {
                   </tr>
                 )}
 
-                {/* Existing vendor rows */}
                 {vendorDetails.map((vendor) => (
                   <tr key={vendor.product_id}>
                     <td className="truncate-cell" title={vendor.vendor_name}>
@@ -1292,9 +1607,9 @@ const ComponentDetailsPage = () => {
                       {priceDataMap[vendor.product_id]?.current_time
                         ? format(
                             parseISO(
-                              priceDataMap[vendor.product_id].current_time
+                              priceDataMap[vendor.product_id].current_time,
                             ),
-                            "dd-MM-yyyy"
+                            "dd-MM-yyyy",
                           )
                         : "-"}
                     </td>
@@ -1306,6 +1621,197 @@ const ComponentDetailsPage = () => {
               </tbody>
             </table>
           </div>
+
+          {showVendorModal && (
+            <div style={modalStyles.overlay}>
+              <div style={modalStyles.modal}>
+                <div style={modalStyles.header}>
+                  <div style={modalStyles.headerLeft}>
+                    <h3 style={modalStyles.title}>Add New Vendor</h3>
+                    <p style={modalStyles.subtitle}>
+                      Create vendor master and contact details
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={closeVendorModal}
+                    style={modalStyles.closeBtn}
+                    title="Close"
+                  >
+                    <FaTimes />
+                  </button>
+                </div>
+
+                <div style={modalStyles.body}>
+                  <div style={modalStyles.sectionTitle}>Vendor Information</div>
+
+                  <div style={modalStyles.grid}>
+                    <div style={modalStyles.fieldGroup}>
+                      <label style={modalStyles.label}>Vendor Name</label>
+                      <input
+                        type="text"
+                        style={modalStyles.input}
+                        value={vendorModalData.vendor_name}
+                        onChange={(e) =>
+                          onChangeVendorModal("vendor_name", e.target.value)
+                        }
+                        placeholder="Enter vendor name"
+                      />
+                    </div>
+
+                    <div style={modalStyles.fieldGroup}>
+                      <label style={modalStyles.label}>GSTN</label>
+                      <input
+                        type="text"
+                        style={modalStyles.input}
+                        value={vendorModalData.gstn}
+                        onChange={(e) =>
+                          onChangeVendorModal("gstn", e.target.value)
+                        }
+                        placeholder="Enter GSTN"
+                      />
+                    </div>
+
+                    <div style={modalStyles.fieldGroup}>
+                      <label style={modalStyles.label}>Status</label>
+                      <select
+                        style={modalStyles.select}
+                        value={vendorModalData.active ? "true" : "false"}
+                        onChange={(e) =>
+                          onChangeVendorModal(
+                            "active",
+                            e.target.value === "true",
+                          )
+                        }
+                      >
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                      </select>
+                      <span style={modalStyles.statusPill}>
+                        {vendorModalData.active
+                          ? "Currently Active"
+                          : "Currently Inactive"}
+                      </span>
+                    </div>
+
+                    <div style={modalStyles.fieldGroup}>
+                      <label style={modalStyles.label}>Default POC</label>
+                      <select
+                        style={modalStyles.select}
+                        value={vendorModalData.default_poc ? "true" : "false"}
+                        onChange={(e) =>
+                          onChangeVendorModal(
+                            "default_poc",
+                            e.target.value === "true",
+                          )
+                        }
+                      >
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                      </select>
+                      <span style={modalStyles.helperText}>
+                        Mark this contact as the default point of contact
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ height: "18px" }} />
+
+                  <div style={modalStyles.sectionTitle}>
+                    Contact Information
+                  </div>
+
+                  <div style={modalStyles.grid}>
+                    <div style={modalStyles.fieldGroup}>
+                      <label style={modalStyles.label}>Point of Contact</label>
+                      <input
+                        type="text"
+                        style={modalStyles.input}
+                        value={vendorModalData.point_of_contact}
+                        onChange={(e) =>
+                          onChangeVendorModal(
+                            "point_of_contact",
+                            e.target.value,
+                          )
+                        }
+                        placeholder="Enter contact person"
+                      />
+                    </div>
+
+                    <div style={modalStyles.fieldGroup}>
+                      <label style={modalStyles.label}>Phone Number</label>
+                      <input
+                        type="text"
+                        style={modalStyles.input}
+                        value={vendorModalData.phone_number}
+                        onChange={(e) =>
+                          onChangeVendorModal("phone_number", e.target.value)
+                        }
+                        placeholder="Enter phone number"
+                      />
+                    </div>
+
+                    <div style={modalStyles.fieldGroup}>
+                      <label style={modalStyles.label}>Email</label>
+                      <input
+                        type="email"
+                        style={modalStyles.input}
+                        value={vendorModalData.email}
+                        onChange={(e) =>
+                          onChangeVendorModal("email", e.target.value)
+                        }
+                        placeholder="Enter email"
+                      />
+                    </div>
+
+                    <div
+                      style={{
+                        ...modalStyles.fieldGroup,
+                        ...modalStyles.fullWidth,
+                      }}
+                    >
+                      <label style={modalStyles.label}>
+                        Location / Address
+                      </label>
+                      <textarea
+                        style={modalStyles.textarea}
+                        value={vendorModalData.location}
+                        onChange={(e) =>
+                          onChangeVendorModal("location", e.target.value)
+                        }
+                        placeholder="Enter location / address"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div style={modalStyles.footer}>
+                  <button
+                    type="button"
+                    onClick={closeVendorModal}
+                    disabled={savingVendorModal}
+                    style={modalStyles.cancelBtn}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={createVendorAndSublist}
+                    disabled={savingVendorModal}
+                    style={{
+                      ...modalStyles.saveBtn,
+                      opacity: savingVendorModal ? 0.7 : 1,
+                      cursor: savingVendorModal ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    {savingVendorModal ? "Saving..." : "Save Vendor"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           <ToastContainerComponent />
         </div>

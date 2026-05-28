@@ -275,6 +275,76 @@ const Mrfrequest = () => {
     }
   };
 
+  //  Bulk Assign All pending items
+  const handleAssignAll = async () => {
+    if (!approvalStatus) {
+      showWarningToast("Please approve the MRF before assigning items.");
+      return;
+    }
+
+    const itemsToAssign = mrfListData.filter(
+      (item) => item.action && !item.returns
+    );
+
+    if (itemsToAssign.length === 0) {
+      showInfoToast("No items pending assignment.");
+      return;
+    }
+
+    try {
+      // Fetch inventory once for bulk operation
+      const response = await fetch(`${config.apiBaseURL}/inventory/`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch inventory data");
+      }
+      const inventoryData = await response.json();
+
+      for (const item of itemsToAssign) {
+        const currentItem = inventoryData.find(
+          (inv) => inv.serial_number === item.serial_number
+        );
+
+        if (!currentItem) {
+          console.warn(
+            `Serial ${item.serial_number} not found in inventory. Skipping.`
+          );
+          continue;
+        }
+
+        if (currentItem.status !== "Available") {
+          // Same logic as single-row assignment
+          await assignSerial(currentItem.serial_number, item.id);
+        } else {
+          const availableOptions = inventoryData.filter(
+            (inv) =>
+              inv.component_type?.toLowerCase().trim() ===
+                item.component_type?.toLowerCase().trim() &&
+              inv.specification?.toLowerCase().trim() ===
+                (item.component_specification?.toLowerCase().trim() ||
+                  item.specification?.toLowerCase().trim()) &&
+              inv.status === "Available"
+          );
+
+          if (availableOptions.length === 0) {
+            console.warn(
+              `No available serial numbers for ${item.component_type} - ${
+                item.component_specification || item.specification
+              }`
+            );
+            continue;
+          }
+
+          await assignSerial(availableOptions[0].serial_number, item.id);
+        }
+      }
+
+      showSuccessToast("All pending items assigned where possible.");
+    } catch (error) {
+      console.error("Error during bulk assignment:", error);
+      showErrorToast("Error while assigning all items.");
+    }
+  };
+
   const handleSubmitQC = async () => {
     if (!newQuestion.qcQuestions || newQuestion.qcQuestions.length === 0) {
       showWarningToast("No questions available to submit.");
@@ -413,6 +483,10 @@ const Mrfrequest = () => {
     setCurrentUserRole(role);
   }, []);
 
+  const hasAssignable = mrfListData.some(
+    (item) => item.action && !item.returns
+  );
+
   return (
     <div>
       <h2>Material Request Data for {MRF_id}</h2>
@@ -447,6 +521,28 @@ const Mrfrequest = () => {
           >
             <button onClick={handleApproval} className="approve-screen">
               Approve MRF
+            </button>
+          </div>
+        )}
+        {/* Bulk Assign button shown only when approved + role can see actions */}
+        {approvalStatus && canSeeActions && (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginTop: "8px",
+            }}
+          >
+            <button
+              onClick={handleAssignAll}
+              className="approve-screen"
+              disabled={!hasAssignable}
+              style={{
+                opacity: hasAssignable ? 1 : 0.6,
+                cursor: hasAssignable ? "pointer" : "not-allowed",
+              }}
+            >
+              Assign All
             </button>
           </div>
         )}

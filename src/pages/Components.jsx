@@ -58,6 +58,228 @@ const Component = () => {
   const tagTypeDropdownRef = useRef(null);
 
   const navigate = useNavigate();
+  const [componentMap, setComponentMap] = useState({});
+
+  const [showNoMoreData, setShowNoMoreData] = useState(false);
+
+  // const [editCell, setEditCell] = useState(null); // { id, field }
+  // const [editValue, setEditValue] = useState("");
+
+  // const startEditCell = (componentId, field, currentValue) => {
+  //   setEditCell({ id: componentId, field });
+  //   setEditValue(currentValue ?? "");
+  // };
+
+  // const cancelEditCell = () => {
+  //   setEditCell(null);
+  //   setEditValue("");
+  // };
+
+  // const saveEditCell = async () => {
+  //   if (!editCell) return;
+  //   const { id: componentId, field } = editCell;
+
+  //   const payload = { [field]: editValue }; //  PATCH only this field
+
+  //   const res = await fetch(`${config.apiBaseURL}/component/${componentId}/`, {
+  //     method: "PATCH",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify(payload),
+  //   });
+
+  //   if (!res.ok) {
+  //     showErrorToast("Failed to update.");
+  //     return;
+  //   }
+
+  //   //  update local cache so UI shows instantly
+  //   setComponentMap((prev) => ({
+  //     ...prev,
+  //     [componentId]: {
+  //       ...(prev[componentId] || { component_id: componentId }),
+  //       [field]: editValue,
+  //     },
+  //   }));
+
+  //   showSuccessToast("Updated!");
+  //   cancelEditCell();
+  // };
+
+  // const onEditKeyDown = (e) => {
+  //   if (e.key === "Enter") saveEditCell();
+  //   if (e.key === "Escape") cancelEditCell();
+  // };
+
+  // --- Multi-value editor (HSN/SKU/PART arrays)
+  const [editList, setEditList] = useState(null); // { id, field }
+  const [newListValue, setNewListValue] = useState("");
+
+  const startEditList = (componentId, field) => {
+    setEditList({ id: componentId, field }); // field: "hsn_numbers" | "sku_numbers" | "part_numbers"
+    setNewListValue("");
+  };
+
+  const closeEditList = () => {
+    setEditList(null);
+    setNewListValue("");
+  };
+
+  const patchArrayField = async (componentId, field, nextArray) => {
+    const res = await fetch(`${config.apiBaseURL}/component/${componentId}/`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ [field]: nextArray }),
+    });
+
+    if (!res.ok) {
+      showErrorToast("Failed to update.");
+      return false;
+    }
+
+    //  Update master map
+    setComponentMap((prev) => ({
+      ...prev,
+      [componentId]: {
+        ...(prev[componentId] || { component_id: componentId }),
+        [field]: nextArray,
+      },
+    }));
+
+    //  Update visible list (components)
+    setComponents((prev) =>
+      prev.map((item) => {
+        const cid = item?.component_id?.component_id || item?.component_id;
+        if (cid !== componentId) return item;
+
+        // If nested object exists, update it
+        if (
+          typeof item.component_id === "object" &&
+          item.component_id !== null
+        ) {
+          return {
+            ...item,
+            component_id: {
+              ...item.component_id,
+              [field]: nextArray,
+            },
+          };
+        }
+
+        // If component_id is string, still keep item, list UI will resolve from componentMap anyway
+        return item;
+      }),
+    );
+
+    return true;
+  };
+
+  const addToArrayField = async (component, field, value) => {
+    const componentId = component.component_id;
+    const trimmed = (value || "").trim();
+    if (!trimmed) return;
+
+    const current = Array.isArray(component[field]) ? component[field] : [];
+    if (current.includes(trimmed)) {
+      showWarningToast("Already exists.");
+      return;
+    }
+
+    const next = [...current, trimmed];
+    const ok = await patchArrayField(componentId, field, next);
+    if (ok) {
+      showSuccessToast("Added!");
+      setNewListValue("");
+    }
+  };
+
+  const removeFromArrayField = async (component, field, value) => {
+    const componentId = component.component_id;
+    const current = Array.isArray(component[field]) ? component[field] : [];
+    const next = current.filter((x) => x !== value);
+
+    const ok = await patchArrayField(componentId, field, next);
+    if (ok) showSuccessToast("Removed!");
+  };
+
+  const multiCellStyle = {
+    width: "140px", //  fixed column width (change as you like)
+    maxWidth: "140px",
+    whiteSpace: "normal",
+    wordBreak: "break-word",
+    overflowWrap: "anywhere",
+    verticalAlign: "top",
+  };
+
+  const chipWrapStyle = {
+    display: "flex",
+    gap: "6px",
+    flexWrap: "wrap",
+    alignItems: "flex-start",
+    maxWidth: "100%",
+  };
+
+  const chipStyle = {
+    background: "#eef2ff",
+    padding: "2px 8px",
+    borderRadius: "12px",
+    fontSize: "12px",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "6px",
+    maxWidth: "100%",
+    wordBreak: "break-word",
+  };
+
+  const addBtnStyle = {
+    background: "#e2dede",
+    border: "none",
+    cursor: "pointer",
+    borderRadius: "12px",
+    padding: "2px 10px",
+    fontSize: "12px",
+    flex: "0 0 auto",
+  };
+
+  const inputRowStyle = {
+    marginTop: "6px",
+    display: "flex",
+    gap: "6px",
+    flexWrap: "wrap",
+  };
+
+  //////////////
+  useEffect(() => {
+    const fetchComponentMaster = async () => {
+      try {
+        const res = await fetch(`${config.apiBaseURL}/component/`);
+        const data = await res.json();
+
+        const map = {};
+        data.forEach((c) => {
+          map[c.component_id] = c;
+        });
+
+        setComponentMap(map);
+      } catch (e) {
+        console.error("Failed to fetch component master:", e);
+      }
+    };
+
+    fetchComponentMaster();
+  }, []);
+
+  const resolveComponent = (item) => {
+    const cid =
+      typeof item.component_id === "string"
+        ? item.component_id
+        : item.component_id?.component_id;
+
+    // Prefer master map (full data), else fallback to nested object
+    return (
+      (cid && componentMap[cid]) ||
+      (typeof item.component_id === "object" ? item.component_id : {})
+    );
+  };
 
   // -------------------------------------------------
   // initial auxiliary data
@@ -235,6 +457,7 @@ const Component = () => {
     setComponents([]);
     setCurrentPage(1);
     setHasMore(true);
+    setShowNoMoreData(false);
     fetchPage(1, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -247,23 +470,40 @@ const Component = () => {
   // auto-fill: if the list isn't tall enough to scroll, fetch more pages
   useEffect(() => {
     const el = document.getElementById("component-table-wrapper");
-    if (!el) return;
+    if (!el || loading || isLoadingMore || inFlightRef.current) return;
+
+    let cancelled = false;
+
     const tryFill = async () => {
-      // give DOM a tick to layout
-      await new Promise((r) => setTimeout(r, 50));
-      while (
-        el.scrollHeight <= el.clientHeight &&
-        hasMore &&
-        !loading &&
-        !isLoadingMore &&
-        !inFlightRef.current
-      ) {
+      await new Promise((r) => setTimeout(r, 80));
+      if (cancelled) return;
+
+      const isScrollable = el.scrollHeight > el.clientHeight + 5;
+
+      // If page is not scrollable and there is no more data,
+      // don't show "No more data"
+      if (!isScrollable && !hasMore) {
+        setShowNoMoreData(false);
+        return;
+      }
+
+      // If page is scrollable and no more data, then show it
+      if (isScrollable && !hasMore) {
+        setShowNoMoreData(true);
+        return;
+      }
+
+      // If not scrollable but more pages exist, fetch one more page
+      if (!isScrollable && hasMore) {
         await fetchPage(currentPage);
-        await new Promise((r) => setTimeout(r, 50));
       }
     };
+
     tryFill();
-    // rerun when list grows or paging state changes
+
+    return () => {
+      cancelled = true;
+    };
   }, [components.length, hasMore, loading, isLoadingMore, currentPage]);
 
   // -------------------------------------------------
@@ -363,19 +603,19 @@ const Component = () => {
                 components.find(
                   (c) =>
                     (c.component_id?.component_id || c.component_id) ===
-                    selectedComponent
+                    selectedComponent,
                 )?.component_id?.component_type || "",
               category:
                 components.find(
                   (c) =>
                     (c.component_id?.component_id || c.component_id) ===
-                    selectedComponent
+                    selectedComponent,
                 )?.component_id?.category || "",
               component_specification:
                 components.find(
                   (c) =>
                     (c.component_id?.component_id || c.component_id) ===
-                    selectedComponent
+                    selectedComponent,
                 )?.component_id?.component_specification || "",
             },
           },
@@ -408,8 +648,8 @@ const Component = () => {
               !(
                 t.tags.includes(deletedTag) &&
                 t.component_id.component_id === componentId
-              )
-          )
+              ),
+          ),
         );
 
         showSuccessToast("Tag deleted successfully!");
@@ -423,7 +663,7 @@ const Component = () => {
 
   const handleSaveTallyReference = async (componentId) => {
     const target = components.find(
-      (c) => (c.component_id?.component_id || c.component_id) === componentId
+      (c) => (c.component_id?.component_id || c.component_id) === componentId,
     );
     const payload = {
       ...target.component_id,
@@ -437,7 +677,7 @@ const Component = () => {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
-        }
+        },
       );
 
       if (response.ok) {
@@ -455,8 +695,8 @@ const Component = () => {
                     tally_reference: editedTallyRef,
                   },
                 }
-              : item
-          )
+              : item,
+          ),
         );
       } else {
         showErrorToast("Failed to update tally reference.");
@@ -563,15 +803,14 @@ const Component = () => {
       <div className="header">
         <h2>Component List</h2>
         <div className="button-group">
-          {user?.role !== "User" &&
-            (user?.role !== "Finance" && (
-              <button
-                className="create-tag-button"
-                onClick={() => setShowPopup(true)}
-              >
-                <img src={Tags} alt="icon" />
-              </button>
-            ))}
+          {user?.role !== "User" && user?.role !== "Finance" && (
+            <button
+              className="create-tag-button"
+              onClick={() => setShowPopup(true)}
+            >
+              <img src={Tags} alt="icon" />
+            </button>
+          )}
           {user?.role !== "Finance" && (
             <button
               className="add-comp"
@@ -605,11 +844,17 @@ const Component = () => {
           style={{ overflowY: loading ? "hidden" : "auto" }}
           onScroll={onScroll}
         >
-          <table>
+          {/* <table> */}
+          <table style={{ tableLayout: "fixed", width: "100%" }}>
             <thead>
               <tr>
+                {/* Component ID – reduced */}
                 <th
-                  style={{ textDecoration: "underline", cursor: "pointer" }}
+                  style={{
+                    width: "90px",
+                    textDecoration: "underline",
+                    cursor: "pointer",
+                  }}
                   onClick={() => handleSort("component_id")}
                 >
                   Component ID{" "}
@@ -620,7 +865,12 @@ const Component = () => {
                     : ""}
                 </th>
 
-                <th className="category-dropdown-wrapper" ref={dropdownRef}>
+                {/* Category – reduced */}
+                <th
+                  className="category-dropdown-wrapper"
+                  ref={dropdownRef}
+                  style={{ width: "120px" }}
+                >
                   <div
                     className="category-dropdown"
                     onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -663,9 +913,11 @@ const Component = () => {
                   )}
                 </th>
 
+                {/* Component Type – slightly reduced */}
                 <th
                   className="component-type-dropdown-wrapper"
                   ref={componentTypeDropdownRef}
+                  style={{ width: "140px" }}
                 >
                   <div
                     className="component-dropdown"
@@ -712,8 +964,13 @@ const Component = () => {
                   )}
                 </th>
 
+                {/* Specification – MORE SPACE */}
                 <th
-                  style={{ textDecoration: "underline", cursor: "pointer" }}
+                  style={{
+                    width: "400px", //  increase/decrease as needed
+                    textDecoration: "underline",
+                    cursor: "pointer",
+                  }}
                   onClick={() => handleSort("component_specification")}
                 >
                   Specification{" "}
@@ -724,14 +981,24 @@ const Component = () => {
                     : ""}
                 </th>
 
-                {user?.role !== "User" &&
-                  user?.role !== "Finance" && <th>Tally Reference</th>}
-                <th>UOM</th>
+                {/* Fixed chip columns */}
+                <th style={{ width: "140px" }}>HSN.No</th>
+                <th style={{ width: "140px" }}>SKU.No</th>
+                <th style={{ width: "140px" }}>Part.No</th>
 
+                {/* Tally Reference – reduced */}
+                {user?.role !== "User" && user?.role !== "Finance" && (
+                  <th style={{ width: "120px" }}>Tally Reference</th>
+                )}
+
+                {/* UOM – small */}
+                <th style={{ width: "70px" }}>UOM</th>
+
+                {/* Tags – medium */}
                 <th
                   className="tags-dropdown-wrapper"
-                  style={{ position: "relative" }}
                   ref={tagTypeDropdownRef}
+                  style={{ width: "220px", position: "relative" }}
                 >
                   <div
                     className="tags-dropdown"
@@ -792,7 +1059,8 @@ const Component = () => {
                 </tr>
               ) : sortedComponents.length > 0 ? (
                 sortedComponents.map((item, index) => {
-                  const component = item.component_id || {};
+                  const component = resolveComponent(item);
+
                   // unique + stable key
                   const rowKey =
                     component.component_id || item.id || `row-${index}`;
@@ -815,54 +1083,318 @@ const Component = () => {
                       >
                         {component.component_specification}
                       </td>
-                      {user?.role !== "User" &&
-                        (user?.role !== "Finance" && (
-                          <td>
-                            {editTallyRefId === component.component_id ? (
-                              <div className="tally-edit-container">
-                                <input
-                                  type="text"
-                                  value={editedTallyRef}
-                                  onChange={(e) =>
-                                    setEditedTallyRef(e.target.value)
+
+                      <td style={multiCellStyle}>
+                        <div style={chipWrapStyle}>
+                          {(component.hsn_numbers || []).length > 0 ? (
+                            component.hsn_numbers.map((hsn) => (
+                              <span key={hsn} style={chipStyle}>
+                                <span
+                                  style={{
+                                    maxWidth: "90px",
+                                    overflowWrap: "anywhere",
+                                  }}
+                                >
+                                  {hsn}
+                                </span>
+                                <button
+                                  style={{
+                                    border: "none",
+                                    background: "transparent",
+                                    cursor: "pointer",
+                                    fontWeight: "bold",
+                                    flex: "0 0 auto",
+                                  }}
+                                  onClick={() =>
+                                    removeFromArrayField(
+                                      component,
+                                      "hsn_numbers",
+                                      hsn,
+                                    )
                                   }
-                                  className="tally-input"
-                                />
-                                <div className="tally-actions">
-                                  <button
-                                    className="tally-button save-button"
-                                    onClick={() =>
-                                      handleSaveTallyReference(
-                                        component.component_id
-                                      )
-                                    }
-                                  >
-                                    Save
-                                  </button>
-                                  <button
-                                    className="tally-button cancel-button"
-                                    onClick={() => setEditTallyRefId(null)}
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                              </div>
-                            ) : (
-                              <span
-                                style={{ cursor: "pointer", color: "#007bff" }}
-                                title="Click to edit"
-                                onClick={() => {
-                                  setEditTallyRefId(component.component_id);
-                                  setEditedTallyRef(
-                                    component.tally_reference || ""
-                                  );
-                                }}
-                              >
-                                {component.tally_reference || "Click to add"}
+                                  title="Remove"
+                                >
+                                  ×
+                                </button>
                               </span>
-                            )}
-                          </td>
-                        ))}
+                            ))
+                          ) : (
+                            <span style={{ color: "gray" }}></span>
+                          )}
+
+                          <button
+                            style={addBtnStyle}
+                            onClick={() =>
+                              startEditList(
+                                component.component_id,
+                                "hsn_numbers",
+                              )
+                            }
+                          >
+                            + Add
+                          </button>
+                        </div>
+
+                        {editList?.id === component.component_id &&
+                          editList?.field === "hsn_numbers" && (
+                            <div style={inputRowStyle}>
+                              <input
+                                autoFocus
+                                value={newListValue}
+                                onChange={(e) =>
+                                  setNewListValue(e.target.value)
+                                }
+                                placeholder="Enter HSN"
+                                style={{ width: "120px" }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter")
+                                    addToArrayField(
+                                      component,
+                                      "hsn_numbers",
+                                      newListValue,
+                                    );
+                                  if (e.key === "Escape") closeEditList();
+                                }}
+                              />
+                              <button
+                                onClick={() =>
+                                  addToArrayField(
+                                    component,
+                                    "hsn_numbers",
+                                    newListValue,
+                                  )
+                                }
+                              >
+                                Save
+                              </button>
+                              <button onClick={closeEditList}>Cancel</button>
+                            </div>
+                          )}
+                      </td>
+
+                      <td style={multiCellStyle}>
+                        <div style={chipWrapStyle}>
+                          {(component.sku_numbers || []).length > 0 ? (
+                            component.sku_numbers.map((sku) => (
+                              <span key={sku} style={chipStyle}>
+                                <span
+                                  style={{
+                                    maxWidth: "90px",
+                                    overflowWrap: "anywhere",
+                                  }}
+                                >
+                                  {sku}
+                                </span>
+                                <button
+                                  style={{
+                                    border: "none",
+                                    background: "transparent",
+                                    cursor: "pointer",
+                                    fontWeight: "bold",
+                                    flex: "0 0 auto",
+                                  }}
+                                  onClick={() =>
+                                    removeFromArrayField(
+                                      component,
+                                      "sku_numbers",
+                                      sku,
+                                    )
+                                  }
+                                  title="Remove"
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            ))
+                          ) : (
+                            <span style={{ color: "gray" }}></span>
+                          )}
+
+                          <button
+                            style={addBtnStyle}
+                            onClick={() =>
+                              startEditList(
+                                component.component_id,
+                                "sku_numbers",
+                              )
+                            }
+                          >
+                            + Add
+                          </button>
+                        </div>
+
+                        {editList?.id === component.component_id &&
+                          editList?.field === "sku_numbers" && (
+                            <div style={inputRowStyle}>
+                              <input
+                                autoFocus
+                                value={newListValue}
+                                onChange={(e) =>
+                                  setNewListValue(e.target.value)
+                                }
+                                placeholder="Enter SKU"
+                                style={{ width: "120px" }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter")
+                                    addToArrayField(
+                                      component,
+                                      "sku_numbers",
+                                      newListValue,
+                                    );
+                                  if (e.key === "Escape") closeEditList();
+                                }}
+                              />
+                              <button
+                                onClick={() =>
+                                  addToArrayField(
+                                    component,
+                                    "sku_numbers",
+                                    newListValue,
+                                  )
+                                }
+                              >
+                                Save
+                              </button>
+                              <button onClick={closeEditList}>Cancel</button>
+                            </div>
+                          )}
+                      </td>
+
+                      <td style={multiCellStyle}>
+                        <div style={chipWrapStyle}>
+                          {(component.part_numbers || []).length > 0 ? (
+                            component.part_numbers.map((part) => (
+                              <span key={part} style={chipStyle}>
+                                <span
+                                  style={{
+                                    maxWidth: "90px",
+                                    overflowWrap: "anywhere",
+                                  }}
+                                >
+                                  {part}
+                                </span>
+                                <button
+                                  style={{
+                                    border: "none",
+                                    background: "transparent",
+                                    cursor: "pointer",
+                                    fontWeight: "bold",
+                                    flex: "0 0 auto",
+                                  }}
+                                  onClick={() =>
+                                    removeFromArrayField(
+                                      component,
+                                      "part_numbers",
+                                      part,
+                                    )
+                                  }
+                                  title="Remove"
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            ))
+                          ) : (
+                            <span style={{ color: "gray" }}></span>
+                          )}
+
+                          <button
+                            style={addBtnStyle}
+                            onClick={() =>
+                              startEditList(
+                                component.component_id,
+                                "part_numbers",
+                              )
+                            }
+                          >
+                            + Add
+                          </button>
+                        </div>
+
+                        {editList?.id === component.component_id &&
+                          editList?.field === "part_numbers" && (
+                            <div style={inputRowStyle}>
+                              <input
+                                autoFocus
+                                value={newListValue}
+                                onChange={(e) =>
+                                  setNewListValue(e.target.value)
+                                }
+                                placeholder="Enter Part No"
+                                style={{ width: "120px" }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter")
+                                    addToArrayField(
+                                      component,
+                                      "part_numbers",
+                                      newListValue,
+                                    );
+                                  if (e.key === "Escape") closeEditList();
+                                }}
+                              />
+                              <button
+                                onClick={() =>
+                                  addToArrayField(
+                                    component,
+                                    "part_numbers",
+                                    newListValue,
+                                  )
+                                }
+                              >
+                                Save
+                              </button>
+                              <button onClick={closeEditList}>Cancel</button>
+                            </div>
+                          )}
+                      </td>
+
+                      {user?.role !== "User" && user?.role !== "Finance" && (
+                        <td>
+                          {editTallyRefId === component.component_id ? (
+                            <div className="tally-edit-container">
+                              <input
+                                type="text"
+                                value={editedTallyRef}
+                                onChange={(e) =>
+                                  setEditedTallyRef(e.target.value)
+                                }
+                                className="tally-input"
+                              />
+                              <div className="tally-actions">
+                                <button
+                                  className="tally-button save-button"
+                                  onClick={() =>
+                                    handleSaveTallyReference(
+                                      component.component_id,
+                                    )
+                                  }
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  className="tally-button cancel-button"
+                                  onClick={() => setEditTallyRefId(null)}
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <span
+                              style={{ cursor: "pointer", color: "#007bff" }}
+                              title="Click to edit"
+                              onClick={() => {
+                                setEditTallyRefId(component.component_id);
+                                setEditedTallyRef(
+                                  component.tally_reference || "",
+                                );
+                              }}
+                            >
+                              {component.tally_reference || "Click to add"}
+                            </span>
+                          )}
+                        </td>
+                      )}
                       <td>{component.unit_of_measurement}</td>
                       <td>
                         <div>
@@ -880,7 +1412,7 @@ const Component = () => {
                                     ×
                                   </button>
                                 </span>
-                              )
+                              ),
                             )
                           ) : (
                             <span></span>
@@ -942,7 +1474,7 @@ const Component = () => {
               ) : (
                 <tr>
                   <td
-                    colSpan="8"
+                    colSpan="10"
                     style={{
                       textAlign: "center",
                       color: "gray",
@@ -957,7 +1489,7 @@ const Component = () => {
           </table>
 
           {isLoadingMore && <div className="loading-message">Loading...</div>}
-          {!hasMore && !loading && components.length > 0 && (
+          {showNoMoreData && !loading && components.length > 0 && (
             <div className="no-message">No more data</div>
           )}
         </div>
@@ -1025,7 +1557,8 @@ const Component = () => {
                   }
                   const existingTag = availableTags.find(
                     (tag) =>
-                      tag.tags.toLowerCase() === newTagName.trim().toLowerCase()
+                      tag.tags.toLowerCase() ===
+                      newTagName.trim().toLowerCase(),
                   );
                   if (existingTag) {
                     showInfoToast(`The tag "${newTagName}" already exists.`);
@@ -1040,7 +1573,7 @@ const Component = () => {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(payload),
-                      }
+                      },
                     );
                     if (response.ok) {
                       showSuccessToast("Tag created successfully!");

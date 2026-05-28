@@ -50,6 +50,11 @@ const Vendors = () => {
   const [newVendor, setNewVendor] = useState({
     vendor_name: "",
     gstn: "",
+    point_of_contact: "",
+    email: "",
+    phone_number: "",
+    location: "",
+    default_poc: true,
   });
   const [newSubVendor, setNewSubVendor] = useState({
     point_of_contact: "",
@@ -182,7 +187,7 @@ const Vendors = () => {
   // Get the default POC for a given vendor
   const getDefaultPocForVendor = (vendorId) => {
     const defaultPoc = pocData.find(
-      (poc) => poc.vendor === vendorId && poc.default_poc
+      (poc) => poc.vendor === vendorId && poc.default_poc,
     );
     return defaultPoc ? defaultPoc.point_of_contact : "N/A";
   };
@@ -191,7 +196,7 @@ const Vendors = () => {
     // const updatedPocData = [...pocData];
     // updatedPocData[index][field] = value;
     const updatedPocData = pocData.map((poc) =>
-      poc.id === pocId ? { ...poc, [field]: value } : poc
+      poc.id === pocId ? { ...poc, [field]: value } : poc,
     );
     setPocData(updatedPocData);
   };
@@ -205,12 +210,12 @@ const Vendors = () => {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(tempEditPoc),
-        }
+        },
       );
       if (response.ok) {
         // Replace old entry with updated one
         setPocData((prev) =>
-          prev.map((p) => (p.id === pocId ? tempEditPoc : p))
+          prev.map((p) => (p.id === pocId ? tempEditPoc : p)),
         );
         showSuccessToast("POC updated successfully");
         setIsEditing(null);
@@ -288,7 +293,7 @@ const Vendors = () => {
   const handleAddPOC = async () => {
     try {
       const isFirstPoc = !pocData.some(
-        (poc) => poc.vendor === selectedVendorId
+        (poc) => poc.vendor === selectedVendorId,
       );
       const payload = {
         ...newPOC,
@@ -330,7 +335,7 @@ const Vendors = () => {
       const updatedPocData = pocData.map((poc) =>
         poc.vendor === selectedVendorId
           ? { ...poc, default_poc: poc.id === pocId }
-          : poc
+          : poc,
       );
 
       setPocData(updatedPocData);
@@ -351,8 +356,8 @@ const Vendors = () => {
               location: poc.location,
               vendor: poc.vendor,
             }),
-          })
-        )
+          }),
+        ),
       );
       showSuccessToast("Default POC updated successfully");
     } catch (error) {
@@ -379,29 +384,82 @@ const Vendors = () => {
   // Function to add a new vendor and generate a vendor_id
   const handleAddVendor = async () => {
     try {
-      const response = await fetch(`${config.apiBaseURL}/vendor_list/`, {
+      // Step 1: create vendor in vendor_list
+      const vendorPayload = {
+        vendor_name: newVendor.vendor_name,
+        gstn: newVendor.gstn,
+      };
+
+      const vendorResponse = await fetch(`${config.apiBaseURL}/vendor_list/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newVendor),
+        body: JSON.stringify(vendorPayload),
       });
 
-      if (response.ok) {
-        const addedVendor = await response.json();
-
-        // update both lists so table updates immediately
-        setVendorData((prev) => [...prev, addedVendor]);
-        setFilteredVendorData((prev) => [...prev, addedVendor]);
-
-        setNewVendorId(addedVendor.vendor_id);
-        setShowAddVendorPopup(false);
-        setNewVendor({ vendor_name: "", gstn: "" });
-        showSuccessToast("Vendor added successfully.");
-      } else {
-        console.error("Error adding vendor:", response.statusText);
+      if (!vendorResponse.ok) {
+        console.error("Error adding vendor:", vendorResponse.statusText);
         showErrorToast("Failed to add vendor.");
+        return;
       }
+
+      const addedVendor = await vendorResponse.json();
+
+      // update vendor table immediately
+      setVendorData((prev) => [...prev, addedVendor]);
+      setFilteredVendorData((prev) => [...prev, addedVendor]);
+
+      // Step 2: create POC in vendor_sub_list using returned vendor_id
+      const hasPocDetails =
+        newVendor.point_of_contact?.trim() ||
+        newVendor.email?.trim() ||
+        newVendor.phone_number?.trim() ||
+        newVendor.location?.trim();
+
+      if (hasPocDetails) {
+        const pocPayload = {
+          point_of_contact: newVendor.point_of_contact,
+          email: newVendor.email,
+          phone_number: newVendor.phone_number,
+          location: newVendor.location,
+          default_poc: true,
+          vendor: addedVendor.vendor_id,
+        };
+
+        const pocResponse = await fetch(
+          `${config.apiBaseURL}/vendor_sub_list/`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(pocPayload),
+          },
+        );
+
+        if (pocResponse.ok) {
+          const addedPOC = await pocResponse.json();
+          setPocData((prev) => [...prev, addedPOC]);
+          showSuccessToast("Vendor and POC added successfully.");
+        } else {
+          console.error("Error adding POC:", pocResponse.statusText);
+          showErrorToast("Vendor created, but POC creation failed.");
+        }
+      } else {
+        showSuccessToast("Vendor added successfully.");
+      }
+
+      setShowAddVendorPopup(false);
+      setNewVendor({
+        vendor_name: "",
+        gstn: "",
+        point_of_contact: "",
+        email: "",
+        phone_number: "",
+        location: "",
+        default_poc: true,
+      });
     } catch (error) {
       console.error("Error adding vendor:", error);
       showErrorToast("Something went wrong.");
@@ -449,14 +507,14 @@ const Vendors = () => {
         `${config.apiBaseURL}/vendor_sub_list/${pocId}/`,
         {
           method: "DELETE",
-        }
+        },
       );
       if (response.ok) {
         // Remove deleted POC from state
         showSuccessToast("POC deleted successfully");
 
         setPocData((prevPocData) =>
-          prevPocData.filter((poc) => poc.id !== pocId)
+          prevPocData.filter((poc) => poc.id !== pocId),
         );
       } else {
         console.error("Error deleting POC:", response.statusText);
@@ -488,7 +546,7 @@ const Vendors = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(editedVendorName),
-        }
+        },
       );
       if (response.ok) {
         // Update the vendorData state with the new name
@@ -496,8 +554,8 @@ const Vendors = () => {
           prevData.map((vendor) =>
             vendor.vendor_id === vendor_id
               ? { ...vendor, ...editedVendorName }
-              : vendor
-          )
+              : vendor,
+          ),
         );
         setIsEditingVendor(null); // Exit editing mode
         showSuccessToast("Vendor details updated successfully");
@@ -527,7 +585,7 @@ const Vendors = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ active: updatedStatus }),
-        }
+        },
       );
 
       if (!response.ok) {
@@ -539,28 +597,28 @@ const Vendors = () => {
         prevData.map((vendor) =>
           vendor.vendor_id === vendorId
             ? { ...vendor, active: updatedStatus }
-            : vendor
-        )
+            : vendor,
+        ),
       );
 
       setFilteredVendorData((prevData) =>
         prevData.map((vendor) =>
           vendor.vendor_id === vendorId
             ? { ...vendor, active: updatedStatus }
-            : vendor
-        )
+            : vendor,
+        ),
       );
 
       showSuccessToast(
         `Vendor ${vendorName} marked as ${
           updatedStatus ? "Active" : "Inactive"
-        } successfully`
+        } successfully`,
       );
 
       // If marking inactive, also update vendor_master products
       if (!updatedStatus) {
         const masterResponse = await fetch(
-          `${config.apiBaseURL}/vendor_master/`
+          `${config.apiBaseURL}/vendor_master/`,
         );
         if (!masterResponse.ok) {
           throw new Error("Failed to fetch vendor_master data");
@@ -568,7 +626,7 @@ const Vendors = () => {
 
         const masterData = await masterResponse.json();
         const vendorProducts = masterData.filter(
-          (product) => product.vendor === vendorId
+          (product) => product.vendor === vendorId,
         );
 
         await Promise.all(
@@ -580,15 +638,15 @@ const Vendors = () => {
                   method: "PATCH",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ active: false }),
-                }
+                },
               );
               if (!updateMasterResponse.ok) {
                 console.error(
-                  `Failed to update vendor_master for product_id: ${product.product_id}`
+                  `Failed to update vendor_master for product_id: ${product.product_id}`,
                 );
               }
             }
-          })
+          }),
         );
       }
 
@@ -613,7 +671,7 @@ const Vendors = () => {
     const localFiltered = vendorData.filter(
       (vendor) =>
         vendor.vendor_name?.toLowerCase().includes(lowerQuery) ||
-        vendor.gstn?.toLowerCase().includes(lowerQuery)
+        vendor.gstn?.toLowerCase().includes(lowerQuery),
     );
 
     if (localFiltered.length > 0) {
@@ -627,7 +685,7 @@ const Vendors = () => {
     try {
       setLoadingVendors(true);
       const response = await fetch(
-        `${config.apiBaseURL}/vendor_search/?search=${query}`
+        `${config.apiBaseURL}/vendor_search/?search=${query}`,
       );
       if (response.ok) {
         const vendors = await response.json();
@@ -661,9 +719,10 @@ const Vendors = () => {
           >
             <div
               className="modal-contents"
-              onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside modal
+              onClick={(e) => e.stopPropagation()}
             >
               <h4>Add New Vendor</h4>
+
               <input
                 type="text"
                 placeholder="Vendor Name"
@@ -672,6 +731,7 @@ const Vendors = () => {
                   handleVendorInputChange("vendor_name", e.target.value)
                 }
               />
+
               <input
                 type="text"
                 placeholder="GSTN"
@@ -680,6 +740,45 @@ const Vendors = () => {
                   handleVendorInputChange("gstn", e.target.value)
                 }
               />
+
+              <h4 style={{ marginTop: "15px" }}>Point of Contact</h4>
+
+              <input
+                type="text"
+                placeholder="POC Name"
+                value={newVendor.point_of_contact}
+                onChange={(e) =>
+                  handleVendorInputChange("point_of_contact", e.target.value)
+                }
+              />
+
+              <input
+                type="email"
+                placeholder="Email"
+                value={newVendor.email}
+                onChange={(e) =>
+                  handleVendorInputChange("email", e.target.value)
+                }
+              />
+
+              <input
+                type="text"
+                placeholder="Phone Number"
+                value={newVendor.phone_number}
+                onChange={(e) =>
+                  handleVendorInputChange("phone_number", e.target.value)
+                }
+              />
+
+              <input
+                type="text"
+                placeholder="Address"
+                value={newVendor.location}
+                onChange={(e) =>
+                  handleVendorInputChange("location", e.target.value)
+                }
+              />
+
               <div className="modal-buttons">
                 <button
                   className="modal-button save-button"
@@ -983,7 +1082,7 @@ const Vendors = () => {
                           toggleVendorStatus(
                             vendor.vendor_id,
                             vendor.active,
-                            vendor.vendor_name
+                            vendor.vendor_name,
                           )
                         }
                       >
@@ -1239,7 +1338,7 @@ const Vendors = () => {
                             onChange={(e) =>
                               handleInputChange(
                                 "point_of_contact",
-                                e.target.value
+                                e.target.value,
                               )
                             }
                           />

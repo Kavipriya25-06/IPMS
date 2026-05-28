@@ -46,7 +46,7 @@ const Login = () => {
         localStorage.setItem("email", email);
         localStorage.setItem("userRole", user.role);
 
-        // 👉 Instead of going to first allowed tile
+        //  Instead of going to first allowed tile
         navigate("/dashboard"); // Show clean dashboard after login
       } else {
         setError("Invalid email or password");

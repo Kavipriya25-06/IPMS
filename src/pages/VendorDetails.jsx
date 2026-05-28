@@ -83,7 +83,7 @@ const VendorDetails = () => {
   const fetchImagesForComponent = async (componentId) => {
     try {
       const res = await fetch(
-        `${config.apiBaseURL}/component_images/by-component/${componentId}/`
+        `${config.apiBaseURL}/component_images/by-component/${componentId}/`,
       );
       if (res.ok) {
         const data = await res.json();
@@ -149,7 +149,7 @@ const VendorDetails = () => {
 
         // Filter vendor_master for selected vendor **once**
         const matchedProducts = vendorMaster.filter(
-          (product) => product.vendor === vendorId
+          (product) => product.vendor === vendorId,
         );
 
         // Component master map: product_id -> component_id (as in your original logic)
@@ -206,7 +206,7 @@ const VendorDetails = () => {
         .sort(
           (a, b) =>
             new Date(b.current_time).getTime() -
-            new Date(a.current_time).getTime()
+            new Date(a.current_time).getTime(),
         );
 
       setPriceHistory(filtered);
@@ -217,8 +217,8 @@ const VendorDetails = () => {
         prev.map((p) =>
           p.product_id === productId
             ? { ...p, last_price: filtered[0]?.price ?? p.last_price }
-            : p
-        )
+            : p,
+        ),
       );
 
       setShowPriceHistory(true);
@@ -255,7 +255,7 @@ const VendorDetails = () => {
 
         // Update cache
         setPriceTablesCache((prev) =>
-          prev ? [...prev, addedEntry] : [addedEntry]
+          prev ? [...prev, addedEntry] : [addedEntry],
         );
 
         // Refresh visible history (in-memory)
@@ -271,8 +271,8 @@ const VendorDetails = () => {
                   tax: addedEntry.tax,
                   delivery_days: addedEntry.delivery_days,
                 }
-              : product
-          )
+              : product,
+          ),
         );
 
         setNewPriceEntry({ date: "", price: "", tax: "", delivery_days: "" });
@@ -316,7 +316,7 @@ const VendorDetails = () => {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
-        }
+        },
       );
       if (response.ok) {
         const updatedEntry = await response.json();
@@ -328,7 +328,9 @@ const VendorDetails = () => {
 
         // Update cache (replace same id)
         setPriceTablesCache((prev) =>
-          (prev || []).map((e) => (e.id === updatedEntry.id ? updatedEntry : e))
+          (prev || []).map((e) =>
+            e.id === updatedEntry.id ? updatedEntry : e,
+          ),
         );
 
         // Update main table latest
@@ -341,8 +343,8 @@ const VendorDetails = () => {
                   tax: updatedEntry.tax,
                   delivery_days: updatedEntry.delivery_days,
                 }
-              : product
-          )
+              : product,
+          ),
         );
 
         setIsEditingPriceEntry(null);
@@ -365,7 +367,7 @@ const VendorDetails = () => {
         `${config.apiBaseURL}/price_tables/${entryToDelete.id}/`,
         {
           method: "DELETE",
-        }
+        },
       );
 
       if (response.ok) {
@@ -373,7 +375,7 @@ const VendorDetails = () => {
 
         // Update cache
         setPriceTablesCache((prev) =>
-          (prev || []).filter((e) => e.id !== entryToDelete.id)
+          (prev || []).filter((e) => e.id !== entryToDelete.id),
         );
 
         const updatedHistory = priceHistory.filter((_, i) => i !== index);
@@ -383,7 +385,7 @@ const VendorDetails = () => {
         const latest =
           updatedHistory.length > 0
             ? updatedHistory.reduce((a, b) =>
-                new Date(a.current_time) > new Date(b.current_time) ? a : b
+                new Date(a.current_time) > new Date(b.current_time) ? a : b,
               )
             : null;
 
@@ -397,8 +399,8 @@ const VendorDetails = () => {
                   tax: latest?.tax ?? 0,
                   delivery_days: latest?.delivery_days ?? 0,
                 }
-              : product
-          )
+              : product,
+          ),
         );
       } else {
         const errorText = await response.text();
@@ -469,7 +471,7 @@ const VendorDetails = () => {
     try {
       const response = await fetch(
         `${config.apiBaseURL}/component_images/by-component/${componentId}/`,
-        { method: "POST", body: formData }
+        { method: "POST", body: formData },
       );
 
       if (response.ok) {
@@ -508,11 +510,11 @@ const VendorDetails = () => {
       const product = updatedProducts[index];
 
       const existingImages = (product.images || []).map((imgObj) =>
-        String(imgObj.image).toLowerCase()
+        String(imgObj.image).toLowerCase(),
       );
 
       const alreadySelected = (product.newImages || []).map(
-        (f) => `${f.name.toLowerCase()}-${f.size}`
+        (f) => `${f.name.toLowerCase()}-${f.size}`,
       );
 
       const added = [];
@@ -526,7 +528,7 @@ const VendorDetails = () => {
 
         const baseName = file.name.toLowerCase().split(".")[0];
         const isSaved = existingImages.some((saved) =>
-          saved.includes(baseName)
+          saved.includes(baseName),
         );
         if (isSaved) {
           showInfoToast(`"${file.name}" already exists in saved images.`);
@@ -552,7 +554,7 @@ const VendorDetails = () => {
     try {
       const response = await fetch(
         `${config.apiBaseURL}/vendor_master/${selectedVendorData[index].product_id}/`,
-        { method: "PATCH", body: formData }
+        { method: "PATCH", body: formData },
       );
 
       if (response.ok) {
@@ -583,13 +585,15 @@ const VendorDetails = () => {
     component_id: "",
     last_price: "",
     tax: "",
+    delivery_days: "",
+    price_date: formatDateToYYYYMMDD(new Date()),
     img: null,
     attachments: null,
     category: "",
     component_type: "",
     component_specification: "",
     vendor: vendorId,
-    active: "",
+    active: true,
   });
 
   const handleSaveEditProduct = async () => {
@@ -612,15 +616,15 @@ const VendorDetails = () => {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
-        }
+        },
       );
 
       if (response.ok) {
         const savedProduct = await response.json();
         setSelectedVendorData((prev) =>
           prev.map((p) =>
-            p.product_id === savedProduct.product_id ? savedProduct : p
-          )
+            p.product_id === savedProduct.product_id ? savedProduct : p,
+          ),
         );
         setShowEditProductForm(false);
       } else {
@@ -659,111 +663,141 @@ const VendorDetails = () => {
 
   const handleAddNewProduct = async () => {
     const requiredFields = [
+      "component_id",
       "product_description",
       "category",
       "component_type",
       "component_specification",
       "unit_of_measurement",
-      "component_id",
+      "last_price",
+      "tax",
+      "delivery_days",
+      "price_date",
     ];
 
     const emptyFields = requiredFields.filter(
-      (field) => !newProduct[field] || String(newProduct[field]).trim() === ""
+      (field) => !newProduct[field] || String(newProduct[field]).trim() === "",
     );
 
     if (emptyFields.length > 0) {
       setMessageBoxContent(
         `Please fill in the following fields: ${emptyFields
           .map((field) => field.replace(/_/g, " "))
-          .join(", ")}`
+          .join(", ")}`,
       );
       setShowMessageBox(true);
       showWarningToast("Please fill all the required fields");
       return;
     }
 
-    const formData = new FormData();
-    Object.entries(newProduct).forEach(([key, value]) => {
-      if (value !== null) formData.append(key, value);
-    });
-    formData.append("vendor", vendorId);
-
     try {
+      const formData = new FormData();
+
+      Object.entries(newProduct).forEach(([key, value]) => {
+        if (
+          value !== null &&
+          value !== undefined &&
+          key !== "price_date" &&
+          key !== "delivery_days"
+        ) {
+          formData.append(key, value);
+        }
+      });
+
+      formData.append("vendor", vendorId);
+      formData.append("active", true);
+
       const response = await fetch(`${config.apiBaseURL}/vendor_master/`, {
         method: "POST",
         body: formData,
       });
 
-      if (response.ok) {
-        const addedProduct = await response.json();
-        showSuccessToast("Product saved successfully");
-
-        const componentId = addedProduct.component_id;
-
-        try {
-          await fetch(
-            `${config.apiBaseURL}/request_component/status/Added/${componentId}/`,
-            {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ vendor_added: true }),
-            }
-          );
-        } catch (patchError) {
-          console.error("Failed to patch request_component:", patchError);
-        }
-
-        setSelectedVendorData((prev) => [...prev, addedProduct]);
-        setNewProduct({
-          product_description: "",
-          img: null,
-          attachments: null,
-          last_price: "",
-          tax: "",
-          category: "",
-          component_type: "",
-          component_specification: "",
-          unit_of_measurement: "",
-          vendor: vendorId,
-          active: true,
-          component_id: "",
-        });
-        setShowAddProductForm(false);
-
-        const { last_price, tax, product_id, delivery_days } = addedProduct;
-        const priceTablePayload = {
-          current_time: new Date().toISOString(),
-          tax: tax,
-          price: last_price,
-          delivery_days: delivery_days,
-          product: product_id,
-        };
-
-        const priceResponse = await fetch(
-          `${config.apiBaseURL}/price_tables/`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(priceTablePayload),
-          }
-        );
-
-        if (priceResponse.ok) {
-          const newRow = await priceResponse.json();
-          // Update cache
-          setPriceTablesCache((prev) => (prev ? [...prev, newRow] : [newRow]));
-        } else {
-          console.error(
-            "Error updating price table:",
-            priceResponse.statusText
-          );
-        }
-      } else {
+      if (!response.ok) {
         showErrorToast("Failed to save product");
+        return;
       }
+
+      const addedProduct = await response.json();
+
+      const priceTablePayload = {
+        current_time: newProduct.price_date,
+        price: newProduct.last_price,
+        tax: newProduct.tax,
+        delivery_days: newProduct.delivery_days,
+        product: addedProduct.product_id,
+      };
+
+      const priceResponse = await fetch(`${config.apiBaseURL}/price_tables/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(priceTablePayload),
+      });
+
+      let newPriceRow = null;
+
+      if (priceResponse.ok) {
+        newPriceRow = await priceResponse.json();
+        setPriceTablesCache((prev) =>
+          prev ? [...prev, newPriceRow] : [newPriceRow],
+        );
+      } else {
+        showWarningToast("Product saved, but price history was not saved");
+      }
+
+      const componentId = addedProduct.component_id;
+
+      try {
+        await fetch(
+          `${config.apiBaseURL}/request_component/status/Added/${componentId}/`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ vendor_added: true }),
+          },
+        );
+      } catch (patchError) {
+        console.error("Failed to patch request_component:", patchError);
+      }
+
+      const rowToAdd = {
+        ...addedProduct,
+        last_price: newPriceRow?.price ?? newProduct.last_price,
+        tax: newPriceRow?.tax ?? newProduct.tax,
+        delivery_days: newPriceRow?.delivery_days ?? newProduct.delivery_days,
+        images: [],
+        newImages: [],
+        isEditingImage: false,
+        isEditingAttachment: false,
+        isEditingRemarks: false,
+        editableRemarks: "",
+        imagesLoaded: false,
+      };
+
+      setSelectedVendorData((prev) => [...prev, rowToAdd]);
+
+      setNewProduct({
+        product_id: "",
+        product_description: "",
+        unit_of_measurement: "",
+        component_id: "",
+        last_price: "",
+        tax: "",
+        delivery_days: "",
+        price_date: formatDateToYYYYMMDD(new Date()),
+        img: null,
+        attachments: null,
+        category: "",
+        component_type: "",
+        component_specification: "",
+        vendor: vendorId,
+        active: true,
+      });
+
+      setShowAddProductForm(false);
+      showSuccessToast("Product and first price entry saved successfully");
     } catch (error) {
-      showErrorToast("Something went wrong. Please try again");
       console.error("Error adding product:", error);
+      showErrorToast("Something went wrong. Please try again");
     }
   };
 
@@ -780,7 +814,7 @@ const VendorDetails = () => {
     productId,
     currentStatus,
     vendorIdArg,
-    componentId
+    componentId,
   ) => {
     try {
       const updatedStatus = !currentStatus;
@@ -797,7 +831,7 @@ const VendorDetails = () => {
 
       if (matchedVendor.active === false && updatedStatus === true) {
         showInfoToast(
-          "Cannot activate product because the vendor is inactive."
+          "Cannot activate product because the vendor is inactive.",
         );
         return;
       }
@@ -808,7 +842,7 @@ const VendorDetails = () => {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ active: updatedStatus }),
-        }
+        },
       );
 
       if (response.ok) {
@@ -816,13 +850,13 @@ const VendorDetails = () => {
           prevData.map((product) =>
             product.product_id === productId
               ? { ...product, active: updatedStatus }
-              : product
-          )
+              : product,
+          ),
         );
         showSuccessToast(
           `Vendor ${componentId} marked as ${
             updatedStatus ? "Active" : "Inactive"
-          } successfully`
+          } successfully`,
         );
       } else {
         console.error("Error updating vendor status:", response.statusText);
@@ -843,7 +877,7 @@ const VendorDetails = () => {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
-        }
+        },
       );
 
       if (response.ok) {
@@ -872,7 +906,7 @@ const VendorDetails = () => {
         `${config.apiBaseURL}/component_images/${imageId}/`,
         {
           method: "DELETE",
-        }
+        },
       );
 
       if (response.ok) {
@@ -935,71 +969,144 @@ const VendorDetails = () => {
       {/* Add Product Modal */}
       {showAddProductForm && (
         <div className="modal-overlay">
-          <div className="popup">
-            <h3>Add New Product</h3>
+          <div className="popup add-product-popup">
+            <h3 className="popup-title">Add New Product</h3>
 
-            {/* Component ID Dropdown */}
-            <select
-              value={newProduct.component}
-              onChange={(e) => {
-                const selectedComponentId = e.target.value;
-                const selectedComponent = componentList.find(
-                  (comp) => comp.component_id === selectedComponentId
-                );
+            <div className="form-grid-two">
+              <div className="form-group full-width">
+                <label>Component ID</label>
+                <select
+                  value={newProduct.component_id}
+                  onChange={(e) => {
+                    const selectedComponentId = e.target.value;
+                    const selectedComponent = componentList.find(
+                      (comp) => comp.component_id === selectedComponentId,
+                    );
 
-                setNewProduct({
-                  ...newProduct,
-                  component_id: selectedComponentId,
-                  category: selectedComponent?.category || "",
-                  component_type: selectedComponent?.component_type || "",
-                  component_specification:
-                    selectedComponent?.component_specification || "",
-                  unit_of_measurement:
-                    selectedComponent?.unit_of_measurement || "",
-                });
-              }}
-            >
-              <option value="">Select Component ID</option>
-              {componentList.map((comp) => (
-                <option key={comp.component_id} value={comp.component_id}>
-                  {comp.component_id}
-                </option>
-              ))}
-            </select>
+                    setNewProduct({
+                      ...newProduct,
+                      component_id: selectedComponentId,
+                      category: selectedComponent?.category || "",
+                      component_type: selectedComponent?.component_type || "",
+                      component_specification:
+                        selectedComponent?.component_specification || "",
+                      unit_of_measurement:
+                        selectedComponent?.unit_of_measurement || "",
+                    });
+                  }}
+                >
+                  <option value="">Select Component ID</option>
+                  {componentList.map((comp) => (
+                    <option key={comp.component_id} value={comp.component_id}>
+                      {comp.component_id}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <input
-              type="text"
-              placeholder="Product Description"
-              value={newProduct.product_description}
-              onChange={(e) =>
-                handleInputChange("product_description", e.target.value)
-              }
-            />
+              <div className="form-group full-width">
+                <label>Product Description</label>
+                <input
+                  type="text"
+                  placeholder="Product Description"
+                  value={newProduct.product_description}
+                  onChange={(e) =>
+                    handleInputChange("product_description", e.target.value)
+                  }
+                />
+              </div>
 
-            <input
-              type="text"
-              placeholder="Category"
-              value={newProduct.category}
-              readOnly
-            />
-            <input
-              type="text"
-              placeholder="Component Type"
-              value={newProduct.component_type}
-              readOnly
-            />
-            <input
-              type="text"
-              placeholder="Component Specification"
-              value={newProduct.component_specification}
-              readOnly
-            />
-            <input
-              type="text"
-              placeholder="Unit of Measurement"
-              value={newProduct.unit_of_measurement}
-              readOnly
-            />
+              <div className="form-group">
+                <label>Category</label>
+                <input
+                  type="text"
+                  placeholder="Category"
+                  value={newProduct.category}
+                  readOnly
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Component Type</label>
+                <input
+                  type="text"
+                  placeholder="Component Type"
+                  value={newProduct.component_type}
+                  readOnly
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Component Specification</label>
+                <input
+                  type="text"
+                  placeholder="Component Specification"
+                  value={newProduct.component_specification}
+                  readOnly
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Unit of Measurement</label>
+                <input
+                  type="text"
+                  placeholder="Unit of Measurement"
+                  value={newProduct.unit_of_measurement}
+                  readOnly
+                />
+              </div>
+            </div>
+
+            <hr />
+
+            <h4 className="section-title">Initial Price Details</h4>
+
+            <div className="form-grid-two">
+              <div className="form-group">
+                <label>Date</label>
+                <input
+                  type="date"
+                  value={newProduct.price_date}
+                  onChange={(e) =>
+                    handleInputChange("price_date", e.target.value)
+                  }
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Price</label>
+                <input
+                  type="number"
+                  placeholder="Price"
+                  value={newProduct.last_price}
+                  onChange={(e) =>
+                    handleInputChange("last_price", e.target.value)
+                  }
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Tax %</label>
+                <input
+                  type="number"
+                  placeholder="Tax %"
+                  value={newProduct.tax}
+                  onChange={(e) => handleInputChange("tax", e.target.value)}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Delivery Days</label>
+                <input
+                  type="number"
+                  placeholder="Delivery Days"
+                  value={newProduct.delivery_days}
+                  onChange={(e) =>
+                    handleInputChange("delivery_days", e.target.value)
+                  }
+                />
+              </div>
+            </div>
 
             <div className="popup-actions">
               <button onClick={handleAddNewProduct}>Save Product</button>
@@ -1076,7 +1183,7 @@ const VendorDetails = () => {
                               >
                                 {editPriceEntry.date
                                   ? new Date(
-                                      editPriceEntry.date
+                                      editPriceEntry.date,
                                     ).toLocaleDateString("en-GB")
                                   : "dd-mm-yyyy"}
                                 <i className="fas fa-calendar-alt calendar-icon"></i>
@@ -1084,7 +1191,7 @@ const VendorDetails = () => {
                             </>
                           ) : (
                             new Date(entry.current_time).toLocaleDateString(
-                              "en-GB"
+                              "en-GB",
                             )
                           )}
                         </td>
@@ -1108,7 +1215,7 @@ const VendorDetails = () => {
                               {
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
-                              }
+                              },
                             )}`
                           )}
                         </td>
@@ -1146,7 +1253,7 @@ const VendorDetails = () => {
                             />
                           ) : (
                             `${parseFloat(entry.delivery_days).toLocaleString(
-                              "en-IN"
+                              "en-IN",
                             )}`
                           )}
                         </td>
@@ -1217,7 +1324,7 @@ const VendorDetails = () => {
                           >
                             {newPriceEntry.date
                               ? new Date(newPriceEntry.date).toLocaleDateString(
-                                  "en-GB"
+                                  "en-GB",
                                 )
                               : "dd-mm-yyyy"}
                             <i className="fas fa-calendar-alt calendar-icon"></i>
@@ -1432,7 +1539,7 @@ const VendorDetails = () => {
                         {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
-                        }
+                        },
                       )}
                     </td>
 
@@ -1491,7 +1598,7 @@ const VendorDetails = () => {
                                           onConfirm: async () => {
                                             await handleDeleteImage(
                                               index,
-                                              imgObj.id
+                                              imgObj.id,
                                             );
                                           },
                                           onCancel: () => {
@@ -1572,7 +1679,7 @@ const VendorDetails = () => {
                                               newImages: updated[
                                                 index
                                               ].newImages.filter(
-                                                (_, j) => j !== i
+                                                (_, j) => j !== i,
                                               ),
                                             };
                                             return updated;
@@ -1634,7 +1741,7 @@ const VendorDetails = () => {
                                       onChange={(e) =>
                                         handleImageChange(
                                           index,
-                                          Array.from(e.target.files)
+                                          Array.from(e.target.files),
                                         )
                                       }
                                     />
@@ -1707,7 +1814,7 @@ const VendorDetails = () => {
                                 onChange={(e) =>
                                   handleAttachmentChange(
                                     index,
-                                    e.target.files[0]
+                                    e.target.files[0],
                                   )
                                 }
                               />
@@ -1745,7 +1852,7 @@ const VendorDetails = () => {
                             product.product_id,
                             product.active,
                             product.vendor,
-                            product.component_id
+                            product.component_id,
                           )
                         }
                       >

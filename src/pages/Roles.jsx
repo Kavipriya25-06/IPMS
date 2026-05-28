@@ -5,13 +5,14 @@ import {
   showErrorToast,
   showWarningToast,
   showMessageToast,
-} from "./Toastify.jsx"; // ✅ Removed ToastContainerComponent import here
+} from "./Toastify.jsx"; //  Removed ToastContainerComponent import here
 
 const Roles = () => {
   const [users, setUsers] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [newUser, setNewUser] = useState({
+    name: "",
     email: "",
     password: "",
     role: "User",
@@ -52,7 +53,7 @@ const Roles = () => {
       onConfirm: async () => {
         try {
           const updatedUsers = users.map((user) =>
-            user.id === userId ? { ...user, role: newRole } : user
+            user.id === userId ? { ...user, role: newRole } : user,
           );
           setUsers(updatedUsers);
 
@@ -62,7 +63,7 @@ const Roles = () => {
               method: "PATCH",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ role: newRole }),
-            }
+            },
           );
 
           if (response.ok) {
@@ -86,11 +87,11 @@ const Roles = () => {
   const handleAddUser = async () => {
     try {
       const emailExists = users.some(
-        (user) => user.email.toLowerCase() === newUser.email.toLowerCase()
+        (user) => user.email.toLowerCase() === newUser.email.toLowerCase(),
       );
       if (emailExists) {
         showWarningToast(
-          "This email is already registered. Please add another one."
+          "This email is already registered. Please add another one.",
         );
         return;
       }
@@ -98,7 +99,12 @@ const Roles = () => {
       const response = await fetch(`${config.apiBaseURL}/register/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newUser),
+        body: JSON.stringify({
+          name: newUser.name,
+          email: newUser.email,
+          password: newUser.password,
+          role: newUser.role,
+        }),
       });
 
       if (!response.ok) {
@@ -106,7 +112,7 @@ const Roles = () => {
         showErrorToast(
           error?.email
             ? `Error: ${error.email}`
-            : "Error adding user. Please try again."
+            : "Error adding user. Please try again.",
         );
         return;
       }
@@ -114,7 +120,7 @@ const Roles = () => {
       const addedUser = await response.json();
       setUsers((prevUsers) => [...prevUsers, addedUser]);
       setShowPopup(false);
-      setNewUser({ email: "", password: "", role: "User" });
+      setNewUser({ name: "", email: "", password: "", role: "User" });
       showSuccessToast("User added successfully");
     } catch (error) {
       console.error("Error adding user:", error);
@@ -139,7 +145,7 @@ const Roles = () => {
         showSuccessToast(
           !currentStatus
             ? "User activated successfully"
-            : "User inactivated successfully"
+            : "User inactivated successfully",
         );
         fetchUsers();
       } else {
@@ -171,6 +177,7 @@ const Roles = () => {
         <table>
           <thead>
             <tr>
+              <th>Name</th>
               <th>Email</th>
               {roles.map((role) => (
                 <th key={role}>{role}</th>
@@ -181,6 +188,7 @@ const Roles = () => {
           <tbody>
             {users.map((user) => (
               <tr key={user.id}>
+                <td>{user.name}</td>
                 <td>{user.email}</td>
                 {roles.map((role) => (
                   <td key={role}>
@@ -195,7 +203,7 @@ const Roles = () => {
                           handleRoleChangeConfirmation(
                             user.id,
                             role,
-                            user.email
+                            user.email,
                           );
                         }, 0)
                       }
@@ -231,9 +239,22 @@ const Roles = () => {
               className="popup-form"
               onSubmit={(e) => {
                 e.preventDefault();
-                handleAddUser();
+                handleAddUser(); 
               }}
             >
+              <div className="form-group">
+                <label className="form-label">Name:</label>
+                <input
+                  className="form-input"
+                  type="text"
+                  value={newUser.name}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, name: e.target.value })
+                  }
+                  required
+                />
+              </div>
+
               <div className="form-group">
                 <label className="form-label">Email:</label>
                 <input

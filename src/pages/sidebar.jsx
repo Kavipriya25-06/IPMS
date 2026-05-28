@@ -29,12 +29,19 @@ export default function Sidebar() {
     {
       label: "Components",
       path: "/components",
-      roles: ["Admin", "Sub-Admin", "Procurement", "Inventory", "Finance","User"],
+      roles: [
+        "Admin",
+        "Sub-Admin",
+        "Procurement",
+        "Inventory",
+        "Finance",
+        "User",
+      ],
     },
     {
       label: "Inventory",
       path: "/inventory",
-      roles: ["Admin", "Sub-Admin", "Inventory", "Finance","Procurement"],
+      roles: ["Admin", "Sub-Admin", "Inventory", "Finance", "Procurement"],
     },
     {
       label: "Vendor",
@@ -44,7 +51,14 @@ export default function Sidebar() {
     {
       label: "BOM",
       path: "/bom",
-      roles: ["Admin", "Sub-Admin", "Procurement","Inventory","Finance","User"],
+      roles: [
+        "Admin",
+        "Sub-Admin",
+        "Procurement",
+        "Inventory",
+        "Finance",
+        "User",
+      ],
     },
     {
       label: "Projects",
@@ -59,7 +73,7 @@ export default function Sidebar() {
       ],
     },
     {
-      label: "Requests",
+      label: "Purchase Requests",
       path: "/requests",
       roles: ["Admin", "Sub-Admin", "Procurement", "User", "Inventory"],
     },
@@ -73,12 +87,16 @@ export default function Sidebar() {
       path: "/inwardlist",
       roles: ["Admin", "Sub-Admin", "Inventory", "Procurement"],
     },
-     {
+    {
       label: "Outward",
       path: "/outward",
       roles: ["Admin", "Sub-Admin", "Inventory", "Procurement"],
     },
-
+    {
+      label: "Component Request",
+      path: "/ComponentRequest",
+      roles: ["Admin", "Sub-Admin", "Inventory", "Procurement"],
+    },
   ];
 
   const topLevelPaths = tiles.map((tile) => tile.path);
@@ -87,7 +105,10 @@ export default function Sidebar() {
 
   return (
     <div className="layout-container">
-      <aside className={`sidebar ${isMenuOpen ? "open" : "closed"}`} style={{  zIndex: 10 }}>
+      <aside
+        className={`sidebar ${isMenuOpen ? "open" : "closed"}`}
+        style={{ zIndex: 10 }}
+      >
         <div className="hamburger-menu">
           <button
             className={`hamburger-button ${

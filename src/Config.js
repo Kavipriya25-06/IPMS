@@ -1,6 +1,8 @@
 // // src/config.js
 const config = {
-   apiBaseURL: "http://127.0.0.1:8000",
+  // apiBaseURL: "http://127.0.0.1:8000/api",
+  apiBaseURL: "http://127.0.0.1:8000/api",
+  // MEDIA_BASE_URL: "http://dms.aero360.co.in",
 
   //apiBaseURL: "http://148.135.138.195:8000",
 

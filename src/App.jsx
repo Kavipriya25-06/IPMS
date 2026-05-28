@@ -52,8 +52,8 @@ import OutwardEvent from "./pages/OutwardEvent";
 import MainDashboard from "./pages/MainDashboard";
 import QCForm from "./pages/QcQuestion";
 import QcIcon from "./pages/QcIcon";
-
-
+// import ComponentRequest from "./pages/ComponentRequest";
+import ComponentRequest from "./pages/componentrequest";
 
 function App() {
   const { user, logout } = useAuth();
@@ -107,13 +107,11 @@ function App() {
             <div style={{ paddingLeft: "10px", fontSize: "18px" }}>
               <TagIcon style={{ fontSize: "20px" }} />
             </div>
-            <div style={{ paddingLeft: "10px", paddingRight:"5px" }}>
+            <div style={{ paddingLeft: "10px", paddingRight: "5px" }}>
               <ProfileDropdown />
             </div>
           </div>
         </header>
-
-  
 
         <div className="main-content">
           <Routes>
@@ -352,7 +350,12 @@ function App() {
                 path="inwardlist"
                 element={
                   <ProtectedRoute
-                    allowedRoles={["Admin", "Sub-Admin", "Inventory", "Procurement"]}
+                    allowedRoles={[
+                      "Admin",
+                      "Sub-Admin",
+                      "Inventory",
+                      "Procurement",
+                    ]}
                   >
                     <InwardList />
                   </ProtectedRoute>
@@ -362,7 +365,12 @@ function App() {
                 path="outward"
                 element={
                   <ProtectedRoute
-                    allowedRoles={["Admin", "Sub-Admin", "Inventory" ,"Procurement"]}
+                    allowedRoles={[
+                      "Admin",
+                      "Sub-Admin",
+                      "Inventory",
+                      "Procurement",
+                    ]}
                   >
                     <Outward />
                   </ProtectedRoute>
@@ -528,6 +536,24 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+
+              <Route
+                path="ComponentRequest"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={[
+                      "Procurement",
+                      "Admin",
+                      "Sub-Admin",
+                      "Inventory",
+                      "User",
+                    ]}
+                  >
+                    <ComponentRequest />
+                  </ProtectedRoute>
+                }
+              />
+
               <Route
                 path="qcform"
                 element={

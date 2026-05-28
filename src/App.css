@@ -21,7 +21,7 @@ h1 {
   margin: 0 0 0px;
   font-size: 2rem;
   padding: 0px 0;
-  background-color: #ffffff;
+  background-color: #ffffff;   
 }
 
 /* Navbar Styles */
@@ -50,7 +50,9 @@ nav ul li a {
   color: white;
   text-decoration: none;
   border-radius: 5px;
-  transition: background-color 0.3s ease, opacity 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    opacity 0.3s ease;
 }
 
 nav ul li a:hover {
@@ -1157,7 +1159,9 @@ table td {
   border-radius: 6px;
   font-size: 15px;
   font-weight: 500;
-  transition: background-color 0.3s ease, transform 0.2s ease;
+  transition:
+    background-color 0.3s ease,
+    transform 0.2s ease;
 }
 
 .create-tag-button:hover {
@@ -2293,7 +2297,9 @@ main {
 }
 
 .main-content {
-  transition: margin-left 0.3s ease, width 0.3s ease;
+  transition:
+    margin-left 0.3s ease,
+    width 0.3s ease;
   /* height: 100vh; */
   /* overflow-y: auto; */
   box-sizing: border-box;
@@ -2706,7 +2712,9 @@ main {
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
-  transition: background-color 0.3s, box-shadow 0.3s;
+  transition:
+    background-color 0.3s,
+    box-shadow 0.3s;
 }
 
 .price-entry-button:hover {
@@ -3828,7 +3836,9 @@ ul {
   font-size: 14px;
   color: #333;
   cursor: pointer;
-  transition: background-color 0.3s, color 0.3s;
+  transition:
+    background-color 0.3s,
+    color 0.3s;
 }
 
 .tab-btn:hover {
@@ -4036,7 +4046,9 @@ ul {
   font-size: 14px;
   color: #333;
   cursor: pointer;
-  transition: background-color 0.3s, color 0.3s;
+  transition:
+    background-color 0.3s,
+    color 0.3s;
 }
 
 .joborder-container .tab-btn:hover {
@@ -5349,7 +5361,9 @@ ul {
   border-radius: 6px;
   font-size: 14px;
   text-align: right;
-  transition: border 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border 0.2s ease,
+    box-shadow 0.2s ease;
   cursor: pointer;
 }
 
@@ -5707,4 +5721,235 @@ textarea.input1 {
 .load-images-btn:hover {
   opacity: 0.7;
   color: whitesmoke;
+}
+
+/* 🔷 Top bar layout */
+.top-bar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr; 
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+/* 🔷 CENTER TABS */
+.tabs {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* RIGHT SIDE CONTAINER */
+.right-section {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 15px;
+}
+
+
+/* SEARCH BOX */
+.search-box input {
+  width: 220px;
+  padding: 7px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+  transition: 0.2s;
+}
+
+.search-box input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 4px rgba(0, 123, 255, 0.3);
+}
+
+/* ADD BUTTON */
+.add-btn {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.add-btn:hover {
+  background: #0056b3;
+}
+
+/* RIGHT SIDE BUTTON */
+.add-container {
+  margin-left: auto;
+}
+
+/* 🔷 Tabs */
+.tabs button {
+  padding: 8px 15px;
+  border: none;
+  background: #e0e0e0;
+  cursor: pointer;
+  border-radius: 5px;
+  font-weight: 500;
+}
+
+.active-tab {
+  background: #f58720 !important;
+  color: white;
+}
+
+/* 🔷 Add button (top right) */
+.add-container {
+  margin-left: auto;
+}
+
+.add-btn {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.add-btn:hover {
+  background: #218838;
+}
+
+/* 🔷 Return button */
+.return-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.return-btn:hover {
+  background: #c82333;
+}
+
+/* keeps same height as button */
+.add-placeholder {
+  height: 32px; /* same as button height */
+}
+
+.action-cell {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+
+.save-btn {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.save-btn:hover {
+  background-color: #218838;
+}
+
+.close-btn {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.close-btn:hover {
+  background-color: #c82333;
+}
+
+.serial-box {
+  max-height: 120px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  padding: 5px;
+  background: #fafafa;
+  font-size: 13px;
+}
+ 
+
+.add-product-popup {
+  width: 700px;
+  max-width: 95vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.popup-title {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.form-grid-two {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px 18px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group.full-width {
+  grid-column: span 2;
+}
+
+.form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #444;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.form-group input[readonly] {
+  background-color: #f1f1f1;
+  color: #555;
+}
+
+.section-title {
+  margin: 16px 0 12px;
+}
+
+.popup-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+@media (max-width: 600px) {
+  .form-grid-two {
+    grid-template-columns: 1fr;
+  }
+
+  .form-group.full-width {
+    grid-column: span 1;
+  }
+
+  .add-product-popup {
+    width: 94vw;
+  }
 }

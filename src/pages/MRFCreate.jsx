@@ -189,6 +189,41 @@ const MRFCreate = () => {
     updatedRows[index].checked = !updatedRows[index].checked;
     setNewRows(updatedRows);
   };
+  //  Select All handler
+  const handleToggleSelectAll = () => {
+    // determine if currently everything is selected
+    const allRequestSelected =
+      requestDetails.length > 0 &&
+      requestDetails.every((row) => selectedItems[row.serial_number]);
+    const allNewRowsSelected =
+      newRows.length === 0 || newRows.every((row) => row.checked);
+    const currentlyAllSelected =
+      requestDetails.length + newRows.length > 0 &&
+      allRequestSelected &&
+      allNewRowsSelected;
+
+    const newValue = !currentlyAllSelected;
+
+    // update reserved rows selection
+    const updatedSelectedItems = { ...selectedItems };
+    requestDetails.forEach((row) => {
+      updatedSelectedItems[row.serial_number] = newValue;
+    });
+    setSelectedItems(updatedSelectedItems);
+    // update new rows selection
+    setNewRows((prev) => prev.map((row) => ({ ...row, checked: newValue })));
+  };
+
+  // computed "select all" checked state
+  const allRequestSelected =
+    requestDetails.length > 0 &&
+    requestDetails.every((row) => selectedItems[row.serial_number]);
+  const allNewRowsSelected =
+    newRows.length === 0 || newRows.every((row) => row.checked);
+  const isAllSelected =
+    requestDetails.length + newRows.length > 0 &&
+    allRequestSelected &&
+    allNewRowsSelected;
 
   const handleCreateMRF = async () => {
     const selectedRows = requestDetails.filter(
@@ -376,7 +411,16 @@ const MRFCreate = () => {
               <th>Vendor Name</th>
               <th>Serial Number</th>
               <th>Status</th>
-              <th>Actions</th>
+              <th>
+                <div style={{ marginTop: "4px" }}>
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected} // <-- from state we computed
+                    onChange={handleToggleSelectAll} // <-- toggles all checkboxes
+                  />{" "}
+                  Actions
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody>
